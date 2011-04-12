@@ -1,0 +1,51 @@
+PATH
+  remote: .
+  specs:
+    vcap_common (0.99)
+      eventmachine (~> 0.12.10)
+      nats
+      thin
+      yajl-ruby
+
+GEM
+  remote: http://rubygems.org/
+  specs:
+    addressable (2.2.4)
+    daemons (1.1.2)
+    diff-lcs (1.1.2)
+    em-http-request (1.0.0.beta.3)
+      addressable (>= 2.2.3)
+      em-socksify
+      eventmachine
+      http_parser.rb (>= 0.5.1)
+    em-socksify (0.1.0)
+      eventmachine
+    eventmachine (0.12.10)
+    http_parser.rb (0.5.1)
+    json_pure (1.5.1)
+    nats (0.4.2)
+      daemons (>= 1.1.0)
+      eventmachine (>= 0.12.10)
+      json_pure (>= 1.5.1)
+    rack (1.2.2)
+    rspec (2.5.0)
+      rspec-core (~> 2.5.0)
+      rspec-expectations (~> 2.5.0)
+      rspec-mocks (~> 2.5.0)
+    rspec-core (2.5.1)
+    rspec-expectations (2.5.0)
+      diff-lcs (~> 1.1.2)
+    rspec-mocks (2.5.0)
+    thin (1.2.11)
+      daemons (>= 1.0.9)
+      eventmachine (>= 0.12.6)
+      rack (>= 1.0.0)
+    yajl-ruby (0.8.2)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  em-http-request (~> 1.0.0.beta3)
+  rspec
+  vcap_common!

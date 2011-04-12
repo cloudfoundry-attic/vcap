@@ -1,0 +1,6 @@
+port: 2222
+inet: 0.0.0.0
+sock: /tmp/router.sock
+mbus: nats://localhost:4222
+log_level: INFO
+pid: /var/vcap/sys/run/router.pid

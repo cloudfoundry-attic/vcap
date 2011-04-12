@@ -1,0 +1,48 @@
+#!/usr/bin/env ruby
+# Copyright (c) 2009-2011 VMware, Inc.
+
+require 'optparse'
+opts_parser = OptionParser.new do |opts|
+  opts.on('-p PORT')                   { |port| $cc_port = port.to_i }
+  opts.on('-c CONFIG_FILE')            { |cfg| $cc_config_file = cfg.to_s }
+end
+opts_parser.parse!(ARGV.dup)
+
+if $cc_config_file
+  if File.exists?($cc_config_file)
+    ENV['CLOUD_CONTROLLER_CONFIG'] = $cc_config_file
+  else
+    $stderr.puts "Could not find specified config file at #{$cc_config_file.inspect}"
+    exit 1
+  end
+end
+
+cc_root = File.expand_path('../../cloud_controller', __FILE__)
+cc_boot = File.join(cc_root, 'config', 'boot')
+require cc_boot
+
+# Sets TCP/IP environment for sub-processes as well.
+if $cc_port && $cc_port.nonzero?
+  CloudController.instance_port = $cc_port
+end
+
+begin
+  pid_file = CloudController.pid
+  FileUtils.mkdir_p(File.dirname(pid_file)) # ensure pidfile directory exists
+  File.open(pid_file, 'wb') do |handle|
+    handle.print(Process.pid)
+    at_exit { File.unlink(pid_file) rescue nil }
+  end
+rescue
+  $stderr.puts "Unable to write to pidfile at: #{pid_file}"
+  exit 1
+end
+
+require 'thin'
+server = Thin::Server.new(CloudController.bind_address, CloudController.instance_port)
+cc_rack = File.join(cc_root, 'config.ru')
+server.app = Rack::Adapter.load(cc_rack)
+# The routers proxying to us handle killing inactive connections. Set an upper limit
+# just to be safe.
+server.timeout = 15 * 60 # 15 min
+server.start
