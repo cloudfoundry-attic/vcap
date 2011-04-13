@@ -27,21 +27,6 @@ namespace "db" do
 end
 task "migrate" => "db:migrate"
 
-task :setup do
-  # Make submodules sibling of origin
-  github_base = %x[git config remote.origin.url].gsub(/\/vcap.git\Z/, '').strip
-
-  %w{java services tests}.each do |git_module|
-    if %x[git config submodule.#{git_module}.url].empty?
-      url = "#{github_base}/vcap-#{git_module}.git"
-      `git config submodule.#{git_module}.url #{url}`
-      puts "configure submodule #{git_module}: #{url}"
-    end
-  end
-
-  sh "git submodule update"
-end
-
 task :sync do
-  sh "git submodule update"
+  sh "git submodule update --init"
 end
