@@ -97,11 +97,13 @@ class Service < ActiveRecord::Base
   def synthesize_service_type
     case self.name
     when /mysql/
-      'database'
+      'relational'
     when /redis/
       'key-value'
     when /mongodb/
-      'key-value'
+      'document'
+    when /rabbit/
+      'message-queue'
     else
       'generic'
     end
