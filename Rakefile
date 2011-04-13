@@ -26,3 +26,7 @@ namespace "db" do
   end
 end
 task "migrate" => "db:migrate"
+
+task :sync do
+  sh "git submodule update --init"
+end
