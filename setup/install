@@ -104,11 +104,6 @@ gem install vmc --no-rdoc --no-ri
 echo "Setting up vcap."
 cd ~/cloudfoundry/vcap
 
-echo "Trotter, copy the new shit over"
-read WHO_CARES
-echo "Again, with feeling!"
-read WHO_CARES
-
 sudo setup/vcap_setup -a -s -p "$MYSQL_PASS"
 
 cd ~/cloudfoundry/vcap/services/mysql/config
