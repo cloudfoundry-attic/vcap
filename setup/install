@@ -43,7 +43,7 @@ echo ""
 echo "Hopefully this will be the last time you type your password"
 sudo ls > /dev/null
 
-if [[ -z $MYSQL_PASS ]]; then
+if [[ -z "$MYSQL_PASS" ]]; then
   read -p "Enter the password you want to use for root mysql user: " MYSQL_PASS
 fi
 
