@@ -7,16 +7,25 @@ cat <<EOF
 usage: $0 options
 
 OPTIONS:
-  -h  Show this message
+  -h           Show this message
+  -a           Answer yes to all questions
+  -s           Install all optional services
+  -p PASSWORD  Preseed the MySQL password
 EOF
 }
 
-while getopts "hp:" OPTION
+while getopts "hasp:" OPTION
 do
   case $OPTION in
     h)
       usage
       exit 1
+      ;;
+    a)
+      ALL=true
+      ;;
+    s)
+      ALL_SERVICES=true
       ;;
     p)
       MYSQL_PASS="$OPTARG"
@@ -40,17 +49,21 @@ echo '-----------------------------------------------------------'
 echo ""
 
 
-echo "Just hit <enter> to skip any item"
-echo ""
+if [[ $ALL != true ]]; then
+  echo "Just hit <enter> to skip any item"
+  echo ""
+fi
 
 if [ "$(id -u)" != "0" ]; then
     echo '** Setup must be run as root **'
     exit 1
 fi
 
-read -p "Setup all components? default: individual components? [y/N]"
-if [[ $REPLY =~ ^[yY]$ ]]; then
-    ALL=true
+if [[ $ALL != true ]]; then
+  read -p "Setup all components? default: individual components? [y/N]"
+  if [[ $REPLY =~ ^[yY]$ ]]; then
+      ALL=true
+  fi
 fi
 
 # Defaults, done for everyone
@@ -137,14 +150,24 @@ fi
 
 if [[ $CC == true || $ALL == true ]]; then
     if [[ $PLATFORM == 'Linux' ]]; then
-	read -p "Should I do a production setup as well (Postgres/MySQL)? [y/N] "
-	if [[ $REPLY =~ ^[yY]$ ]]; then
+        if [[ $ALL != true ]]; then
+            read -p "Should I do a production setup as well (Postgres/MySQL)? [y/N] "
+            if [[ $REPLY =~ ^[yY]$ ]]; then
+                $RELATIONAL_DBS=true
+            fi
+        fi
+
+	if [[ $RELATIONAL_DBS == true || $ALL == true ]]; then
 	    echo "Installing PostgreSQL server and support"
 	    apt-get install -qqy postgresql
 	    echo "Installing pg gems"
 	    gem install pg --no-rdoc --no-ri
 	    echo ""
 	    echo "Installing MySQL server and support"
+        if [[ -n "$MYSQL_PASS" ]]; then
+          echo mysql-server-5.1 mysql-server/root_password select $MYSQL_PASS | sudo debconf-set-selections
+          echo mysql-server-5.1 mysql-server/root_password_again select $MYSQL_PASS | sudo debconf-set-selections
+        fi
 	    apt-get install -qqy mysql-server ruby-dev libmysql-ruby libmysqlclient-dev
 	    echo "Installing mysql gems"
 	    gem install mysql --no-rdoc --no-ri
@@ -198,7 +221,9 @@ if [[ $DEA == true || $ALL == true ]]; then
             apt-get install -qqy python-software-properties
             add-apt-repository "deb http://archive.canonical.com/ lucid partner"
             apt-get -qqy update
-            apt-get install -qqy curl sun-java6-bin sun-java6-jre sun-java6-jdk
+            echo sun-java6-jdk shared/accepted-sun-dlj-v1-1 boolean true | sudo /usr/bin/debconf-set-selections
+            echo sun-java6-jre shared/accepted-sun-dlj-v1-1 boolean true | sudo /usr/bin/debconf-set-selections
+            sudo apt-get install -qqy curl sun-java6-bin sun-java6-jre sun-java6-jdk
 	elif [[ $PLATFORM == 'MacOSX' ]]; then
 	    echo -e "\033[31mFIXME: Implement for MacOSX \033[0m"
 	fi
@@ -253,22 +278,24 @@ if [[ $DEA == true || $ALL == true ]]; then
 	chmod  777 "/var/vcap.local"
     fi
 
-    if [[ $ALL != true ]]; then
-	read -p "Should I do a production setup and secure this system? [y/N] "
-	if [[ $REPLY =~ ^[yY]$ ]]; then
-          # Setup var directory
-	    echo "Securing directories and permissions"
-	    chmod 755 "/var"
-	    chmod -R 700 "/var/vcap/sys"
-	    chmod -R 700 "/var/vcap/shared"
-	    chmod -R 700 "/var/vcap.local"
-	    chmod -R 711 "/var/vcap.local"
-	    chmod -R 711 "/var/vcap.local/apps"
-	    chmod -R 700 "/tmp"
-	    chmod -R 700 "/var/tmp"
-	fi
-	echo ""
+if [[ $ALL != true ]]; then
+    read -p "Should I do a production setup and secure this system? [y/N] "
+    if [[ $REPLY =~ ^[yY]$ ]]; then
+        PROD_SETUP=true
     fi
+fi
+
+if [[ $PROD_SETUP == true || $ALL == true ]]; then
+        # Setup var directory
+    echo "Securing directories and permissions"
+    chmod 755 "/var"
+    chmod -R 700 "/var/vcap/sys"
+    chmod -R 700 "/var/vcap/shared"
+    chmod -R 700 "/var/vcap.local"
+    chmod -R 711 "/var/vcap.local"
+    chmod -R 711 "/var/vcap.local/apps"
+    chmod -R 700 "/tmp"
+    chmod -R 700 "/var/tmp"
 fi
 
 ###################
@@ -280,13 +307,19 @@ echo "Additional Optional Services"
 # question than you should answer yes here for sure
 X=`which mysqld`
 if [ $? != 0 ]; then
-    read -p "Should I add MySQL Server? [y/N] "
-    if [[ $REPLY =~ ^[yY]$ ]]; then
+    if [[ $ALL_SERVICES != true ]]; then
+        read -p "Should I add MySQL Server? [y/N] "
+        if [[ $REPLY =~ ^[yY]$ ]]; then
+            $MYSQL=true
+        fi
+    fi
+
+    if [[ $MYSQL == true || $ALL_SERVICES == true ]]; then
         echo "Installing MySQL server and support"
 
-        if [[ -n "$MYSQL_PASS" ]]; then
-          echo mysql-server mysql-server/root_password select $MYSQL_PASS | sudo debconf-set-selections
-          echo mysql-server mysql-server/root_password_again select $MYSQL_PASS | sudo debconf-set-selections
+        if [[ -n "$MYSQL_PASS" && $PLATFORM == "Linux" ]]; then
+          echo mysql-server-5.1 mysql-server/root_password select $MYSQL_PASS | sudo debconf-set-selections
+          echo mysql-server-5.1 mysql-server/root_password_again select $MYSQL_PASS | sudo debconf-set-selections
         fi
 	    apt-get install -qqy mysql-server ruby-dev libmysql-ruby libmysqlclient-dev
 	    echo "Installing mysql gems"
@@ -299,9 +332,14 @@ REDIS_VERSION=2.2.4
 
 redis_current=`redis-server -v | grep $REDIS_VERSION`
 
-if [[ -z "$redis_current" ]]; then
+if [[ $ALL_SERVICES != true ]]; then
     read -p "Should I add Redis Server? [y/N] "
     if [[ $REPLY =~ ^[yY]$ ]]; then
+        $REDIS=true
+    fi
+fi
+
+if [[ $REDIS == true || $ALL_SERVICES == true ]]; then
 	echo "Installing Redis (version $REDIS_VERSION)"
 	pushd .
 	cd /tmp
@@ -323,8 +361,14 @@ fi
 RABBITMQ_VERSION=2.4.0
 RABBITMQ_VERSION_FULL=2.4.0-1_all
 
-read -p "Should I add RabbitMQ Server? [y/N] "
-if [[ $REPLY =~ ^[yY]$ ]]; then
+if [[ $ALL_SERVICES != true ]]; then
+    read -p "Should I add RabbitMQ Server? [y/N] "
+    if [[ $REPLY =~ ^[yY]$ ]]; then
+        $RABBITMQ=true
+    fi
+fi
+
+if [[ $RABBITMQ == true || $ALL_SERVICES == true ]]; then
     echo "Installing RabbitMQ Server (version $RABBITMQ_VERSION)"
     pushd .
     cd /tmp
@@ -339,8 +383,14 @@ MONGODB_VERSION=1.8.1
 mongodb_current=`mongod --version | grep $MONGODB_VERSION`
 
 if [[ -z "$mongodb_current" ]]; then
-    read -p "Should I add the MongoDB Server? [y/N] "
-    if [[ $REPLY =~ ^[yY]$ ]]; then
+    if [[ $ALL_SERVICES != true ]]; then
+        read -p "Should I add the MongoDB Server? [y/N] "
+        if [[ $REPLY =~ ^[yY]$ ]]; then
+            $MONGODB=true
+        fi
+    fi
+
+    if [[ $MONGODB == true || $ALL_SERVICES == true ]]; then
 	echo "Installing MongoDB Server (version $MONGODB_VERSION)"
 	if [[ `uname -a` =~ "x86_64" ]] ; then
 	    mongodb="mongodb-linux-x86_64-$MONGODB_VERSION"
