@@ -2,6 +2,27 @@
 # Copyright (c) 2009-2011 VMware, Inc.
 # Try to detect platform. VCAP installs well on Ubuntu and MacOS X Systems.
 
+usage() {
+cat <<EOF
+usage: $0 options
+
+OPTIONS:
+  -h  Show this message
+EOF
+}
+
+while getopts "hp:" OPTION
+do
+  case $OPTION in
+    h)
+      usage
+      exit 1
+      ;;
+    p)
+      MYSQL_PASS="$OPTARG"
+  esac
+done
+
 OS=`uname -s`
 if [[ $OS == 'Linux' ]]; then
     PLATFORM='Linux'
@@ -262,6 +283,11 @@ if [ $? != 0 ]; then
     read -p "Should I add MySQL Server? [y/N] "
     if [[ $REPLY =~ ^[yY]$ ]]; then
         echo "Installing MySQL server and support"
+
+        if [[ -n "$MYSQL_PASS" ]]; then
+          echo mysql-server mysql-server/root_password select $MYSQL_PASS | sudo debconf-set-selections
+          echo mysql-server mysql-server/root_password_again select $MYSQL_PASS | sudo debconf-set-selections
+        fi
 	    apt-get install -qqy mysql-server ruby-dev libmysql-ruby libmysqlclient-dev
 	    echo "Installing mysql gems"
 	    gem install mysql --no-rdoc --no-ri
