@@ -73,7 +73,7 @@ cd ~/cloudfoundry
 # TODO: Remove reference to 'trotter' when submitting back
 [ -d vcap ] || git clone https://github.com/trotter/vcap.git
 cd vcap
-git co -b fix-install-process origin/fix-install-process
+git checkout -b fix-install-process origin/fix-install-process
 git submodule update --init
 gem install vmc --no-rdoc --no-ri
 
