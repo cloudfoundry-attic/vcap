@@ -51,7 +51,7 @@ additional instructions for this environment have been included.
       and towards the end. The entire process takes ~1 hour, so just keep a loose
       eye on it.
 
-    bash < <(curl -s -k -B https://github.com/trotter/vcap/raw/fix-install-process/setup/install)
+    bash < <(curl -s -k -B https://github.com/cloudfoundry/vcap/raw/master/setup/install)
 
 - step #2 *Optional, mac users only*, create a local ssh tunnel 
   # from your vm, run ifconfig and note eth0, possiby 192.168.252.130
