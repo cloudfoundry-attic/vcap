@@ -1,0 +1,107 @@
+#!/bin/bash
+
+export rvm_trust_rvmrcs_flag=1 # Trust all rmvrcs we find
+
+OS=`uname -s`
+if [[ $OS == 'Linux' ]]; then
+    PLATFORM='Linux'
+elif [[ $OS == 'Darwin' ]]; then
+    PLATFORM='MacOSX'
+else
+    echo "Unknown System, cancelling setup"
+    exit 1
+fi
+
+echo ""
+echo '-----------------------------------------------------------'
+echo "($PLATFORM) One Click Installer for VMware's Cloud Application Platform!"
+echo '-----------------------------------------------------------'
+echo ""
+
+echo "Hopefully this will be the last time you type your password"
+sudo ls > /dev/null
+
+read -p "Enter the password you want to use for root mysql user: " MYSQL_PASS
+
+echo "Installing dependencies"
+if [[ $PLATFORM == 'Linux' ]]; then
+  sudo apt-get -y install autoconf curl git-core ruby bison build-essential zlib1g-dev libssl-dev libreadline5-dev
+else
+  echo "Sorry, we can't install dependencies for your system yet."
+fi
+
+echo "Installing rvm"
+curl -s -k -B https://rvm.beginrescueend.com/install/rvm > /tmp/install_rvm
+bash /tmp/install_rvm
+rm /tmp/install_rvm
+
+echo "Fixing init scripts to work with rvm"
+
+init_file=""
+if [ -f ~/.bashrc ]; then
+  init_file="$HOME/.bashrc"
+elif [ -f ~/.bash_profile ]; then
+  init_file="$HOME/.bash_profile"
+elif [ -f ~/.zshrc ]; then
+  init_file="$HOME/.zshrc"
+fi
+
+if [ -f "$init_file" ]; then
+  echo "Fixing init scripts to work with rvm"
+  if grep '^ *\[ -z "$PS1" \] && return *$' $init_file; then
+    sed -ibkup -e 's/^ *\[ -z "$PS1" \] && return *$/if [ -z "$PS1" ]; then/' $init_file
+    echo "fi" >> $init_file
+  fi
+
+  echo '[[ -s "$rvm_path/scripts/rvm" ]] && source "$rvm_path/scripts/rvm"' >> $init_file
+fi
+
+echo "Fixing init scripts to work with rvm"
+
+rvm_path="$HOME/.rvm"
+[[ -s "$rvm_path/scripts/rvm" ]] && source "$rvm_path/scripts/rvm"
+
+echo "Installing various rubies"
+rvm install 1.9.2-p180
+rvm --default 1.9.2-p180
+rvm install 1.8.7
+
+echo "Getting vcap"
+[ -d ~/cloudfoundry ] || mkdir ~/cloudfoundry
+cd ~/cloudfoundry
+
+# TODO: Remove reference to 'trotter' when submitting back
+[ -d vcap ] || git clone https://github.com/trotter/vcap.git
+cd vcap
+git co -b fix-install-process origin/fix-install-process
+git submodule update --init
+gem install vmc --no-rdoc --no-ri
+
+echo "Setting up vcap."
+cd ~/cloudfoundry/vcap
+
+echo "Trotter, copy the new shit over"
+read WHO_CARES
+echo "Again, with feeling!"
+read WHO_CARES
+
+sudo setup/vcap_setup -a -s -p "$MYSQL_PASS"
+
+cd ~/cloudfoundry/vcap/services/mysql/config
+sed -ibkup -e "s/pass: root/pass: $MYSQL_PASS/" mysql_node.yml
+
+echo "Restarting nginx"
+cd ~/cloudfoundry/vcap
+sudo cp setup/simple.nginx.conf /etc/nginx/nginx.conf
+sudo /etc/init.d/nginx restart
+
+echo "Installing bundler"
+cd ~/cloudfoundry/vcap
+gem install bundler --no-rdoc --no-ri
+rake bundler:install
+
+echo 'Starting it up!'
+cd ~/cloudfoundry/vcap/bin
+./vcap start
+
+echo 'Success!'
