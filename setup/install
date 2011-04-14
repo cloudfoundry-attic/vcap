@@ -54,7 +54,7 @@ fi
 if [ -f "$init_file" ]; then
   echo "Fixing init scripts to work with rvm"
   if grep '^ *\[ -z "$PS1" \] && return *$' $init_file; then
-    sed -ibkup -e 's/^ *\[ -z "$PS1" \] && return *$/if [ -z "$PS1" ]; then/' $init_file
+    sed -i.bkup -e 's/^ *\[ -z "$PS1" \] && return *$/if [ -z "$PS1" ]; then/' $init_file
     echo "fi" >> $init_file
   fi
 
@@ -88,7 +88,7 @@ cd ~/cloudfoundry/vcap
 sudo setup/vcap_setup -a -s -p "$MYSQL_PASS"
 
 cd ~/cloudfoundry/vcap/services/mysql/config
-sed -ibkup -e "s/pass: root/pass: $MYSQL_PASS/" mysql_node.yml
+sed -i.bkup -e "s/pass: root/pass: $MYSQL_PASS/" mysql_node.yml
 
 echo "Restarting nginx"
 cd ~/cloudfoundry/vcap
