@@ -1,28 +1,8 @@
 #!/bin/bash
 
-usage() {
-cat <<EOF
-usage: $0 options
-
-OPTIONS:
-  -h           Show this message
-  -p PASSWORD  Preseed the MySQL password
-EOF
-}
-
-while getopts "hp:" OPTION
-do
-  case $OPTION in
-    h)
-      usage
-      exit 1
-      ;;
-    p)
-      MYSQL_PASS="$OPTARG"
-  esac
-done
-
 export rvm_trust_rvmrcs_flag=1 # Trust all rmvrcs we find
+# Generate random mysql password
+MYSQL_PASS=$(md5 -qs "$(date)")
 
 OS=`uname -s`
 if [[ $OS == 'Linux' ]]; then
@@ -42,10 +22,6 @@ echo ""
 
 echo "Hopefully this will be the last time you type your password"
 sudo ls > /dev/null
-
-if [[ -z "$MYSQL_PASS" ]]; then
-  read -p "Enter the password you want to use for root mysql user: " MYSQL_PASS
-fi
 
 echo "Installing dependencies"
 if [[ $PLATFORM == 'Linux' ]]; then
