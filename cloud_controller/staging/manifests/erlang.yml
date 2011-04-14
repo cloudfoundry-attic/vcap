@@ -1,0 +1,13 @@
+---
+name: "erlang"
+runtimes:
+  - erlang:
+      version: 'R13B'
+      description: 'Erlang'
+      executable: erl
+      default: true
+app_servers:
+detection:
+  - "ebin/*.app": '.'
+staged_services:
+  

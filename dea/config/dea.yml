@@ -37,3 +37,8 @@ runtimes:
     version: 1.6.0
     version_flag: '-version'
     environment:
+  erlang:
+    executable: erl
+    version: ".* 5.7.4"
+    version_flag: '-version'
+    environment: 
