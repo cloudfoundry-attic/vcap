@@ -30,7 +30,7 @@ fi
 
 # Generate random mysql password
 if [[ $PLATFORM == 'Linux' ]]; then
-  MYSQL_PASS="$(date | md5sum | cut -f1 -d' ')"
+  MYSQL_PASS="$(cat /dev/urandom | tr -dc _A-Z-a-z-0-9 | head -c10)"
 elif [[ $PLATFORM == 'MacOSX' ]]; then
   MYSQL_PASS="$(md5 -qs "$(date)")"
 fi
