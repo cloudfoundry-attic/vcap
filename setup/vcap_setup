@@ -282,20 +282,17 @@ if [[ $ALL != true ]]; then
     read -p "Should I do a production setup and secure this system? [y/N] "
     if [[ $REPLY =~ ^[yY]$ ]]; then
         PROD_SETUP=true
-    fi
-fi
-
-if [[ $PROD_SETUP == true || $ALL == true ]]; then
         # Setup var directory
-    echo "Securing directories and permissions"
-    chmod 755 "/var"
-    chmod -R 700 "/var/vcap/sys"
-    chmod -R 700 "/var/vcap/shared"
-    chmod -R 700 "/var/vcap.local"
-    chmod -R 711 "/var/vcap.local"
-    chmod -R 711 "/var/vcap.local/apps"
-    chmod -R 700 "/tmp"
-    chmod -R 700 "/var/tmp"
+        echo "Securing directories and permissions"
+        chmod 755 "/var"
+        chmod -R 700 "/var/vcap/sys"
+        chmod -R 700 "/var/vcap/shared"
+        chmod -R 700 "/var/vcap.local"
+        chmod -R 711 "/var/vcap.local"
+        chmod -R 711 "/var/vcap.local/apps"
+        chmod -R 700 "/tmp"
+        chmod -R 700 "/var/tmp"
+    fi
 fi
 
 ###################
