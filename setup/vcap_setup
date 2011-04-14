@@ -202,6 +202,12 @@ if [[ $DEA == true || $ALL == true ]]; then
 	popd
     fi
 
+		if [[ $PLATFORM == 'Linux' ]]; then
+	            apt-get install -qqy erlang-nox
+		elif [[ $PLATFORM == 'MacOSX' ]]; then
+		    echo -e "\033[31mFIXME: Implement for MacOSX \033[0m"
+		fi
+
     echo "App Platform Support"
     echo "===================="
 
@@ -213,6 +219,10 @@ if [[ $DEA == true || $ALL == true ]]; then
 
     echo -e "\nNode should now be installed -->"
     node -v
+    echo ""
+
+    echo -e "\nErlang should now be installed -->"
+    erl -version
     echo ""
 
     echo "Setting up Ruby System Gems and Support"
