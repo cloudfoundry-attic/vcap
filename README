@@ -36,127 +36,22 @@ additional instructions for this environment have been included.
 == Detailed Install/Run Instructions:
 
 
-- step #-1: 
+- step #0: 
     - setup a VM with a pristine Ubuntu 10.04.2 server 64bit image, 
       (http://www.ubuntu.com/business/get-ubuntu/download)
     - you may wish to snapshot your VM now in case things go pear shaped.
-    - great snapshot spots are here and after step #4
     - to enable remote access (more fun than using the console), install ssh.
 
-     sudo apt-get install openssh-server
+     sudo apt-get install -y openssh-server curl
 
+- step #1:
+    - Run the install script. It'll ask for your sudo password at the beginning
+      and towards the end. The entire process takes ~1 hour, so just keep a loose
+      eye on it.
 
-- step #0, install system and rvm dependencies 
-    sudo apt-get install autoconf curl git-core ruby bison build-essential zlib1g-dev libssl-dev libreadline5-dev
+    bash < <(curl -s -k -B https://github.com/cloudfoundry/vcap/raw/master/setup/install)
 
-- step #1, install rvm
-    #for detailed rvm install instructions see: [https://rvm.beginrescueend.com/rvm/install/]
-    #or follow the quick steps below.
-
-    #grab rvm
-    #note, he -k switch is only needed if the certificate validation fails
-    bash < <(curl -s -k -B https://rvm.beginrescueend.com/install/rvm)
-
-    #follow the instructions given by the RVM installer (a copy is
-    #include below for your convenience).
-    
-    # you must complete the install by loading RVM in new shells.
-    #
-    #
-    #  1) Place the folowing line at the end of your shell's loading files
-    #     (.bashrc or .bash_profile for bash and .zshrc for zsh),
-    #     after all PATH/variable settings:
-    #
-    #     # This loads RVM into a shell session.
-    #     [[ -s \"$rvm_path/scripts/rvm\" ]] && source \"$rvm_path/scripts/rvm\"  
-    #
-    #     You only need to add this line the first time you install rvm.
-    #
-    #  2) Ensure that there is no 'return' from inside the ~/.bashrc file,
-    #     otherwise rvm may be prevented from working properly.
-    #
-    #     This means that if you see something like:
-    #
-    #    '[ -z \"\$PS1\" ] && return'
-    #
-    #  then you change this line to:
-    #
-    #  if [[ -n \"\$PS1\" ]] ; then
-    #
-    #    # ... original content that was below the '&& return' line ...
-    #    
-    #  fi # <= be sure to close the if at the end of the .bashrc.
-    #
-    #    # this is a good place to source rvm
-    #         [[ -s \"$rvm_path/scripts/rvm\" ]] && source \"$rvm_path/scripts/rvm\"      
-    #
-    #   <EOF> - this marks the end of the .bashrc
-    #
-    #     Be absolutely *sure* to REMOVE the '&& return'.
-    #
-    #     If you wish to DRY up your config you can 'source ~/.bashrc' at the 
-    #     bottom of your .bash_profile.
-    #
-    #     Placing all non-interactive (non login) items in the .bashrc,
-    #     including the 'source' line above and any environment settings.
-    #
-    #  3) CLOSE THIS SHELL and open a new one in order to use rvm.
-
-
-- step #2, use rvm to install ruby 1.9.2 and make it default
-    rvm install 1.9.2-p180 
-    rvm --default 1.9.2-p180
-
-- step #3, use rvm to install ruby 1.8.7
-    rvm install 1.8.7
-
-- step #4, clone the vcap and vmc repos:
-    mkdir ~/cloudfoundry; cd ~/cloudfoundry
-    # optionally create new ssh keys and add them to your github account: ssh-keygen -t rsa -C markl@vmware.com
-    # note, this release uses a handful of submodules. its important
-    # to understand the impact of this which is:
-    # 1) after clonding the vcap repo, you must run git submodule update --init
-    #    this ends up mounting the services and tests repos in the directory tree of vcap
-    #
-    # 2) any time you git pull in vcap, you must also git submodule update
-    git clone https://github.com/cloudfoundry/vcap.git
-    
-    # note, there should be a .rvmrc file in vcap/rvmrc
-    # make sure that the vcap/.rvmrc is present and that it contains
-    # rvm use 1.9.2
-    cd ~/cloudfoundry/vcap
-    git submodule update --init
-    gem install vmc --no-rdoc --no-ri
-    
-- step #5, run vcap_setup to prep cloudfoundry for launch
-    # Points to keep in mind.
-    # 1) Answer Y to all questions
-    # 2) Remember your mysql password, you will need it in a minute
-    cd ~/cloudfoundry/vcap
-    sudo setup/vcap_setup
-    
-    # after vcap_setup completes, edit your mysql_node config file 
-    # with the correct password created during install
-    cd ~/cloudfoundry/vcap/services/mysql/config 
-    vi mysql_node.yml and change mysql.pass to your password
-    
-- step #6, restart nginx with a custom config
-    cd ~/cloudfoundry/vcap
-    sudo cp setup/simple.nginx.conf /etc/nginx/nginx.conf
-    sudo /etc/init.d/nginx restart
-    
-- step #7, install bundler gem and run bundler:install
-    cd ~/cloudfoundry/vcap    
-    gem install bundler --no-rdoc --no-ri
-    rake bundler:install
-
-- step #8, start the system  
-    cd ~/cloudfoundry/vcap
-    bin/vcap start
-    bin/vcap tail  # see aggregate logs
-    
-
-- step #9 *Optional, mac users only*, create a local ssh tunnel 
+- step #2 *Optional, mac users only*, create a local ssh tunnel 
   # from your vm, run ifconfig and note eth0, possiby 192.168.252.130
   # go to your mac terminal window and create a local port 80 tunnel as
   # once you do this, from both your mac, and from within the vm, api.vcap.me and *.vcap.me 
@@ -165,7 +60,7 @@ additional instructions for this environment have been included.
 
 ===Trying your setup
 
-- step #10, validate that you can connect and tests pass
+- step #3, validate that you can connect and tests pass
   # from the console of your vm, or from your mac (thanks to local tunnel)
 
   #try 
@@ -206,7 +101,7 @@ rake spec
 cd ../health_manager
 rake spec
 
--step #11, you are done, make sure you can run a simple hello world app.
+-step #4, you are done, make sure you can run a simple hello world app.
   #1) create an empty directory for your test app (lets call it env), and enter it.
   cd env
 
