@@ -1,8 +1,6 @@
 #!/bin/bash
 
 export rvm_trust_rvmrcs_flag=1 # Trust all rmvrcs we find
-# Generate random mysql password
-MYSQL_PASS=$(md5 -qs "$(date)")
 
 OS=`uname -s`
 if [[ $OS == 'Linux' ]]; then
@@ -25,9 +23,16 @@ sudo ls > /dev/null
 
 echo "Installing dependencies"
 if [[ $PLATFORM == 'Linux' ]]; then
-  sudo apt-get -y install autoconf curl git-core ruby bison build-essential zlib1g-dev libssl-dev libreadline5-dev
+  sudo apt-get -y install coreutils autoconf curl git-core ruby bison build-essential zlib1g-dev libssl-dev libreadline5-dev
 else
   echo "Sorry, we can't install dependencies for your system yet."
+fi
+
+# Generate random mysql password
+if [[ $PLATFORM == 'Linux' ]]; then
+  MYSQL_PASS="$(date | md5sum | cut -f1 -d' ')"
+elif [[ $PLATFORM == 'MacOSX' ]]; then
+  MYSQL_PASS="$(md5 -qs "$(date)")"
 fi
 
 echo "Installing rvm"
