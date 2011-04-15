@@ -37,3 +37,9 @@ runtimes:
     version: 1.6.0
     version_flag: '-version'
     environment:
+  php5:
+    executable: php-cgi
+    version: "PHP 5\.3\..*"
+    version_flag: '-v'
+    environment:
+      
