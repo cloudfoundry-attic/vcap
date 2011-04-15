@@ -1,3 +1,5 @@
+= VMware Cloud Application Platform
+
 Copyright (c) 2009-2011 VMware, Inc.
 
 == What is Cloud Foundry?
