@@ -1,4 +1,4 @@
-= VMware Cloud Application Platform
+= VMware's Cloud Application Platform
 
 Copyright (c) 2009-2011 VMware, Inc.
 
