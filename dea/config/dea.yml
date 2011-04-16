@@ -27,6 +27,11 @@ runtimes:
     version_flag: "-e 'puts RUBY_VERSION'"
     additional_checks: "-e 'puts RUBY_PATCHLEVEL >= 180'"
     environment:
+  jruby:
+    executable: jruby
+    version: 1.6.1
+    version_flag: "-e 'puts JRUBY_VERSION'"
+    environment:
   node:
     executable: node
     version: 0.4.[2-9]
