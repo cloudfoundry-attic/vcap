@@ -1,0 +1,62 @@
+#!/bin/sh
+
+KEY="$HOME/.ssh/id_rsa.pub"
+
+IMG="/tmp/Ubuntu64Base.ova"
+NAME=`basename $IMG .ova`
+
+set -e
+
+if [[ `md5 -q "$IMG"` != 'a7ad85e2088bad4a7087f7795c2651cd' ]]; then
+  echo 'Downloading base image...'
+  curl https://s3.amazonaws.com/mashion/$NAME.ova > "$IMG"
+else
+  echo 'Image already downloaded.'
+fi
+
+if VBoxManage list vms | cut -d'"' -f2 | grep -q "$NAME"; then
+  echo "$NAME already imported."
+else
+  VBoxManage import "$IMG"
+fi
+
+NIC=$(echo $(VBoxManage list bridgedifs | grep -m1 Name | awk '{ $1=""; print $0 }'))
+echo "Bridging networking to $NIC"
+VBoxManage modifyvm "$NAME" --nic1 bridged --bridgeadapter1 "$NIC"
+VBoxManage startvm "$NAME" --type headless
+
+echo 'Waiting for IP address...'
+ip_info() {
+  VBoxManage guestproperty get "$NAME" /VirtualBox/GuestInfo/Net/0/V4/IP | grep Value
+}
+
+while ! ip_info > /dev/null; do
+  sleep 1
+done
+
+IP=`ip_info | cut -d' ' -f2`
+
+echo "Installing key $KEY..."
+cat $KEY | ssh ubuntu@$IP 'mkdir .ssh; cat > .ssh/authorized_keys; chmod -R go-rw .ssh; sudo passwd -d ubuntu'
+
+echo 'Starting CloudFoundry install...'
+scp "`dirname $0`/install" ubuntu@$IP:
+ssh ubuntu@$IP 'bash install'
+
+echo <<-DOC
+
+All done!
+
+Log in with:   ssh ubuntu@$IP
+Shutdown with: VBoxManage controlvm $NAME acpipowerbutton
+
+Make sure to add the following to your hosts file:
+  $IP api.vcap.me myappname.vcap.me
+
+If you haven't downloaded VMC yet, run:
+  gem install vmc
+
+And create and account with:
+  vmc register
+
+DOC
