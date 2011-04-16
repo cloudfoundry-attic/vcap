@@ -159,97 +159,98 @@ additional instructions for this environment have been included.
     
 
 - step #9 *Optional, mac users only*, create a local ssh tunnel 
-  # from your vm, run ifconfig and note eth0, possiby 192.168.252.130
-  # go to your mac terminal window and create a local port 80 tunnel as
-  # once you do this, from both your mac, and from within the vm, api.vcap.me and *.vcap.me 
-  # map to localhost which maps to your running cloudfoundry instance
-  sudo ssh -L 80:192.168.252.130:80 mhl@192.168.252.130 -N
+    # from your vm, run ifconfig and note eth0, possiby 192.168.252.130
+    # go to your mac terminal window and create a local port 80 tunnel as
+    # once you do this, from both your mac, and from within the vm, api.vcap.me and *.vcap.me 
+    # map to localhost which maps to your running cloudfoundry instance
+    sudo ssh -L 80:192.168.252.130:80 mhl@192.168.252.130 -N
 
 ===Trying your setup
 
 - step #10, validate that you can connect and tests pass
-  # from the console of your vm, or from your mac (thanks to local tunnel)
+    # from the console of your vm, or from your mac (thanks to local tunnel)
 
-  #try 
-  vmc target api.vcap.me
-  vmc info
+    #try 
+    vmc target api.vcap.me
+    vmc info
 
-  #it should produce roughly the following...
+    #it should produce roughly the following...
 
-  VMware's Cloud Application Platform
-  For support visit support@cloudfoundry.com
+    VMware's Cloud Application Platform
+    For support visit support@cloudfoundry.com
 
-  Target:   http://api.vcap.me (v0.999)
-  Client:   v0.3.10
+    Target:   http://api.vcap.me (v0.999)
+    Client:   v0.3.10
 
 
-  #play around as a user, start with
-  vmc register --email foo@bar.com --passwd password
-  vmc login --email foo@bar.com --passwd password
+    #play around as a user, start with
+    vmc register --email foo@bar.com --passwd password
+    vmc login --email foo@bar.com --passwd password
 
-  #to see what else you can do try
-  vmc help
+    #to see what else you can do try
+    vmc help
 
 == Testing your setup  
 
-#Once the system is installed, you can run the following command Basic System
-#Validation Tests (BVT) to ensure that major functionality is working.
-cd cloudfoundry/vcap
-cd tests && bundle package; bundle install && cd ..
-rake tests
+Once the system is installed, you can run the following command Basic System
+Validation Tests (BVT) to ensure that major functionality is working.
+
+    cd cloudfoundry/vcap
+    cd tests && bundle package; bundle install && cd ..
+    rake tests
   
-# unit tests can also be run using the following.
-cd cloudcontroller
-rake spec
-cd ../dea
-rake spec
-cd ../router
-rake spec
-cd ../health_manager
-rake spec
+    # unit tests can also be run using the following.
+    cd cloudcontroller
+    rake spec
+    cd ../dea
+    rake spec
+    cd ../router
+    rake spec
+    cd ../health_manager
+    rake spec
 
--step #11, you are done, make sure you can run a simple hello world app.
-  #1) create an empty directory for your test app (lets call it env), and enter it.
-  cd env
+- step #11, you are done, make sure you can run a simple hello world app.
 
-  #2) cut and paste the following app into a ruby file (lets say env.rb)
-  vi env.rb
+    #1) create an empty directory for your test app (lets call it env), and enter it.
+    cd env
 
-  ==== cut ===
+    #2) cut and paste the following app into a ruby file (lets say env.rb)
+    vi env.rb
 
-require 'rubygems'
-require 'sinatra'
+    --- cut ---
 
-get '/' do
-  host = ENV['VMC_APP_HOST']
-  port = ENV['VMC_APP_PORT']
-  "<h1>XXXXX Hello from the Cloud! via: #{host}:#{port}</h1>"
-end
+    require 'rubygems'
+    require 'sinatra'
 
-get '/env' do
-  res = ''
-  ENV.each do |k, v|
-    res << "#{k}: #{v}<br/>"
-  end
-  res
-end
+    get '/' do
+      host = ENV['VMC_APP_HOST']
+      port = ENV['VMC_APP_PORT']
+      "<h1>XXXXX Hello from the Cloud! via: #{host}:#{port}</h1>"
+    end
 
- === cut ===
+    get '/env' do
+      res = ''
+      ENV.each do |k, v|
+        res << "#{k}: #{v}<br/>"
+      end
+      res
+    end
 
-  # run the following the create/push a 4 instance version of this app
-  # validate by running vmc apps, note the 4 instance running app
-  # then go to a browser and hit env.vcap.me/, note that hitting refresh
-  # will show a different port in each refresh reflecting the different
-  # active instances
-  vmc push env --instances 4 --mem 64M --url env.vcap.me -n
+    --- cut ---
 
-  #running 
-  vmc apps
+    # run the following the create/push a 4 instance version of this app
+    # validate by running vmc apps, note the 4 instance running app
+    # then go to a browser and hit env.vcap.me/, note that hitting refresh
+    # will show a different port in each refresh reflecting the different
+    # active instances
+    vmc push env --instances 4 --mem 64M --url env.vcap.me -n
 
-  #should give the following output.
-  #+-------------+----+---------+-------------+----------+
-  #| Application | #  | Health  | URLS        | Services |
-  #+-------------+----+---------+-------------+----------+
-  #| env         | 1  | RUNNING | env.vcap.me |          |
-  #+-------------+----+---------+-------------+----------+
+    #running 
+    vmc apps
 
+    #should give the following output.
+    #+-------------+----+---------+-------------+----------+
+    #| Application | #  | Health  | URLS        | Services |
+    #+-------------+----+---------+-------------+----------+
+    #| env         | 1  | RUNNING | env.vcap.me |          |
+    #+-------------+----+---------+-------------+----------+
