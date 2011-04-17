@@ -6,7 +6,6 @@ class PhpPlugin < StagingPlugin
   end
 
   def stage_application
-    # TODO: Stop script uses kill -9, and this means we're not cleaning up php-cgi workers.
     Dir.chdir(destination_directory) do
       create_app_directories
       copy_source_files
@@ -20,6 +19,23 @@ class PhpPlugin < StagingPlugin
     "lighttpd -f ../lighttpd.config -D"
   end
 
+  # Nicer kill script that attempts an INT first, and then only if the process doesn't die will
+  # we try a -9.
+  def stop_script_template
+    <<-SCRIPT
+    #!/bin/bash
+    MAX_NICE_KILL_ATTEMPTS=20
+    attempts=0
+    kill -INT $STARTED
+    while pgrep $STARTED >/dev/null; do
+      (( ++attempts >= MAX_NICE_KILL_ATTEMPTS )) && break
+      sleep 1
+    done
+    pgrep $STARTED && kill -9 $STARTED
+    kill -9 $PPID
+    SCRIPT
+  end
+
   private
   def startup_script
     vars = environment_hash
@@ -27,7 +43,6 @@ class PhpPlugin < StagingPlugin
   end
 
   def create_lighttpd_config
-    # TODO: Handle multiple instances that would share the same socket
     File.open('lighttpd.config', 'w') do |f|
       f.write <<-EOT
       server.document-root = var.CWD
@@ -51,10 +66,10 @@ class PhpPlugin < StagingPlugin
         ((
           "bin-path" => "/usr/bin/php-cgi",
           "socket" => env.HOME + "/php.socket",
-          "max-procs" => 2,
+          "max-procs" => 1,
           "idle-timeout" => 20,
           "bin-environment" => (
-                  "PHP_FCGI_CHILDREN" => "4",
+                  "PHP_FCGI_CHILDREN" => "0",
                   "PHP_FCGI_MAX_REQUESTS" => "10000"
           ),
           "bin-copy-environment" => (
