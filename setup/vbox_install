@@ -43,7 +43,7 @@ echo 'Starting CloudFoundry install...'
 scp "`dirname $0`/install" ubuntu@$IP:
 ssh ubuntu@$IP 'bash install'
 
-echo <<-DOC
+cat <<-DOC
 
 All done!
 
