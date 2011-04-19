@@ -1,7 +1,5 @@
 #!/bin/sh
 
-KEY="$HOME/.ssh/id_rsa.pub"
-
 IMG="/tmp/Ubuntu64Base.ova"
 NAME=`basename $IMG .ova`
 
@@ -36,8 +34,17 @@ done
 
 IP=`ip_info | cut -d' ' -f2`
 
-echo "Installing key $KEY..."
-cat $KEY | ssh ubuntu@$IP 'mkdir .ssh; cat > .ssh/authorized_keys; chmod -R go-rw .ssh; sudo passwd -d ubuntu'
+KEY=`ls -f "$HOME/.ssh/id_dsa.pub" "$HOME/.ssh/id_rsa.pub" 2>/dev/null | head -n1`
+if [[ ! -f "$KEY" ]]; then
+  read -p "Couldn't find SSH key, please enter the path to your SSH keyfile: " KEY
+fi
+
+if [[ -f "$KEY" ]]; then
+  echo "Installing key $KEY..."
+  cat $KEY | ssh -o StrictHostKeyChecking=no ubuntu@$IP 'mkdir .ssh; cat > .ssh/authorized_keys; chmod -R go-rw .ssh; sudo passwd -d ubuntu'
+else
+  echo "Key $KEY not found, skipping SSH key installation."
+fi
 
 echo 'Starting CloudFoundry install...'
 scp "`dirname $0`/install" ubuntu@$IP:
