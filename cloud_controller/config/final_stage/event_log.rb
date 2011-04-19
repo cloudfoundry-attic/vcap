@@ -6,8 +6,8 @@ module CloudController
 
     def initialize
       log_file = AppConfig[:log_file]
-      @logger = Logger.new(log_file ? log_file : STDOUT, 'daily')
-      @logger.level = Logger::INFO
+      @logger = Logging.logger(log_file ? log_file : STDOUT, 'daily')
+      @logger.level = 'INFO'
     end
 
     def sys_event(*args)

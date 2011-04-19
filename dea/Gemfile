@@ -9,6 +9,7 @@ gem 'rack', :require => ["rack/utils", "rack/mime"]
 gem 'rake'
 gem 'thin'
 gem 'yajl-ruby', :require => ['yajl', 'yajl/json_gem']
+gem 'logging', '>= 1.5.0'
 
 gem 'vcap_common', :path => '../common'
 

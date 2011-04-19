@@ -14,6 +14,7 @@ spec = Gem::Specification.new do |s|
   s.add_dependency('thin')
   s.add_dependency('yajl-ruby')
   s.add_dependency('nats')
+  s.add_dependency('logging', '>= 1.5.0')
 
   s.require_paths = ['lib']
 

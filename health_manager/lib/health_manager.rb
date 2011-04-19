@@ -83,22 +83,8 @@ class HealthManager
   def initialize(config)
     @config = config
 
-    @logger = Logger.new(config['log_file'] ? config['log_file'] : STDOUT, 'daily')
-    @logger.level= case config['log_level']
-                   when 'DEBUG'
-                     Logger::DEBUG
-                   when 'INFO'
-                     Logger::INFO
-                   when 'WARN'
-                     Logger::WARN
-                   when 'ERROR'
-                     Logger::ERROR
-                   when 'FATAL'
-                     Logger::FATAL
-                   else
-                     Logger::UNKNOWN
-                   end
-
+    @logger = Logging.logger(config['log_file'] || STDOUT, 'daily')
+    @logger.level= config['log_level']
     @database_scan = config['intervals']['database_scan']
     @droplet_lost = config['intervals']['droplet_lost']
     @droplets_analysis = config['intervals']['droplets_analysis']

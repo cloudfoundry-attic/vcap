@@ -18,16 +18,8 @@ class Router
     def config(config)
       @droplets = {}
       @client_connection_count = @app_connection_count = @outstanding_request_count = 0
-      @log = Logger.new(config['log_file'] ? config['log_file'] : STDOUT, 'daily')
-      @log.level = case config['log_level']
-        when 'DEBUG' then Logger::DEBUG
-        when 'INFO'  then Logger::INFO
-        when 'WARN'  then Logger::WARN
-        when 'ERROR' then Logger::ERROR
-        when 'FATAL' then Logger::FATAL
-        else Logger::UNKNOWN
-      end
-
+      @log = Logging.logger(config['log_file'] ? config['log_file'] : STDOUT, 'daily')
+      @log.level =  config['log_level']
       if config['404_redirect']
         @notfound_redirect = "HTTP/1.1 302 Not Found\r\nConnection: close\r\nLocation: #{config['404_redirect']}\r\n\r\n".freeze
         log.info "Registered 404 redirect at #{config['404_redirect']}"

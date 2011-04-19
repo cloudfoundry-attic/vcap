@@ -10,6 +10,7 @@ end
 
 require 'fcntl'
 require 'logger'
+require 'logging'
 require 'pp'
 require 'set'
 require 'socket'
@@ -69,15 +70,8 @@ module DEA
     SECURE_USER = /#{Secure::SECURE_USER_STRING}/
 
     def initialize(config)
-      @logger = Logger.new(config['log_file'] ? config['log_file'] : STDOUT, 'daily')
-      @logger.level = case config['log_level']
-                      when 'DEBUG' then Logger::DEBUG
-                      when 'INFO' then Logger::INFO
-                      when 'WARN' then Logger::WARN
-                      when 'ERROR' then Logger::ERROR
-                      when 'FATAL' then Logger::FATAL
-                      else Logger::UNKNOWN
-                      end
+      @logger = Logging.logger(config['log_file'] ? config['log_file'] : STDOUT, 'daily')
+      @logger.level = config['log_level']
 
       @secure = config['secure']
 

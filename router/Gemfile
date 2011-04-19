@@ -7,6 +7,8 @@ gem 'eventmachine',  '~> 0.12.10'
 gem "http_parser.rb",  :require => "http/parser"
 gem "yajl-ruby", :require => ["yajl", "yajl/json_gem"]
 
+gem 'logging', '>= 1.5.0'
+
 gem 'vcap_common', :path => '../common'
 
 group :test do

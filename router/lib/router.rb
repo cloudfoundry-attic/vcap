@@ -1,6 +1,6 @@
 # Copyright (c) 2009-2011 VMware, Inc.
 require 'fileutils'
-require 'logger'
+require 'logging'
 require 'optparse'
 require 'socket'
 require 'yaml'
