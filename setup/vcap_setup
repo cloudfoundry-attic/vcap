@@ -119,7 +119,7 @@ if [[ $CC == true || $ALL == true ]]; then
 	read -p "Should I do a production setup as well (Postgres/MySQL)? [y/N] "
 	if [[ $REPLY =~ ^[yY]$ ]]; then
 	    echo "Installing PostgreSQL server and support"
-	    apt-get install -qqy postgresql
+	    apt-get install -qqy postgresql libpq-dev
 	    echo "Installing pg gems"
 	    gem install pg --no-rdoc --no-ri
 	    echo ""
@@ -299,6 +299,7 @@ RABBITMQ_VERSION_FULL=2.4.0-1_all
 
 read -p "Should I add RabbitMQ Server? [y/N] "
 if [[ $REPLY =~ ^[yY]$ ]]; then
+    apt-get install -qqy erlang-nox
     echo "Installing RabbitMQ Server (version $RABBITMQ_VERSION)"
     pushd .
     cd /tmp
