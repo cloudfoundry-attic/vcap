@@ -159,7 +159,7 @@ if [[ $CC == true || $ALL == true ]]; then
 
 	if [[ $RELATIONAL_DBS == true || $ALL == true ]]; then
 	    echo "Installing PostgreSQL server and support"
-	    apt-get install -qqy postgresql
+	    apt-get install -qqy postgresql libpq-dev
 	    echo "Installing pg gems"
 	    gem install pg --no-rdoc --no-ri
 	    echo ""
@@ -367,6 +367,7 @@ fi
 
 if [[ $RABBITMQ == true || $ALL_SERVICES == true ]]; then
     echo "Installing RabbitMQ Server (version $RABBITMQ_VERSION)"
+    apt-get install -qqy erlang-nox
     pushd .
     cd /tmp
     wget http://www.rabbitmq.com/releases/rabbitmq-server/v$RABBITMQ_VERSION/rabbitmq-server_$RABBITMQ_VERSION_FULL.deb
