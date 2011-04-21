@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Allow VCAP_REPO to be overriden for testing
+VCAP_REPO=${VCAP_REPO:-https://github.com/cloudfoundry/vcap.git}
+
 export rvm_trust_rvmrcs_flag=1 # Trust all rmvrcs we find
 
 OS=`uname -s`
@@ -77,7 +80,7 @@ echo "Getting vcap"
 [ -d ~/cloudfoundry ] || mkdir ~/cloudfoundry
 cd ~/cloudfoundry
 
-[ -d vcap ] || git clone https://github.com/cloudfoundry/vcap.git
+[ -d vcap ] || git clone $VCAP_REPO
 cd vcap
 git submodule update --init
 gem install vmc --no-rdoc --no-ri
