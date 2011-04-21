@@ -228,7 +228,7 @@ describe 'DEA Agent' do
   end
 
   it 'should properly exit when NATS fails to reconnect' do
-    @nats_server.kill_server
+    @nats_server.stop
     @nats_server.is_running?.should be_false
     sleep(0.5)
     @dea_agent.is_running?.should be_false
