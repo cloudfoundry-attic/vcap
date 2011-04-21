@@ -37,16 +37,33 @@ additional instructions for this environment have been included.
 
 == Detailed Install/Run Instructions:
 
+There are two methods for installing VCAP.  One is a manual process, which you
+might choose to do if you want to understand the details of what goes into
+a bringing up a VCAP instance. The other is an automated process contributed
+by the community. In both cases, you need to start with a stock Ubuntu.
+server VM.
 
 - step #-1: 
     - setup a VM with a pristine Ubuntu 10.04.2 server 64bit image, 
       (http://www.ubuntu.com/business/get-ubuntu/download)
     - you may wish to snapshot your VM now in case things go pear shaped.
-    - great snapshot spots are here and after step #4
+    - great snapshot spots are here and after step #4 in the manual process
     - to enable remote access (more fun than using the console), install ssh.
 
      sudo apt-get install openssh-server
 
+=== Automated process:
+- Step #0:
+   - Run the install script. It'll ask for your sudo password at the
+     beginning and towards the end. The entire process takes ~1 hour, so just
+     keep a loose eye on it.
+
+   bash < <(curl -s -k -B https://github.com/cloudfoundry/vcap/raw/master/setup/install)
+
+- Jump to step 9 in the manual process to optionally setup an ssh tunnel
+  and test your installation.
+
+Manual process:
 
 - step #0, install system and rvm dependencies 
     sudo apt-get install autoconf curl git-core ruby bison build-essential zlib1g-dev libssl-dev libreadline5-dev
