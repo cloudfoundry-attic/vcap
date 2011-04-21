@@ -15,7 +15,7 @@
 # - redis
 # - mysql
 # - mongo
-#
+# - neo4j
 
 require 'yaml'
 require 'fileutils'
@@ -300,6 +300,8 @@ module Run
     puts
     kill_service_instances('mongodb', /mongod/)
     puts
+    kill_service_instances('neo4j', /neo4j/ )
+    puts
 
     puts "Cleaning shared directories:"
     dirs = %w[/var/vcap/services /var/vcap/shared /var/vcap/sys /var/vcap.local/* /tmp/vcap-run]
@@ -381,7 +383,7 @@ module Run
   end
 
   def self.services
-    %w(redis mysql mongodb)
+    %w(redis mysql mongodb neo4j)
   end
 
   def self.alias_args(args)
