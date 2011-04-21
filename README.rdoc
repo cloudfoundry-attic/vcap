@@ -66,6 +66,7 @@ server VM.
 Manual process:
 
 - step #0, install system and rvm dependencies 
+    sudo apt-get update
     sudo apt-get install autoconf curl git-core ruby bison build-essential zlib1g-dev libssl-dev libreadline5-dev
 
 - step #1, install rvm
