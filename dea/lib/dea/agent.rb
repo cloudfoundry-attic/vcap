@@ -70,7 +70,7 @@ module DEA
     SECURE_USER = /#{Secure::SECURE_USER_STRING}/
 
     def initialize(config)
-      @logger = Logging.logger(config['log_file'] ? config['log_file'] : STDOUT, 'daily')
+      @logger = VCAP.create_logger('dea', :log_file => config['log_file'], :log_rotation_interval => config['log_rotation_interval'])
       @logger.level = config['log_level']
 
       @secure = config['secure']

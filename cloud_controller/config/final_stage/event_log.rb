@@ -6,7 +6,7 @@ module CloudController
 
     def initialize
       log_file = AppConfig[:log_file]
-      @logger = Logging.logger(log_file ? log_file : STDOUT, 'daily')
+      @logger = VCAP.create_logger('cc_events', :log_file => log_file, :log_rotation_interval => AppConfig[:log_rotation_interval])
       @logger.level = 'INFO'
     end
 

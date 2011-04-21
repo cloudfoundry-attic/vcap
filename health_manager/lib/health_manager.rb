@@ -83,7 +83,7 @@ class HealthManager
   def initialize(config)
     @config = config
 
-    @logger = Logging.logger(config['log_file'] || STDOUT, 'daily')
+    @logger = VCAP.create_logger('hm', :log_file => config['log_file'], :log_rotation_interval => config['log_rotation_interval'])
     @logger.level= config['log_level']
     @database_scan = config['intervals']['database_scan']
     @droplet_lost = config['intervals']['droplet_lost']
