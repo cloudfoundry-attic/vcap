@@ -18,7 +18,7 @@ GEM
     eventmachine (0.12.10)
     http_parser.rb (0.5.1)
     json_pure (1.5.1)
-    nats (0.4.8)
+    nats (0.4.10)
       daemons (>= 1.1.0)
       eventmachine (>= 0.12.10)
       json_pure (>= 1.5.1)
@@ -47,7 +47,7 @@ DEPENDENCIES
   ci_reporter
   eventmachine (~> 0.12.10)
   http_parser.rb
-  nats (>= 0.4.8)
+  nats (>= 0.4.10)
   rake
   rcov
   rspec

@@ -79,9 +79,10 @@ class RouterServer
       # %x[rm #{LOG_FILE}] if File.exists? LOG_FILE
     end
 
-    server = File.expand_path(File.join(__FILE__, "../../../bin/router"))
+    server = File.expand_path(File.join(__FILE__, '../../../bin/router'))
+    nats_timeout = File.expand_path(File.join(File.dirname(__FILE__), 'nats_timeout'))
     # pid = Process.fork { %x[#{server} -c #{CONFIG_FILE} 2> /dev/null] }
-    pid = Process.fork { %x[#{server} -c #{CONFIG_FILE} ] }
+    pid = Process.fork { %x[ruby -r#{nats_timeout} #{server} -c #{CONFIG_FILE} 2> /dev/null] }
     Process.detach(pid)
 
     wait_for_server
@@ -106,7 +107,7 @@ class RouterServer
 
   def kill_server
     if File.exists? PID_FILE
-      %x[kill -9 #{server_pid}]
+      %x[kill -9 #{server_pid} 2> /dev/null]
       %x[rm #{PID_FILE}]
     end
     %x[rm #{CONFIG_FILE}] if File.exists? CONFIG_FILE

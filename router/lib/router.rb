@@ -94,14 +94,19 @@ EM.run {
 
   create_pid_file(config['pid'])
 
-  EM.error_handler { |e|
-    if e.kind_of? NATS::Error
-      Router.log.error("NATS problem, #{e}")
+  NATS.on_error do |e|
+    if e.kind_of? NATS::ConnectError
+      Router.log.error("EXITING! NATS connection failed: #{e}")
+      exit!
     else
-      Router.log.error "Eventmachine problem, #{e}"
-      Router.log.error("#{e.backtrace.join("\n")}")
+      Router.log.error("NATS problem, #{e}")
     end
-  }
+  end
+
+  EM.error_handler do |e|
+    Router.log.error "Eventmachine problem, #{e}"
+    Router.log.error("#{e.backtrace.join("\n")}")
+  end
 
   begin
     # TCP/IP Socket

@@ -70,6 +70,14 @@ class NatsComponent < ForkedComponent
   def is_running?()
     VCAP.process_running?(@pid) && port_open?(@port)
   end
+
+  def kill_server
+    return unless @pid && VCAP.process_running?(@pid)
+    Process.kill('TERM', @pid)
+    Process.waitpid(@pid, 0)
+    @pid = nil
+  end
+
 end
 
 class DeaComponent < ForkedComponent

@@ -69,7 +69,7 @@ GEM
     mime-types (1.16)
     mocha (0.9.12)
     mysql2 (0.2.7)
-    nats (0.4.8)
+    nats (0.4.10)
       daemons (>= 1.1.0)
       eventmachine (>= 0.12.10)
       json_pure (>= 1.5.1)
@@ -139,7 +139,7 @@ DEPENDENCIES
   eventmachine (~> 0.12.10)
   mocha
   mysql2 (>= 0.2.6)
-  nats (>= 0.4.8)
+  nats (>= 0.4.10)
   nokogiri (>= 1.4.4)
   pg
   rack-fiber_pool

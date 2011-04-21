@@ -2,7 +2,7 @@ source "http://rubygems.org"
 
 gem 'bundler', '>= 1.0.10'
 gem 'rake'
-gem 'nats', '>= 0.4.8', :require => 'nats/client'
+gem 'nats', '>= 0.4.10', :require => 'nats/client'
 gem 'eventmachine',  '~> 0.12.10'
 gem "http_parser.rb",  :require => "http/parser"
 gem "yajl-ruby", :require => ["yajl", "yajl/json_gem"]

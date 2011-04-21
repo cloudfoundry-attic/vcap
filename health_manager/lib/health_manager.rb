@@ -149,14 +149,19 @@ class HealthManager
     register_error_handler
     configure_timers
 
-    EM.error_handler{ |e|
-      if e.kind_of? NATS::Error
-        @logger.error("NATS problem, #{e}")
+    NATS.on_error do |e|
+      if e.kind_of? NATS::ConnectError
+        @logger.error("EXITING! NATS connection failed: #{e}")
+        exit!
       else
-        @logger.error "Eventmachine problem, #{e}"
-        @logger.error("#{e.backtrace.join("\n")}")
+        @logger.error("NATS problem, #{e}")
       end
-    }
+    end
+
+    EM.error_handler do |e|
+      @logger.error "Eventmachine problem, #{e}"
+      @logger.error("#{e.backtrace.join("\n")}")
+    end
 
     NATS.start(:uri => @config['mbus'])
     register_as_component
