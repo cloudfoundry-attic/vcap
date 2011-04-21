@@ -337,6 +337,26 @@ else
     echo "MongoDB Server (version $MONGODB_VERSION) is current"
 fi
 
+NEO4J_VERSION=community-1.3
+NEO4J_DIST_FILE=neo4j-community-1.3-unix.tar.gz
+NEO4J_SERVICE_DIR=/var/vcap/services/neo4j
+
+if [[ -d "$NEO4J_SERVICE_DIR/neo4j-$NEO4J_VERSION" ]]; then
+   echo "Neo4j ($NEO4J_VERSION) is current"
+else
+read -p "Should I add Neo4j Server? [y/N] "
+if [[ $REPLY =~ ^[yY]$ ]]; then
+    echo "Installing Neo4j Server (version $NEO4J_VERSION)"
+    pushd .
+    mkdir -p $NEO4J_SERVICE_DIR
+        cd $NEO4J_SERVICE_DIR
+    curl -O http://dist.neo4j.org/$NEO4J_DIST_FILE
+    tar xzf $NEO4J_DIST_FILE
+    popd
+fi
+fi
+
+
 echo -e "\n\nYou should be good to go!!\n\n"
 ruby -v
 
