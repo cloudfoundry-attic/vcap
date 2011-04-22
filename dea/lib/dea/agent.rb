@@ -950,7 +950,6 @@ module DEA
 
     def setup_instance_env(instance, app_env, services)
       env = []
-      app_env.each { |ae| env << ae} if app_env
 
       env << "HOME=#{instance[:dir]}"
       env << "VCAP_APPLICATION='#{create_instance_for_env(instance)}'"
@@ -976,6 +975,16 @@ module DEA
 
       # Do the runtime environment settings
       runtime_env(instance[:runtime]).each { |re| env << re }
+
+      # User's environment settings
+      # Make sure user's env variables are in double quotes.
+      if app_env
+        app_env.each do |ae|
+          k,v = ae.split('=', 2)
+          v = "\"#{v}\"" unless v.start_with? "'"
+          env << "#{k}=#{v}"
+        end
+      end
 
       return env
     end
