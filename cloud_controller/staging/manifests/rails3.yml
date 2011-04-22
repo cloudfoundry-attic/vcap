@@ -29,7 +29,7 @@ runtimes:
   - "jruby19":
       version: "1.9.2"
       description: "JRuby 1.6.1 (Ruby 1.9 mode)"
-      executable: "jruby --1.9"
+      executable: "jruby19"
       environment:
        rails_env: "production"
        bundle_gemfile:

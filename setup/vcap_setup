@@ -195,6 +195,11 @@ if [[ $DEA == true || $ALL == true ]]; then
 	mv /usr/local/jruby-$JRUBY_VERSION /usr/local/jruby
 	ln -fs /usr/local/jruby/bin/jruby /usr/local/bin/jruby
 
+	# Wrapper script for 1.9 support on JRuby
+	sed s/JRUBY_OPTS=\"/JRUBY_OPTS=\"--1.9/ /usr/local/jruby/bin/jruby > /usr/local/jruby/bin/jruby19
+	chmod +x /usr/local/jruby/bin/jruby19
+	ln -fs /usr/local/jruby/bin/jruby19 /usr/local/bin/jruby19
+
 	# FIXME: Gem installation is deffered for MRI.
 	# Maybe JRuby should do the same?
 	jruby -S gem install jruby-openssl bundler thin trinidad sinatra

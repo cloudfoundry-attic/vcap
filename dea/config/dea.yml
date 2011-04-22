@@ -34,7 +34,7 @@ runtimes:
     additional_checks: "-e 'puts RUBY_PATCHLEVEL >= 174'"
     environment:
   jruby19:
-    executable: "jruby --1.9"
+    executable: "jruby19"
     version: 1.6.1
     version_flag: "-e 'puts JRUBY_VERSION'"
     additional_checks: "-e 'puts RUBY_PATCHLEVEL >= 136'" # JRuby is on 136 :/
