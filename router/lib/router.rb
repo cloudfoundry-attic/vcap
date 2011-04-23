@@ -1,6 +1,5 @@
 # Copyright (c) 2009-2011 VMware, Inc.
 require 'fileutils'
-require 'logging'
 require 'optparse'
 require 'socket'
 require 'yaml'
@@ -9,6 +8,7 @@ require 'openssl'
 require 'rubygems'
 require 'bundler/setup'
 
+require 'logging'
 require 'nats/client'
 require 'http/parser'
 
