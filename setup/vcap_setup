@@ -307,7 +307,7 @@ if [ $? != 0 ]; then
     if [[ $ALL_SERVICES != true ]]; then
         read -p "Should I add MySQL Server? [y/N] "
         if [[ $REPLY =~ ^[yY]$ ]]; then
-            $MYSQL=true
+            MYSQL=true
         fi
     fi
 
@@ -332,7 +332,7 @@ redis_current=`redis-server -v | grep $REDIS_VERSION`
 if [[ $ALL_SERVICES != true ]]; then
     read -p "Should I add Redis Server? [y/N] "
     if [[ $REPLY =~ ^[yY]$ ]]; then
-        $REDIS=true
+        REDIS=true
     fi
 fi
 
@@ -361,7 +361,7 @@ RABBITMQ_VERSION_FULL=2.4.0-1_all
 if [[ $ALL_SERVICES != true ]]; then
     read -p "Should I add RabbitMQ Server? [y/N] "
     if [[ $REPLY =~ ^[yY]$ ]]; then
-        $RABBITMQ=true
+        RABBITMQ=true
     fi
 fi
 
@@ -384,7 +384,7 @@ if [[ -z "$mongodb_current" ]]; then
     if [[ $ALL_SERVICES != true ]]; then
         read -p "Should I add the MongoDB Server? [y/N] "
         if [[ $REPLY =~ ^[yY]$ ]]; then
-            $MONGODB=true
+            MONGODB=true
         fi
     fi
 
