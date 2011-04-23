@@ -61,7 +61,7 @@ inet = config['inet'] unless inet
 
 EM.epoll
 
-EM.run {
+EM.run do
 
   trap("TERM") { stop(config['pid']) }
   trap("INT")  { stop(config['pid']) }
@@ -120,6 +120,15 @@ EM.run {
   # Allow nginx to access..
   FileUtils.chmod(0777, fn) if fn
 
+  # Override reconnect attempts in NATS until the proper option
+  # is available inside NATS itself.
+  begin
+    sv, $-v = $-v, nil
+    NATS::MAX_RECONNECT_ATTEMPTS = 150 # 5 minutes total
+    NATS::RECONNECT_TIME_WAIT    = 2   # 2 secs
+    $-v = sv
+  end
+
   NATS.start(:uri => config['mbus'])
 
   # Create the register/unregister listeners.
@@ -145,10 +154,17 @@ EM.run {
   Router.setup_sweepers
 
   # Setup a start sweeper to make sure we have a consistent view of the world.
-  EM.next_tick {
+  EM.next_tick do
     # Announce our existence
     NATS.publish('router.start', @hello_message)
-    EM.add_periodic_timer(START_SWEEPER) { NATS.publish('router.start', @hello_message) }
-  }
-}
+
+    # Don't let the messages pile up if we are in a reconnecting state
+    EM.add_periodic_timer(START_SWEEPER) do
+      unless NATS.client.reconnecting?
+        NATS.publish('router.start', @hello_message)
+      end
+    end
+  end
+
+end
 

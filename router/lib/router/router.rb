@@ -94,6 +94,17 @@ class Router
 
     def check_registered_urls
       start = Time.now
+
+      # If NATS is reconnecting, let's be optimistic and assume
+      # the apps are there instead of actively pruning.
+      if NATS.client.reconnecting?
+        log.info "Suppressing checks on registered URLS while reconnecting to mbus."
+        @droplets.each_pair do |url, instances|
+          instances.each { |droplet| droplet[:timestamp] = start }
+        end
+        return
+      end
+
       to_drop = []
       @droplets.each_pair do |url, instances|
         instances.each do |droplet|
