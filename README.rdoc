@@ -50,7 +50,7 @@ server VM.
     - great snapshot spots are here and after step #4 in the manual process
     - to enable remote access (more fun than using the console), install ssh.
 
-     sudo apt-get install openssh-server
+     sudo apt-get install openssh-server curl
 
 === Automated process:
 - Step #0:
