@@ -56,7 +56,7 @@ server VM.
 * great snapshot spots are here and after step 4
 * to enable remote access (more fun than using the console), install ssh.
 
-     sudo apt-get install openssh-server curl
+     sudo apt-get install openssh-server
 
 ### Automated Setup (experimental):
 
@@ -65,6 +65,7 @@ Run the install script. It'll ask for your sudo password at the
 beginning and towards the end. The entire process takes ~1 hour, so just
 keep a loose eye on it.
 
+     sudo apt-get install curl
      bash < <(curl -s -k -B https://github.com/cloudfoundry/vcap/raw/master/setup/install)
 
 Jump to step 9 in the manual process to optionally setup an ssh tunnel
