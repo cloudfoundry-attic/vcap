@@ -103,6 +103,7 @@ module DEA
       @filer_start_attempts = 0   # How many times we've tried to start the filer
       @filer_start_timer = nil    # The periodic timer responsible for starting the filer
       @evacuation_delay = config['evacuation_delay'] || DEFAULT_EVACUATION_DELAY
+      @recovered_droplets = false
 
       # Various directories and files we will use
       @pid_filename   = config['pid']
@@ -184,6 +185,9 @@ module DEA
       NATS.on_error do |e|
         if e.kind_of? NATS::ConnectError
           @logger.error("EXITING! NATS connection failed: #{e}")
+          # Only snapshot app state if we had a chance to recover saved state. This prevents a connect error
+          # that occurs before we can recover state from blowing existing data away.
+          snapshot_app_state if @recovered_droplets
           exit!
         else
           @logger.error("NATS problem, #{e}")
@@ -633,6 +637,7 @@ module DEA
           if pid and not instance[:stop_processed]
             @logger.debug("PID:#{pid} assigned to droplet: #{name}:#{droplet_id}")
             instance[:pid] = pid
+            schedule_snapshot
           end
         end
       end
@@ -684,7 +689,10 @@ module DEA
     end
 
     def recover_existing_droplets
-      return unless File.exists?(@app_state_file)
+      unless File.exists?(@app_state_file)
+        @recovered_droplets = true
+        return
+      end
       recovered = nil
       File.open(@app_state_file, 'r') { |f| recovered = Yajl::Parser.parse(f) }
       # Whip through and reconstruct droplet_ids and instance symbols correctly for droplets, state, etc..
@@ -717,6 +725,7 @@ module DEA
           end
         end
       end
+      @recovered_droplets = true
 
       @logger.info("DEA recovered #{@num_clients} applications") if @num_clients > 0
 
