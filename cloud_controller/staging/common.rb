@@ -155,7 +155,11 @@ class StagingPlugin
   def self.load_manifest(path)
     framework = File.basename(path, '.yml')
     m = YAML.load_file(path)
-    manifests[framework] = m
+    unless m['disabled']
+      manifests[framework] = m
+    else
+      manifests.delete(framework)
+    end
   rescue
     puts "Failed to load staging manifest for #{framework} from #{path.inspect}"
     exit 1

@@ -241,4 +241,19 @@ describe 'Router Functional Tests' do
 
   end
 
+  it 'should properly exit when NATS fails to reconnect' do
+    @nats_server.kill_server
+    @nats_server.is_running?.should be_false
+    sleep(0.5)
+    @router.is_running?.should be_false
+  end
+
+  it 'should not start with nats not running' do
+    @nats_server.is_running?.should be_false
+    @router.start_server
+    sleep(0.5)
+    @router.is_running?.should be_false
+  end
+
+  # If you run test below here, need to restart NATS.
 end

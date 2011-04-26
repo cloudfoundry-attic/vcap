@@ -9,13 +9,24 @@ require 'pathname'
 # If +app+ is not specified, a Rack::File of the same +root+ will be used.
 
 module DEA
+  class FileServer < Rack::File
+    # based on Rack::File, just add the NOFOLLOW flag
+    def each
+      File.open(@path, File::RDONLY | File::NOFOLLOW) { |file|
+        while part = file.read(8192)
+          yield part
+        end
+      }
+    end
+  end
+
   class Directory
     attr_reader :files
     attr_accessor :root, :path
 
     def initialize(root, app = nil)
       @root = Pathname.new(F.expand_path(root)).realpath
-      @app = app || Rack::File.new(@root)
+      @app = app || FileServer.new(@root)
     end
 
     def call(env)
@@ -30,10 +41,25 @@ module DEA
       @path_info = Rack::Utils.unescape(env['PATH_INFO'])
       @path = F.expand_path(F.join(@root, @path_info))
 
+      resolve_symlink
       if forbidden = check_forbidden
         forbidden
       else
         list_path
+      end
+    end
+
+    def resolve_symlink
+      real_path = Pathname.new(@path).realpath.to_s
+      return if real_path == @path
+
+      # Adjust env only if user has access rights to real path
+      app_base =  File.join(@root, @path_info.sub(/^\/+/,'').split('/').first)
+      if real_path.start_with?(app_base)
+        m = real_path.match(@root.to_s)
+        return if m.nil?
+        @env['PATH_INFO'] = @path_info = m.post_match
+        @path = real_path
       end
     end
 
@@ -66,10 +92,6 @@ module DEA
       Dir[glob].sort.each do |node|
         stat = stat(node)
         next unless stat
-
-        # check node itself then check for embedded symlinks
-        next if File.symlink?(node)
-        next unless (node == Pathname.new(node).realpath.to_s)
 
         basename = F.basename(node)
         # ignore B29 control files, only return defaults

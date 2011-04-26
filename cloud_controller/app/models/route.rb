@@ -26,7 +26,7 @@ class Route < ActiveRecord::Base
 
   private
   def normalize_url
-    url = read_attribute(:url).to_s.strip
+    url = read_attribute(:url).to_s.downcase.strip
     write_attribute(:url, url)
   end
 

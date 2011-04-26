@@ -4,3 +4,4 @@ require "bundler"
 Bundler.require(:default, :spec)
 require "vcap/common"
 require "vcap/component"
+require "vcap/json_schema"

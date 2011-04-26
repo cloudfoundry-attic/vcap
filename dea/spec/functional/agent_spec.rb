@@ -40,7 +40,11 @@ describe 'DEA Agent' do
     'disable_dir_cleanup' => true,
   }
 
-  DEA_CMD = File.expand_path(File.join(__FILE__, "../../../bin/dea -c #{DEA_CONFIG_FILE}"))
+  nats_timeout = File.expand_path(File.join(File.dirname(__FILE__), 'nats_timeout'))
+  dea_agent = File.expand_path(File.join(__FILE__, "../../../bin/dea -c #{DEA_CONFIG_FILE}"))
+
+  DEA_CMD = "ruby -r#{nats_timeout} #{dea_agent}"
+
   TCPSERVER_DROPLET_BUNDLE = File.join(TEST_DIR, 'droplet')
 
   before :all do
@@ -222,6 +226,14 @@ describe 'DEA Agent' do
     stopped = wait_for { !port_open?(droplet_info['port']) }
     stopped.should be_true
   end
+
+  it 'should properly exit when NATS fails to reconnect' do
+    @nats_server.stop
+    @nats_server.is_running?.should be_false
+    sleep(0.5)
+    @dea_agent.is_running?.should be_false
+  end
+
 
   # ========== Helpers ==========
 

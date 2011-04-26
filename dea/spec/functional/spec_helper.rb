@@ -70,6 +70,7 @@ class NatsComponent < ForkedComponent
   def is_running?()
     VCAP.process_running?(@pid) && port_open?(@port)
   end
+
 end
 
 class DeaComponent < ForkedComponent

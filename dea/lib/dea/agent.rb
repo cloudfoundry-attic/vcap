@@ -10,6 +10,7 @@ end
 
 require 'fcntl'
 require 'logger'
+require 'logging'
 require 'pp'
 require 'set'
 require 'socket'
@@ -69,15 +70,8 @@ module DEA
     SECURE_USER = /#{Secure::SECURE_USER_STRING}/
 
     def initialize(config)
-      @logger = Logger.new(config['log_file'] ? config['log_file'] : STDOUT, 'daily')
-      @logger.level = case config['log_level']
-                      when 'DEBUG' then Logger::DEBUG
-                      when 'INFO' then Logger::INFO
-                      when 'WARN' then Logger::WARN
-                      when 'ERROR' then Logger::ERROR
-                      when 'FATAL' then Logger::FATAL
-                      else Logger::UNKNOWN
-                      end
+      @logger = VCAP.create_logger('dea', :log_file => config['log_file'], :log_rotation_interval => config['log_rotation_interval'])
+      @logger.level = config['log_level']
 
       @secure = config['secure']
 
@@ -184,14 +178,19 @@ module DEA
       ['TERM', 'INT', 'QUIT'].each { |s| trap(s) { shutdown() } }
       trap('USR2') { evacuate_apps_then_quit() }
 
-      EM.error_handler{ |e|
-        if e.kind_of? NATS::Error
-          @logger.error("NATS problem, #{e}")
+      NATS.on_error do |e|
+        if e.kind_of? NATS::ConnectError
+          @logger.error("EXITING! NATS connection failed: #{e}")
+          exit!
         else
-          @logger.error "Eventmachine problem, #{e}"
-          @logger.error("#{e.backtrace.join("\n")}")
+          @logger.error("NATS problem, #{e}")
         end
-      }
+      end
+
+      EM.error_handler do |e|
+        @logger.error "Eventmachine problem, #{e}"
+        @logger.error("#{e.backtrace.join("\n")}")
+      end
 
       NATS.start(:uri => @nats_uri) do
 
@@ -945,7 +944,6 @@ module DEA
 
     def setup_instance_env(instance, app_env, services)
       env = []
-      app_env.each { |ae| env << ae} if app_env
 
       env << "HOME=#{instance[:dir]}"
       env << "VCAP_APPLICATION='#{create_instance_for_env(instance)}'"
@@ -971,6 +969,16 @@ module DEA
 
       # Do the runtime environment settings
       runtime_env(instance[:runtime]).each { |re| env << re }
+
+      # User's environment settings
+      # Make sure user's env variables are in double quotes.
+      if app_env
+        app_env.each do |ae|
+          k,v = ae.split('=', 2)
+          v = "\"#{v}\"" unless v.start_with? "'"
+          env << "#{k}=#{v}"
+        end
+      end
 
       return env
     end

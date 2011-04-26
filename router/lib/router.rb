@@ -1,6 +1,5 @@
 # Copyright (c) 2009-2011 VMware, Inc.
 require 'fileutils'
-require 'logger'
 require 'optparse'
 require 'socket'
 require 'yaml'
@@ -9,6 +8,7 @@ require 'openssl'
 require 'rubygems'
 require 'bundler/setup'
 
+require 'logging'
 require 'nats/client'
 require 'http/parser'
 
@@ -61,7 +61,7 @@ inet = config['inet'] unless inet
 
 EM.epoll
 
-EM.run {
+EM.run do
 
   trap("TERM") { stop(config['pid']) }
   trap("INT")  { stop(config['pid']) }
@@ -94,14 +94,19 @@ EM.run {
 
   create_pid_file(config['pid'])
 
-  EM.error_handler { |e|
-    if e.kind_of? NATS::Error
-      Router.log.error("NATS problem, #{e}")
+  NATS.on_error do |e|
+    if e.kind_of? NATS::ConnectError
+      Router.log.error("EXITING! NATS connection failed: #{e}")
+      exit!
     else
-      Router.log.error "Eventmachine problem, #{e}"
-      Router.log.error("#{e.backtrace.join("\n")}")
+      Router.log.error("NATS problem, #{e}")
     end
-  }
+  end
+
+  EM.error_handler do |e|
+    Router.log.error "Eventmachine problem, #{e}"
+    Router.log.error("#{e.backtrace.join("\n")}")
+  end
 
   begin
     # TCP/IP Socket
@@ -114,6 +119,15 @@ EM.run {
 
   # Allow nginx to access..
   FileUtils.chmod(0777, fn) if fn
+
+  # Override reconnect attempts in NATS until the proper option
+  # is available inside NATS itself.
+  begin
+    sv, $-v = $-v, nil
+    NATS::MAX_RECONNECT_ATTEMPTS = 150 # 5 minutes total
+    NATS::RECONNECT_TIME_WAIT    = 2   # 2 secs
+    $-v = sv
+  end
 
   NATS.start(:uri => config['mbus'])
 
@@ -140,10 +154,17 @@ EM.run {
   Router.setup_sweepers
 
   # Setup a start sweeper to make sure we have a consistent view of the world.
-  EM.next_tick {
+  EM.next_tick do
     # Announce our existence
     NATS.publish('router.start', @hello_message)
-    EM.add_periodic_timer(START_SWEEPER) { NATS.publish('router.start', @hello_message) }
-  }
-}
+
+    # Don't let the messages pile up if we are in a reconnecting state
+    EM.add_periodic_timer(START_SWEEPER) do
+      unless NATS.client.reconnecting?
+        NATS.publish('router.start', @hello_message)
+      end
+    end
+  end
+
+end
 

@@ -83,22 +83,8 @@ class HealthManager
   def initialize(config)
     @config = config
 
-    @logger = Logger.new(config['log_file'] ? config['log_file'] : STDOUT, 'daily')
-    @logger.level= case config['log_level']
-                   when 'DEBUG'
-                     Logger::DEBUG
-                   when 'INFO'
-                     Logger::INFO
-                   when 'WARN'
-                     Logger::WARN
-                   when 'ERROR'
-                     Logger::ERROR
-                   when 'FATAL'
-                     Logger::FATAL
-                   else
-                     Logger::UNKNOWN
-                   end
-
+    @logger = VCAP.create_logger('hm', :log_file => config['log_file'], :log_rotation_interval => config['log_rotation_interval'])
+    @logger.level= config['log_level']
     @database_scan = config['intervals']['database_scan']
     @droplet_lost = config['intervals']['droplet_lost']
     @droplets_analysis = config['intervals']['droplets_analysis']
@@ -149,14 +135,19 @@ class HealthManager
     register_error_handler
     configure_timers
 
-    EM.error_handler{ |e|
-      if e.kind_of? NATS::Error
-        @logger.error("NATS problem, #{e}")
+    NATS.on_error do |e|
+      if e.kind_of? NATS::ConnectError
+        @logger.error("EXITING! NATS connection failed: #{e}")
+        exit!
       else
-        @logger.error "Eventmachine problem, #{e}"
-        @logger.error("#{e.backtrace.join("\n")}")
+        @logger.error("NATS problem, #{e}")
       end
-    }
+    end
+
+    EM.error_handler do |e|
+      @logger.error "Eventmachine problem, #{e}"
+      @logger.error("#{e.backtrace.join("\n")}")
+    end
 
     NATS.start(:uri => @config['mbus'])
     register_as_component

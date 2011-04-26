@@ -41,10 +41,10 @@ end
 
 config.update(cfg_overrides)
 
-# XXX(mjp) - Not sure if this is needed...
 config['config_file'] = File.expand_path(config['config_file'])
 
 EM.epoll
+
 EM.run {
   agent = DEA::Agent.new(config)
   agent.run()
