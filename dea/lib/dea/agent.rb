@@ -163,6 +163,9 @@ module DEA
         exit 1
       end
 
+      # Clean the staged directory on startup
+      FileUtils.rm_f(File.join(@staged_dir,'*')) unless @disable_dir_cleanup
+
       EM.next_tick do
         unless start_file_viewer
           # Periodically try to start the file viewer in case of port contention
@@ -896,9 +899,13 @@ module DEA
       # Explode the app into its directory and optionally bind its
       # local runtime.
       `mkdir #{instance_dir}; cd #{instance_dir}; tar -xzf #{tgz_file}`
+      @logger.warn("Problems staging file #{tgz_file}") if $? != 0
+
+      # Removed the staged bits
+      FileUtils.rm_f(tgz_file) unless @disable_dir_cleanup
+
       bind_local_runtime(instance_dir, runtime)
 
-      @logger.warn("Problems staging file #{tgz_file}") if $? != 0
       @logger.debug("Took #{Time.now - start} to stage the app directory")
     end
 
