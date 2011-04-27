@@ -51,13 +51,16 @@ class Rails3Plugin < StagingPlugin
       vars['PATH'] = "$PWD/app/rubygems/ruby/#{library_version}/bin:#{local_bin_path}:/usr/bin:/bin"
       vars['GEM_PATH'] = vars['GEM_HOME'] = "$PWD/app/rubygems/ruby/#{library_version}"
     end
+    vars['RUBYOPT'] = '-I$PWD/ruby -rstdsync'
     generate_startup_script(vars) do
-      <<-MIGRATE
+      cmds = ['mkdir ruby', 'echo "\$stdout.sync = true" >> ./ruby/stdsync.rb']
+      cmds << <<-MIGRATE
 if [ -f "$PWD/app/config/database.yml" ] ; then
   cd app && #{migration_command} >>../logs/migration.log 2>> ../logs/migration.log && cd ..;
 fi
       MIGRATE
-    end
+      cmds.join("\n")
+      end
   end
 
   # Rails applications often disable asset serving in production mode, and delegate that to
