@@ -16,7 +16,7 @@ describe "A Spring application being staged" do
       script_body = File.read(start_script)
       script_body.should == <<-EXPECTED
 #!/bin/bash
-export CATALINA_OPTS="-Xms512m -Xmx512m"
+export CATALINA_OPTS="-server -Xms512m -Xmx512m -XX:MaxPermSize=128m -Dfile.encoding=UTF-8 -Djava.awt.headless=true"
 export CATALINA_OPTS="$CATALINA_OPTS `ruby resources/set_environment`"
 env > env.log
 PORT=-1
@@ -53,7 +53,7 @@ wait $STARTED
       script_body = File.read(start_script)
       script_body.should == <<-EXPECTED
 #!/bin/bash
-export CATALINA_OPTS="-Xms256m -Xmx256m"
+export CATALINA_OPTS="-server -Xms256m -Xmx256m -XX:MaxPermSize=64m -Dfile.encoding=UTF-8 -Djava.awt.headless=true"
 export CATALINA_OPTS="$CATALINA_OPTS `ruby resources/set_environment`"
 env > env.log
 PORT=-1
