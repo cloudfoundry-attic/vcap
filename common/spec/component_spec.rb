@@ -33,6 +33,42 @@ describe VCAP::Component do
     end
   end
 
+  describe 'suppression of keys in config information in varz' do
+    it 'should suppress certain keys in the top level config' do
+      options = { :type => 'suppress_test' }
+      options[:config] = {
+        :mbus => 'nats://user:pass@localhost:4222',
+        :keys => 'sekret!keys',
+        :mysql => { :user => 'derek', :password => 'sekret!' },
+        :password => 'crazy',
+        :database_environment => { :stuff => 'should not see' }
+      }
+      em do
+        VCAP::Component.register(options)
+        done
+      end
+      VCAP::Component.varz.should include(:config => {})
+    end
+
+    it 'should suppress certain keys at any level in config' do
+      options = { :type => 'suppress_test' }
+      options[:config] = {
+        :mbus => 'nats://user:pass@localhost:4222',
+        :keys => 'sekret!keys',
+        :mysql => { :user => 'derek', :password => 'sekret!' },
+        :password => 'crazy',
+        :database_environment => { :stuff => 'should not see' },
+        :this_is_ok => { :password => 'sekret!', :mysql => 'sekret!', :test => 'ok'}
+      }
+      em do
+        VCAP::Component.register(options)
+        done
+      end
+      VCAP::Component.varz.should include(:config => { :this_is_ok => { :test => 'ok'}} )
+    end
+
+  end
+
   describe "http endpoint" do
     let(:host) { VCAP::Component.varz[:host] }
     let(:http) { ::EM::HttpRequest.new("http://#{host}/varz") }
