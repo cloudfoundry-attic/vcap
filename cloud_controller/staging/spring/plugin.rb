@@ -39,8 +39,8 @@ class SpringPlugin < StagingPlugin
   end
 
   def configure_catalina_opts
-    max_perm_gen = 0.25 * application_memory
-    "-server -Xms#{application_memory}m -Xmx#{application_memory}m -XX:MaxPermSize=#{max_perm_gen.to_i}m -Dfile.encoding=UTF-8 -Djava.awt.headless=true"
+    # We want to set this to what the user requests, *not* set a minum bar
+    "-Xms#{application_memory}m -Xmx#{application_memory}m"
   end
 
   private
