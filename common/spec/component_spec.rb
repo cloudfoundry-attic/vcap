@@ -14,7 +14,6 @@ describe VCAP::Component do
       pid = File.read(NATS::AUTOSTART_PID_FILE).chomp.to_i
       `kill -9 #{pid}`
       FileUtils.rm_f NATS::AUTOSTART_PID_FILE
-      puts "FOUND THE AUTOSTART PID!: #{pid}"
     end
   end
 
