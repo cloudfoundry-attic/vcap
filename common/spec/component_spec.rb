@@ -6,11 +6,11 @@ require "em-http/version"
 describe VCAP::Component do
   include VCAP::Spec::EM
 
-  let(:nats) { NATS.connect(:uri => "mbus://127.0.0.1:4223") }
+  let(:nats) { NATS.connect(:uri => "mbus://127.0.0.1:4223", :autostart => true) }
   let(:default_options) { { :type => "type", :nats => nats } }
 
   it "should publish an announcement" do
-    em do
+    em(:timeout => 1) do
       nats.subscribe("vcap.component.announce") do |msg|
         body = Yajl::Parser.parse(msg, :symbolize_keys => true)
         body[:type].should == "type"
@@ -87,13 +87,13 @@ describe VCAP::Component do
       end
     end
 
-    it "should return 401 on malformed authorization header" do
+    it "should return 400 on malformed authorization header" do
       em do
         VCAP::Component.register(default_options)
 
         request = http.get :path => "/varz", :head => { "authorization" => "foo" }
         request.callback do
-          request.response_header.status.should == 401
+          request.response_header.status.should == 400
           done
         end
       end
