@@ -6,8 +6,17 @@ require "em-http/version"
 describe VCAP::Component do
   include VCAP::Spec::EM
 
-  let(:nats) { NATS.connect(:uri => "mbus://127.0.0.1:4223", :autostart => true) }
+  let(:nats) { NATS.connect(:uri => "nats://localhost:4223", :autostart => true) }
   let(:default_options) { { :type => "type", :nats => nats } }
+
+  after :all do
+    if File.exists? NATS::AUTOSTART_PID_FILE
+      pid = File.read(NATS::AUTOSTART_PID_FILE).chomp.to_i
+      `kill -9 #{pid}`
+      FileUtils.rm_f NATS::AUTOSTART_PID_FILE
+      puts "FOUND THE AUTOSTART PID!: #{pid}"
+    end
+  end
 
   it "should publish an announcement" do
     em(:timeout => 1) do
@@ -35,15 +44,15 @@ describe VCAP::Component do
 
   describe 'suppression of keys in config information in varz' do
     it 'should suppress certain keys in the top level config' do
-      options = { :type => 'suppress_test' }
-      options[:config] = {
-        :mbus => 'nats://user:pass@localhost:4222',
-        :keys => 'sekret!keys',
-        :mysql => { :user => 'derek', :password => 'sekret!' },
-        :password => 'crazy',
-        :database_environment => { :stuff => 'should not see' }
-      }
       em do
+        options = { :type => 'suppress_test', :nats => nats }
+        options[:config] = {
+          :mbus => 'nats://user:pass@localhost:4223',
+          :keys => 'sekret!keys',
+          :mysql => { :user => 'derek', :password => 'sekret!' },
+          :password => 'crazy',
+          :database_environment => { :stuff => 'should not see' }
+        }
         VCAP::Component.register(options)
         done
       end
@@ -51,16 +60,16 @@ describe VCAP::Component do
     end
 
     it 'should suppress certain keys at any level in config' do
-      options = { :type => 'suppress_test' }
-      options[:config] = {
-        :mbus => 'nats://user:pass@localhost:4222',
-        :keys => 'sekret!keys',
-        :mysql => { :user => 'derek', :password => 'sekret!' },
-        :password => 'crazy',
-        :database_environment => { :stuff => 'should not see' },
-        :this_is_ok => { :password => 'sekret!', :mysql => 'sekret!', :test => 'ok'}
-      }
       em do
+        options = { :type => 'suppress_test', :nats => nats }
+        options[:config] = {
+          :mbus => 'nats://user:pass@localhost:4223',
+          :keys => 'sekret!keys',
+          :mysql => { :user => 'derek', :password => 'sekret!' },
+          :password => 'crazy',
+          :database_environment => { :stuff => 'should not see' },
+          :this_is_ok => { :password => 'sekret!', :mysql => 'sekret!', :test => 'ok'}
+        }
         VCAP::Component.register(options)
         done
       end
