@@ -75,6 +75,30 @@ describe VCAP::Component do
       VCAP::Component.varz.should include(:config => { :this_is_ok => { :test => 'ok'}} )
     end
 
+    it 'should leave config its passed untouched' do
+      em do
+        options = { :type => 'suppress_test', :nats => nats }
+        options[:config] = {
+          :mbus => 'nats://user:pass@localhost:4223',
+          :keys => 'sekret!keys',
+          :mysql => { :user => 'derek', :password => 'sekret!' },
+          :password => 'crazy',
+          :database_environment => { :stuff => 'should not see' },
+          :this_is_ok => { :password => 'sekret!', :mysql => 'sekret!', :test => 'ok'}
+        }
+        VCAP::Component.register(options)
+
+        options.should include(:config => {
+          :mbus => 'nats://user:pass@localhost:4223',
+          :keys => 'sekret!keys',
+          :mysql => { :user => 'derek', :password => 'sekret!' },
+          :password => 'crazy',
+          :database_environment => { :stuff => 'should not see' },
+          :this_is_ok => { :password => 'sekret!', :mysql => 'sekret!', :test => 'ok'}
+        })
+        done
+      end
+    end
   end
 
   describe "http endpoint" do

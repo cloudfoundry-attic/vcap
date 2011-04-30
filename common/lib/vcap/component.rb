@@ -129,7 +129,13 @@ module VCAP
       end
 
       def sanitize_config(config)
-        config = config.dup
+        # Can't Marshal/Deep Copy logger instances that services use
+        if config[:logger]
+          config = config.dup
+          config.delete(:logger)
+        end
+        # Deep copy
+        config = Marshal.load(Marshal.dump(config))
         clear_level(config)
         config
       end
