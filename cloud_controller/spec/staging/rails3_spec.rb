@@ -26,10 +26,10 @@ unset BUNDLE_GEMFILE
 mkdir ruby
 echo "\\$stdout.sync = true" >> ./ruby/stdsync.rb
 if [ -f "$PWD/app/config/database.yml" ] ; then
-  cd app && #{executable} ./rubygems/ruby/1.8/bin/bundle exec rake db:migrate --trace >>../logs/migration.log 2>> ../logs/migration.log && cd ..;
+  cd app && #{executable} ./rubygems/ruby/1.8/bin/bundle exec #{executable} ./rubygems/ruby/1.8/bin/rake db:migrate --trace >>../logs/migration.log 2>> ../logs/migration.log && cd ..;
 fi
 cd app
-#{executable} ./rubygems/ruby/1.8/bin/bundle exec rails server $@ > ../logs/stdout.log 2> ../logs/stderr.log &
+#{executable} ./rubygems/ruby/1.8/bin/bundle exec #{executable} ./rubygems/ruby/1.8/bin/rails server $@ > ../logs/stdout.log 2> ../logs/stderr.log &
 STARTED=$!
 echo "$STARTED" >> ../run.pid
 echo "#!/bin/bash" >> ../stop
@@ -63,10 +63,10 @@ unset BUNDLE_GEMFILE
 mkdir ruby
 echo "\\$stdout.sync = true" >> ./ruby/stdsync.rb
 if [ -f "$PWD/app/config/database.yml" ] ; then
-  cd app && #{executable} ./rubygems/ruby/1.8/bin/bundle exec rake db:migrate --trace >>../logs/migration.log 2>> ../logs/migration.log && cd ..;
+  cd app && #{executable} ./rubygems/ruby/1.8/bin/bundle exec #{executable} ./rubygems/ruby/1.8/bin/rake db:migrate --trace >>../logs/migration.log 2>> ../logs/migration.log && cd ..;
 fi
 cd app
-#{executable} ./rubygems/ruby/1.8/bin/bundle exec rails server thin $@ > ../logs/stdout.log 2> ../logs/stderr.log &
+#{executable} ./rubygems/ruby/1.8/bin/bundle exec #{executable} ./rubygems/ruby/1.8/bin/rails server thin $@ > ../logs/stdout.log 2> ../logs/stderr.log &
 STARTED=$!
 echo "$STARTED" >> ../run.pid
 echo "#!/bin/bash" >> ../stop

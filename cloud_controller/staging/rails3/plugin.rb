@@ -13,7 +13,7 @@ class Rails3Plugin < StagingPlugin
     if uses_bundler?
       # Specify Thin if the app bundled it; otherwise let Rails figure it out.
       server_script = thin? ? "server thin" : "server"
-      "#{local_runtime} #{gem_bin_dir}/bundle exec rails #{server_script} $@"
+      "#{local_runtime} #{gem_bin_dir}/bundle exec #{local_runtime} #{gem_bin_dir}/rails #{server_script} $@"
     else
       "#{local_runtime} -S thin -R config.ru $@ start"
     end
@@ -26,7 +26,7 @@ class Rails3Plugin < StagingPlugin
 
   def migration_command
     if uses_bundler?
-      "#{local_runtime} #{gem_bin_dir}/bundle exec rake db:migrate --trace"
+      "#{local_runtime} #{gem_bin_dir}/bundle exec #{local_runtime} #{gem_bin_dir}/rake db:migrate --trace"
     else
       "#{local_runtime} -S rake db:migrate --trace"
     end
