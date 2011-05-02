@@ -19,7 +19,7 @@ class App < ActiveRecord::Base
 
   AppStates = %w[STOPPED STARTED]
   PackageStates = %w[PENDING STAGED FAILED]
-  Runtimes = %w[ruby18 ruby19 java node]
+  Runtimes = %w[ruby18 ruby19 jruby18 jruby19 java node]
   Frameworks = %w[sinatra rails3 spring grails node unknown]
 
   validates_presence_of :name, :framework, :runtime

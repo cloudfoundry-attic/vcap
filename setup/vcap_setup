@@ -229,6 +229,28 @@ if [[ $DEA == true || $ALL == true ]]; then
 	fi
     fi
 
+    # JRuby
+    JRUBY_VERSION=1.6.1
+    JRUBY_TARBALL=jruby-bin-$JRUBY_VERSION.tar.gz
+    
+    if [[ ! `jruby -e 'puts JRUBY_VERSION'` == $JRUBY_VERSION ]]; then
+	echo "Installing JRuby $JRUBY_VERSION"
+	wget -O /usr/local/jruby-bin-$JRUBY_VERSION.tar.gz http://jruby.org.s3.amazonaws.com/downloads/1.6.1/$JRUBY_TARBALL
+	tar -C /usr/local -zxf /usr/local/$JRUBY_TARBALL
+	rm -fr /usr/local/$JRUBY_TARBALL /usr/local/jruby
+	mv /usr/local/jruby-$JRUBY_VERSION /usr/local/jruby
+	ln -fs /usr/local/jruby/bin/jruby /usr/local/bin/jruby
+
+	# Wrapper script for 1.9 support on JRuby
+	sed s/JRUBY_OPTS=\"/JRUBY_OPTS=\"--1.9/ /usr/local/jruby/bin/jruby > /usr/local/jruby/bin/jruby19
+	chmod +x /usr/local/jruby/bin/jruby19
+	ln -fs /usr/local/jruby/bin/jruby19 /usr/local/bin/jruby19
+
+	# FIXME: Gem installation is deffered for MRI.
+	# Maybe JRuby should do the same?
+	jruby -S gem install jruby-openssl bundler thin trinidad sinatra
+    fi
+
     # Node
     pushd .
     cd /tmp
@@ -256,6 +278,9 @@ if [[ $DEA == true || $ALL == true ]]; then
 
     echo -e "\nJava should now be installed -->"
     java -version
+
+    echo -e "\nJRuby should now be installed -->"
+    jruby -v
 
     echo -e "\nNode should now be installed -->"
     node -v
