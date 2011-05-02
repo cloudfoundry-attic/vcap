@@ -214,15 +214,20 @@ class HealthManager
             index_entry[:state_timestamp] = now
           end
 
+          reason = nil
           if droplet_entry[:state] == STOPPED
             extra_instance = true
+            reason = "Droplet state is STOPPED."
           elsif index >= droplet_entry[:instances]
             extra_instance = true
+            reason = "Extra instance. Droplet should have #{droplet_entry[:instances]} instances running."
           elsif version != droplet_entry[:live_version]
             extra_instance = true
+            reason = "Live version mismatch. Live version is #{droplet_entry[:live_version]} instance version is #{version}."
           end
 
           if RUNNING_STATES.include?(index_entry[:state]) && extra_instance
+            @logger.info("Preparing to stop instance (app_id=#{app_id}, index=#{index}, instance=#{index_entry[:instance]}). Reason: #{reason}")
             extra_instances << index_entry[:instance]
           elsif extra_instance
             # stop tracking extra instances
@@ -252,6 +257,7 @@ class HealthManager
           stats[:down] += 1 if index_entry[:state] == DOWN
 
           if index_entry[:state] == DOWN && now - index_entry[:last_action] > @restart_timeout
+            @logger.info("Preparing to restart instance (app_id=#{app_id}, index=#{index}). Reason: droplet state is STARTED, but instance state is DOWN.")
             index_entry[:last_action] = now
             missing_indices << index
           end
@@ -259,7 +265,13 @@ class HealthManager
       end
 
       # don't act if we were looking at a stale droplet
-      return if update_droplet(App.find_by_id(app_id))
+      if update_droplet(App.find_by_id(app_id))
+        if missing_indices.any? || extra_instances.any?
+          @logger.info("Droplet information is stale for app id #{app_id}, not taking action.")
+          @logger.info("(#{missing_indices.length} instances need to be started, #{extra_instances.length} instances need to be stopped.)")
+        end
+        return
+      end
 
       if missing_indices.any?
         start_instances(app_id, missing_indices)
@@ -287,9 +299,9 @@ class HealthManager
     if collect_stats
       VCAP::Component.varz[:running_instances] = stats[:running]
       VCAP::Component.varz[:down_instances]    = stats[:down]
-      @logger.debug("Analyzed #{stats[:running]} running and #{stats[:down]} down apps in #{elapsed_time_in_ms(start)}")
+      @logger.info("Analyzed #{stats[:running]} running and #{stats[:down]} down apps in #{elapsed_time_in_ms(start)}")
     else
-      @logger.debug("Analyzed #{@droplets.size} apps in #{elapsed_time_in_ms(start)}")
+      @logger.info("Analyzed #{@droplets.size} apps in #{elapsed_time_in_ms(start)}")
     end
   end
 
@@ -353,6 +365,7 @@ class HealthManager
               index_entry[:state] = DOWN
               index_entry[:state_timestamp] = Time.now.to_i
               index_entry[:last_action] = now
+              @logger.info("Preparing to start instance (app_id=#{droplet_id}, index=#{index}). Reason: Instance exited with reason '#{exit_message['reason']}'.")
               start_instances(droplet_id, [index])
             end
           end
@@ -410,7 +423,7 @@ class HealthManager
         threshold = @database_scan * 2
 
         if health_manager_uptime > threshold && instance_uptime > threshold
-          @logger.debug("Stopping unknown app: #{droplet_id}/#{instance}.")
+          @logger.info("Stopping unknown app: #{droplet_id}/#{instance}.")
           stop_instances(droplet_id, [instance])
         end
       end
@@ -491,7 +504,7 @@ class HealthManager
     VCAP::Component.varz[:total_users] = User.count
     VCAP::Component.varz[:users] = User.all_email_addresses.map {|e| {:email => e}}
     VCAP::Component.varz[:apps] = App.health_manager_representations
-    @logger.debug("Database scan took #{elapsed_time_in_ms(start)} and found #{@droplets.size} apps")
+    @logger.info("Database scan took #{elapsed_time_in_ms(start)} and found #{@droplets.size} apps")
   end
 
   def droplet_version(droplet)
@@ -527,7 +540,7 @@ class HealthManager
     }
     start_message = encode_json(start_message)
     NATS.publish('cloudcontrollers.hm.requests', start_message)
-    @logger.debug("Requesting the start of missing instances: #{start_message}")
+    @logger.info("Requesting the start of missing instances: #{start_message}")
   end
 
   def stop_instances(droplet_id, instances)
@@ -540,7 +553,7 @@ class HealthManager
       :instances => instances
     }.to_json
     NATS.publish('cloudcontrollers.hm.requests', stop_message)
-    @logger.debug("Requesting the stop of extra instances: #{stop_message}")
+    @logger.info("Requesting the stop of extra instances: #{stop_message}")
   end
 
   def register_error_handler
