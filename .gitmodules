@@ -1,6 +1,6 @@
 [submodule "services"]
 	path = services
-	url = https://github.com/cloudfoundry/vcap-services.git
+	url = git@github.com:neo4j/vcap-services.git
 [submodule "tests"]
 	path = tests
 	url = https://github.com/cloudfoundry/vcap-tests.git
