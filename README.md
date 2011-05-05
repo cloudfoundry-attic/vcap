@@ -50,7 +50,7 @@ server VM.
 
 ### step -1:
 
-* setup a VM with a pristine Ubuntu 10.04.2 server 64bit image,
+* setup a VM with a pristine Ubuntu 10.04.2 server image,
   [download here](http://www.ubuntu.com/business/get-ubuntu/download)
 * you may wish to snapshot your VM now in case things go pear shaped.
 * great snapshot spots are here and after step 4
@@ -199,14 +199,26 @@ with the correct password created during install
     bin/vcap start
     bin/vcap tail  # see aggregate logs
 
-#### step 9: *Optional, mac users only*, create a local ssh tunnel
+#### step 9: *Optional*, create a local ssh tunnel
 
+This is a useful step if you have ssh available on your host system.
+It means you can run vmc and interact with your cloudfoundry instance
+from the guest or the host using the same *.vcap.me URLs.
 From your vm, run ifconfig and note eth0, let's say it's: 192.168.252.130
-go to your mac terminal window and create a local port 80 tunnel.
+go to a terminal window and create a local port 80 tunnel.
 Once you do this, from both your mac, and from within the vm, api.vcap.me and *.vcap.me
 map to localhost which maps to your running cloudfoundry instance
 
     sudo ssh -L 80:192.168.252.130:80 mhl@192.168.252.130 -N
+
+(Replace 'mhl' above with a valid user id on the guest system.)  Hint:
+If you also add the guest IP address to `/etc/hosts` you will be able
+to do this with a hostname of your choice, e.g. 'vcap':
+
+    # in /etc/hosts
+    192.168.252.130 vcap
+
+    sudo ssh -L 80:vcap:80 mhl@vcap -N
 
 Trying your setup
 -----------------
@@ -298,3 +310,34 @@ Note that hitting refresh will show a different port in each refresh reflecting 
     +-------------+----+---------+-------------+----------+
     | env         | 1  | RUNNING | env.vcap.me |          |
     +-------------+----+---------+-------------+----------+
+
+
+Starting and Stopping the System
+--------------------------------
+
+From the vcap guest vm at any time you can use the `vcap` command
+line to start, stop and check the status of the system.  For example
+
+    $ cd cloudfoundry/vcap
+    $ bin/vcap start
+    router              :	 RUNNING
+    cloud_controller    :	 RUNNING
+    dea                 :	 RUNNING
+    health_manager      :	 RUNNING
+    ...
+
+    $ bin/vcap status
+    router              :	 RUNNING
+    cloud_controller    :	 RUNNING
+    dea                 :	 RUNNING
+    health_manager      :	 RUNNING
+    ...
+
+    $ bin/vcap stop
+    router              :	 STOPPED
+    cloud_controller    :	 STOPPED
+    dea                 :	 STOPPED
+    health_manager      :	 STOPPED
+    ...
+
+    
