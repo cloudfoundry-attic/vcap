@@ -340,7 +340,7 @@ fi
 NEO4J_VERSION=community-1.4.M01
 NEO4J_DIST_FILE=neo4j-community-1.4.M01-unix.tar.gz
 NEO4J_SERVICE_DIR=/var/vcap/services/neo4j
-
+NEO4J_HOSTING_EXTENSION=neo4j-hosting-extension-1.4.M1.jar
 if [[ -f "$NEO4J_SERVICE_DIR/$NEO4J_DIST_FILE" ]]; then
    echo "Neo4j ($NEO4J_VERSION) is current"
 else
@@ -353,10 +353,9 @@ if [[ $REPLY =~ ^[yY]$ ]]; then
     curl -O http://dist.neo4j.org/$NEO4J_DIST_FILE
     rm neo4j-server.tgz
     ln -s $NEO4J_DIST_FILE neo4j-server.tgz
-#    curl -O  http://dist.neo4j.org/neo4j-hosting-extension-$NEO4J_VERSION.jar
-    cp /home/cloud/neo4j-hosting-extension-0.6-SNAPSHOT.jar neo4j-hosting-extension-$NEO4J_VERSION.jar
+    curl -O  http://dist.neo4j.org/$NEO4J_HOSTING_EXTENSION
     rm neo4j-hosting-extension.jar
-    ln -s neo4j-hosting-extension-$NEO4J_VERSION.jar neo4j-hosting-extension.jar
+    ln -s $NEO4J_HOSTING_EXTENSION neo4j-hosting-extension.jar
     popd
 fi
 fi
