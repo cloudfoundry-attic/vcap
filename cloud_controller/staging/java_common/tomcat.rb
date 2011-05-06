@@ -68,6 +68,7 @@ class Tomcat
       else
         default_application_context_file = get_default_application_context_file(webapp_path)
         unless default_application_context_file == nil
+          context_param_node = context_param_nodes.first
           webapp_config = configure_default_context webapp_path, webapp_config, autostaging_context_param_name_node, autostaging_context_param_value, context_param_node, DEFAULT_APP_CONTEXT
         end
       end
@@ -179,6 +180,7 @@ class Tomcat
 
   def self.copy_jar jar, dest
     jar_path = File.join(File.dirname(__FILE__), 'resources', jar)
+    FileUtils.mkdir_p dest
     FileUtils.cp(jar_path, dest)
   end
 
