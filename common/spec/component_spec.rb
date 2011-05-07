@@ -41,6 +41,23 @@ describe VCAP::Component do
     end
   end
 
+  it "should allow you to set an index" do
+    em do
+      options = default_options
+      options[:index] = 5
+
+      VCAP::Component.register(options)
+
+      nats.request("vcap.component.discover") do |msg|
+        body = Yajl::Parser.parse(msg, :symbolize_keys => true)
+        body[:type].should == "type"
+        body[:index].should == 5
+        body[:uuid].should =~ /^5-.*/
+        done
+      end
+    end
+  end
+
   describe 'suppression of keys in config information in varz' do
     it 'should suppress certain keys in the top level config' do
       em do
@@ -105,6 +122,41 @@ describe VCAP::Component do
     let(:host) { VCAP::Component.varz[:host] }
     let(:http) { ::EM::HttpRequest.new("http://#{host}/varz") }
     let(:authorization) { { :head => { "authorization" => VCAP::Component.varz[:credentials] } } }
+
+    it "should let you specify the port" do
+      em do
+        options = default_options
+        options[:port] = 18123
+
+        VCAP::Component.register(options)
+
+        http.opts.port.should == 18123
+
+        request = http.get authorization.merge(:path => "/varz")
+        request.callback do
+          request.response_header.status.should == 200
+          done
+        end
+      end
+    end
+
+   it "should let you specify the auth" do
+      em do
+        options = default_options
+        options[:user] = "foo"
+        options[:password] = "bar"
+
+        VCAP::Component.register(options)
+
+        VCAP::Component.varz[:credentials].should == ["foo", "bar"]
+
+        request = http.get authorization.merge(:path => "/varz")
+        request.callback do
+          request.response_header.status.should == 200
+          done
+        end
+      end
+    end
 
     it "should skip keep-alive by default" do
       em do

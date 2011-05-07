@@ -78,18 +78,22 @@ module VCAP
       def register(opts)
         uuid = VCAP.fast_uuid
         type = opts[:type]
+        index = opts[:index]
+        uuid = "#{index}-#{uuid}" if index
         host = opts[:host] || VCAP.local_ip
-        port = VCAP.grab_ephemeral_port
+        port = opts[:port] || VCAP.grab_ephemeral_port
         nats = opts[:nats] || NATS
-        auth = [VCAP.fast_uuid, VCAP.fast_uuid]
+        auth = [opts[:user] || VCAP.fast_uuid, opts[:password] || VCAP.fast_uuid]
 
         # Discover message limited
         @discover = {
           :type => type,
+          :index => index,
           :uuid => uuid,
           :host => "#{host}:#{port}",
           :credentials => auth,
-          :start => Time.now }
+          :start => Time.now
+        }
 
         # Varz is customizable
         @varz = @discover.dup

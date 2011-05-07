@@ -202,7 +202,7 @@ module DEA
       NATS.start(:uri => @nats_uri) do
 
         # Register ourselves with the system
-        VCAP::Component.register(:type => 'DEA', :host => @local_ip, :config => @config)
+        VCAP::Component.register(:type => 'DEA', :host => @local_ip, :config => @config, :index => @config['index'])
 
         uuid = VCAP::Component.uuid
 
