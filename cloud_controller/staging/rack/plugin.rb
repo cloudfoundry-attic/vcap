@@ -15,9 +15,8 @@ class RackPlugin < StagingPlugin
 
   # Rack has a standard startup process.
   def start_command
-    config_ru = detect_main_file
     if uses_bundler?
-      "#{local_runtime} -S bundle exec thin -R #{config_ru} $@ start"
+      "#{local_runtime} -S bundle exec thin -R config.ru $@ start"
     else
       raise "Rack applications *must* have a Gemfile"      
     end
@@ -53,13 +52,5 @@ class RackPlugin < StagingPlugin
     cmds.join("\n")
   end
 
-  def detect_main_file
-    file = 'config.ru'
-    file = nil unless File.exist?(file)
-    # TODO - Currently staging exceptions are not handled well.
-    # Convert to using exit status and return value on a case-by-case basis.
-    raise "Unable to determine Rack startup command (missing config.ru?)" unless file
-    file
-  end
 end
 
