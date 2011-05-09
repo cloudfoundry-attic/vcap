@@ -17,11 +17,10 @@ class RackPlugin < StagingPlugin
   def start_command
     puts Dir.pwd
     puts `ls -lsa`
-    if uses_bundler?
-      "#{local_runtime} -S bundle exec thin -R config.ru $@ start"
-    else
+    if ! File.exist?("app/Gemfile")
       raise "Rack applications *must* have a Gemfile"      
     end
+    "#{local_runtime} -S bundle exec thin -R config.ru $@ start"
   end
 
   private
