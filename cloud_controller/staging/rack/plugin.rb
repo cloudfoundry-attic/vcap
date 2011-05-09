@@ -15,8 +15,6 @@ class RackPlugin < StagingPlugin
 
   # Rack has a standard startup process.
   def start_command
-    puts Dir.pwd
-    puts `ls -lsa`
     if ! File.exist?("app/Gemfile")
       raise "Rack applications *must* have a Gemfile"      
     end
