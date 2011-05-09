@@ -20,7 +20,7 @@ unset BUNDLE_GEMFILE
 mkdir ruby
 echo "\\$stdout.sync = true" >> ./ruby/stdsync.rb
 cd app
-"#{executable} -S bundle exec thin -R config.ru $@ start" > ../logs/stdout.log 2> ../logs/stderr.log &
+#{executable} -S bundle exec thin -R config.ru $@ start > ../logs/stdout.log 2> ../logs/stderr.log &
 STARTED=$!
 echo "$STARTED" >> ../run.pid
 echo "#!/bin/bash" >> ../stop
