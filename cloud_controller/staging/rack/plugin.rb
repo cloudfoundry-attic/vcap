@@ -16,6 +16,7 @@ class RackPlugin < StagingPlugin
   # Rack has a standard startup process.
   def start_command
     puts Dir.pwd
+    puts `ls -lsa`
     if uses_bundler?
       "#{local_runtime} -S bundle exec thin -R config.ru $@ start"
     else
