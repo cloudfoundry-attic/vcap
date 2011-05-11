@@ -81,14 +81,14 @@ and test your installation.
 
 #### step 1: install rvm
 
-For detailed rvm install instructions see: [https://rvm.beginrescueend.com/rvm/install/](https://rvm.beginrescueend.com/rvm/install/) or follow the quick steps below.
+For detailed [rvm](https://rvm.beginrescueend.com/) install instructions see: [https://rvm.beginrescueend.com/rvm/install/](https://rvm.beginrescueend.com/rvm/install/) or follow the quick steps below.
 
-Install rvm using their script. Note: the `-k`
+First install rvm using their script. Note: the `-k`
 switch is only needed if the certificate validation fails:
 
     bash < <(curl -s -k -B https://rvm.beginrescueend.com/install/rvm)
 
-Follow the instructions given by the RVM
+Then follow the instructions given by the RVM
 installer (a copy is included below for your convenience).
 
     # you must complete the install by loading RVM in new shells.
