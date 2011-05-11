@@ -24,7 +24,7 @@ single vm/single os or can be spread across several machines/vm's.
 
 For development purposes, the preferred environment is to run all of the core
 components within a single vm and then interact with the system from outside of
-the vm via an ssh tunnel. The pre-defined domain *.vcap.me maps to local host,
+the vm via an ssh tunnel. The pre-defined domain `*.vcap.me` maps to local host,
 so when you use this setup, the end result is that your development environment
 is available at [http://api.vcap.me](http://api.vcap.me).
 
@@ -91,7 +91,7 @@ and test your installation.
 
 For detailed rvm install instructions see: [https://rvm.beginrescueend.com/rvm/install/](https://rvm.beginrescueend.com/rvm/install/) or follow the quick steps below.
 
-Install rvm using their script. Note: the -k
+Install rvm using their script. Note: the `-k`
 switch is only needed if the certificate validation fails:
 
     bash < <(curl -s -k -B https://rvm.beginrescueend.com/install/rvm)
@@ -159,16 +159,18 @@ installer (a copy is included below for your convenience).
 
 Note, this release uses a handful of submodules. It's important to
 understand the impact of this which is that after cloning the vcap
-repo, you must run: `git submodule update --init`
+repo, you must run:
+
+    git submodule update --init
 
 This ends up mounting the services and tests repos in the directory tree of vcap.
-Any time you git pull in vcap, you must also git submodule update
+Any time you `git pull` in vcap, you must also `git submodule update`.
 
     mkdir ~/cloudfoundry; cd ~/cloudfoundry
     git clone https://github.com/cloudfoundry/vcap.git
 
-Note, there should be a .rvmrc file in the ~/cloudfoundry/vcap directory.
-Make sure that the vcap/.rvmrc is present and that it contains rvm use 1.9.2
+Note, there should be a `.rvmrc` file in the `~/cloudfoundry/vcap` directory.
+Make sure that the `vcap/.rvmrc` is present and that it contains `rvm use 1.9.2`.
 
     cd ~/cloudfoundry/vcap
     git submodule update --init
@@ -185,7 +187,7 @@ Points to keep in mind:
     cd ~/cloudfoundry/vcap
     sudo setup/vcap_setup
 
-After vcap_setup completes, edit your mysql_node config file
+After `vcap_setup` completes, edit your `mysql_node` config file
 with the correct password created during install
 
     cd ~/cloudfoundry/vcap/services/mysql/config
@@ -211,9 +213,9 @@ with the correct password created during install
 
 #### step 9: *Optional, mac users only*, create a local ssh tunnel
 
-From your vm, run ifconfig and note eth0, let's say it's: 192.168.252.130
+From your vm, run `ifconfig` and note eth0, let's say it's: 192.168.252.130
 go to your mac terminal window and create a local port 80 tunnel.
-Once you do this, from both your mac, and from within the vm, api.vcap.me and *.vcap.me
+Once you do this, from both your mac, and from within the vm, `api.vcap.me` and `*.vcap.me`
 map to localhost which maps to your running cloudfoundry instance
 
     sudo ssh -L 80:192.168.252.130:80 mhl@192.168.252.130 -N
