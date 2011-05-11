@@ -226,12 +226,22 @@ you created during install and save.
 
 #### step 9: *Optional, mac users only*, create a local ssh tunnel
 
-From your vm, run `ifconfig` and note eth0, let's say it's: 192.168.252.130
-go to your mac terminal window and create a local port 80 tunnel.
-Once you do this, from both your mac, and from within the vm, `api.vcap.me` and `*.vcap.me`
-map to localhost which maps to your running cloudfoundry instance
+From your VM, run `ifconfig` and note your eth0 IP address, which will look something like: `192.168.252.130`
 
-    sudo ssh -L 80:192.168.252.130:80 mhl@192.168.252.130 -N
+Now go to your mac terminal window and verify that you can connect with SSH:
+
+    ssh <your VM user>@<VM IP address>
+
+If this works, create a local port 80 tunnel:
+
+    sudo ssh -L <local-port>:<VM IP address>:80 <your VM user>@<VM IP address> -N
+
+If you are not already running a local web server, use port 80 as your local port,
+otherwise you may want to use 8080 or another common http port.
+
+Once you do this, from both your mac, and from within the vm, `api.vcap.me` and `*.vcap.me`
+will map to localhost which will map to your running Cloud Foundry instance.
+
 
 Trying your setup
 -----------------
@@ -241,6 +251,9 @@ Trying your setup
 
     vmc target api.vcap.me
     vmc info
+
+Note: If you are using a tunnel and selected a local port other than 80 you
+will need to modify the target to include it here, like `api.vcap.me:8080`.
 
 #### This should produce roughly the following:
 
