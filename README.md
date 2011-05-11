@@ -153,27 +153,28 @@ installer (a copy is included below for your convenience).
 
 #### step 4: clone the vcap and vmc repos:
 
-  Optionally create new ssh keys and add them to your github account:
+Optionally create new ssh keys and add them to your github account:
 
     ssh-keygen -t rsa -C me@example.com
 
-Note, this release uses a handful of submodules. It's important to
-understand the impact of this which is that after cloning the vcap
-repo, you must run:
-
-    git submodule update --init
-
-This ends up mounting the services and tests repos in the directory tree of vcap.
-Any time you `git pull` in vcap, you must also `git submodule update`.
+Now create a directory for cloudfoundry and use git to clone the project into it:
 
     mkdir ~/cloudfoundry; cd ~/cloudfoundry
     git clone https://github.com/cloudfoundry/vcap.git
-
-Note, there should be a `.rvmrc` file in the `~/cloudfoundry/vcap` directory.
-Make sure that the `vcap/.rvmrc` is present and that it contains `rvm use 1.9.2`.
-
     cd ~/cloudfoundry/vcap
+
+The first time that you enter the vcap directory you may see an RVM warning noting a new or modified .rvmrc file. Follow the instructions to review the file and when asked to trust enter `yes` at the prompt.
+
+There should be a `.rvmrc` file in the `~/cloudfoundry/vcap` directory. Make sure that file is present and that it contains `rvm use 1.9.2`.
+
+This release uses a handful of submodules. After cloning the vcap repo, you must run:
+
     git submodule update --init
+
+This will check out additional resources which are required for the project to run. *NOTE:* Any time that you update the project with `git pull` you must `git submodule update` afterwards or you will not have a complete copy of the latest code.
+
+Now install the vmc gem (command line tools for interacting with the platform):
+
     gem install vmc --no-rdoc --no-ri
 
 #### step 5: run vcap_setup to prep cloudfoundry for launch
