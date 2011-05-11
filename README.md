@@ -167,9 +167,11 @@ This release uses a handful of submodules. After cloning the vcap repo, you must
     git submodule update --init
     
 This will check out additional resources which are required for the 
-project to run. *NOTE:* Any time that you update the project 
-with `git pull` you must `git submodule update` afterwards or 
-you will not have a complete copy of the latest code.
+project to run. 
+
+*NOTE:* Any time that you update the project with `git pull` you 
+must `git submodule update` afterwards or you will not have a complete 
+copy of the latest code.
 
 Now install the vmc gem (command line tools for interacting with the platform):
 
@@ -186,11 +188,15 @@ Points to keep in mind:
     cd ~/cloudfoundry/vcap
     sudo setup/vcap_setup
 
-After `vcap_setup` completes, edit your `mysql_node` config file
-with the correct password created during install
+This step may take a long time as your selections are downloaded and built as needed.
+
+After `vcap_setup` completes, edit your `mysql_node.yml` config file:
 
     cd ~/cloudfoundry/vcap/services/mysql/config
-    vi mysql_node.yml and change mysql.pass to your password
+    vi mysql_node.yml # or use your editor of choice
+    
+Change the `pass` in the `mysql` section to the mysql root password 
+you created during install and save.
 
 #### step 6: restart nginx with a custom config
 
