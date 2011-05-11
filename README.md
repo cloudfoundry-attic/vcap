@@ -51,7 +51,7 @@ server VM.
 ### step -1:
 
 * setup a VM with a pristine Ubuntu 10.04.2 server 64bit image,
-  [download here](http://www.ubuntu.com/business/get-ubuntu/download)
+  [download here](http://www.ubuntu.com/download/ubuntu/download)
 * you may wish to snapshot your VM now in case things go pear shaped.
 * great snapshot spots are here and after step 4
 * to enable remote access (more fun than using the console), install ssh.
