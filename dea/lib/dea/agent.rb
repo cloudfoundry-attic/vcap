@@ -241,6 +241,7 @@ module DEA
 
         # Recover existing application state.
         recover_existing_droplets
+        delete_untracked_instance_dirs
 
         EM.add_periodic_timer(@heartbeat_interval) { send_heartbeat }
         EM.add_periodic_timer(MONITOR_INTERVAL) { monitor_apps }
@@ -752,6 +753,24 @@ module DEA
       monitor_apps(true)
       send_heartbeat
       schedule_snapshot
+    end
+
+    # Removes any instance dirs without a corresponding instance entry in @droplets
+    # NB: This is run once at startup, so not using EM.system to perform the rm is fine.
+    def delete_untracked_instance_dirs
+      tracked_instance_dirs = Set.new
+      for droplet_id, instances in @droplets
+        for instance_id, instance in instances
+          tracked_instance_dirs << instance[:dir]
+        end
+      end
+
+      all_instance_dirs = Set.new(Dir.glob(File.join(@apps_dir, '*')))
+      to_remove = all_instance_dirs - tracked_instance_dirs
+      for dir in to_remove
+        @logger.warn("Removing instance dir '#{dir}', doesn't correspond to any instance entry.")
+        FileUtils.rm_rf(dir)
+      end
     end
 
     def add_instance_resources(instance)
@@ -1275,6 +1294,7 @@ module DEA
           delete_instance = instance[:state] == :CRASHED && Time.now.to_i - instance[:state_timestamp] > CRASHES_REAPER_TIMEOUT
           if delete_instance
             @logger.debug("Crashes reaper deleted: #{instance[:instance_id]}")
+            EM.system("rm -rf #{instance[:dir]}") unless @disable_dir_cleanup
           end
           delete_instance
         end
