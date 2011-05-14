@@ -27,6 +27,7 @@ class CloudError < StandardError
   # User-level errors
   FORBIDDEN = [200, HTTP_FORBIDDEN, "Operation not permitted"]
   USER_NOT_FOUND = [201, HTTP_FORBIDDEN, "User not found"]
+  HTTPS_REQUIRED = [202, HTTP_FORBIDDEN, "HTTPS required"]
 
   # Application-level errors
   APP_INVALID = [300, HTTP_BAD_REQUEST, "Invalid application description"]
