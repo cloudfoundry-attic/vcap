@@ -14,6 +14,9 @@ describe "A simple Rack app being staged" do
       script_body = File.read(start_script)
       script_body.should == <<-EXPECTED
 #!/bin/bash
+export GEM_HOME="$PWD/app/rubygems/ruby/1.8"
+export GEM_PATH="$PWD/app/rubygems/ruby/1.8"
+export PATH="$PWD/app/rubygems/ruby/1.8/bin:$PATH"
 export RACK_ENV="production"
 export RAILS_ENV="production"
 export RUBYOPT="-rubygems -I$PWD/ruby -rstdsync"
