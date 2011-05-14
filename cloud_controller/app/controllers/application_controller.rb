@@ -72,7 +72,7 @@ class ApplicationController < ActionController::Base
       if token.valid?
         @current_user = ::User.find_by_email(token.user_name)
         if AppConfig[:https_required] or (@current_user.admin? and AppConfig[:https_required_for_admins])
-          raise CloudError.new(CloudError::HTTPS_REQUIRED) unless !request.env[:HTTP_X_FORWARDED_PROTO].nil? and request.env[:HTTP_X_FORWARDED_PROTO] =~ /^https/i
+          raise CloudError.new(CloudError::HTTPS_REQUIRED) unless !request.env[:HTTP_X_FORWARDED_PROTO].nil? and request.header["X-Forwarded_Proto"] =~ /^https/i
         end
       end
     end
