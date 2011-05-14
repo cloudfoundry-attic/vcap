@@ -244,7 +244,7 @@ module DEA
         delete_untracked_instance_dirs
 
         EM.add_periodic_timer(@heartbeat_interval) { send_heartbeat }
-        EM.add_periodic_timer(MONITOR_INTERVAL) { monitor_apps }
+        EM.add_timer(MONITOR_INTERVAL) { monitor_apps }
         EM.add_periodic_timer(CRASHES_REAPER_INTERVAL) { crashes_reaper }
         EM.add_periodic_timer(VARZ_UPDATE_INTERVAL) { snapshot_varz }
 
@@ -1304,15 +1304,20 @@ module DEA
     end
 
     # monitor the running applications
+    # NB: We cannot use a periodic timer here because of EM.system. If we did, and the du takes longer than the monitor
+    # interval, we could end up with multiple du's running concurrently.
     def monitor_apps(startup_check = false)
       # Always reset
       @mem_usage = 0
-      VCAP::Component.varz[:running_apps] = running_apps = []
+      VCAP::Component.varz[:running_apps] = []
 
-      return if (no_monitorable_apps? && !startup_check)
+      if (no_monitorable_apps? && !startup_check)
+        EM.add_timer(MONITOR_INTERVAL) { monitor_apps(false) }
+        return
+      end
 
       pid_info = {}
-      user_info = {} if @secure
+      user_info = {}
       start = Time.now
 
       # BSD style ps invocation
@@ -1327,10 +1332,32 @@ module DEA
         (user_info[parts[USER_INDEX]] ||= []) << parts if (@secure && parts[USER_INDEX] =~ SECURE_USER)
       end
 
+      # This really, really needs refactoring, but seems like the least intrusive/failure-prone way
+      # of making the du non-blocking in all but the startup case...
+      du_start = Time.now
+      if startup_check
+        du_all_out = `cd #{@apps_dir}; du -sk * 2> /dev/null`
+        monitor_apps_helper(startup_check, start, du_start, du_all_out, pid_info, user_info)
+      else
+        du_proc = proc do |p|
+          p.send_data("cd #{@apps_dir}\n")
+          p.send_data("du -sk * 2> /dev/null\n")
+          p.send_data("exit\n")
+        end
+
+        cont_proc = proc do |output, status|
+          monitor_apps_helper(startup_check, start, du_start, output, pid_info, user_info)
+        end
+
+        EM.system('/bin/sh', du_proc, cont_proc)
+      end
+    end
+
+    def monitor_apps_helper(startup_check, ma_start, du_start, du_all_out, pid_info, user_info)
+      running_apps = []
+
       # Do disk summary
       du_hash = {}
-      du_start = Time.now
-      du_all_out = `cd #{@apps_dir}; du -sk * 2> /dev/null`
       du_elapsed = Time.now - du_start
       @logger.warn("Took #{du_elapsed}s to execute du.") if du_elapsed > 0.25
       if (du_elapsed > 10) && (!@last_apps_dump || ((Time.now - @last_apps_dump) > APPS_DUMP_INTERVAL))
@@ -1392,8 +1419,9 @@ module DEA
       end
       # export running app information to varz
       VCAP::Component.varz[:running_apps] = running_apps
-      ttlog = Time.now - start
-      @logger.warn("Took #{ttlog} to process ps and du stats") if ttlog > 0.25
+      ttlog = Time.now - ma_start
+      @logger.warn("Took #{ttlog} to process ps and du stats") if ttlog > 0.4
+      EM.add_timer(MONITOR_INTERVAL) { monitor_apps(false) } unless startup_check
     end
 
     # This is for general access to the file system for the staged droplets.
