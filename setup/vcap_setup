@@ -229,6 +229,12 @@ if [[ $DEA == true || $ALL == true ]]; then
 	fi
     fi
 
+    # Python WSGI support
+    if [[ $PLATFORM == 'Linux' ]]; then
+      apt-get install python-setuptools
+    fi
+    easy_install gunicorn
+
     # Node and Erlang frameworks
     pushd .
     cd /tmp
