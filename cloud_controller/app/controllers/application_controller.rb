@@ -71,6 +71,9 @@ class ApplicationController < ActionController::Base
       token = UserToken.decode(auth_token_header)
       if token.valid?
         @current_user = ::User.find_by_email(token.user_name)
+        if AppConfig[:https_required] or (@current_user.admin? and AppConfig[:https_required_for_admins])
+          raise CloudError.new(CloudError::HTTPS_REQUIRED) unless request_https? 
+        end
       end
     end
     fetch_proxy_user
@@ -120,6 +123,10 @@ class ApplicationController < ActionController::Base
 
   def remote_request?
     request.remote_ip != '127.0.0.1'
+  end
+
+  def request_https?
+    (!request.headers["X-Forwarded_Proto"].nil? and request.headers["X-Forwarded_Proto"] =~ /^https/i) ? true : false
   end
 
   # Called whenever an action raises a CloudError.
