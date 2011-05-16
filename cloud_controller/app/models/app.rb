@@ -20,7 +20,7 @@ class App < ActiveRecord::Base
   AppStates = %w[STOPPED STARTED]
   PackageStates = %w[PENDING STAGED FAILED]
   Runtimes = %w[ruby18 ruby19 luajit java node erlangR14B02]
-  Frameworks = %w[sinatra rails3 spring grails node otp_rebar rack lua unknown]
+  Frameworks = %w[sinatra rails3 spring grails node otp_rebar rack luajit unknown]
 
   validates_presence_of :name, :framework, :runtime
 
@@ -519,8 +519,8 @@ class App < ActiveRecord::Base
     when "rack/1.0"
       self.framework = 'rack'
       self.runtime   = 'ruby18'
-    when "lua/1.0"
-      self.framework = 'lua'
+    when "luajit/1.0"
+      self.framework = 'luajit'
       self.runtime   = 'luajit'
     when "rails/1.0"
       self.framework = 'rails3'

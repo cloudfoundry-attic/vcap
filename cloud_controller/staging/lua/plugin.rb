@@ -12,22 +12,13 @@ class LuaPlugin < StagingPlugin
   end
 
   def start_command
-    "wsapi -c ./cnf/wsapi.conf"
+    "/usr/local/bin/wsapi -p $VCAP_APP_PORT"
   end
 
   private
   def startup_script
     vars = environment_hash
-    generate_startup_script(vars) do
-      plugin_specific_startup
-    end
-  end
-
-  def plugin_specific_startup
-    cmds = []
-    cmds << "mkdir cnf"
-    cmds << 'echo "port = os.getenv(\'VMC_APP_PORT\')" >> ./cnf/wsapi.conf'
-    cmds.join("\n")
+    generate_startup_script(vars)
   end
 
 end
