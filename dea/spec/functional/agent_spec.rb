@@ -39,6 +39,7 @@ describe 'DEA Agent' do
     },
     'disable_dir_cleanup' => true,
   }
+  APP_STATE_FILE = File.join(APP_DIR, 'db', 'applications.json')
 
   nats_timeout = File.expand_path(File.join(File.dirname(__FILE__), 'nats_timeout'))
   dea_agent = File.expand_path(File.join(__FILE__, "../../../bin/dea -c #{DEA_CONFIG_FILE}"))
@@ -234,6 +235,30 @@ describe 'DEA Agent' do
     @dea_agent.is_running?.should be_false
   end
 
+  it 'should not attempt to snapshot state if the initial connect fails' do
+    File.exists?(APP_STATE_FILE).should be_false
+    @nats_server.stop
+    @nats_server.is_running?.should be_false
+    @dea_agent.start
+    sleep(0.5)
+    @dea_agent.is_running?.should be_false
+    File.exists?(APP_STATE_FILE).should be_false
+  end
+
+  it 'should snapshot state upon reconnect failure' do
+    File.exists?(APP_STATE_FILE).should be_false
+    @nats_server.start
+    @nats_server.is_running?.should be_true
+    @dea_agent.start
+    @dea_agent.is_running?.should be_true
+    File.exists?(APP_STATE_FILE).should be_false
+    @nats_server.stop
+    @nats_server.is_running?.should be_false
+    sleep(0.5)
+    @dea_agent.is_running?.should be_false
+
+    File.exists?(APP_STATE_FILE).should be_true
+  end
 
   # ========== Helpers ==========
 

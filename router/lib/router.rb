@@ -135,9 +135,14 @@ EM.run do
   Router.setup_listeners
 
   # Register ourselves with the system
+  status_config = config['status'] || {}
   VCAP::Component.register(:type => 'Router',
                            :host => VCAP.local_ip(config['local_route']),
-                           :config => config)
+                           :index => config['index'],
+                           :config => config,
+                           :port => status_config['port'],
+                           :user => status_config['user'],
+                           :password => status_config['password'])
 
   # Setup some of our varzs..
   VCAP::Component.varz[:requests] = 0

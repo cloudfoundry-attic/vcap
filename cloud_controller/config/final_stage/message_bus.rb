@@ -29,7 +29,7 @@ end
 
 EM.next_tick do
   NATS.start(:uri => AppConfig[:mbus]) do
-    options = {:type => 'CloudController', :config => AppConfig}
+    options = {:type => 'CloudController', :config => AppConfig, :index => AppConfig[:index]}
     options[:host] = CloudController.bind_address
     VCAP::Component.register(options)
     require File.join(File.expand_path('..', __FILE__), 'varz')

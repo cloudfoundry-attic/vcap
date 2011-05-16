@@ -144,3 +144,10 @@ if AppConfig[:builtin_services]
     exit 1
   end
 end
+
+c = OpenSSL::Cipher::Cipher.new('blowfish')
+pw_len = AppConfig[:keys][:password].length
+if pw_len < c.key_len
+  $stderr.puts "The supplied password is too short (#{pw_len} bytes), must be at least #{c.key_len} bytes. (Though only the first #{c.key_len} will be used.)"
+  exit 1
+end

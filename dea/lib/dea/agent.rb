@@ -69,10 +69,12 @@ module DEA
 
     SECURE_USER = /#{Secure::SECURE_USER_STRING}/
 
+    # How long to wait in between logging the structure of the apps directory in the event that a du takes excessively long
+    APPS_DUMP_INTERVAL = 30*60
+
     def initialize(config)
       @logger = VCAP.create_logger('dea', :log_file => config['log_file'], :log_rotation_interval => config['log_rotation_interval'])
       @logger.level = config['log_level']
-
       @secure = config['secure']
 
       @droplets = {}
@@ -103,6 +105,7 @@ module DEA
       @filer_start_attempts = 0   # How many times we've tried to start the filer
       @filer_start_timer = nil    # The periodic timer responsible for starting the filer
       @evacuation_delay = config['evacuation_delay'] || DEFAULT_EVACUATION_DELAY
+      @recovered_droplets = false
 
       # Various directories and files we will use
       @pid_filename   = config['pid']
@@ -111,6 +114,15 @@ module DEA
       @apps_dir       = File.join(@droplet_dir, 'apps')
       @db_dir         = File.join(@droplet_dir, 'db')
       @app_state_file = File.join(@db_dir, APP_STATE_FILE)
+
+      # If a du of the apps dir takes excessively long we log out the directory structure
+      # here.
+      @last_apps_dump = nil
+      if config['log_file']
+        @apps_dump_dir = File.dirname(config['log_file'])
+      else
+        @apps_dump_dir = ENV['TMPDIR'] || '/tmp'
+      end
 
       @nats_uri = config['mbus']
       @heartbeat_interval = config['intervals']['heartbeat']
@@ -163,6 +175,16 @@ module DEA
         exit 1
       end
 
+      begin
+        DEA::Agent.ensure_writable(@apps_dump_dir)
+      rescue => e
+        @logger.fatal("Unable to write to #{@apps_dump_dir}: #{e}")
+        exit 1
+      end
+
+      # Clean the staged directory on startup
+      FileUtils.rm_f(File.join(@staged_dir,'*')) unless @disable_dir_cleanup
+
       EM.next_tick do
         unless start_file_viewer
           # Periodically try to start the file viewer in case of port contention
@@ -181,6 +203,9 @@ module DEA
       NATS.on_error do |e|
         if e.kind_of? NATS::ConnectError
           @logger.error("EXITING! NATS connection failed: #{e}")
+          # Only snapshot app state if we had a chance to recover saved state. This prevents a connect error
+          # that occurs before we can recover state from blowing existing data away.
+          snapshot_app_state if @recovered_droplets
           exit!
         else
           @logger.error("NATS problem, #{e}")
@@ -195,7 +220,7 @@ module DEA
       NATS.start(:uri => @nats_uri) do
 
         # Register ourselves with the system
-        VCAP::Component.register(:type => 'DEA', :host => @local_ip, :config => @config)
+        VCAP::Component.register(:type => 'DEA', :host => @local_ip, :config => @config, :index => @config['index'])
 
         uuid = VCAP::Component.uuid
 
@@ -216,9 +241,10 @@ module DEA
 
         # Recover existing application state.
         recover_existing_droplets
+        delete_untracked_instance_dirs
 
         EM.add_periodic_timer(@heartbeat_interval) { send_heartbeat }
-        EM.add_periodic_timer(MONITOR_INTERVAL) { monitor_apps }
+        EM.add_timer(MONITOR_INTERVAL) { monitor_apps }
         EM.add_periodic_timer(CRASHES_REAPER_INTERVAL) { crashes_reaper }
         EM.add_periodic_timer(VARZ_UPDATE_INTERVAL) { snapshot_varz }
 
@@ -480,15 +506,15 @@ module DEA
       @logger.debug("Requested Limits: mem=#{mem}M, fds=#{num_fds}, disk=#{disk}M")
 
       if @shutting_down
-        @logger.debug('Shutting down, ignoring start request')
+        @logger.info('Shutting down, ignoring start request')
         return
       elsif @reserved_mem + mem > @max_memory || @num_clients >= @max_clients
-        @logger.debug('Do not have room for this client application')
+        @logger.info('Do not have room for this client application')
         return
       end
 
       if (!sha1 || !bits_file || !bits_uri)
-        @logger.debug('Start request missing proper download information, ignoring request')
+        @logger.warn("Start request missing proper download information, ignoring request. (#{message})")
         return
       end
 
@@ -513,7 +539,8 @@ module DEA
         :state => :STARTING,
         :runtime => runtime,
         :start => Time.now,
-        :state_timestamp => Time.now.to_i
+        :state_timestamp => Time.now.to_i,
+        :log_id => "(name=%s app_id=%s instance=%s index=%s)" % [name, droplet_id, instance_id, instance_index],
       }
 
       instances = @droplets[droplet_id] || {}
@@ -532,7 +559,7 @@ module DEA
         port = VCAP.grab_ephemeral_port
 
         @logger.debug('Completed download')
-        @logger.debug("Starting up #{name}:#{droplet_id} - #{instance_id} on port:#{port}")
+        @logger.info("Starting up instance #{instance[:log_id]} on port:#{port}")
 
         @logger.debug("Clients: #{@num_clients}")
         @logger.debug("Reserved Memory Usage: #{@reserved_mem} MB of #{@max_memory} MB TOTAL")
@@ -597,8 +624,8 @@ module DEA
         end
 
         exit_operation = proc do |_, status|
-          @logger.debug("#{name} completed running with status = #{status}.")
-          @logger.debug("#{name} uptime was #{Time.now - instance[:start]}.")
+          @logger.info("#{name} completed running with status = #{status}.")
+          @logger.info("#{name} uptime was #{Time.now - instance[:start]}.")
           stop_droplet(instance)
         end
 
@@ -614,22 +641,23 @@ module DEA
         # connection..
         detect_app_ready(instance, manifest) do |detected|
           if detected and not instance[:stop_processed]
-            @logger.debug("#{name} is ready for connections, notifying system of status")
+            @logger.info("Instance #{instance[:log_id]} is ready for connections, notifying system of status")
             instance[:state] = :RUNNING
             instance[:state_timestamp] = Time.now.to_i
             send_single_heartbeat(instance)
             register_instance_with_router(instance)
             schedule_snapshot
           else
-            @logger.debug('Giving up on connecting app.')
+            @logger.warn('Giving up on connecting app.')
             stop_droplet(instance)
           end
         end
 
         detect_app_pid(instance_dir) do |pid|
           if pid and not instance[:stop_processed]
-            @logger.debug("PID:#{pid} assigned to droplet: #{name}:#{droplet_id}")
+            @logger.info("PID:#{pid} assigned to droplet instance: #{instance[:log_id]}")
             instance[:pid] = pid
+            schedule_snapshot
           end
         end
       end
@@ -681,7 +709,10 @@ module DEA
     end
 
     def recover_existing_droplets
-      return unless File.exists?(@app_state_file)
+      unless File.exists?(@app_state_file)
+        @recovered_droplets = true
+        return
+      end
       recovered = nil
       File.open(@app_state_file, 'r') { |f| recovered = Yajl::Parser.parse(f) }
       # Whip through and reconstruct droplet_ids and instance symbols correctly for droplets, state, etc..
@@ -714,6 +745,7 @@ module DEA
           end
         end
       end
+      @recovered_droplets = true
 
       @logger.info("DEA recovered #{@num_clients} applications") if @num_clients > 0
 
@@ -721,6 +753,24 @@ module DEA
       monitor_apps(true)
       send_heartbeat
       schedule_snapshot
+    end
+
+    # Removes any instance dirs without a corresponding instance entry in @droplets
+    # NB: This is run once at startup, so not using EM.system to perform the rm is fine.
+    def delete_untracked_instance_dirs
+      tracked_instance_dirs = Set.new
+      for droplet_id, instances in @droplets
+        for instance_id, instance in instances
+          tracked_instance_dirs << instance[:dir]
+        end
+      end
+
+      all_instance_dirs = Set.new(Dir.glob(File.join(@apps_dir, '*')))
+      to_remove = all_instance_dirs - tracked_instance_dirs
+      for dir in to_remove
+        @logger.warn("Removing instance dir '#{dir}', doesn't correspond to any instance entry.")
+        FileUtils.rm_rf(dir)
+      end
     end
 
     def add_instance_resources(instance)
@@ -896,9 +946,13 @@ module DEA
       # Explode the app into its directory and optionally bind its
       # local runtime.
       `mkdir #{instance_dir}; cd #{instance_dir}; tar -xzf #{tgz_file}`
+      @logger.warn("Problems staging file #{tgz_file}") if $? != 0
+
+      # Removed the staged bits
+      FileUtils.rm_f(tgz_file) unless @disable_dir_cleanup
+
       bind_local_runtime(instance_dir, runtime)
 
-      @logger.warn("Problems staging file #{tgz_file}") if $? != 0
       @logger.debug("Took #{Time.now - start} to stage the app directory")
     end
 
@@ -1035,6 +1089,8 @@ module DEA
       # Unplug us from the system immediately, both the routers and health managers.
       send_exited_message(instance)
 
+      @logger.info("Stopping instance #{instance[:log_id]}")
+
       # grab secure user
       username = instance[:secure_user]
 
@@ -1077,10 +1133,8 @@ module DEA
           schedule_snapshot
         end
         unless @disable_dir_cleanup
-          EM.add_timer(0.25) do
-            @logger.debug("#{instance[:name]}: Cleaning up dir #{instance[:dir]}")
-            FileUtils.rm_rf(instance[:dir])
-          end
+          @logger.debug("#{instance[:name]}: Cleaning up dir #{instance[:dir]}")
+          EM.system("rm -rf #{instance[:dir]}")
         end
       end
     end
@@ -1192,7 +1246,7 @@ module DEA
         nice = (instance[:nice] || 0) + 1
         if nice < MAX_RENICE_VALUE
           instance[:nice] = nice
-          @logger.debug("Lowering priority on CPU bound process(#{instance[:name]}), new value:#{nice}")
+          @logger.info("Lowering priority on CPU bound process(#{instance[:name]}), new value:#{nice}")
           %x[renice  #{nice} -u #{instance[:secure_user]}]
         end
       end
@@ -1238,6 +1292,7 @@ module DEA
           delete_instance = instance[:state] == :CRASHED && Time.now.to_i - instance[:state_timestamp] > CRASHES_REAPER_TIMEOUT
           if delete_instance
             @logger.debug("Crashes reaper deleted: #{instance[:instance_id]}")
+            EM.system("rm -rf #{instance[:dir]}") unless @disable_dir_cleanup
           end
           delete_instance
         end
@@ -1249,19 +1304,27 @@ module DEA
     end
 
     # monitor the running applications
+    # NB: We cannot use a periodic timer here because of EM.system. If we did, and the du takes longer than the monitor
+    # interval, we could end up with multiple du's running concurrently.
     def monitor_apps(startup_check = false)
       # Always reset
       @mem_usage = 0
-      VCAP::Component.varz[:running_apps] = running_apps = []
+      VCAP::Component.varz[:running_apps] = []
 
-      return if (no_monitorable_apps? && !startup_check)
+      if (no_monitorable_apps? && !startup_check)
+        EM.add_timer(MONITOR_INTERVAL) { monitor_apps(false) }
+        return
+      end
 
       pid_info = {}
-      user_info = {} if @secure
+      user_info = {}
       start = Time.now
 
       # BSD style ps invocation
+      ps_start = Time.now
       process_statuses = `ps axo pid=,ppid=,pcpu=,rss=,user=`.split("\n")
+      ps_elapsed = Time.now - ps_start
+      @logger.warn("Took #{ps_elapsed}s to execute ps. (#{process_statuses.length} entries returned)") if ps_elapsed > 0.25
       process_statuses.each do |process_status|
         parts = process_status.lstrip.split(/\s+/)
         pid = parts[PID_INDEX].to_i
@@ -1269,9 +1332,39 @@ module DEA
         (user_info[parts[USER_INDEX]] ||= []) << parts if (@secure && parts[USER_INDEX] =~ SECURE_USER)
       end
 
+      # This really, really needs refactoring, but seems like the least intrusive/failure-prone way
+      # of making the du non-blocking in all but the startup case...
+      du_start = Time.now
+      if startup_check
+        du_all_out = `cd #{@apps_dir}; du -sk * 2> /dev/null`
+        monitor_apps_helper(startup_check, start, du_start, du_all_out, pid_info, user_info)
+      else
+        du_proc = proc do |p|
+          p.send_data("cd #{@apps_dir}\n")
+          p.send_data("du -sk * 2> /dev/null\n")
+          p.send_data("exit\n")
+        end
+
+        cont_proc = proc do |output, status|
+          monitor_apps_helper(startup_check, start, du_start, output, pid_info, user_info)
+        end
+
+        EM.system('/bin/sh', du_proc, cont_proc)
+      end
+    end
+
+    def monitor_apps_helper(startup_check, ma_start, du_start, du_all_out, pid_info, user_info)
+      running_apps = []
+
       # Do disk summary
       du_hash = {}
-      du_all_out = `cd #{@apps_dir}; du -sk * 2> /dev/null`
+      du_elapsed = Time.now - du_start
+      @logger.warn("Took #{du_elapsed}s to execute du.") if du_elapsed > 0.25
+      if (du_elapsed > 10) && (!@last_apps_dump || ((Time.now - @last_apps_dump) > APPS_DUMP_INTERVAL))
+        dump_apps_dir
+        @last_apps_dump = Time.now
+      end
+
       du_entries = du_all_out.split("\n")
       du_entries.each do |du_entry|
         size, dir = du_entry.split("\t")
@@ -1326,8 +1419,9 @@ module DEA
       end
       # export running app information to varz
       VCAP::Component.varz[:running_apps] = running_apps
-      ttlog = Time.now - start
-      @logger.debug("Took #{ttlog} to process ps and du stats") if ttlog > 0.25
+      ttlog = Time.now - ma_start
+      @logger.warn("Took #{ttlog} to process ps and du stats") if ttlog > 0.4
+      EM.add_timer(MONITOR_INTERVAL) { monitor_apps(false) } unless startup_check
     end
 
     # This is for general access to the file system for the staged droplets.
@@ -1435,6 +1529,27 @@ module DEA
           @logger.info("  #{pname} FAILED, version mismatch (#{version_check})")
         end
       end
+    end
+
+    # Logs out the directory structure of the apps dir. This produces both a summary
+    # (top level view) of the directory, as well as a detailed view.
+    def dump_apps_dir
+      now = Time.now
+      pid = fork do
+        # YYYYMMDD_HHMM
+        tsig = "%04d%02d%02d_%02d%02d" % [now.year, now.month, now.day, now.hour, now.min]
+        summary_file = File.join(@apps_dump_dir, "apps.du.#{tsig}.summary")
+        details_file = File.join(@apps_dump_dir, "apps.du.#{tsig}.details")
+        exec("du -skh #{@apps_dir}/* > #{summary_file} 2>&1; du -h --max-depth 6 #{@apps_dir} > #{details_file}")
+      end
+      Process.detach(pid)
+      pid
+    end
+
+    def self.ensure_writable(dir)
+      test_file = File.join(dir, "dea.#{Process.pid}.sentinel")
+      FileUtils.touch(test_file)
+      FileUtils.rm_f(test_file)
     end
 
   end

@@ -30,6 +30,7 @@ class SinatraPlugin < StagingPlugin
     if uses_bundler?
       vars['PATH'] = "$PWD/app/rubygems/ruby/#{library_version}/bin:$PATH"
       vars['GEM_PATH'] = vars['GEM_HOME'] = "$PWD/app/rubygems/ruby/#{library_version}"
+      vars['RUBYOPT'] = '-I$PWD/ruby -rstdsync'
     else
       vars['RUBYOPT'] = "-rubygems -I$PWD/ruby -rstdsync"
     end
@@ -41,10 +42,8 @@ class SinatraPlugin < StagingPlugin
 
   def plugin_specific_startup
     cmds = []
-    unless uses_bundler?
-      cmds << "mkdir ruby"
-      cmds << 'echo "\$stdout.sync = true" >> ./ruby/stdsync.rb'
-    end
+    cmds << "mkdir ruby"
+    cmds << 'echo "\$stdout.sync = true" >> ./ruby/stdsync.rb'
     cmds.join("\n")
   end
 
