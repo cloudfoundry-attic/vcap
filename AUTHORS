@@ -2,7 +2,7 @@
 # =========
 #
 # This is a reasonably complete list of everyone who has committed
-# code to the Cloud Foundry project. The list is just ordered by first 
+# code to the Cloud Foundry project. The list is just ordered by first
 # name here, but the file is (and should be kept) YAML-formatted.
 #
 # Please feel free to add any personal details.
@@ -20,6 +20,7 @@
 - Nicholas Kushmerick       { email: nicholask@vmware.com}
 - Oleg Shaldybin            { email: olegs@vmware.com}
 - Patrick Bozeman           { email: pbozeman@vmware.com}
+- Paul Jones                { email: pauljones23@gmail.com }
 - Peter Kukol               { email: peterk@vmware.com }
 - Pieter Noordhuis          { email: pcnoordhuis@gmail.com }
 - Ramnivas Laddad           { email: rladdad@vmware.com }
