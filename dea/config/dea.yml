@@ -32,6 +32,11 @@ runtimes:
     version: 0.4.[2-9]
     version_flag: '-v'
     environment:
+  lua:
+    executable: luajit
+    version: "LuaJIT 2.0.0-beta7 .*"
+    version_flag: '-v'
+    environment:
   java:
     executable: java
     version: 1.6.0
