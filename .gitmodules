@@ -6,4 +6,4 @@
 	url = https://github.com/cloudfoundry/vcap-tests.git
 [submodule "java"]
 	path = java
-        url = https://github.com/cloudfoundry/vcap-java.git
+    url = https://github.com/cloudfoundry/vcap-java.git
