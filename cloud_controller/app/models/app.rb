@@ -525,6 +525,9 @@ class App < ActiveRecord::Base
     when "rails/1.0"
       self.framework = 'rails3'
       self.runtime   = 'ruby18'
+    when "rack/1.0"
+      self.framework = 'rack'
+      self.runtime   = 'ruby18'
     when "spring_web/1.0"
       self.framework = 'spring'
       self.runtime   = 'java'
