@@ -1,7 +1,8 @@
 class UsersController < ApplicationController
   before_filter :enforce_registration_policy, :only => :create
   before_filter :grab_event_user
-  #before_filter :require_user
+  before_filter :require_user, :except => :create
+  before_filter :require_admin, :only => :delete
 
   def create
     user = ::User.new :email => body_params[:email]
@@ -15,20 +16,20 @@ class UsersController < ApplicationController
   end
 
   def delete
-    if user = ::User.find_by_email(params['email'])
+    if target_user = ::User.find_by_email(params['email'])
 
       # Cleanup leftover services
-      user.service_configs.each { |cfg| cfg.unprovision }
+      target_user.service_configs.each { |cfg| cfg.unprovision }
 
       # Now cleanup any apps we own
-      user.apps.each do |app|
-        if app.owner == user
+      target_user.apps.each do |app|
+        if app.owner == target_user
           app.purge_all_resources!
           app.destroy
         end
       end
 
-      user.destroy
+      target_user.destroy
       render :status => 204, :nothing => true
     else
       raise CloudError.new(CloudError::USER_NOT_FOUND)
