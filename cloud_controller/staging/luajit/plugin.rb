@@ -1,6 +1,6 @@
-class LuaPlugin < StagingPlugin
+class LuajitPlugin < StagingPlugin
   def framework
-    'lua'
+    'luajit'
   end
 
   def stage_application

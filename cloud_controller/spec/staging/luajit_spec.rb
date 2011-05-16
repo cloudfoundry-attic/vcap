@@ -2,21 +2,19 @@ require 'spec_helper'
 
 describe "A simple Lua app being staged" do
   before do
-    app_fixture :lua_trivial
+    app_fixture :luajit_trivial
   end
 
   it "is packaged with a startup script" do
-    stage :lua do |staged_dir|
+    stage :luajit do |staged_dir|
       executable = '%VCAP_LOCAL_RUNTIME%'
       start_script = File.join(staged_dir, 'startup')
       start_script.should be_executable_file
       script_body = File.read(start_script)
       script_body.should == <<-EXPECTED
 #!/bin/bash
-mkdir cnf
-echo "port = os.getenv('VMC_APP_PORT')" >> ./cnf/wsapi.conf
 cd app
-wsapi -c ./cnf/wsapi.conf > ../logs/stdout.log 2> ../logs/stderr.log &
+/usr/local/bin/wsapi -p $VCAP_APP_PORT > ../logs/stdout.log 2> ../logs/stderr.log &
 STARTED=$!
 echo "$STARTED" >> ../run.pid
 echo "#!/bin/bash" >> ../stop
