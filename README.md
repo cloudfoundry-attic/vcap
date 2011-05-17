@@ -68,6 +68,14 @@ keep a loose eye on it.
      sudo apt-get install curl
      bash < <(curl -s -k -B https://github.com/cloudfoundry/vcap/raw/master/setup/install)
 
+NOTE: if you have issues with 'vmc target api.vcap.me' after using the
+automated installer, exit out of the shell you did the install in, open
+a new shell, and perform the following operations:
+
+    cd ~/cloudfoundry/vcap
+    bin/vcap stop
+    bin/vcap start
+
 Jump to step 9 in the manual process to optionally setup an ssh tunnel
 and test your installation.
 
