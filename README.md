@@ -24,7 +24,7 @@ single vm/single os or can be spread across several machines/vm's.
 
 For development purposes, the preferred environment is to run all of the core
 components within a single vm and then interact with the system from outside of
-the vm via an ssh tunnel. The pre-defined domain *.vcap.me maps to local host,
+the vm via an ssh tunnel. The pre-defined domain `*.vcap.me` maps to local host,
 so when you use this setup, the end result is that your development environment
 is available at [http://api.vcap.me](http://api.vcap.me).
 
@@ -56,7 +56,9 @@ server VM.
 * great snapshot spots are here and after step 4
 * to enable remote access (more fun than using the console), install ssh.
 
-     sudo apt-get install openssh-server
+To install ssh: 
+
+    sudo apt-get install openssh-server
 
 ### Automated Setup (experimental):
 
@@ -87,14 +89,14 @@ and test your installation.
 
 #### step 1: install rvm
 
-For detailed rvm install instructions see: [https://rvm.beginrescueend.com/rvm/install/](https://rvm.beginrescueend.com/rvm/install/) or follow the quick steps below.
+For detailed [rvm](https://rvm.beginrescueend.com/) install instructions see: [https://rvm.beginrescueend.com/rvm/install/](https://rvm.beginrescueend.com/rvm/install/) or follow the quick steps below.
 
-Install rvm using their script. Note: the -k
+First install rvm using their script. Note: the `-k`
 switch is only needed if the certificate validation fails:
 
     bash < <(curl -s -k -B https://rvm.beginrescueend.com/install/rvm)
 
-Follow the instructions given by the RVM
+Then follow the instructions given by the RVM
 installer (a copy is included below for your convenience).
 
     # you must complete the install by loading RVM in new shells.
@@ -151,25 +153,36 @@ installer (a copy is included below for your convenience).
 
 #### step 4: clone the vcap and vmc repos:
 
-  Optionally create new ssh keys and add them to your github account:
+Optionally create new ssh keys and add them to your github account:
 
     ssh-keygen -t rsa -C me@example.com
 
-Note, this release uses a handful of submodules. It's important to
-understand the impact of this which is that after cloning the vcap
-repo, you must run: `git submodule update --init`
-
-This ends up mounting the services and tests repos in the directory tree of vcap.
-Any time you git pull in vcap, you must also git submodule update
+Now create a directory for cloudfoundry and use git to clone the project into it:
 
     mkdir ~/cloudfoundry; cd ~/cloudfoundry
     git clone https://github.com/cloudfoundry/vcap.git
-
-Note, there should be a .rvmrc file in the ~/cloudfoundry/vcap directory.
-Make sure that the vcap/.rvmrc is present and that it contains rvm use 1.9.2
-
     cd ~/cloudfoundry/vcap
+    
+The first time that you enter the vcap directory you may see an RVM warning 
+noting a new or modified .rvmrc file. Follow the instructions to review 
+the file and when asked to trust enter `yes` at the prompt.
+
+There should be a `.rvmrc` file in the `~/cloudfoundry/vcap` directory. 
+Make sure that file is present and that it contains `rvm use 1.9.2`.
+    
+This release uses a handful of submodules. After cloning the vcap repo, you must run: 
+
     git submodule update --init
+    
+This will check out additional resources which are required for the 
+project to run. 
+
+*NOTE:* Any time that you update the project with `git pull` you 
+must `git submodule update` afterwards or you will not have a complete 
+copy of the latest code.
+
+Now install the vmc gem (command line tools for interacting with the platform):
+
     gem install vmc --no-rdoc --no-ri
 
 #### step 5: run vcap_setup to prep cloudfoundry for launch
@@ -183,11 +196,15 @@ Points to keep in mind:
     cd ~/cloudfoundry/vcap
     sudo setup/vcap_setup
 
-After vcap_setup completes, edit your mysql_node config file
-with the correct password created during install
+This step may take a long time as your selections are downloaded and built as needed.
+
+After `vcap_setup` completes, edit your `mysql_node.yml` config file:
 
     cd ~/cloudfoundry/vcap/services/mysql/config
-    vi mysql_node.yml and change mysql.pass to your password
+    vi mysql_node.yml # or use your editor of choice
+    
+Change the `pass` in the `mysql` section to the mysql root password 
+you created during install and save.
 
 #### step 6: restart nginx with a custom config
 
@@ -209,12 +226,22 @@ with the correct password created during install
 
 #### step 9: *Optional, mac users only*, create a local ssh tunnel
 
-From your vm, run ifconfig and note eth0, let's say it's: 192.168.252.130
-go to your mac terminal window and create a local port 80 tunnel.
-Once you do this, from both your mac, and from within the vm, api.vcap.me and *.vcap.me
-map to localhost which maps to your running cloudfoundry instance
+From your VM, run `ifconfig` and note your eth0 IP address, which will look something like: `192.168.252.130`
 
-    sudo ssh -L 80:192.168.252.130:80 mhl@192.168.252.130 -N
+Now go to your mac terminal window and verify that you can connect with SSH:
+
+    ssh <your VM user>@<VM IP address>
+
+If this works, create a local port 80 tunnel:
+
+    sudo ssh -L <local-port>:<VM IP address>:80 <your VM user>@<VM IP address> -N
+
+If you are not already running a local web server, use port 80 as your local port, 
+otherwise you may want to use 8080 or another common http port.
+
+Once you do this, from both your mac, and from within the vm, `api.vcap.me` and `*.vcap.me`
+will map to localhost which will map to your running Cloud Foundry instance.
+
 
 Trying your setup
 -----------------
@@ -224,6 +251,9 @@ Trying your setup
 
     vmc target api.vcap.me
     vmc info
+  
+Note: If you are using a tunnel and selected a local port other than 80 you
+will need to modify the target to include it here, like `api.vcap.me:8080`.
 
 #### This should produce roughly the following:
 
