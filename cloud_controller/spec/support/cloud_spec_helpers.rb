@@ -1,10 +1,28 @@
 module CloudSpecHelpers
+  # Define test scenarios for https enforcement code
+  HTTPS_ENFORCEMENT_SCENARIOS = [{:protocol => "http", :appconfig_enabled => [], :user => "user", :success => true},
+   {:protocol => "http", :appconfig_enabled => [], :user => "admin", :success => true},
+   {:protocol => "https", :appconfig_enabled => [], :user => "user", :success => true},
+   {:protocol => "https", :appconfig_enabled => [], :user => "admin", :success => true},
+
+   # Next with https_required
+   {:protocol => "http", :appconfig_enabled => [:https_required], :user => "user", :success => false},
+   {:protocol => "http", :appconfig_enabled => [:https_required], :user => "admin", :success => false},
+   {:protocol => "https", :appconfig_enabled => [:https_required], :user => "user", :success => true},
+   {:protocol => "https", :appconfig_enabled => [:https_required], :user => "admin", :success => true},
+
+   # Finally with https_required_for_admins
+   {:protocol => "http", :appconfig_enabled => [:https_required_for_admins], :user => "user", :success => true},
+   {:protocol => "http", :appconfig_enabled => [:https_required_for_admins], :user => "admin", :success => false},
+   {:protocol => "https", :appconfig_enabled => [:https_required_for_admins], :user => "user", :success => true},
+   {:protocol => "https", :appconfig_enabled => [:https_required_for_admins], :user => "admin", :success => true}]
+
   # Generate a handy header Hash.
   # At minimum it requires a User or email as the first argument.
   # Optionally, you can pass a second User or email which will be the 'proxy user'.
   # Finally, if you pass a String or Hash as the third argument, it will be
   # JSON-ized and used as the request body.
-  def headers_for(user, proxy_user = nil, raw_data = nil)
+  def headers_for(user, proxy_user = nil, raw_data = nil, https = false)
     headers = {}
     if user
       email = User === user ? user.email : user.to_s
@@ -20,13 +38,14 @@ module CloudSpecHelpers
       end
       headers['RAW_POST_DATA'] = raw_data
     end
+    headers['X-Forwarded_Proto'] = "https" if https
     headers
   end
 
   # Convenience method for constructing and saving a regular user.
-  def build_user(email, password = 'password')
+  def build_user(email, user_password = 'password')
     user = User.new :email => email
-    user.set_and_encrypt_password 'password'
+    user.set_and_encrypt_password user_password
     user.save!
     user
   end
@@ -34,8 +53,10 @@ module CloudSpecHelpers
   # Expected to be called in a 'before' block. Ensures that there are at least two users, one an admin.
   def build_admin_and_user
     User.admins = %w[admin@example.com]
-    @admin ||= build_user(User.admins.first)
-    @user ||= build_user('user@example.com')
+    @admin_password ||= "ADMINpassword" if @admin.nil?
+    @admin ||= build_user(User.admins.first, @admin_password)
+    @user_password ||= "USERpassword" if @user.nil?
+    @user ||= build_user('user@example.com', @user_password)
   end
 
   # Easier than bringing the usual Faker gem in.

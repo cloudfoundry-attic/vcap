@@ -68,6 +68,8 @@ staging:
 
 # admin support
 admins: [derek@gmail.com, foobar@vmware.com]
+https_required: false
+https_required_for_admins: false
 
 # Normal user accounts
 default_account_capacity:

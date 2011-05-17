@@ -2,21 +2,14 @@ require 'spec_helper'
 
 describe "Specifying a proxy user" do
   before do
-    User.admins = %w[a@example.com]
-    @admin = User.new :email => 'a@example.com'
-    @admin.set_and_encrypt_password 'password'
-    @admin.save
-
-    @user = User.new :email => 'user@example.com'
-    @user.set_and_encrypt_password 'password'
-    @user.save
+    build_admin_and_user
   end
 
   describe "as an authorized admin" do
     it "performs the request as that user" do
       get cloud_info_url, nil, headers_for(@admin, @user)
       response.status.should == 200
-      Yajl::Parser.parse(response.body)['user'].should == 'user@example.com'
+      Yajl::Parser.parse(response.body)['user'].should == @user.email
     end
   end
 
