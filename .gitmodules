@@ -1,9 +1,9 @@
 [submodule "services"]
 	path = services
-	url = https://github.com/cloudfoundry/vcap-services.git
+	url = git@github.com:vmware-ac/vcap-services.git
 [submodule "tests"]
 	path = tests
-	url = https://github.com/cloudfoundry/vcap-tests.git
+	url = git@github.com:vmware-ac/vcap-tests.git
 [submodule "java"]
 	path = java
-    url = https://github.com/cloudfoundry/vcap-java.git
+	url = git@github.com:vmware-ac/vcap-java.git
