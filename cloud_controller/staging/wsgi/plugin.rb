@@ -1,4 +1,7 @@
 class WsgiPlugin < StagingPlugin
+  include VirtualenvSupport
+  include PipSupport
+
   def framework
     'wsgi'
   end
@@ -13,13 +16,20 @@ class WsgiPlugin < StagingPlugin
   end
 
   def start_command
-    "gunicorn -c ../gunicorn.config app:app"
+    cmds = []
+    if uses_pip?
+      cmds << install_requirements
+    end
+    cmds << "../env/bin/gunicorn -c ../gunicorn.config app:app"
+    cmds.join("\n")
   end
 
   private
   def startup_script
     vars = environment_hash
-    generate_startup_script(vars)
+    generate_startup_script(vars) do
+      setup_virtualenv
+    end
   end
 
   def create_gunicorn_config
