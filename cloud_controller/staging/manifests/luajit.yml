@@ -1,0 +1,23 @@
+---
+name: "luajit"
+runtimes:
+  - "luajit":
+      version: "2.0.0-beta7"
+      description: "LuaJIT-2.0.0-beta7"
+      executable: "/usr/local/bin/luajit"
+      default: true
+      environment:
+app_servers:
+  - "wsapi":
+      description: "WSAPI"
+      executable: false # determined during staging
+      default: true
+detection:
+  - "*.lua": true
+staged_services:
+  - "name": "mysql"
+    "version": "*"
+  - "name": "redis"
+    "version": "2"
+
+# vim: filetype=yaml
