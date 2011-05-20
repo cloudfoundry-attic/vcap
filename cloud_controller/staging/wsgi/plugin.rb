@@ -36,7 +36,7 @@ class WsgiPlugin < StagingPlugin
     File.open('gunicorn.config', 'w') do |f|
       f.write <<-EOT
 import os
-bind = "127.0.0.1:%s" % os.environ['VCAP_APP_PORT']
+bind = "0.0.0.0:%s" % os.environ['VCAP_APP_PORT']
       EOT
     end
   end
