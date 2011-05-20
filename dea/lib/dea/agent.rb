@@ -201,15 +201,11 @@ module DEA
       trap('USR2') { evacuate_apps_then_quit() }
 
       NATS.on_error do |e|
-        if e.kind_of? NATS::ConnectError
-          @logger.error("EXITING! NATS connection failed: #{e}")
-          # Only snapshot app state if we had a chance to recover saved state. This prevents a connect error
-          # that occurs before we can recover state from blowing existing data away.
-          snapshot_app_state if @recovered_droplets
-          exit!
-        else
-          @logger.error("NATS problem, #{e}")
-        end
+        @logger.error("EXITING! NATS error: #{e}")
+        # Only snapshot app state if we had a chance to recover saved state. This prevents a connect error
+        # that occurs before we can recover state from blowing existing data away.
+        snapshot_app_state if @recovered_droplets
+        exit!
       end
 
       EM.error_handler do |e|
