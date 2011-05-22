@@ -237,10 +237,14 @@ if [[ $DEA == true || $ALL == true ]]; then
 	fi
     fi
 
-    # Python WSGI support
+    # Python support
     if [[ $PLATFORM == 'Linux' ]]; then
-      apt-get install python-setuptools
+      apt-get install python-setuptools python-dev
     fi
+    easy_install virtualenv
+    easy_install pip
+    easy_install django
+    easy_install spawning
     easy_install gunicorn
 
     # Node and Erlang frameworks
