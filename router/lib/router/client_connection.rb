@@ -60,8 +60,7 @@ module ClientConnection
   def terminate_app_conn
     return unless @bound_app_conn
     Router.log.debug "Terminating AppConnection"
-    @bound_app_conn.stop_proxying
-    @bound_app_conn.close_connection
+    @bound_app_conn.terminate
     @bound_app_conn = nil
   end
 
