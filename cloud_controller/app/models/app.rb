@@ -20,7 +20,7 @@ class App < ActiveRecord::Base
   AppStates = %w[STOPPED STARTED]
   PackageStates = %w[PENDING STAGED FAILED]
   Runtimes = %w[ruby18 ruby19 java node erlangR14B02]
-  Frameworks = %w[sinatra rails3 spring grails node otp_rebar unknown]
+  Frameworks = %w[sinatra rails3 spring grails node otp_rebar lift unknown]
 
   validates_presence_of :name, :framework, :runtime
 
