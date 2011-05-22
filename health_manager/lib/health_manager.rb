@@ -136,12 +136,8 @@ class HealthManager
     configure_timers
 
     NATS.on_error do |e|
-      if e.kind_of? NATS::ConnectError
-        @logger.error("EXITING! NATS connection failed: #{e}")
-        exit!
-      else
-        @logger.error("NATS problem, #{e}")
-      end
+      @logger.error("NATS problem, #{e}")
+      exit!
     end
 
     EM.error_handler do |e|
