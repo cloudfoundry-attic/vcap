@@ -14,6 +14,9 @@ describe UsersController do
       @admin_headers.each {|key, value| request.env[key] = value}
       get :list
       response.status.should == 200
+      json = Yajl::Parser.parse(response.body)
+      json.should be_kind_of(Array)
+      json.count.should >= 2
     end
 
     it 'should return 403 as a user' do
@@ -34,17 +37,21 @@ describe UsersController do
       @admin_headers.each {|key, value| request.env[key] = value}
       delete :delete, {:email => @user.email}
       response.status.should == 204
+      User.find_by_email(@user.email).should be_nil
+      User.find_by_email(@admin.email).should_not be_nil
     end
 
     it 'should return 403 as a user' do
       @user_headers.each {|key, value| request.env[key] = value}
       delete :delete, {:email => @user.email}
       response.status.should == 403
+      User.find_by_email(@user.email).should_not be_nil
     end
 
     it 'should return 403 without authentication' do
       delete :delete, {:email => @user.email}
       response.status.should == 403
+      User.find_by_email(@user.email).should_not be_nil
     end
   end
 end
