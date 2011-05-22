@@ -520,6 +520,7 @@ class AppManager
   def new_message
     data = {:droplet => app.id, :name => app.name, :uris => app.mapped_urls}
     data[:runtime] = app.runtime
+    data[:framework] = app.framework
     data[:sha1] = app.staged_package_hash
     data[:executableFile] = app.staged_package_path
     data[:executableUri] = "/staged_droplets/#{app.id}/#{app.staged_package_hash}"

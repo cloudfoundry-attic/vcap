@@ -143,6 +143,8 @@ describe 'DEA Agent' do
       droplet_info = start_droplet(@nats_server.uri, @droplet)
       droplet_info.should_not be_nil
       wait_for { port_open?(droplet_info['port']) }.should be_true
+      droplet_info["tags"].should == {"framework"=>"sinatra", "runtime"=>"ruby18"}
+      droplet_info["uris"].should == ["test_app.vcap.me"]
     end
 
     it 'should heartbeat a running droplet' do
@@ -286,7 +288,8 @@ describe 'DEA Agent' do
       'uris'     => ['test_app.vcap.me'],
       'executableFile' => bundle_filename,
       'executableUri'  => 'http://localhost/foo',
-      'runtime'        => 'ruby18'
+      'runtime'        => 'ruby18',
+      'framework'      => 'sinatra'
     }
   end
 end
