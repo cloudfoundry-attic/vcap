@@ -136,6 +136,13 @@ module ClientConnection
     # pick a random backend unless selected from above already
     @droplet = droplets[rand*droplets.size] unless @droplet
 
+    if @droplet[:tags]
+      @droplet[:tags].each do |key, value|
+        tag_metrics = VCAP::Component.varz[:tags][key][value]
+        tag_metrics[:requests] += 1
+      end
+    end
+
     @droplet[:requests] += 1
 
     # Client tracking, override with header if its set (nginx to unix domain socket)
