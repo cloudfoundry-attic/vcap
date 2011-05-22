@@ -78,9 +78,9 @@ module AppConnection
 
   def on_message_complete
     @parser = nil
-    :stop
     @outstanding_requests -= 1
     Router.outstanding_request_count -= 1
+    :stop
   end
 
   def cant_be_recycled?
@@ -159,4 +159,11 @@ module AppConnection
 
     @client.close_connection_after_writing if @client
   end
+
+  def terminate
+    stop_proxying
+    close_connection
+    on_message_complete if @outstanding_requests > 0
+  end
+
 end
