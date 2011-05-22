@@ -6,9 +6,9 @@ require File.expand_path('../../java_common/tomcat', __FILE__)
 class LiftPlugin < StagingPlugin
 
   LIFT_FILTER_CLASS = 'net.liftweb.http.LiftFilter'
-  CF_LIFT_PROPERTIES_GENERATOR_FILTER = 
+  CF_LIFT_PROPERTIES_GENERATOR_FILTER =
     'CloudLiftServicesPropertiesGeneratorFilter'
-  CF_LIFT_PROPERTIES_GENERATOR_FILTER_CLASS = 
+  CF_LIFT_PROPERTIES_GENERATOR_FILTER_CLASS =
     'org.cloudfoundry.reconfiguration.CloudLiftServicesPropertiesGeneratorFilter';
 
   def framework
@@ -94,7 +94,7 @@ ruby resources/generate_server_xml $PORT
         lift_filter_map = web_config.xpath("//web-app/filter-mapping[contains(
                                            normalize-space(#{prefix}filter-name),
                                            normalize-space(#{lift_filter_name}))]")
-        cf_lift_props_generator_filter_map = 
+        cf_lift_props_generator_filter_map =
           generate_cf_filter_map web_config, lift_filter_map, prefix
         lift_filter_map.first.add_previous_sibling cf_lift_props_generator_filter_map
         File.open(web_config_file, 'w') {|f| f.write(web_config.to_xml) }
@@ -116,7 +116,7 @@ ruby resources/generate_server_xml $PORT
     cf_filter_class.content = CF_LIFT_PROPERTIES_GENERATOR_FILTER_CLASS
 
     cf_filter_description = Nokogiri::XML::Node.new 'description', web_config
-    cf_filter_description.content = 
+    cf_filter_description.content =
       "A filter that generates a properties file with CloudFoundry services information"
 
     cf_lift_props_generator_filter.add_child cf_filter_name
@@ -129,7 +129,7 @@ ruby resources/generate_server_xml $PORT
   def generate_cf_filter_map web_config, lift_filter_map, prefix
     url_pattern = lift_filter_map.xpath("url-pattern").first.content
 
-    cf_lift_props_generator_filter_map = 
+    cf_lift_props_generator_filter_map =
       Nokogiri::XML::Node.new 'filter-mapping', web_config
 
     cf_filter_map_name = Nokogiri::XML::Node.new 'filter-name', web_config
