@@ -1,0 +1,103 @@
+require 'yaml'
+require 'fileutils'
+require 'digest/md5'
+require 'pp'
+
+update_steps = ['tomcat:download',
+	        'tomcat:prepare',
+		'tomcat:install']
+
+desc "Update Tomcat installation used by Cloud Foundry"
+task :update => update_steps
+
+namespace "tomcat" do
+  desc "Download Tomcat from an Apache mirror"
+  task :download do
+    puts "\nStarting Tomcat download"
+    manifest_file = "tomcat_manifest.yml"
+    @manifest = YAML.load_file(manifest_file)
+    @download_dest = File.join("/tmp", "tomcat-v#{@manifest['version']}")
+    puts "\tDownloading Tomcat v#{@manifest['version']} from '#{@manifest['download_uri']}' to '#{@download_dest}'"
+    FileUtils.remove_dir(@download_dest)
+    FileUtils.mkdir_p(@download_dest)
+    Dir.chdir(@download_dest) do
+      system "wget -q #{@manifest['download_uri']}"
+      system "wget -q #{@manifest['download_uri']}.md5"
+      @download_file = @manifest['download_uri'].split("/").last
+      verify_download
+    end
+    puts "Tomcat download completed"
+  end
+
+  desc "Prepare Tomcat for CloudFoundry"
+  task :prepare do
+    puts "\nPreparing Tomcat"
+    Dir.chdir(@download_dest) do
+      system "tar xzf #{@download_file}"
+      exp_dir = `tar ztf "#{@download_file}" | cut -f1 -d\/ | uniq`.strip
+      tomcat_dir = "tomcat"
+      FileUtils.mv exp_dir, tomcat_dir
+      @targetdir = File.join(@download_dest, tomcat_dir)
+    end
+    handle_replace_files
+    handle_clear_dirs
+    handle_remove_files
+    handle_add_jars
+    Dir.chdir(@download_dest) do
+      system "zip -q -r tomcat.zip tomcat"
+    end
+    puts "Tomcat prepare completed"
+  end
+
+  desc "Installing Tomcat into CloudFoundry"
+  task :install do
+    puts "\nInstalling Tomcat"
+      FileUtils.copy(File.join(@download_dest, "tomcat.zip"), @manifest['destination'])
+    puts "Tomcat install completed\n"
+  end
+
+  def verify_download
+    puts "\tVerifying download"
+    digest = Digest::MD5.hexdigest(File.read(@download_file))
+    md5sum = IO.readlines("#{@download_file}.md5")[0].split[0]
+    raise "MD5Sum verification check failed" unless digest == md5sum
+  end
+
+  def handle_replace_files
+    @manifest['replace_files'].each do |file|
+      target_file = File.join(@targetdir, file)
+      source_file = File.join("resources", file)
+      puts "\tReplacing '#{target_file}' with '#{source_file}'"
+      FileUtils.remove(target_file)
+      FileUtils.copy(source_file, target_file)
+    end
+  end
+
+  def handle_clear_dirs
+    @manifest['clear_dirs'].each do |file|
+      target_file = File.join(@targetdir, file)
+      puts "\tClearing '#{target_file}'"
+      Dir.chdir target_file do
+        FileUtils.rm_r Dir.glob('*')
+      end
+    end
+  end
+
+  def handle_remove_files
+    @manifest['remove_files'].each do |file|
+      target_file = File.join(@targetdir, file)
+      puts "\tRemoving '#{target_file}'"
+      FileUtils.rm target_file
+    end
+  end
+
+  def handle_add_jars
+    @manifest['add_jars'].each do |file|
+      target_file = File.join(@targetdir, file)
+      source_file = File.join("resources", file)
+      puts "\tCopying jar '#{source_file}' to '#{target_file}"
+      FileUtils.copy(source_file, target_file)
+    end
+  end
+
+end
