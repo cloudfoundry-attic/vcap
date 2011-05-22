@@ -60,6 +60,7 @@ describe 'DEA Agent' do
       'multi_tenant' => true,
       'max_memory'   => 4096,
       'secure'       => false,
+      'enforce_ulimit' => true,
       'local_route'  => '127.0.0.1',
       'pid'          => File.join(@run_dir, 'dea.pid'),
       'runtimes'     => {

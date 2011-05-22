@@ -76,6 +76,7 @@ module DEA
       @logger = VCAP.create_logger('dea', :log_file => config['log_file'], :log_rotation_interval => config['log_rotation_interval'])
       @logger.level = config['log_level']
       @secure = config['secure']
+      @enforce_ulimit = config['enforce_ulimit']
 
       @droplets = {}
       @usage = {}
@@ -608,7 +609,7 @@ module DEA
 
         exec_operation = proc do |process|
           process.send_data("cd #{instance_dir}\n")
-          if @secure
+          if @secure || @enforce_ulimit
             process.send_data("ulimit -m #{mem_kbytes} 2> /dev/null\n")  # ulimit -m takes kb, soft enforce
             process.send_data("ulimit -v 3000000 2> /dev/null\n") # virtual memory at 3G, this will be enforced
             process.send_data("ulimit -n #{num_fds} 2> /dev/null\n")
