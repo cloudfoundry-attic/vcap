@@ -37,6 +37,7 @@ module CloudController
     require 'nats/client'
     require 'vcap/common'
     require 'vcap/component'
+    require 'vcap/rolling_metric'
     all_models.each {|fn| require(fn)}
 
     # This is needed for comparisons between the last_updated time of an app and the current time
@@ -650,11 +651,17 @@ class HealthManager
     EM.add_timer(@droplet_lost) do
       EM.add_periodic_timer(@droplets_analysis) { analyze_all_apps }
     end
+
+    EM.add_periodic_timer(10) do
+      NATS.publish('healthmanager.nats.ping', "#{Time.now.to_f}")
+    end
+
   end
 
   def register_as_component
     VCAP::Component.register(:type => 'HealthManager',
                              :host => VCAP.local_ip(@config['local_route']),
+                             :index => @config['index'],
                              :config => @config)
 
     # Initialize VCAP component varzs..
@@ -669,6 +676,8 @@ class HealthManager
 
     VCAP::Component.varz[:frameworks] = {}
     VCAP::Component.varz[:runtimes] = {}
+
+    VCAP::Component.varz[:nats_latency] = VCAP::RollingMetric.new(60)
 
     VCAP::Component.varz[:heartbeat_msgs_received] = 0
     VCAP::Component.varz[:droplet_exited_msgs_received] = 0
@@ -706,6 +715,10 @@ class HealthManager
     NATS.subscribe('healthmanager.health') do |message, reply|
       @logger.debug("healthmanager.health: #{message}")
       process_health_message(message, reply)
+    end
+
+    NATS.subscribe('healthmanager.nats.ping') do |message|
+      VCAP::Component.varz[:nats_latency] << ((Time.now.to_f - message.to_f) * 1000).to_i
     end
 
     NATS.publish('healthmanager.start')
