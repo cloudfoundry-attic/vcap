@@ -11,3 +11,5 @@ ci-working-dir
 *.rbc
 *.swp
 .rvmrc
+*.pid
+
