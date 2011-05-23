@@ -48,7 +48,7 @@ a bringing up a VCAP instance. The other is an automated process contributed
 by the community. In both cases, you need to start with a stock Ubuntu
 server VM.
 
-### step -1:
+### Step 1: create a pristine VM with ssh
 
 * setup a VM with a pristine Ubuntu 10.04.2 server 64bit image,
   [download here](http://www.ubuntu.com/download/ubuntu/download)
@@ -60,9 +60,7 @@ To install ssh:
 
     sudo apt-get install openssh-server
 
-### Automated Setup (experimental):
-
-#### Step 0:
+#### Step 2: run the automated setup process
 Run the install script. It'll ask for your sudo password at the
 beginning and towards the end. The entire process takes ~1 hour, so just
 keep a loose eye on it.
@@ -70,161 +68,17 @@ keep a loose eye on it.
      sudo apt-get install curl
      bash < <(curl -s -k -B https://github.com/cloudfoundry/vcap/raw/master/setup/install)
 
-NOTE: if you have issues with 'vmc target api.vcap.me' after using the
-automated installer, exit out of the shell you did the install in, open
-a new shell, and perform the following operations:
+NOTE: The automated setup does not auto-start the system. Once you are
+done with the setup, exit your current shell, restart a new shell and continue
+the following steps
 
-    cd ~/cloudfoundry/vcap
-    bin/vcap stop
-    bin/vcap start
-
-Jump to step 9 in the manual process to optionally setup an ssh tunnel
-and test your installation.
-
-### Manual Setup:
-
-#### step 0: install system and rvm dependencies
-
-    sudo apt-get install autoconf curl git-core ruby bison build-essential zlib1g-dev libssl-dev libreadline5-dev
-
-#### step 1: install rvm
-
-For detailed [rvm](https://rvm.beginrescueend.com/) install instructions see: [https://rvm.beginrescueend.com/rvm/install/](https://rvm.beginrescueend.com/rvm/install/) or follow the quick steps below.
-
-First install rvm using their script. Note: the `-k`
-switch is only needed if the certificate validation fails:
-
-    bash < <(curl -s -k -B https://rvm.beginrescueend.com/install/rvm)
-
-Then follow the instructions given by the RVM
-installer (a copy is included below for your convenience).
-
-    # you must complete the install by loading RVM in new shells.
-    #
-    #
-    #  1) Place the folowing line at the end of your shell's loading files
-    #     (.bashrc or .bash_profile for bash and .zshrc for zsh),
-    #     after all PATH/variable settings:
-    #
-    #     # This loads RVM into a shell session.
-    #     [[ -s \"$rvm_path/scripts/rvm\" ]] && source \"$rvm_path/scripts/rvm\"
-    #
-    #     You only need to add this line the first time you install rvm.
-    #
-    #  2) Ensure that there is no 'return' from inside the ~/.bashrc file,
-    #     otherwise rvm may be prevented from working properly.
-    #
-    #     This means that if you see something like:
-    #
-    #    '[ -z \"\$PS1\" ] && return'
-    #
-    #  then you change this line to:
-    #
-    #  if [[ -n \"\$PS1\" ]] ; then
-    #
-    #    # ... original content that was below the '&& return' line ...
-    #
-    #  fi # <= be sure to close the if at the end of the .bashrc.
-    #
-    #    # this is a good place to source rvm
-    #         [[ -s \"$rvm_path/scripts/rvm\" ]] && source \"$rvm_path/scripts/rvm\"
-    #
-    #   <EOF> - this marks the end of the .bashrc
-    #
-    #     Be absolutely *sure* to REMOVE the '&& return'.
-    #
-    #     If you wish to DRY up your config you can 'source ~/.bashrc' at the
-    #     bottom of your .bash_profile.
-    #
-    #     Placing all non-interactive (non login) items in the .bashrc,
-    #     including the 'source' line above and any environment settings.
-    #
-    #  3) CLOSE THIS SHELL and open a new one in order to use rvm.
-
-
-#### step 2: use rvm to install ruby 1.9.2 and make it default
-
-    rvm install 1.9.2-p180
-    rvm --default 1.9.2-p180
-
-#### step 3: use rvm to install ruby 1.8.7
-
-    rvm install 1.8.7
-
-#### step 4: clone the vcap and vmc repos:
-
-Optionally create new ssh keys and add them to your github account:
-
-    ssh-keygen -t rsa -C me@example.com
-
-Now create a directory for cloudfoundry and use git to clone the project into it:
-
-    mkdir ~/cloudfoundry; cd ~/cloudfoundry
-    git clone https://github.com/cloudfoundry/vcap.git
-    cd ~/cloudfoundry/vcap
-
-The first time that you enter the vcap directory you may see an RVM warning
-noting a new or modified .rvmrc file. Follow the instructions to review
-the file and when asked to trust enter `yes` at the prompt.
-
-There should be a `.rvmrc` file in the `~/cloudfoundry/vcap` directory.
-Make sure that file is present and that it contains `rvm use 1.9.2`.
-
-This release uses a handful of submodules. After cloning the vcap repo, you must run:
-
-    git submodule update --init
-
-This will check out additional resources which are required for the
-project to run.
-
-*NOTE:* Any time that you update the project with `git pull` you
-must `git submodule update` afterwards or you will not have a complete
-copy of the latest code.
-
-Now install the vmc gem (command line tools for interacting with the platform):
-
-    gem install vmc --no-rdoc --no-ri
-
-#### step 5: run vcap_setup to prep cloudfoundry for launch
-
-Points to keep in mind:
-
-1). Answer Y to all questions
-
-2). Remember your mysql password, you will need it in a minute
-
-    cd ~/cloudfoundry/vcap
-    sudo setup/vcap_setup
-
-This step may take a long time as your selections are downloaded and built as needed.
-
-After `vcap_setup` completes, edit your `mysql_node.yml` config file:
-
-    cd ~/cloudfoundry/vcap/services/mysql/config
-    vi mysql_node.yml # or use your editor of choice
-
-Change the `pass` in the `mysql` section to the mysql root password
-you created during install and save.
-
-#### step 6: restart nginx with a custom config
-
-    cd ~/cloudfoundry/vcap
-    sudo cp setup/simple.nginx.conf /etc/nginx/nginx.conf
-    sudo /etc/init.d/nginx restart
-
-#### step 7: install bundler gem and run bundler:install
-
-    cd ~/cloudfoundry/vcap
-    gem install bundler --no-rdoc --no-ri
-    rake bundler:install
-
-#### step 8: start the system
+#### Step 3: start the system
 
     cd ~/cloudfoundry/vcap
     bin/vcap start
     bin/vcap tail  # see aggregate logs
 
-#### step 9: *Optional, mac users only*, create a local ssh tunnel
+#### Step 4: *Optional, mac users only*, create a local ssh tunnel
 
 From your VM, run `ifconfig` and note your eth0 IP address, which will look something like: `192.168.252.130`
 
@@ -246,7 +100,7 @@ will map to localhost which will map to your running Cloud Foundry instance.
 Trying your setup
 -----------------
 
-### step 10: validate that you can connect and tests pass
+### Step 5: validate that you can connect and tests pass
 #### From the console of your vm, or from your mac (thanks to local tunnel)
 
     vmc target api.vcap.me
@@ -291,7 +145,7 @@ Validation Tests (BVT) to ensure that major functionality is working.
     cd ../health_manager
     rake spec
 
-### step 11: you are done, make sure you can run a simple hello world app.
+### Step 6: you are done, make sure you can run a simple hello world app.
 
 Create an empty directory for your test app (lets call it env), and enter it.
 

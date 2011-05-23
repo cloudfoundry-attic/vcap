@@ -41,13 +41,24 @@ elif [[ $PLATFORM == 'MacOSX' ]]; then
   MYSQL_PASS="$(md5 -qs "$(date)")"
 fi
 
+echo "Patch around .bash_profile issue with RMV"
+if [ -f ~/.bashrc ]; then
+  if [ ! -f ~/.bash_profile ]; then
+    # rvm install is going to write into .bash_profile in this
+    # case and short circuit loading of .bashrc so we need to
+    # create a proper .bash_profile if its missing
+    echo "# This file is sourced by bash for login shells.  The following line" >> ~/.bash_profile
+    echo "# runs your .bashrc and is recommended by the bash info pages." >> ~/.bash_profile
+    echo "[[ -f ~/.bashrc ]] && . ~/.bashrc" >> ~/.bash_profile
+  fi
+fi
+
 echo "Installing rvm"
 curl -s -k -B https://rvm.beginrescueend.com/install/rvm > /tmp/install_rvm
 bash /tmp/install_rvm
 rm /tmp/install_rvm
 
 echo "Fixing init scripts to work with rvm"
-
 init_file=""
 if [ -f ~/.bashrc ]; then
   init_file="$HOME/.bashrc"
@@ -56,26 +67,35 @@ elif [ -f ~/.bash_profile ]; then
 elif [ -f ~/.zshrc ]; then
   init_file="$HOME/.zshrc"
 fi
-
 if [ -f "$init_file" ]; then
-  echo "Fixing init scripts to work with rvm"
   if grep '^ *\[ -z "$PS1" \] && return *$' $init_file; then
-    sed -i.bkup -e 's/^ *\[ -z "$PS1" \] && return *$/if [ -z "$PS1" ]; then/' $init_file
+    sed -i.bkup -e 's/^ *\[ -z "$PS1" \] && return *$/if [ -n "$PS1" ]; then/' $init_file
     echo "fi" >> $init_file
   fi
 
-  echo '[[ -s "$rvm_path/scripts/rvm" ]] && source "$rvm_path/scripts/rvm"' >> $init_file
+  echo '[[ -s "$HOME/.rvm/scripts/rvm" ]] && source "$HOME/.rvm/scripts/rvm"' >> $init_file
 fi
 
-echo "Fixing init scripts to work with rvm"
-
+echo "Activate rvm"
 rvm_path="$HOME/.rvm"
 [[ -s "$rvm_path/scripts/rvm" ]] && source "$rvm_path/scripts/rvm"
+type rvm | head -1
+
+# remove rake from default and global gems and instead install manually 
+rm ~/.rvm/gemsets/default.gems
+rm ~/.rvm/gemsets/global.gems
 
 echo "Installing various rubies"
 rvm install 1.9.2-p180
 rvm --default 1.9.2-p180
 rvm install 1.8.7
+
+# install only rake 0.8.7
+rvm use 1.8.7
+gem install rake --version '0.8.7' --no-rdoc --no-ri
+
+rvm use 1.9.2
+gem install rake --version '0.8.7' --no-rdoc --no-ri
 
 echo "Getting vcap"
 [ -d ~/cloudfoundry ] || mkdir ~/cloudfoundry
@@ -104,8 +124,8 @@ cd ~/cloudfoundry/vcap
 gem install bundler --no-rdoc --no-ri
 rake bundler:install
 
-echo 'Starting it up!'
-cd ~/cloudfoundry/vcap/bin
-./vcap start
+# don't start up vcap in this shell
+# its best to exit the shell and then
+# come back in so that the .rvmrc in cloudfoundry/vcap activates correctly
 
 echo 'Success!'
