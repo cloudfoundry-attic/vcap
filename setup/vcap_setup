@@ -160,6 +160,7 @@ if [[ $CC == true || $ALL == true ]]; then
 	if [[ $RELATIONAL_DBS == true || $ALL == true ]]; then
 	    echo "Installing PostgreSQL server and support"
 	    apt-get install -qqy postgresql libpq-dev
+            su - postgres -c "/usr/bin/psql -c \"alter role postgres password 'password'\""
 	    echo "Installing pg gems"
 	    gem install pg --no-rdoc --no-ri
 	    echo ""

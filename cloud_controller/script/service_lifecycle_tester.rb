@@ -33,12 +33,13 @@ end
 svcs = {
   'redis' => '2',
   'mysql' => '5.1',
+  'postgresql' => '9.0',
 }
 svc = nil
 svc = ARGV[0] if ARGV.length > 0
 
 unless svcs[svc]
-  puts "Usage: service_lifecycle_tester.rb [redis || mysql]"
+  puts "Usage: service_lifecycle_tester.rb [redis || mysql || postgresql]"
   exit 1
 end
 

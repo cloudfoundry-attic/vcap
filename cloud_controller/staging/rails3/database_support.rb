@@ -39,6 +39,9 @@ module RailsDatabaseSupport
     when /^mysql/
       { 'adapter' => 'mysql2', 'encoding' => 'utf8', 'pool' => 5,
         'reconnect' => false }.merge(credentials_from(binding))
+    when /^postgresql/
+      { 'adapter' => 'postgresql', 'encoding' => 'utf8', 'pool' => 5,
+        'reconnect' => false }.merge(credentials_from(binding))
     else
       # Should never get here, so it is an exception not 'exit 1'
       raise "Unable to configure unknown database: #{binding.inspect}"
@@ -65,6 +68,9 @@ module RailsDatabaseSupport
     if label = binding[:label]
       case label
       when /^mysql/
+        binding
+      end
+      when /^postgresql/
         binding
       end
     end
