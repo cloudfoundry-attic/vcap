@@ -298,7 +298,12 @@ if [[ $DEA == true || $ALL == true ]]; then
 
     echo "Installing some default system gems"
     echo "gem: --no-rdoc --no-ri" > ~/.gemrc
-    gem install rack rake thin sinatra eventmachine
+
+    # original code did this in one shot, BUT with the rake issues with 0.9.0 and rails 3
+    # we hard version the rake gem to 0.8.7 since that is the only one that really works
+    gem install rack
+    gem install rake --version '0.8.7'
+    gem install thin sinatra eventmachine
 
     if [ ! -d '/var/vcap.local' ]; then
 	echo "Creating directory /var/vcap.local"
