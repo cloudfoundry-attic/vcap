@@ -1,0 +1,3 @@
+#!/usr/bin/env ruby
+
+exec(File.expand_path("../../../services/neo4j/bin/neo4j_node", __FILE__), *ARGV)
