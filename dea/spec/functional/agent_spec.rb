@@ -28,6 +28,7 @@ describe 'DEA Agent' do
     'multi_tenant' => true,
     'max_memory'   => 4096,
     'secure'       => false,
+    'enforce_ulimit' => true,
     'local_route'  => 'localhost',
     'pid'          => File.join(TEST_DIR, 'dea.pid'),
     'runtimes'     => {
