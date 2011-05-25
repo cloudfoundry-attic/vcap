@@ -2,7 +2,7 @@ class UsersController < ApplicationController
   before_filter :enforce_registration_policy, :only => :create
   before_filter :grab_event_user
   before_filter :require_user, :except => :create
-  before_filter :require_admin, :only => :delete
+  before_filter :require_admin, :only => [:delete, :list]
 
   def create
     user = ::User.new :email => body_params[:email]
@@ -48,9 +48,22 @@ class UsersController < ApplicationController
     render :json => { :email => user.email }
   end
 
+  def list
+    user_list = User.includes(:apps_owned).all.map do |target_user|
+      user_hash = {:email => target_user.email, :admin => target_user.admin?}
+      
+      # In the future, more application data could be included here. Keeping it to a minimum for performance
+      # in large scale environments. All keys used here should match corresponding keys in App#to_json
+      user_hash[:apps] = target_user.apps_owned.map {|app| {:name => app.name, :state => app.state}}
+      user_hash
+    end
+
+    render :json => user_list
+  end
+
   protected
   def grab_event_user
-    @event_args = [ params['email'] || body_params[:email] ]
+    @event_args = [ params['email'] || (body_params.nil? ? '' : body_params[:email]) ]
   end
 
   def enforce_registration_policy
