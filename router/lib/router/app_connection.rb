@@ -60,7 +60,7 @@ module AppConnection
   end
 
   def process_response_body_chunk(data)
-    return unless data
+    return unless data and data.bytesize > 0
 
     # Let parser process as well to properly determine end of message.
     # TODO: Once EM 1.0, add in optional bytsize proxy if Content-Length is present.
