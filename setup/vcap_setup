@@ -236,7 +236,6 @@ if [[ $DEA == true || $ALL == true ]]; then
     easy_install virtualenv
     easy_install pip
     easy_install django
-    easy_install spawning
     easy_install gunicorn
 
     # Node and Erlang frameworks
