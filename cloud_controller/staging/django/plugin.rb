@@ -2,7 +2,7 @@ class DjangoPlugin < StagingPlugin
   include VirtualenvSupport
   include PipSupport
 
-  REQUIREMENTS = ['django', 'spawning']
+  REQUIREMENTS = ['django', 'gunicorn']
 
   def framework
     'django'
@@ -13,6 +13,7 @@ class DjangoPlugin < StagingPlugin
       create_app_directories
       copy_source_files
       create_startup_script
+      create_gunicorn_config
     end 
   end 
 
@@ -22,7 +23,7 @@ class DjangoPlugin < StagingPlugin
     if uses_pip?
       cmds << install_requirements
     end 
-    cmds << "spawning --factory=spawning.django_factory.config_factory settings $@"
+    cmds << "gunicorn_django -c ../gunicorn.config"
     cmds.join("\n")
   end 
 
@@ -34,4 +35,14 @@ class DjangoPlugin < StagingPlugin
       setup_virtualenv(REQUIREMENTS)
     end 
   end 
+  
+  def create_gunicorn_config
+    File.open('gunicorn.config', 'w') do |f|
+      f.write <<-EOT
+import os
+bind = "0.0.0.0:%s" % os.environ['VCAP_APP_PORT']
+loglevel = "debug"
+      EOT
+    end
+  end
 end
