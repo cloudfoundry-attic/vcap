@@ -5,7 +5,6 @@ spec = Gem::Specification.new do |s|
   s.summary = 'vcap common'
   s.homepage = "http://github.com/vmware-ac/core"
   s.description = 'common vcap classes/methods'
-  s.has_rdoc = false
 
   s.authors = ["Derek Collison"]
   s.email = ["derek.collison@gmail.com"]
