@@ -11,258 +11,208 @@ require 'vcap/common'
 require 'yaml'
 
 describe 'DEA Agent' do
-  PID = Process.pid()
-  TEST_DIR = "/tmp/dea_agent_tests_#{PID}_#{Time.now.to_i}"
-  NATS_PORT = VCAP.grab_ephemeral_port
-  NATS_PID_FILE = File.join(TEST_DIR, 'nats.pid')
-  NATS_CMD = "ruby -S bundle exec nats-server -p #{NATS_PORT} -P #{NATS_PID_FILE}"
-  NATS_URI = "nats://localhost:#{NATS_PORT}"
-  APP_DIR = File.join(TEST_DIR, 'apps')
-  DEA_CONFIG_FILE = File.join(TEST_DIR, 'dea.config')
-  DEA_CONFIG = {
-    'base_dir'     => APP_DIR,
-    'filer_port'   => nil,  # Set in before :each
-    'mbus'         => NATS_URI,
-    'intervals'    => {'heartbeat' => 1},
-    'log_level'    => 'DEBUG',
-    'multi_tenant' => true,
-    'max_memory'   => 4096,
-    'secure'       => false,
-    'local_route'  => 'localhost',
-    'pid'          => File.join(TEST_DIR, 'dea.pid'),
-    'runtimes'     => {
-      'ruby18' => {
-        'executable'        => '/usr/bin/ruby',
-        'version'           => '1.8.7',
-        'version_flag'      => "-e 'puts RUBY_VERSION'"
-      }
-    },
-    'disable_dir_cleanup' => true,
-  }
-  APP_STATE_FILE = File.join(APP_DIR, 'db', 'applications.json')
-
-  nats_timeout = File.expand_path(File.join(File.dirname(__FILE__), 'nats_timeout'))
-  dea_agent = File.expand_path(File.join(__FILE__, "../../../bin/dea -c #{DEA_CONFIG_FILE}"))
-
-  DEA_CMD = "ruby -r#{nats_timeout} #{dea_agent}"
-
-  TCPSERVER_DROPLET_BUNDLE = File.join(TEST_DIR, 'droplet')
+  nats_timeout_path = File.expand_path(File.join(File.dirname(__FILE__), 'nats_timeout'))
+  dea_path = File.expand_path(File.join(__FILE__, "../../../bin/dea"))
+  run_id_ctr = 0
 
   before :all do
-    FileUtils.mkdir(TEST_DIR)
-    File.directory?(TEST_DIR).should be_true
-    @nats_server = NatsComponent.new(NATS_CMD, NATS_PID_FILE, NATS_PORT, TEST_DIR)
-    @dea_agent = DeaComponent.new(DEA_CMD, DEA_CONFIG['pid'], DEA_CONFIG, TEST_DIR)
-    create_droplet_bundle(TCPSERVER_DROPLET_BUNDLE)
-    @droplet = droplet_for_bundle(TCPSERVER_DROPLET_BUNDLE)
-    at_exit do
-      @nats_server.stop
-      @dea_agent.stop
-    end
+    # Base test directory to house invididual run directories
+    @test_dir = "/tmp/dea_agent_tests_#{Process.pid}_#{Time.now.to_i}"
+    FileUtils.mkdir(@test_dir)
+    File.directory?(@test_dir).should be_true
 
-    @nats_server.start()
-    @nats_server.is_running?().should be_true
+    @tcpserver_droplet_bundle = File.join(@test_dir, 'droplet')
+    create_droplet_bundle(@test_dir, @tcpserver_droplet_bundle)
+    @droplet = droplet_for_bundle(@tcpserver_droplet_bundle)
+
+    @run_id = 0
   end
 
   after :all do
     # Cleanup after ourselves
-    FileUtils.rm_rf(TEST_DIR)
+    FileUtils.rm_rf(@test_dir)
   end
 
   before :each do
-    # Setup app dir
-    File.directory?(APP_DIR).should be_false
-    FileUtils.mkdir(APP_DIR)
-    File.directory?(APP_DIR).should be_true
+    # Create a directory per scenario to store log files, pid files, etc.
+    @run_dir = File.join(@test_dir, "run_#{run_id_ctr}")
+    create_dir(@run_dir)
 
-    # Pick a different ephemeral port for each run since SO_REUSEADDR isn't set for the filer. If we use a single port and quickly
-    # stop the dea and restart it, there is a chance that the addr is in TIME_WAIT when we attempt to start the dea again. This will
-    # prevent the filer from binding to the port and ultimately cause our tests to fail.
-    DEA_CONFIG['filer_port'] = VCAP.grab_ephemeral_port
+    # NATS
+    port = VCAP.grab_ephemeral_port
+    pid_file = File.join(@run_dir, 'nats.pid')
+    @nats_cfg = {
+      :port     => port,
+      :pid_file => pid_file,
+      :cmd      => "ruby -S bundle exec nats-server -p #{port} -P #{pid_file}",
+      :uri      => "nats://localhost:#{port}",
+      :outdir   => @run_dir,
+    }
+    @nats_server = NatsComponent.new(@nats_cfg)
 
-    # Write dea config
-    File.exists?(DEA_CONFIG_FILE).should be_false
-    write_config(DEA_CONFIG_FILE, DEA_CONFIG)
-    File.exists?(DEA_CONFIG_FILE).should be_true
+    # DEA
+    @dea_cfg = {
+      'base_dir'     => @run_dir,
+      'filer_port'   => VCAP.grab_ephemeral_port,
+      'mbus'         => @nats_cfg[:uri],
+      'intervals'    => {'heartbeat' => 1},
+      'log_level'    => 'DEBUG',
+      'multi_tenant' => true,
+      'max_memory'   => 4096,
+      'secure'       => false,
+      'local_route'  => '127.0.0.1',
+      'pid'          => File.join(@run_dir, 'dea.pid'),
+      'runtimes'     => {
+        'ruby18' => {
+          'executable'        => '/usr/bin/ruby',
+          'version'           => '1.8.7',
+          'version_flag'      => "-e 'puts RUBY_VERSION'"
+        }
+      },
+      'disable_dir_cleanup' => true,
+    }
+    @dea_config_file = File.join(@run_dir, 'dea.config')
+    File.open(@dea_config_file, 'w') {|f| YAML.dump(@dea_cfg, f) }
+    @dea_agent = DeaComponent.new("ruby -r#{nats_timeout_path} #{dea_path} -c #{@dea_config_file}", @dea_cfg['pid'], @dea_cfg, @run_dir)
+    @app_state_file = File.join(@run_dir, 'db', 'applications.json')
   end
 
   after :each do
-    @dea_agent.stop()
-    @dea_agent.is_running?().should be_false
-
-    # Cleanup app dir
-    FileUtils.rm_rf(APP_DIR)
-    File.directory?(APP_DIR).should be_false
-
-    # Cleanup config
-    FileUtils.rm_f(DEA_CONFIG_FILE)
-    File.exists?(DEA_CONFIG_FILE).should be_false
+    run_id_ctr += 1
   end
 
-  # ========== DEA Functionality tests ==========
-
-  it 'should ensure it can find an executable ruby' do
-    # Unknown file
-    lambda { DEA::Agent.new({'dea_ruby' => "/tmp/fsd94jklaf98"}) }.should raise_error
-
-    # Non executable file
-    lambda { DEA::Agent.new({'dea_ruby' => DEA_CONFIG_FILE}) }.should raise_error
+  it 'should not snapshot state if the initial connect to NATS fails' do
+    File.exists?(@app_state_file).should be_false
+    @dea_agent.start
+    wait_for { Process.waitpid(@dea_agent.pid, Process::WNOHANG) != nil }.should be_true
+    File.exists?(@app_state_file).should be_false
   end
 
-  it 'should ensure that a file-server is running' do
-    @dea_agent.start()
-    @dea_agent.is_running?().should be_true
-    wait_for { port_open?(DEA_CONFIG['filer_port']) }
-    port_open?(DEA_CONFIG['filer_port']).should be_true
-  end
+  describe 'when running' do
+    before :each do
+      @nats_server.start
+      wait_for { @nats_server.is_ready? }.should be_true
 
-  it 'should announce itself on startup' do
-    start_msg = nil
-    em_run_with_timeout do
-      NATS.start(:uri => NATS_URI) do
-        NATS.subscribe('dea.start') do |msg|
-          start_msg = msg
-          EM.stop
+      # The dea announces itself on startup (after all initialization has been performed).
+      # Listen for that message as a signal that it is ready.
+      start_msg = nil
+      em_run_with_timeout do
+        NATS.start(:uri => @nats_server.uri) do
+          NATS.subscribe('dea.start') do |msg|
+            start_msg = msg
+            EM.stop
+          end
+          # This is a little weird, but it ensures that our subscribe has been processed
+          NATS.publish('foo') { @dea_agent.start }
         end
-        # This is a little weird, but it ensures that our subscribe has been processed
-        NATS.publish('foo') do
-          @dea_agent.start()
-          @dea_agent.is_running?().should be_true
+      end
+
+      start_msg.should_not be_nil
+    end
+
+    after :each do
+      @dea_agent.stop
+      @dea_agent.is_running?.should be_false
+
+      @nats_server.stop
+      @nats_server.is_running?.should be_false
+    end
+
+    it 'should ensure it can find an executable ruby' do
+      # Unknown file
+      lambda { DEA::Agent.new({'dea_ruby' => "/tmp/fsd94jklaf98"}) }.should raise_error
+
+      # Non executable file
+      lambda { DEA::Agent.new({'dea_ruby' => @dea_config_file}) }.should raise_error
+    end
+
+    it 'should ensure that a file-server is running' do
+      wait_for { port_open?(@dea_cfg['filer_port']) }.should be_true
+    end
+
+    it 'should respond to status requests' do
+      send_request(@nats_server.uri, 'dea.status', nil).should_not be_nil
+    end
+
+    it 'should respond to discover requests' do
+      disc_msg = {'droplet' => 1, 'runtime' => 'ruby18', 'limits' => {'mem' => 1}}.to_json
+      send_request(@nats_server.uri, 'dea.discover', disc_msg).should_not be_nil
+    end
+
+    it 'should start a droplet when requested' do
+      droplet_info = start_droplet(@nats_server.uri, @droplet)
+      droplet_info.should_not be_nil
+      wait_for { port_open?(droplet_info['port']) }.should be_true
+    end
+
+    it 'should heartbeat a running droplet' do
+      droplet_info = start_droplet(@nats_server.uri, @droplet)
+      droplet_info.should_not be_nil
+      receive_message(@nats_server.uri, 'dea.heartbeat').should_not be_nil
+    end
+
+    it 'should respond to find droplet requests' do
+      droplet_info = start_droplet(@nats_server.uri, @droplet)
+      droplet_info.should_not be_nil
+      req = {'droplet' => @droplet['droplet']}.to_json
+      send_request(@nats_server.uri, 'dea.find.droplet', req).should_not be_nil
+    end
+
+    it 'should stop a running droplet when requested' do
+      droplet_info = start_droplet(@nats_server.uri, @droplet)
+      droplet_info.should_not be_nil
+      stop_droplet(@nats_server.uri, @droplet)
+      wait_for { !port_open?(droplet_info['port']) }.should be_true
+    end
+
+    it 'should properly exit when NATS fails to reconnect' do
+      @nats_server.stop
+      @nats_server.is_running?.should be_false
+      wait_for { Process.waitpid(@dea_agent.pid, Process::WNOHANG) != nil }.should be_true
+    end
+
+    it 'should snapshot state upon reconnect failure' do
+      File.exists?(@app_state_file).should be_false
+      @nats_server.stop
+      @nats_server.is_running?.should be_false
+      wait_for { Process.waitpid(@dea_agent.pid, Process::WNOHANG) != nil }.should be_true
+      File.exists?(@app_state_file).should be_true
+    end
+  end
+
+  def create_dir(dir)
+    File.directory?(dir).should be_false
+    FileUtils.mkdir(dir)
+    File.directory?(dir).should be_true
+  end
+
+  def send_request(uri, subj, req, timeout=10)
+    response = nil
+    em_run_with_timeout(timeout) do
+      NATS.start(:uri => uri) do
+        NATS.request(subj, req) do |msg|
+          response = msg
+          EM.stop
         end
       end
     end
-
-    start_msg.should_not be_nil
+    response
   end
 
-  it 'should respond to status requests' do
-    @dea_agent.start()
-    @dea_agent.is_running?().should be_true
-    status = nil
+  def receive_message(uri, subj, timeout=10)
+    ret = nil
     em_run_with_timeout do
-      NATS.start(:uri => NATS_URI) do
-        NATS.request('dea.status') do |msg|
-          status = msg
-          EM.stop
-        end
-      end
-    end
-
-    status.should_not be_nil
-  end
-
-  it 'should respond to discover requests' do
-    @dea_agent.start()
-    @dea_agent.is_running?().should be_true
-    agent = nil
-    disc_msg = {'droplet' => 1, 'runtime' => 'ruby18', 'limits' => {'mem' => 1}}.to_json()
-    em_run_with_timeout do
-      NATS.start(:uri => NATS_URI) do
-        NATS.request('dea.discover', disc_msg) do |msg|
-          agent = msg
-          EM.stop
-        end
-      end
-    end
-
-    agent.should_not be_nil
-  end
-
-  it 'should start a droplet when requested' do
-    @dea_agent.start()
-    @dea_agent.is_running?().should be_true
-    droplet_info = start_droplet(@droplet)
-    droplet_info.should_not be_nil
-    running = wait_for { port_open?(droplet_info['port']) }
-    running.should be_true
-  end
-
-  it 'should heartbeat a running droplet' do
-    @dea_agent.start()
-    @dea_agent.is_running?().should be_true
-    droplet_info = start_droplet(@droplet)
-    droplet_info.should_not be_nil
-
-    hb_recvd = false
-    em_run_with_timeout do
-      NATS.start(:uri => NATS_URI) do
-
-        # Wait for heartbeat
+      NATS.start(:uri => uri) do
         NATS.subscribe('dea.heartbeat') do |msg|
-          hb_recvd = true
+          ret = msg
           EM.stop
         end
       end
     end
-
-    hb_recvd.should be_true
+    ret
   end
 
-  it 'should respond to find droplet requests' do
-    @dea_agent.start()
-    @dea_agent.is_running?().should be_true
-    droplet_info = start_droplet(@droplet)
-    droplet_info.should_not be_nil
-
-    found_droplet = false
-    em_run_with_timeout do
-      NATS.start(:uri => NATS_URI) do
-        NATS.request('dea.find.droplet', {'droplet' => @droplet['droplet']}.to_json()) do |msg|
-          msg_json = JSON.parse(msg)
-          found_droplet = true
-          EM.stop
-        end
-      end
-    end
-
-    found_droplet.should be_true
-  end
-
-  it 'should stop a running droplet when requested' do
-    @dea_agent.start()
-    @dea_agent.is_running?().should be_true
-    droplet_info = start_droplet(@droplet)
-    droplet_info.should_not be_nil
-    stop_droplet(@droplet)
-    stopped = wait_for { !port_open?(droplet_info['port']) }
-    stopped.should be_true
-  end
-
-  it 'should properly exit when NATS fails to reconnect' do
-    @nats_server.stop
-    @nats_server.is_running?.should be_false
-    sleep(0.5)
-    @dea_agent.is_running?.should be_false
-  end
-
-  it 'should not attempt to snapshot state if the initial connect fails' do
-    File.exists?(APP_STATE_FILE).should be_false
-    @nats_server.stop
-    @nats_server.is_running?.should be_false
-    @dea_agent.start
-    sleep(0.5)
-    @dea_agent.is_running?.should be_false
-    File.exists?(APP_STATE_FILE).should be_false
-  end
-
-  it 'should snapshot state upon reconnect failure' do
-    File.exists?(APP_STATE_FILE).should be_false
-    @nats_server.start
-    @nats_server.is_running?.should be_true
-    @dea_agent.start
-    @dea_agent.is_running?.should be_true
-    File.exists?(APP_STATE_FILE).should be_false
-    @nats_server.stop
-    @nats_server.is_running?.should be_false
-    sleep(0.5)
-    @dea_agent.is_running?.should be_false
-
-    File.exists?(APP_STATE_FILE).should be_true
-  end
-
-  # ========== Helpers ==========
-
-  def start_droplet(droplet, timeout=10)
+  def start_droplet(uri, droplet, timeout=10)
     disc_msg = {
       'droplet'        => 1,
       'sha1'           => 22,
@@ -271,8 +221,8 @@ describe 'DEA Agent' do
     }.to_json()
 
     droplet_info = nil
-    em_run_with_timeout do
-      NATS.start(:uri => NATS_URI) do
+    em_run_with_timeout(timeout) do
+      NATS.start(:uri => uri) do
         NATS.request('dea.discover', disc_msg) do |msg|
 
           # Wait for the app
@@ -291,6 +241,8 @@ describe 'DEA Agent' do
     droplet_info
   end
 
+  # NB: This is intended to be used without the event-loop already running.
+  #     (We expect to block here.)
   def em_run_with_timeout(timeout=10)
     EM.run do
       EM.add_timer(timeout) { EM.stop }
@@ -298,22 +250,16 @@ describe 'DEA Agent' do
     end
   end
 
-  def stop_droplet(droplet)
+  def stop_droplet(uri, droplet)
     em_run_with_timeout do
-      NATS.start(:uri => NATS_URI) do
+      NATS.start(:uri => uri) do
         NATS.publish('dea.stop', { 'droplet' => droplet['droplet'] }.to_json) { EM.stop }
       end
     end
   end
 
-  def write_config(config_file, config)
-    File.open(config_file, 'w') do |f|
-      YAML.dump(config, f)
-    end
-  end
-
-  def create_droplet_bundle(bundlename)
-    staging_dir = File.join(TEST_DIR, 'staging')
+  def create_droplet_bundle(base_dir, bundlename)
+    staging_dir = File.join(base_dir, 'staging')
     FileUtils.mkdir(staging_dir)
     File.exists?(staging_dir).should be_true
     {'start_tcpserver.rb' => 'startup',
