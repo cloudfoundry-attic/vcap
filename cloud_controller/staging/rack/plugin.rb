@@ -18,7 +18,7 @@ class RackPlugin < StagingPlugin
     if ! File.exist?("app/Gemfile")
       raise "Rack applications *must* have a Gemfile"      
     end
-    "#{local_runtime} -S bundle exec #{gem_bin_dir}/thin -R config.ru $@ start"
+    "#{local_runtime} -S bundle exec #{local_runtime} #{gem_bin_dir}/thin -R config.ru $@ start"
   end
 
   private
