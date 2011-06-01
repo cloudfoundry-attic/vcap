@@ -525,6 +525,9 @@ class App < ActiveRecord::Base
     when "grails/1.0"
       self.framework = 'grails'
       self.runtime   = 'java'
+    when "lift/1.0"
+      self.framework = 'lift'
+      self.runtime   = 'java'
     end
     self.runtime = StagingPlugin.default_runtime_for(framework) if self.runtime.nil?
     true
