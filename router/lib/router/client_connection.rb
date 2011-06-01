@@ -60,8 +60,7 @@ module ClientConnection
   def terminate_app_conn
     return unless @bound_app_conn
     Router.log.debug "Terminating AppConnection"
-    @bound_app_conn.stop_proxying
-    @bound_app_conn.close_connection
+    @bound_app_conn.terminate
     @bound_app_conn = nil
   end
 
@@ -136,6 +135,13 @@ module ClientConnection
 
     # pick a random backend unless selected from above already
     @droplet = droplets[rand*droplets.size] unless @droplet
+
+    if @droplet[:tags]
+      @droplet[:tags].each do |key, value|
+        tag_metrics = VCAP::Component.varz[:tags][key][value]
+        tag_metrics[:requests] += 1
+      end
+    end
 
     @droplet[:requests] += 1
 

@@ -2,7 +2,7 @@
 host = CloudController.bind_address
 port = CloudController.instance_port
 uri  = AppConfig[:external_uri]
-register_msg = { :host => host, :port => port, :uris => [uri] }
+register_msg = { :host => host, :port => port, :uris => [uri], :tags => {:component => "CloudController"} }
 json = Yajl::Encoder.encode(register_msg)
 
 EM.next_tick do

@@ -19,7 +19,7 @@ File.open(PID_FILE, 'w+') do |f|
   f.write("%d\n" % (Process.pid()))
 end
 
-server = TCPServer.new('localhost', port)
+server = TCPServer.new('127.0.0.1', port)
 while true do
   client = server.accept()
   client.close()

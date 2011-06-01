@@ -9,6 +9,7 @@ log_level: DEBUG
 multi_tenant: true
 max_memory: 4096
 secure: false
+enforce_ulimit: false
 pid: /var/vcap/sys/run/dea2.pid
 
 # This is where the execution agent determines its available runtimes.

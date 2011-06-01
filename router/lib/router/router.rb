@@ -31,14 +31,14 @@ class Router
 
     def setup_listeners
       NATS.subscribe('router.register') { |msg|
-        msgHash = Yajl::Parser.parse(msg, :symbolize_keys => true)
-        return unless uris = msgHash[:uris]
-        uris.each { |uri| register_droplet(uri, msgHash[:host], msgHash[:port]) }
+        msg_hash = Yajl::Parser.parse(msg, :symbolize_keys => true)
+        return unless uris = msg_hash[:uris]
+        uris.each { |uri| register_droplet(uri, msg_hash[:host], msg_hash[:port], msg_hash[:tags]) }
       }
       NATS.subscribe('router.unregister') { |msg|
-        msgHash = Yajl::Parser.parse(msg, :symbolize_keys => true)
-        return unless uris = msgHash[:uris]
-        uris.each { |uri| unregister_droplet(uri, msgHash[:host], msgHash[:port]) }
+        msg_hash = Yajl::Parser.parse(msg, :symbolize_keys => true)
+        return unless uris = msg_hash[:uris]
+        uris.each { |uri| unregister_droplet(uri, msg_hash[:host], msg_hash[:port]) }
       }
     end
 
@@ -155,7 +155,7 @@ class Router
       @droplets[url]
     end
 
-    def register_droplet(url, host, port)
+    def register_droplet(url, host, port, tags)
       return unless host && port
       url.downcase!
       droplets = @droplets[url] || []
@@ -167,10 +167,18 @@ class Router
           return
         end
       }
+      tags.delete_if { |key, value| key.nil? || value.nil? } if tags
       droplet = {
-        :host => host, :port => port, :connections => [], :clients => Hash.new(0),
-        :url => url, :timestamp => Time.now, :requests => 0
+        :host => host,
+        :port => port,
+        :connections => [],
+        :clients => Hash.new(0),
+        :url => url,
+        :timestamp => Time.now,
+        :requests => 0,
+        :tags => tags
       }
+      add_tag_metrics(tags) if tags
       droplets << droplet
       @droplets[url] = droplets
       VCAP::Component.varz[:urls] = @droplets.size
@@ -189,6 +197,21 @@ class Router
       VCAP::Component.varz[:urls] = @droplets.size
       VCAP::Component.varz[:droplets] -= 1 unless (dsize == droplets.size)
       log.info "#{droplets.size} servers available for #{url}"
+    end
+
+    def add_tag_metrics(tags)
+      tags.each do |key, value|
+        key_metrics = VCAP::Component.varz[:tags][key] ||= {}
+        key_metrics[value] ||= {
+          :requests => 0,
+          :latency => VCAP::RollingMetric.new(60),
+          :responses_2xx => 0,
+          :responses_3xx => 0,
+          :responses_4xx => 0,
+          :responses_5xx => 0,
+          :responses_xxx => 0
+        }
+      end
     end
 
   end

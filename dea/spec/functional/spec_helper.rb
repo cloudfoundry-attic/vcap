@@ -35,7 +35,7 @@ class ForkedComponent
     @output_basedir = output_basedir
   end
 
-  def start()
+  def start
     fork do
       fn = File.join(@output_basedir, "#{@name}.#{Process.pid}.out")
       outfile = File.new(fn, 'w+')
@@ -45,10 +45,9 @@ class ForkedComponent
     end
     wait_for { File.exists? @pid_filename }
     @pid = File.read(@pid_filename).chomp.to_i()
-    wait_for { is_running? }
   end
 
-  def stop()
+  def stop
     return unless @pid && VCAP.process_running?(@pid)
     Process.kill('TERM', @pid)
     Process.waitpid(@pid, 0)
@@ -56,30 +55,29 @@ class ForkedComponent
     @pid = nil
   end
 
-  def is_running?()
-    raise NotImplementedError("You must implement is_running?()")
+  def is_running?
+    VCAP.process_running?(@pid)
   end
 end
 
 class NatsComponent < ForkedComponent
-  def initialize(cmd, pid_filename, port, output_basedir)
-    super(cmd, pid_filename, 'nats', output_basedir)
-    @port = port
+  attr_reader :port
+  attr_reader :uri
+
+  def initialize(opts)
+    super(opts[:cmd], opts[:pid_file], 'nats', opts[:outdir])
+    @port = opts[:port]
+    @uri = opts[:uri]
   end
 
-  def is_running?()
+  def is_ready?
     VCAP.process_running?(@pid) && port_open?(@port)
   end
-
 end
 
 class DeaComponent < ForkedComponent
   def initialize(cmd, pid_filename, config, output_basedir)
     super(cmd, pid_filename, 'dea', output_basedir)
     @config = config
-  end
-
-  def is_running?()
-    VCAP.process_running?(@pid) && port_open?(@config['filer_port'])
   end
 end

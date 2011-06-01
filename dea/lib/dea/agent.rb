@@ -76,6 +76,7 @@ module DEA
       @logger = VCAP.create_logger('dea', :log_file => config['log_file'], :log_rotation_interval => config['log_rotation_interval'])
       @logger.level = config['log_level']
       @secure = config['secure']
+      @enforce_ulimit = config['enforce_ulimit']
 
       @droplets = {}
       @usage = {}
@@ -487,6 +488,7 @@ module DEA
       app_env = message_json['env']
       users = message_json['users']
       runtime = message_json['runtime']
+      framework = message_json['framework']
 
       # Limits processing
       mem     = DEFAULT_APP_MEM
@@ -534,6 +536,7 @@ module DEA
         :fds_quota => num_fds,
         :state => :STARTING,
         :runtime => runtime,
+        :framework => framework,
         :start => Time.now,
         :state_timestamp => Time.now.to_i,
         :log_id => "(name=%s app_id=%s instance=%s index=%s)" % [name, droplet_id, instance_id, instance_index],
@@ -606,7 +609,7 @@ module DEA
 
         exec_operation = proc do |process|
           process.send_data("cd #{instance_dir}\n")
-          if @secure
+          if @secure || @enforce_ulimit
             process.send_data("ulimit -m #{mem_kbytes} 2> /dev/null\n")  # ulimit -m takes kb, soft enforce
             process.send_data("ulimit -v 3000000 2> /dev/null\n") # virtual memory at 3G, this will be enforced
             process.send_data("ulimit -n #{num_fds} 2> /dev/null\n")
@@ -1141,7 +1144,8 @@ module DEA
                      :dea  => VCAP::Component.uuid,
                      :host => @local_ip,
                      :port => instance[:port],
-                     :uris => options[:uris] || instance[:uris]
+                     :uris => options[:uris] || instance[:uris],
+                     :tags => {:framework => instance[:framework], :runtime => instance[:runtime]}
                    }.to_json)
     end
 
@@ -1368,6 +1372,8 @@ module DEA
         du_hash[dir] = size
       end
 
+      metrics = {:framework => {}, :runtime => {}}
+
       @droplets.each_value do |instances|
         instances.each_value do |instance|
           if instance[:pid] && pid_info[instance[:pid]]
@@ -1396,6 +1402,15 @@ module DEA
             #@logger.debug("Droplet Stats are = #{JSON.pretty_generate(usage)}")
             @mem_usage += mem
 
+            metrics.each do |key, value|
+              metric = value[instance[key]] ||= {:used_memory => 0, :reserved_memory => 0,
+                                                 :used_disk => 0, :used_cpu => 0}
+              metric[:used_memory] += mem
+              metric[:reserved_memory] += instance[:mem_quota] / 1024
+              metric[:used_disk] += disk
+              metric[:used_cpu] += cpu
+            end
+
             # Track running apps for varz tracking
             i2 = instance.dup
             i2[:usage] = cur_usage # Snapshot
@@ -1415,6 +1430,8 @@ module DEA
       end
       # export running app information to varz
       VCAP::Component.varz[:running_apps] = running_apps
+      VCAP::Component.varz[:frameworks] = metrics[:framework]
+      VCAP::Component.varz[:runtimes] = metrics[:runtime]
       ttlog = Time.now - ma_start
       @logger.warn("Took #{ttlog} to process ps and du stats") if ttlog > 0.4
       EM.add_timer(MONITOR_INTERVAL) { monitor_apps(false) } unless startup_check

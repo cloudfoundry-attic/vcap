@@ -14,6 +14,7 @@ require 'http/parser'
 
 require 'vcap/common'
 require 'vcap/component'
+require 'vcap/rolling_metric'
 
 $:.unshift(File.dirname(__FILE__))
 
@@ -146,9 +147,17 @@ EM.run do
 
   # Setup some of our varzs..
   VCAP::Component.varz[:requests] = 0
+  VCAP::Component.varz[:latency] = VCAP::RollingMetric.new(60)
+  VCAP::Component.varz[:responses_2xx] = 0
+  VCAP::Component.varz[:responses_3xx] = 0
+  VCAP::Component.varz[:responses_4xx] = 0
+  VCAP::Component.varz[:responses_5xx] = 0
+  VCAP::Component.varz[:responses_xxx] = 0
   VCAP::Component.varz[:bad_requests] = 0
   VCAP::Component.varz[:urls] = 0
   VCAP::Component.varz[:droplets] = 0
+
+  VCAP::Component.varz[:tags] = {}
 
   @router_id = VCAP.fast_uuid
   @hello_message = { :id => @router_id, :version => Router::VERSION }.to_json.freeze
