@@ -74,9 +74,9 @@ class StagingPlugin
   end
 
   # Checks the existence and version of the Ruby runtimes specified
-  # by the sinatra and rails staging manifests.
+  # by the sinatra, rack and rails staging manifests.
   def self.check_ruby_runtimes
-    %w[sinatra rails3].each do |framework|
+    %w[sinatra rails3 rack].each do |framework|
       manifests[framework]['runtimes'].each do |hash|
         hash.each do |name, properties|
           exe, ver = properties['executable'], properties['version']

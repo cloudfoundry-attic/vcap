@@ -1,5 +1,5 @@
 ---
-name: "rails3"
+name: "rack"
 runtimes:
   - "ruby18":
       version: "1.8.7" # FIXME change to 1.8.7-p334
@@ -29,11 +29,12 @@ runtimes:
 app_servers:
   - "thin":
       description: "Thin"
-      executable: false
+      executable: false # determined during staging
       default: true
 detection:
-  - "config/application.rb": true
-  - "config/environment.rb": true
+  - "config.ru": true
+  - "Gemfile": true
+  - "config/environment.rb": false # and config/environment.rb must not exist
 staged_services:
   - "name": "mysql"
     "version": "*"
