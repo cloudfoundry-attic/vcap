@@ -10,7 +10,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20110404125844) do
+ActiveRecord::Schema.define(:version => 20110521014004) do
 
   create_table "app_collaborations", :force => true do |t|
     t.integer  "app_id"
@@ -43,9 +43,11 @@ ActiveRecord::Schema.define(:version => 20110404125844) do
     t.integer  "run_count",           :default => 0,         :null => false
   end
 
+  add_index "apps", ["framework"], :name => "index_apps_on_framework"
   add_index "apps", ["name"], :name => "index_apps_on_name"
   add_index "apps", ["owner_id"], :name => "index_apps_on_user_id"
   add_index "apps", ["package_hash"], :name => "index_apps_on_package_hash"
+  add_index "apps", ["runtime"], :name => "index_apps_on_runtime"
   add_index "apps", ["staged_package_hash"], :name => "index_apps_on_staged_package_hash"
 
   create_table "binding_tokens", :force => true do |t|

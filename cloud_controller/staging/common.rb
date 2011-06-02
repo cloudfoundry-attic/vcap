@@ -149,13 +149,17 @@ class StagingPlugin
     # manifest directory, and it finds a framework.yml file, it will replace this.
     manifest_path = File.join(manifest_root, "#{framework}.yml")
     load_manifest(manifest_path)
-    Object.const_get("#{framework.capitalize}Plugin")
+    Object.const_get("#{framework.camelize}Plugin")
   end
 
   def self.load_manifest(path)
     framework = File.basename(path, '.yml')
     m = YAML.load_file(path)
-    manifests[framework] = m
+    unless m['disabled']
+      manifests[framework] = m
+    else
+      manifests.delete(framework)
+    end
   rescue
     puts "Failed to load staging manifest for #{framework} from #{path.inspect}"
     exit 1

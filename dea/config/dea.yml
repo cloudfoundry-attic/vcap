@@ -9,6 +9,7 @@ log_level: DEBUG
 multi_tenant: true
 max_memory: 4096
 secure: false
+enforce_ulimit: false
 pid: /var/vcap/sys/run/dea.pid
 
 # This is where the execution agent determines its available runtimes.
@@ -37,9 +38,13 @@ runtimes:
     version: 1.6.0
     version_flag: '-version'
     environment:
+  erlangR14B02:
+    executable: /var/vcap/runtimes/erlang-R14B02/bin/erl
+    version: ".* 5.8.3"
+    version_flag: '-version'
+    environment:
   php5:
     executable: php-cgi
     version: "PHP 5\.3\..*"
     version_flag: '-v'
     environment:
-      

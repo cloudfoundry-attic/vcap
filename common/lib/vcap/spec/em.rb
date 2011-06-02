@@ -7,7 +7,7 @@ module VCAP
 
       def em(options = {})
         raise "no block given" unless block_given?
-        timeout = options[:timeout] ||= 0.1
+        timeout = options[:timeout] ||= 1.0
 
         ::EM.run {
           quantum = 0.005

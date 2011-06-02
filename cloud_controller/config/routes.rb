@@ -4,6 +4,7 @@
 CloudController::Application.routes.draw do
   get    'info'                      => 'default#info',         :as => :cloud_info
   get    'info/services'             => 'default#service_info', :as => :cloud_service_info
+  get    'users'                     => 'users#list',           :as => :list_users
   post   'users'                     => 'users#create',         :as => :create_user
   get    'users/*email'              => 'users#info',           :as => :user_info
   delete 'users/*email'              => 'users#delete',         :as => :delete_user

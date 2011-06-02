@@ -6,6 +6,7 @@ module AppConnection
   def initialize(client, request, droplet)
     Router.log.debug "Creating AppConnection"
     @client, @request, @droplet = client, request, droplet
+    @start_time = Time.now
     @connected = false
     @outstanding_requests = 1
     Router.outstanding_request_count += 1
@@ -68,7 +69,7 @@ module AppConnection
       @client.send_data(data)
     else
       Router.log.info "Pipelined response detected!"
-      # We have a pipelined response, we need to hansd over the new headers and only send the proper
+      # We have a pipelined response, we need to hand over the new headers and only send the proper
       # body segments to the backend
       body = data.slice!(0, psize)
       @client.send_data(body)
@@ -76,11 +77,40 @@ module AppConnection
     end
   end
 
+  def record_stats
+    return unless @parser
+
+    latency = ((Time.now - @start_time) * 1000).to_i
+    response_code = @parser.status_code
+    response_code_metric = :responses_xxx
+    if (200..299).include?(response_code)
+      response_code_metric = :responses_2xx
+    elsif (300..399).include?(response_code)
+      response_code_metric = :responses_3xx
+    elsif (400..499).include?(response_code)
+      response_code_metric = :responses_4xx
+    elsif (500..599).include?(response_code)
+      response_code_metric = :responses_5xx
+    end
+
+    VCAP::Component.varz[response_code_metric] += 1
+    VCAP::Component.varz[:latency] << latency
+
+    if @droplet[:tags]
+      @droplet[:tags].each do |key, value|
+        tag_metrics = VCAP::Component.varz[:tags][key][value]
+        tag_metrics[response_code_metric] += 1
+        tag_metrics[:latency] << latency
+      end
+    end
+  end
+
   def on_message_complete
+    record_stats
     @parser = nil
-    :stop
     @outstanding_requests -= 1
     Router.outstanding_request_count -= 1
+    :stop
   end
 
   def cant_be_recycled?
@@ -121,6 +151,7 @@ module AppConnection
   end
 
   def rebind(client, request)
+    @start_time = Time.now
     @client = client
     reuse(request)
   end
@@ -159,4 +190,11 @@ module AppConnection
 
     @client.close_connection_after_writing if @client
   end
+
+  def terminate
+    stop_proxying
+    close_connection
+    on_message_complete if @outstanding_requests > 0
+  end
+
 end
