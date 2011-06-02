@@ -18,16 +18,8 @@ class Router
     def config(config)
       @droplets = {}
       @client_connection_count = @app_connection_count = @outstanding_request_count = 0
-      @log = Logger.new(config['log_file'] ? config['log_file'] : STDOUT, 'daily')
-      @log.level = case config['log_level']
-        when 'DEBUG' then Logger::DEBUG
-        when 'INFO'  then Logger::INFO
-        when 'WARN'  then Logger::WARN
-        when 'ERROR' then Logger::ERROR
-        when 'FATAL' then Logger::FATAL
-        else Logger::UNKNOWN
-      end
-
+      @log = VCAP.create_logger('router', :log_file => config['log_file'], :log_rotation_interval => config['log_rotation_interval'])
+      @log.level =  config['log_level']
       if config['404_redirect']
         @notfound_redirect = "HTTP/1.1 302 Not Found\r\nConnection: close\r\nLocation: #{config['404_redirect']}\r\n\r\n".freeze
         log.info "Registered 404 redirect at #{config['404_redirect']}"
@@ -39,14 +31,14 @@ class Router
 
     def setup_listeners
       NATS.subscribe('router.register') { |msg|
-        msgHash = Yajl::Parser.parse(msg, :symbolize_keys => true)
-        return unless uris = msgHash[:uris]
-        uris.each { |uri| register_droplet(uri, msgHash[:host], msgHash[:port]) }
+        msg_hash = Yajl::Parser.parse(msg, :symbolize_keys => true)
+        return unless uris = msg_hash[:uris]
+        uris.each { |uri| register_droplet(uri, msg_hash[:host], msg_hash[:port], msg_hash[:tags]) }
       }
       NATS.subscribe('router.unregister') { |msg|
-        msgHash = Yajl::Parser.parse(msg, :symbolize_keys => true)
-        return unless uris = msgHash[:uris]
-        uris.each { |uri| unregister_droplet(uri, msgHash[:host], msgHash[:port]) }
+        msg_hash = Yajl::Parser.parse(msg, :symbolize_keys => true)
+        return unless uris = msg_hash[:uris]
+        uris.each { |uri| unregister_droplet(uri, msg_hash[:host], msg_hash[:port]) }
       }
     end
 
@@ -102,6 +94,17 @@ class Router
 
     def check_registered_urls
       start = Time.now
+
+      # If NATS is reconnecting, let's be optimistic and assume
+      # the apps are there instead of actively pruning.
+      if NATS.client.reconnecting?
+        log.info "Suppressing checks on registered URLS while reconnecting to mbus."
+        @droplets.each_pair do |url, instances|
+          instances.each { |droplet| droplet[:timestamp] = start }
+        end
+        return
+      end
+
       to_drop = []
       @droplets.each_pair do |url, instances|
         instances.each do |droplet|
@@ -152,7 +155,7 @@ class Router
       @droplets[url]
     end
 
-    def register_droplet(url, host, port)
+    def register_droplet(url, host, port, tags)
       return unless host && port
       url.downcase!
       droplets = @droplets[url] || []
@@ -164,10 +167,18 @@ class Router
           return
         end
       }
+      tags.delete_if { |key, value| key.nil? || value.nil? } if tags
       droplet = {
-        :host => host, :port => port, :connections => [], :clients => Hash.new(0),
-        :url => url, :timestamp => Time.now, :requests => 0
+        :host => host,
+        :port => port,
+        :connections => [],
+        :clients => Hash.new(0),
+        :url => url,
+        :timestamp => Time.now,
+        :requests => 0,
+        :tags => tags
       }
+      add_tag_metrics(tags) if tags
       droplets << droplet
       @droplets[url] = droplets
       VCAP::Component.varz[:urls] = @droplets.size
@@ -186,6 +197,21 @@ class Router
       VCAP::Component.varz[:urls] = @droplets.size
       VCAP::Component.varz[:droplets] -= 1 unless (dsize == droplets.size)
       log.info "#{droplets.size} servers available for #{url}"
+    end
+
+    def add_tag_metrics(tags)
+      tags.each do |key, value|
+        key_metrics = VCAP::Component.varz[:tags][key] ||= {}
+        key_metrics[value] ||= {
+          :requests => 0,
+          :latency => VCAP::RollingMetric.new(60),
+          :responses_2xx => 0,
+          :responses_3xx => 0,
+          :responses_4xx => 0,
+          :responses_5xx => 0,
+          :responses_xxx => 0
+        }
+      end
     end
 
   end

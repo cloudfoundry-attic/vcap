@@ -13,7 +13,7 @@ class Rails3Plugin < StagingPlugin
     if uses_bundler?
       # Specify Thin if the app bundled it; otherwise let Rails figure it out.
       server_script = thin? ? "server thin" : "server"
-      "#{local_runtime} #{gem_bin_dir}/bundle exec rails #{server_script} $@"
+      "#{local_runtime} #{gem_bin_dir}/bundle exec #{local_runtime} #{gem_bin_dir}/rails #{server_script} $@"
     else
       "#{local_runtime} -S thin -R config.ru $@ start"
     end
@@ -26,7 +26,7 @@ class Rails3Plugin < StagingPlugin
 
   def migration_command
     if uses_bundler?
-      "#{local_runtime} #{gem_bin_dir}/bundle exec rake db:migrate --trace"
+      "#{local_runtime} #{gem_bin_dir}/bundle exec #{local_runtime} #{gem_bin_dir}/rake db:migrate --trace"
     else
       "#{local_runtime} -S rake db:migrate --trace"
     end
@@ -51,13 +51,16 @@ class Rails3Plugin < StagingPlugin
       vars['PATH'] = "$PWD/app/rubygems/ruby/#{library_version}/bin:#{local_bin_path}:/usr/bin:/bin"
       vars['GEM_PATH'] = vars['GEM_HOME'] = "$PWD/app/rubygems/ruby/#{library_version}"
     end
+    vars['RUBYOPT'] = '-I$PWD/ruby -rstdsync'
     generate_startup_script(vars) do
-      <<-MIGRATE
+      cmds = ['mkdir ruby', 'echo "\$stdout.sync = true" >> ./ruby/stdsync.rb']
+      cmds << <<-MIGRATE
 if [ -f "$PWD/app/config/database.yml" ] ; then
   cd app && #{migration_command} >>../logs/migration.log 2>> ../logs/migration.log && cd ..;
 fi
       MIGRATE
-    end
+      cmds.join("\n")
+      end
   end
 
   # Rails applications often disable asset serving in production mode, and delegate that to

@@ -134,6 +134,12 @@ class ApplicationController < ActionController::Base
   end
 
   def handle_general_exception(e)
+    begin
+      logger.error "Exception Caught (#{e.class.name}): #{e.to_s}"
+      logger.error "  #{e.backtrace.join("\n  ")}"
+    rescue
+      # Do nothing
+    end
     render_cloud_error CloudError.new(CloudError::SYSTEM_ERROR)
   end
 

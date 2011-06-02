@@ -3,6 +3,7 @@ PATH
   specs:
     vcap_common (0.99)
       eventmachine (~> 0.12.10)
+      logging (>= 1.5.0)
       nats
       thin
       yajl-ruby
@@ -11,7 +12,7 @@ GEM
   remote: http://rubygems.org/
   specs:
     addressable (2.2.4)
-    daemons (1.1.2)
+    daemons (1.1.3)
     diff-lcs (1.1.2)
     em-http-request (1.0.0.beta.3)
       addressable (>= 2.2.3)
@@ -23,7 +24,10 @@ GEM
     eventmachine (0.12.10)
     http_parser.rb (0.5.1)
     json_pure (1.5.1)
-    nats (0.4.2)
+    little-plugger (1.1.2)
+    logging (1.5.0)
+      little-plugger (>= 1.1.2)
+    nats (0.4.10)
       daemons (>= 1.1.0)
       eventmachine (>= 0.12.10)
       json_pure (>= 1.5.1)

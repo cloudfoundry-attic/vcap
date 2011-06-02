@@ -22,7 +22,7 @@ module VCAP
   class Component
 
     # We will suppress these from normal varz reporting by default.
-    CONFIG_SUPPRESS = Set.new([:mbus, :keys])
+    CONFIG_SUPPRESS = Set.new([:mbus, :service_mbus, :keys, :database_environment, :mysql, :password])
 
     class << self
 
@@ -78,18 +78,22 @@ module VCAP
       def register(opts)
         uuid = VCAP.fast_uuid
         type = opts[:type]
+        index = opts[:index]
+        uuid = "#{index}-#{uuid}" if index
         host = opts[:host] || VCAP.local_ip
-        port = VCAP.grab_ephemeral_port
+        port = opts[:port] || VCAP.grab_ephemeral_port
         nats = opts[:nats] || NATS
-        auth = [VCAP.fast_uuid, VCAP.fast_uuid]
+        auth = [opts[:user] || VCAP.fast_uuid, opts[:password] || VCAP.fast_uuid]
 
         # Discover message limited
         @discover = {
           :type => type,
+          :index => index,
           :uuid => uuid,
           :host => "#{host}:#{port}",
           :credentials => auth,
-          :start => Time.now }
+          :start => Time.now
+        }
 
         # Varz is customizable
         @varz = @discover.dup
@@ -118,9 +122,25 @@ module VCAP
         @discover[:uptime] = VCAP.uptime_string(Time.now - @discover[:start])
       end
 
+      def clear_level(h)
+        h.each do |k, v|
+          if CONFIG_SUPPRESS.include?(k.to_sym)
+            h.delete(k)
+          else
+            clear_level(h[k]) if v.instance_of? Hash
+          end
+        end
+      end
+
       def sanitize_config(config)
-        config = config.dup
-        config.each { |k, v| config.delete(k) if CONFIG_SUPPRESS.include?(k.to_sym) }
+        # Can't Marshal/Deep Copy logger instances that services use
+        if config[:logger]
+          config = config.dup
+          config.delete(:logger)
+        end
+        # Deep copy
+        config = Marshal.load(Marshal.dump(config))
+        clear_level(config)
         config
       end
     end

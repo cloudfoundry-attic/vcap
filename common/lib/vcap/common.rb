@@ -1,5 +1,6 @@
 # Copyright (c) 2009-2011 VMware, Inc.
 require 'fileutils'
+require 'logging'
 require 'socket'
 
 # VMware's Cloud Application Platform
@@ -120,6 +121,27 @@ module VCAP
     else
       hash
     end
+  end
+
+  # Helper for creating logs based on common config options. Returns a logger appending to standard out
+  # by default. This is somewhat kitchen-sink, is better than duplicating this code in each component.
+  #
+  # @param  String  name  Unique ID for this logger
+  # @param  Hash    opts  :log_file => Filename where log messages should go
+  #                       :log_rotation_interval => If supplied, rotate logs on this interval
+  def self.create_logger(name, opts={})
+    log = Logging.logger[name]
+    layout = Logging.layouts.pattern(:pattern => '[%.1l, [%d] %5l -- %c: %m\n')
+    appender = Logging.appenders.stdout(:layout => layout)
+    if opts[:log_file]
+      if opts[:log_rotation_interval]
+        appender = Logging.appenders.rolling_file(opts[:log_file], :age => opts[:log_rotation_interval], :layout => layout)
+      else
+        appender = Logging.appenders.file(opts[:log_file], :layout => layout)
+      end
+    end
+    log.appenders = [appender]
+    log
   end
 
   # Helper class to atomically create/update pidfiles and ensure that only one instance of a given

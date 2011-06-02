@@ -19,8 +19,8 @@ class App < ActiveRecord::Base
 
   AppStates = %w[STOPPED STARTED]
   PackageStates = %w[PENDING STAGED FAILED]
-  Runtimes = %w[ruby18 ruby19 java node php5]
-  Frameworks = %w[sinatra rails3 spring grails node php unknown]
+  Runtimes = %w[ruby18 ruby19 java node erlangR14B02 php5]
+  Frameworks = %w[sinatra rails3 spring grails node php otp_rebar lift unknown]
 
   validates_presence_of :name, :framework, :runtime
 
@@ -524,6 +524,9 @@ class App < ActiveRecord::Base
       self.runtime   = 'java'
     when "grails/1.0"
       self.framework = 'grails'
+      self.runtime   = 'java'
+    when "lift/1.0"
+      self.framework = 'lift'
       self.runtime   = 'java'
     end
     self.runtime = StagingPlugin.default_runtime_for(framework) if self.runtime.nil?

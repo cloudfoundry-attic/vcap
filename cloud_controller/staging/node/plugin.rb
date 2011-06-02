@@ -36,7 +36,7 @@ class NodePlugin < StagingPlugin
       # We need to make this smarter, and then allow client to choose or
       # send us a hint.
 
-      ['app.js', 'index.js', 'main.js', 'application.js'].each do |fname|
+      ['server.js', 'app.js', 'index.js', 'main.js', 'application.js'].each do |fname|
         file = fname if js_files.include? fname
       end
     end

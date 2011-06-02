@@ -4,6 +4,8 @@ require File.dirname(__FILE__) + '/../spec_helper'
 require 'router/router'
 require 'logger'
 
+require 'vcap/rolling_metric'
+
 module VCAP
   class Component
     class << self
@@ -22,11 +24,12 @@ describe Router do
     VCAP::Component.setup
     VCAP::Component.varz[:urls] = 0
     VCAP::Component.varz[:droplets] = 0
+    VCAP::Component.varz[:tags] = {}
   end
 
   describe 'Router.config' do
     it 'should set up a logger' do
-      Router.log.should be_an_instance_of(Logger)
+      Router.log.should be_an_instance_of(Logging::Logger)
     end
 
     it 'should set up a session key' do
@@ -38,7 +41,7 @@ describe Router do
   describe 'Router.register_droplet' do
 
     it 'should register a droplet' do
-      Router.register_droplet('foo.vcap.me', '10.0.1.22', 2222)
+      Router.register_droplet('foo.vcap.me', '10.0.1.22', 2222, {})
       VCAP::Component.varz[:droplets].should == 1
       VCAP::Component.varz[:urls].should == 1
     end
@@ -64,7 +67,7 @@ describe Router do
     end
 
     it 'should count droplets independent of URL' do
-      Router.register_droplet('foo.vcap.me', '10.0.1.22', 2224)
+      Router.register_droplet('foo.vcap.me', '10.0.1.22', 2224, {})
       VCAP::Component.varz[:droplets].should == 2
       VCAP::Component.varz[:urls].should == 1
     end
@@ -76,9 +79,17 @@ describe Router do
     end
 
     it 'should ignore duplicates' do
-      Router.register_droplet('foo.vcap.me', '10.0.1.22', 2224)
+      Router.register_droplet('foo.vcap.me', '10.0.1.22', 2224, {})
       VCAP::Component.varz[:droplets].should == 2
       VCAP::Component.varz[:urls].should == 1
+    end
+
+    it 'should record tags' do
+      VCAP::Component.varz[:tags]["component"].should be_nil
+      Router.register_droplet('foobar.vcap.me', '10.0.1.22', 2225, {"component" => "test"})
+      VCAP::Component.varz[:tags]["component"]["test"].should_not be_nil
+      droplets = Router.lookup_droplet('foobar.vcap.me')
+      droplets.first[:tags].should == {"component" => "test"}
     end
 
   end
@@ -86,6 +97,12 @@ describe Router do
   describe 'Router.unregister_droplet' do
     it 'should unregister a droplet' do
       Router.unregister_droplet('foo.vcap.me', '10.0.1.22', 2224)
+      VCAP::Component.varz[:droplets].should == 2
+      VCAP::Component.varz[:urls].should == 2
+    end
+
+    it 'should unregister a droplet that had tags' do
+      Router.unregister_droplet('foobar.vcap.me', '10.0.1.22', 2225)
       VCAP::Component.varz[:droplets].should == 1
       VCAP::Component.varz[:urls].should == 1
     end
@@ -104,7 +121,7 @@ describe Router do
 
   describe 'Router.session_keys' do
     it 'should properly encrypt and decrypt session keys' do
-      Router.register_droplet('foo.vcap.me', '10.0.1.22', 2222)
+      Router.register_droplet('foo.vcap.me', '10.0.1.22', 2222, {})
       droplets = Router.lookup_droplet('foo.vcap.me')
       droplets.should have(1).items
       droplet = droplets.first
