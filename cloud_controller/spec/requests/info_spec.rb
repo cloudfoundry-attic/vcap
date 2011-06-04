@@ -26,6 +26,12 @@ describe "A GET request to /info" do
         @current_headers = headers_for(@current_user, nil, nil, (scenario_vars[:protocol]=="https"))
       end
 
+      after do
+        # Back to defaults (false)
+        AppConfig[:https_required] = false
+        AppConfig[:https_required_for_admins] = false
+      end
+
       # These should work in EVERY config scenario
       it "with invalid authorization header for #{scenario_vars[:user]}" do
         headers = @current_headers

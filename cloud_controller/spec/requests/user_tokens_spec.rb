@@ -33,6 +33,12 @@ describe "Requesting a new user token" do
         @current_headers = {'X-Forwarded_Proto' => scenario_vars[:protocol]}
       end
 
+      after do
+        # Back to defaults (false)
+        AppConfig[:https_required] = false
+        AppConfig[:https_required_for_admins] = false
+      end
+
       it "and #{scenario_vars[:user]} is logging in" do
         post @current_token_path, @current_password_json, @current_headers
         response.status.should == (scenario_vars[:success] ? 200 : 403)

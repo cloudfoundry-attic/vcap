@@ -71,8 +71,10 @@ class ApplicationController < ActionController::Base
       token = UserToken.decode(auth_token_header)
       if token.valid?
         @current_user = ::User.find_by_email(token.user_name)
-        if AppConfig[:https_required] or (@current_user.admin? and AppConfig[:https_required_for_admins])
-          raise CloudError.new(CloudError::HTTPS_REQUIRED) unless request_https? 
+        unless @current_user.nil?
+          if AppConfig[:https_required] or (@current_user.admin? and AppConfig[:https_required_for_admins])
+            raise CloudError.new(CloudError::HTTPS_REQUIRED) unless request_https? 
+          end
         end
       end
     end
