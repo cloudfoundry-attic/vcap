@@ -26,7 +26,7 @@ unless AppConfig
 end
 
 env_overrides = {:local_route => 'CLOUD_CONTROLLER_HOST',
-                 :instance_port => 'CLOUD_CONTROLLER_PORT',
+                 :external_port => 'CLOUD_CONTROLLER_PORT',
                  :rails_environment => 'RAILS_ENV'}
 
 required = { :external_uri => 'api.vcap.me',
@@ -38,7 +38,7 @@ required = { :external_uri => 'api.vcap.me',
              :allow_external_app_uris => false,
              :staging => { :max_concurrent_stagers => 10,
                            :max_staging_runtime => 60 },
-             :instance_port => 9022,
+             :external_port => 9022,
              :directories => { :droplets          => '/var/vcap/shared/droplets',
                                :resources         => '/var/vcap/shared/resources',
                                :staging_manifests => 'staging/manifests',
