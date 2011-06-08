@@ -44,7 +44,7 @@ class ApplicationController < ActionController::Base
   end
 
   def body_params
-    if request.body.blank?
+    if request.body.blank? 
       {}
     else
       @body_params ||= Yajl::Parser.parse(request.body.read, :symbolize_keys => true)

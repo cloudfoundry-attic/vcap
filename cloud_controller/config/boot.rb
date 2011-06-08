@@ -67,11 +67,23 @@ module CloudController
       AppConfig[:instance_port]
     end
 
+    def external_port
+      AppConfig[:external_port]
+    end
+
+    def use_nginx
+      AppConfig[:use_nginx]
+    end
+
     # This also sets an environment variable so
     # port information can be passed to subprocesses.
     def instance_port=(port)
       ENV['CLOUD_CONTROLLER_PORT'] = port.to_s
       AppConfig[:instance_port] = port.to_i
+    end
+
+    def external_port=(port)
+      AppConfig[:external_port] = port.to_i
     end
 
     def pid

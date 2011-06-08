@@ -23,7 +23,7 @@ require cc_boot
 
 # Sets TCP/IP environment for sub-processes as well.
 if $cc_port && $cc_port.nonzero?
-  CloudController.instance_port = $cc_port
+  CloudController.external_port = $cc_port
 end
 
 begin
@@ -38,8 +38,16 @@ rescue
   exit 1
 end
 
+if CloudController.use_nginx
+  real_cc_port = CloudController.instance_port
+  bind_to = '127.0.0.1'
+else
+  real_cc_port = CloudController.external_port
+  bind_to = CloudController.bind_address
+end
+
 require 'thin'
-server = Thin::Server.new(CloudController.bind_address, CloudController.instance_port)
+server = Thin::Server.new(bind_to,real_cc_port)
 cc_rack = File.join(cc_root, 'config.ru')
 server.app = Rack::Adapter.load(cc_rack)
 # The routers proxying to us handle killing inactive connections. Set an upper limit

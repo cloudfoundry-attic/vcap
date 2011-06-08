@@ -18,9 +18,11 @@ app_uris:
 #  reserved_list: [www, test, dash, register, foo, bar]
 #  reserved_length: 3
 
-instance_port: 9022
+use_nginx: false    #using an nginx proxy in front of CC?
+external_port: 9022 #public CC port
+instance_port: 9025 #where to listen if using nginx
 
-# if file is set, it must be a fully-qualified path,
+# if log_file is set, it must be a fully-qualified path,
 # because the bin/vcap script reads it directly from the file.
 logging:
   level: debug

@@ -1,6 +1,6 @@
 # The CloudController versions of these methods take any command-line arguments into account.
 host = CloudController.bind_address
-port = CloudController.instance_port
+port = CloudController.external_port
 uri  = AppConfig[:external_uri]
 register_msg = { :host => host, :port => port, :uris => [uri], :tags => {:component => "CloudController"} }
 json = Yajl::Encoder.encode(register_msg)

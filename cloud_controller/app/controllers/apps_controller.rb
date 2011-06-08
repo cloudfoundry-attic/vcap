@@ -55,6 +55,18 @@ class AppsController < ApplicationController
     render :nothing => true, :status => 200
   end
 
+  def upload_nginx
+    wraper_class = Class.new do
+      attr_accessor :path
+    end
+    path_wrap = wraper_class.new
+    path_wrap.path = params[:application_path]
+    resources = json_param(:resources)
+    package = AppPackage.new(@app, path_wrap, resources)
+    @app.latest_bits_from(package)
+    render :nothing => true, :status => 200
+  end
+
   def download
     path = @app.package_path
     if path && File.exists?(path)
