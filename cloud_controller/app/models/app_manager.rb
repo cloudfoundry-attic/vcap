@@ -433,7 +433,7 @@ class AppManager
   end
 
   def download_app_uri(path)
-    ['http://', "#{CloudController.bind_address}:#{CloudController.instance_port}", path].join
+    ['http://', "#{CloudController.bind_address}:#{CloudController.external_port}", path].join
   end
 
   # start_instance involves several moving pieces, from sending requests for help to the
