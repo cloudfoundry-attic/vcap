@@ -64,18 +64,47 @@ module CloudController
     end
 
     def instance_port
-      AppConfig[:instance_port]
+      AppConfig[:nginx][:insecure_instance_port]
+    end
+
+    def instance_socket
+      AppConfig[:nginx][:instance_socket]
+    end
+
+    def external_port
+      AppConfig[:external_port]
+    end
+
+    def use_nginx
+      AppConfig[:nginx][:use_nginx]
     end
 
     # This also sets an environment variable so
     # port information can be passed to subprocesses.
     def instance_port=(port)
       ENV['CLOUD_CONTROLLER_PORT'] = port.to_s
-      AppConfig[:instance_port] = port.to_i
+      AppConfig[:nginx][:insecure_instance_port] = port.to_i
+    end
+
+    def instance_socket=(socket)
+      ENV['CLOUD_CONTROLLER_SOCKET'] = socket
+      AppConfig[:nginx][:instance_socket] = socket
+    end
+
+    def external_port=(port)
+      AppConfig[:external_port] = port.to_i
     end
 
     def pid
       AppConfig[:pid]
+    end
+
+    def tmp_dir
+      AppConfig[:directories][:tmpdir]
+    end
+
+    def uploads_dir
+      File.join(tmp_dir,'/uploads')
     end
 
     def database_configuration

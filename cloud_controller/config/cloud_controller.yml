@@ -18,9 +18,16 @@ app_uris:
 #  reserved_list: [www, test, dash, register, foo, bar]
 #  reserved_length: 3
 
-instance_port: 9022
+external_port: 9022 #public CC port
 
-# if file is set, it must be a fully-qualified path,
+#nginx proxy provide multiple functions including
+#offloading of file uploads/downloads.
+nginx:
+  use_nginx: true   #nginx proxy in front of CC?
+  #instance_socket: /tmp/cloud_controller.sock
+  insecure_instance_port: 9025 #debug only!!!! -- not for production use.
+
+# if log_file is set, it must be a fully-qualified path,
 # because the bin/vcap script reads it directly from the file.
 logging:
   level: debug
@@ -36,7 +43,8 @@ directories:
   resources: /var/vcap/shared/resources
   # default values, relative to Rails.root. Leading slash for full path.
   staging_manifests: staging/manifests
-  tmpdir: tmp
+  # this directory blown away at startup, be careful.
+  tmpdir: /var/vcap/data/cloud_controller/tmp
 mbus: nats://localhost:4222/
 keys:
   password: 'password key goes here'
