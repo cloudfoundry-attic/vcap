@@ -30,6 +30,8 @@ env_overrides = {:local_route => 'CLOUD_CONTROLLER_HOST',
                  :rails_environment => 'RAILS_ENV'}
 
 required = { :external_uri => 'api.vcap.me',
+             :description => 'VMware\'s Cloud Application Platform',
+             :support_address => 'http://support.cloudfoundry.com',
              :rails_environment => 'development',
              :local_route  => '127.0.0.1',
              :local_register_only => true,
