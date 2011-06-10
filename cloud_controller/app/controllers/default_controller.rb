@@ -5,9 +5,9 @@ class DefaultController < ApplicationController
     info = {
       :name => 'vcap',
       :build => 2222,
-      :support =>  'support@cloudfoundry.com',
+      :support =>  AppConfig[:support_address],
       :version =>  CloudController.version,
-      :description =>  'VMware\'s Cloud Application Platform'
+      :description =>  AppConfig[:description]
     }
     # If there is a logged in user, give out additional information
     if user

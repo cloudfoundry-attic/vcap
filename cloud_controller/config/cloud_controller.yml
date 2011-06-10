@@ -1,5 +1,7 @@
 ---
 external_uri: api.vcap.me
+description: "VMware's Cloud Application Platform"
+support_address: http://support.cloudfoundry.com
 local_route: 127.0.0.1
 local_register_only: false
 
