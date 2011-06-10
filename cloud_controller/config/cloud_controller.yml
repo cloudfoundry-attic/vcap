@@ -76,3 +76,5 @@ builtin_services:
     token: "0xdeadbeef"
   mongodb:
     token: "0xdeadbeef"
+  rabbitmq:
+    token: "0xdeadbeef"

@@ -134,7 +134,6 @@ class HealthManager
   def run
     @started = Time.now.to_i
     register_error_handler
-    configure_timers
 
     NATS.on_error do |e|
       @logger.error("NATS problem, #{e}")
@@ -146,9 +145,11 @@ class HealthManager
       @logger.error("#{e.backtrace.join("\n")}")
     end
 
-    NATS.start(:uri => @config['mbus'])
-    register_as_component
-    subscribe_to_messages
+    NATS.start(:uri => @config['mbus']) do
+      configure_timers
+      register_as_component
+      subscribe_to_messages
+    end
   end
 
   # We use the CloudController database configuration

@@ -66,7 +66,7 @@ beginning and towards the end. The entire process takes ~1 hour, so just
 keep a loose eye on it.
 
      sudo apt-get install curl
-     bash < <(curl -s -k -B https://github.com/cloudfoundry/vcap/raw/master/setup/install)
+     bash < <(curl -s -k -B https://raw.github.com/cloudfoundry/vcap/master/setup/install)
 
 NOTE: The automated setup does not auto-start the system. Once you are
 done with the setup, exit your current shell, restart a new shell and continue
