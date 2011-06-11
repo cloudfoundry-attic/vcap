@@ -9,6 +9,7 @@ gem 'logging', '>= 1.5.0'
 
 # VCAP common components
 gem 'vcap_common', :require => ['vcap/common', 'vcap/component'], :path => '../common'
+gem 'vcap_logging', :require => ['vcap/logging']
 
 # Databases
 gem 'sqlite3'

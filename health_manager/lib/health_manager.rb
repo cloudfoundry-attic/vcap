@@ -37,6 +37,7 @@ module CloudController
     require 'nats/client'
     require 'vcap/common'
     require 'vcap/component'
+    require 'vcap/logging'
     require 'vcap/rolling_metric'
     all_models.each {|fn| require(fn)}
 
@@ -83,9 +84,8 @@ class HealthManager
 
   def initialize(config)
     @config = config
-
-    @logger = VCAP.create_logger('hm', :log_file => config['log_file'], :log_rotation_interval => config['log_rotation_interval'])
-    @logger.level= config['log_level']
+    VCAP::Logging.setup_from_config(config['logging'])
+    @logger = VCAP::Logging.logger('hm')
     @database_scan = config['intervals']['database_scan']
     @droplet_lost = config['intervals']['droplet_lost']
     @droplets_analysis = config['intervals']['droplets_analysis']
@@ -137,12 +137,14 @@ class HealthManager
 
     NATS.on_error do |e|
       @logger.error("NATS problem, #{e}")
+      @logger.error(e)
       exit!
     end
 
     EM.error_handler do |e|
       @logger.error "Eventmachine problem, #{e}"
       @logger.error("#{e.backtrace.join("\n")}")
+      @logger.error(e)
     end
 
     NATS.start(:uri => @config['mbus']) do
