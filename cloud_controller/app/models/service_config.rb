@@ -55,7 +55,8 @@ class ServiceConfig < ActiveRecord::Base
         config = gw.provision(req.extract)
       end
     rescue => e
-      Rails.logger.error("Error talking to gateway: #{e}")
+      CloudController.logger.error("Error talking to gateway: #{e}")
+      CloudController.logger.error(e)
       raise CloudError.new(CloudError::SERVICE_GATEWAY_ERROR)
     end
 
@@ -96,11 +97,11 @@ class ServiceConfig < ActiveRecord::Base
         http = VCAP::Services::Api::AsyncHttpRequest.new(endpoint, service.token, :delete)
         http.callback do
           if http.response_header.status != 200
-            logger.error("Error unprovisioning #{cfg_name}, non 200 response from gateway #{svc.url}: #{http.response_header.status} #{http.response}")
+            CloudController.logger.error("Error unprovisioning #{cfg_name}, non 200 response from gateway #{svc.url}: #{http.response_header.status} #{http.response}")
           end
         end
         http.errback do
-          logger.error("Error unprovisioning #{cfg_name} at gateway #{svc.url}: #{http.error}")
+          CloudController.logger.error("Error unprovisioning #{cfg_name} at gateway #{svc.url}: #{http.error}")
         end
       else
         uri = URI.parse(svc.url)
@@ -108,7 +109,8 @@ class ServiceConfig < ActiveRecord::Base
         gw.unprovision(:service_id => cfg_name)
       end
     rescue => e
-      Rails.logger.error("Error talking to gateway: #{e}")
+      CloudController.logger.error("Error talking to gateway: #{e}")
+      CloudController.logger.error(e)
       raise CloudError.new(CloudError::SERVICE_GATEWAY_ERROR)
     end
   end
