@@ -19,8 +19,8 @@ EM.next_tick do
         App.process_health_manager_message(payload)
       end
     rescue => e
-      Rails.logger.warn("Exception processing health manager request: '#{msg}'")
-      Rails.logger.warn("#{e}")
+      CloudController.logger.error("Exception processing health manager request: '#{msg}'")
+      CloudController.logger.error(e)
     end
   end
 

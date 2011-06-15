@@ -19,6 +19,7 @@ module CloudController
   class << self
     attr_accessor :resource_pool # The configured ResourcePool instance
     attr_accessor :events # The configured Events instance
+    attr_accessor :logger
   end
 
   class Application < Rails::Application

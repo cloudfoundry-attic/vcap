@@ -21,7 +21,7 @@ class DefaultController < ApplicationController
 
   def service_info
     svcs = Service.active_services.select {|svc| svc.visible_to_user?(user)}
-    logger.debug("Global service listing found #{svcs.length} services.")
+    CloudController.logger.debug("Global service listing found #{svcs.length} services.")
 
     ret = {}
     svcs.each do |svc|

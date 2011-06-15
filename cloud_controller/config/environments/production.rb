@@ -4,7 +4,7 @@ CloudController::Application.configure do
   config.threadsafe!
   config.consider_all_requests_local       = false
   config.action_controller.perform_caching = false
-  config.log_level = AppConfig[:log_level].downcase.to_sym
+  config.log_level = AppConfig[:rails_logging][:level].downcase.to_sym
 
   # FIXME - Configure this via AppConfig
   # Specifies the header that your server uses for sending files
@@ -21,7 +21,7 @@ CloudController::Application.configure do
   # should likely be set from AppConfig.
 
   config.active_record.schema_format = :sql
-  config.paths.log = AppConfig[:log_file]
+  config.paths.log = AppConfig[:rails_logging][:file]
   tmpdir = AppConfig[:directories][:tmpdir]
   config.paths.tmp = tmpdir
   config.paths.tmp.cache = File.join(tmpdir, 'cache')

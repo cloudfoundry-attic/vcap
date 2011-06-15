@@ -130,14 +130,14 @@ module VCAP
   # @param  Hash    opts  :log_file => Filename where log messages should go
   #                       :log_rotation_interval => If supplied, rotate logs on this interval
   def self.create_logger(name, opts={})
-    log = Logging.logger[name]
-    layout = Logging.layouts.pattern(:pattern => '[%.1l, [%d] %5l -- %c: %m\n')
-    appender = Logging.appenders.stdout(:layout => layout)
+    log = ::Logging.logger[name]
+    layout = ::Logging.layouts.pattern(:pattern => '[%.1l, [%d] %5l -- %c: %m\n')
+    appender = ::Logging.appenders.stdout(:layout => layout)
     if opts[:log_file]
       if opts[:log_rotation_interval]
-        appender = Logging.appenders.rolling_file(opts[:log_file], :age => opts[:log_rotation_interval], :layout => layout)
+        appender = ::Logging.appenders.rolling_file(opts[:log_file], :age => opts[:log_rotation_interval], :layout => layout)
       else
-        appender = Logging.appenders.file(opts[:log_file], :layout => layout)
+        appender = ::Logging.appenders.file(opts[:log_file], :layout => layout)
       end
     end
     log.appenders = [appender]
