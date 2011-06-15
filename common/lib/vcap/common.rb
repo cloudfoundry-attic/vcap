@@ -50,10 +50,11 @@ module VCAP
     if RUBY_PLATFORM =~ /linux/
       return `cat /proc/cpuinfo | grep processor | wc -l`.to_i
     elsif RUBY_PLATFORM =~ /darwin/
-      match = /Total Number of Cores:\s*(\d)/i.match(`system_profiler SPHardwareDataType`)
-      return 1 unless match
-      return match[1].to_i
+      `hwprefs cpu_count`.strip.to_i
+    elsif RUBY_PLATFORM =~ /freebsd|netbsd/
+      `sysctl hw.ncpu`.strip.to_i
     else
+      # FIXME: wouldn't it be logical to assume there is at least 1 core!?
       return -1 # unknown..
     end
   end
