@@ -1,6 +1,7 @@
 # Copyright (c) 2009-2011 VMware, Inc.
 require File.dirname(__FILE__) + '/../spec_helper'
 
+require 'fileutils'
 require 'nats/client'
 require 'yajl/json_gem'
 require 'vcap/common'
@@ -39,8 +40,8 @@ class NatsServer
 
   def kill_server
     if File.exists? @pid_file
-      %x[kill -9 #{server_pid}]
-      %x[rm #{@pid_file}]
+      Process.kill('KILL', server_pid)
+      FileUtils.rm_f(@pid_file)
     end
   end
 end
@@ -140,4 +141,89 @@ def new_app_socket
   Socket.do_not_reverse_lookup = true
   app_port = app_socket.addr[1]
   [app_socket, app_port]
+end
+
+
+class TestApp
+  class UsageError < StandardError; end
+
+  attr_reader :host, :port, :uris, :socket
+
+  def initialize(*uris)
+    @uris = uris
+    @port = nil
+    @socket = nil
+    start
+  end
+
+  def start
+    raise UsageError, "Already started" if @socket
+    sock, port = new_app_socket
+    @socket = sock
+    @port = port
+  end
+
+  def stop
+    raise UsageError, "Already stopped" if !@socket
+    @socket.close
+    @socket = nil
+    @port = nil
+  end
+
+  # Simple check that the app can be queried via the router
+  def verify_registered(router_host, router_port)
+    for uri in @uris
+      verify_path_registered(uri, '/', router_host, router_port)
+    end
+  end
+
+  private
+
+  def verify_path_registered(host, path, router_host, router_port)
+    req = simple_http_request(host, path)
+    # Send out simple request and check request and response
+    TCPSocket.open(router_host, router_port) do |rs|
+      rs.send(req, 0)
+      IO.select([@socket], nil, nil, 2) # 2 secs timeout
+      ss = @socket.accept_nonblock
+      req_received = ss.recv(req.bytesize)
+      req_received.should == req
+      # Send a response back..
+      ss.send(FOO_HTTP_RESPONSE, 0)
+      response = rs.read(FOO_HTTP_RESPONSE.bytesize)
+      response.should == FOO_HTTP_RESPONSE
+      ss.close
+    end
+  end
+end
+
+class DummyDea
+
+  attr_reader :nats_uri, :dea_id
+
+  def initialize(nats_uri, dea_id, host='127.0.0.1')
+    @nats_uri = nats_uri
+    @dea_id = dea_id
+    @host = host
+  end
+
+  def reg_hash_for_app(app)
+    { :dea  => @dea_id,
+      :host => @host,
+      :port => app.port,
+      :uris => app.uris
+    }
+  end
+
+  def register_app(app)
+    NATS.start(:uri => @nats_uri) do
+      NATS.publish('router.register', reg_hash_for_app(app).to_json) { NATS.stop }
+    end
+  end
+
+  def unregister_app(app)
+    NATS.start(:uri => @nats_uri) do
+      NATS.publish('router.unregister', reg_hash_for_app(app).to_json) { NATS.stop }
+    end
+  end
 end
