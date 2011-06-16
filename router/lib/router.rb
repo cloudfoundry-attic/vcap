@@ -14,6 +14,7 @@ require 'http/parser'
 
 require 'vcap/common'
 require 'vcap/component'
+require 'vcap/logging'
 require 'vcap/rolling_metric'
 
 $:.unshift(File.dirname(__FILE__))
