@@ -14,7 +14,6 @@
 # services
 # - redis
 # - mysql
-# - postgresql
 # - mongo
 #
 
@@ -382,7 +381,7 @@ module Run
   end
 
   def self.services
-    %w(redis mysql mongodb postgresql)
+    %w(redis mysql mongodb)
   end
 
   def self.alias_args(args)
