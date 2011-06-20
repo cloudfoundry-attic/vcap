@@ -75,7 +75,7 @@ class ApplicationController < ActionController::Base
     end
     fetch_proxy_user
   rescue UserToken::DecodeError
-    logger.warn "Invalid user token in request: #{auth_token_header.inspect}"
+    CloudController.logger.warn "Invalid user token in request: #{auth_token_header.inspect}"
   end
 
   def reset_user!
@@ -135,8 +135,8 @@ class ApplicationController < ActionController::Base
 
   def handle_general_exception(e)
     begin
-      logger.error "Exception Caught (#{e.class.name}): #{e.to_s}"
-      logger.error "  #{e.backtrace.join("\n  ")}"
+      CloudController.logger.error "Exception Caught (#{e.class.name}): #{e.to_s}"
+      CloudController.logger.error e
     rescue
       # Do nothing
     end

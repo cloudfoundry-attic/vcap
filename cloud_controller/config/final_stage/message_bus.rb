@@ -10,18 +10,21 @@ require 'nats_timed_request'
 
 NATS.on_error do |e|
   if e.kind_of? NATS::ConnectError
-    Rails.logger.error("EXITING! NATS connection failed: #{e}")
+    CloudController.logger.error("EXITING! NATS connection failed: #{e}")
+    CloudController.logger.error(e)
+
     # Fail fast
     STDERR.puts("EXITING! NATS connection failed: #{e}")
     exit!
   else
-    Rails.logger.error("NATS problem, #{e}")
+    CloudController.logger.error("NATS problem, #{e}")
+    CloudController.logger.error(e)
   end
 end
 
 EM.error_handler do |e|
-  Rails.logger.error "Eventmachine problem, #{e}"
-  Rails.logger.error("#{e.backtrace.join("\n")}")
+  CloudController.logger.error "Eventmachine problem, #{e}"
+  CloudController.logger.error(e)
   # Fail fast
   STDERR.puts "Eventmachine problem, #{e}"
   exit 1

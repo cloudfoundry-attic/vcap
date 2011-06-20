@@ -19,7 +19,7 @@ class AppPackage
   def to_zip
     tmpdir = Dir.mktmpdir
     dir = path = nil
-    timed_section(Rails.logger, 'app_to_zip') do
+    timed_section(CloudController.logger, 'app_to_zip') do
       dir = unpack_upload
       synchronize_pool_with(dir)
       path = AppPackage.repack_app_in(dir, tmpdir, :zip)
@@ -42,10 +42,10 @@ class AppPackage
       cmd = "cd #{dir}; COPYFILE_DISABLE=true tar -czf #{target_path} *"
     end
 
-    timed_section(Rails.logger, 'repack_app') do
+    timed_section(CloudController.logger, 'repack_app') do
       f = Fiber.current
       opts = {
-        :logger => Rails.logger,
+        :logger => CloudController.logger,
         :nobacktrace => true,
         :callback => proc { f.resume }
       }
@@ -54,7 +54,7 @@ class AppPackage
         if $? != 0
           target_path = nil
           FileUtils.rm_rf(tmpdir)
-          Rails.logger.warn("Unable to repack application in #{dir}: #{output} #{$?}")
+          CloudController.logger.warn("Unable to repack application in #{dir}: #{output} #{$?}")
         end
       end
       Fiber.yield
@@ -104,10 +104,10 @@ private
 
   # Do resource pool synch, needs to be called with a Fiber context
   def synchronize_pool_with(working_dir)
-    timed_section(Rails.logger, 'process_app_resources') do
+    timed_section(CloudController.logger, 'process_app_resources') do
       f = Fiber.current
       opts = {
-        :logger => Rails.logger,
+        :logger => CloudController.logger,
         :nobacktrace => true,
         :callback => proc { f.resume }
       }

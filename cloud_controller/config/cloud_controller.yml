@@ -17,9 +17,18 @@ app_uris:
 #  reserved_length: 3
 
 instance_port: 9022
-# if log_file is set, it must be a fully-qualified path,
+
+# if file is set, it must be a fully-qualified path,
 # because the bin/vcap script reads it directly from the file.
-log_file:
+logging:
+  level: debug
+# file:
+
+# Settings for the rails logger
+rails_logging:
+  level: debug
+# file:
+
 directories:
   droplets: /var/vcap/shared/droplets
   resources: /var/vcap/shared/resources
@@ -27,7 +36,6 @@ directories:
   staging_manifests: staging/manifests
   tmpdir: tmp
 mbus: nats://localhost:4222/
-log_level: DEBUG
 keys:
   password: 'password key goes here'
   token: 'token key goes here'

@@ -17,7 +17,8 @@ module ServicesHelper
            Errno::ECONNREFUSED,                                            \
            Errno::ECONNRESET,                                              \
            Errno::ETIMEDOUT => e
-      logger.error "Error talking to gateway: #{e.to_s}"
+      CloudController.logger.error "Error talking to gateway: #{e.to_s}"
+      CloudController.logger.error e
       raise CloudError.new(CloudError::SERVICE_GATEWAY_ERROR)
     end
   end

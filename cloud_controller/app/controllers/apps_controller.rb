@@ -186,7 +186,7 @@ class AppsController < ApplicationController
     begin
       app.save!
     rescue
-      logger.debug "Failed to save new app, app invalid"
+      CloudController.logger.debug "Failed to save new app, app invalid"
       raise CloudError.new(CloudError::APP_INVALID)
     end
 
@@ -275,7 +275,7 @@ class AppsController < ApplicationController
       end
     end
     unless app.framework
-      logger.debug "No app framework indicated"
+      CloudController.logger.debug "No app framework indicated"
       raise CloudError.new(CloudError::APP_INVALID_FRAMEWORK, 'NONE')
     end
   end
@@ -298,8 +298,8 @@ class AppsController < ApplicationController
     return if body_params.nil?
     added_configs, removed_configs = app.diff_configs(body_params[:services])
     return if added_configs.empty? && removed_configs.empty?
-    logger.debug "Adding services: #{added_configs.inspect}"
-    logger.debug "Removing services: #{removed_configs.inspect}"
+    CloudController.logger.debug "Adding services: #{added_configs.inspect}"
+    CloudController.logger.debug "Removing services: #{removed_configs.inspect}"
 
     # Bind services
     added_configs.each do |cfg_alias|

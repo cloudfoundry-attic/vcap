@@ -17,7 +17,7 @@ class ServicesController < ApplicationController
   #
   def create
     req = VCAP::Services::Api::ServiceOfferingRequest.decode(request_body)
-    logger.debug("Create service request: #{req.extract.inspect}")
+    CloudController.logger.debug("Create service request: #{req.extract.inspect}")
 
     # Should we worry about a race here?
 
@@ -192,8 +192,8 @@ class ServicesController < ApplicationController
 
     binding = ServiceBinding.find_by_binding_token_id(tok.id)
     unless binding
-      logger.info("Removing dangling token #{tok.uuid}")
-      logger.info(tok.inspect)
+      CloudController.logger.info("Removing dangling token #{tok.uuid}")
+      CloudController.logger.info(tok.inspect)
       tok.destroy
       render :json => {}
       return
