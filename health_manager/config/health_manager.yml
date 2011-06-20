@@ -1,7 +1,8 @@
 ---
 local_route: 127.0.0.1
 mbus: nats://localhost:4222/
-log_level: DEBUG
+logging:
+  level: debug
 pid: /var/vcap/sys/run/healthmanager.pid
 database_environment: # replaces database.yml
   production:

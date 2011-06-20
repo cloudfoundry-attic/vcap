@@ -129,6 +129,7 @@ GEM
       polyglot (>= 0.3.1)
     tzinfo (0.3.26)
     uuidtools (2.1.2)
+    vcap_logging (0.1.0)
     yajl-ruby (0.8.2)
 
 PLATFORMS
@@ -158,4 +159,5 @@ DEPENDENCIES
   thin (> 1.2)
   uuidtools
   vcap_common!
+  vcap_logging
   yajl-ruby (>= 0.7.9)
