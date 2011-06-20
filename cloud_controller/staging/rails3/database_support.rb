@@ -69,7 +69,6 @@ module RailsDatabaseSupport
       case label
       when /^mysql/
         binding
-      end
       when /^postgresql/
         binding
       end
