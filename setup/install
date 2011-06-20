@@ -114,6 +114,10 @@ sudo setup/vcap_setup -a -s -p "$MYSQL_PASS"
 cd ~/cloudfoundry/vcap/services/mysql/config
 sed -i.bkup -e "s/pass: root/pass: $MYSQL_PASS/" mysql_node.yml
 
+cd ~/cloudfoundry/vcap/services/postgresql/config
+sed -i.bkup -e "s/9.0/8.4/g" postgresql_gateway.yml
+sed -i.bkup -e "s/user: vcap/user: postgres/" -e "s/pass: vcap/pass: password/" postgresql_node.yml
+
 echo "Restarting nginx"
 cd ~/cloudfoundry/vcap
 sudo cp setup/simple.nginx.conf /etc/nginx/nginx.conf

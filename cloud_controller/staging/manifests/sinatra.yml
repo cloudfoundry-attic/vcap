@@ -29,6 +29,8 @@ detection:
 staged_services:
   - "name": "mysql"
     "version": "*"
+  - "name": "postgresql"
+    "version": "*"
   - "name": "redis"
     "version": "2"
 

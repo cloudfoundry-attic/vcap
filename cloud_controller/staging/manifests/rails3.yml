@@ -29,5 +29,7 @@ detection:
 staged_services:
   - "name": "mysql"
     "version": "*"
+  - "name": "postgresql"
+    "version": "*"
 
 # vim: filetype=yaml

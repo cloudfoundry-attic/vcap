@@ -98,6 +98,8 @@ class Service < ActiveRecord::Base
     case self.name
     when /mysql/
       'database'
+    when /postgresql/
+      'database'
     when /redis/
       'key-value'
     when /mongodb/
