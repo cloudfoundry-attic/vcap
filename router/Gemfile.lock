@@ -41,6 +41,7 @@ GEM
       daemons (>= 1.0.9)
       eventmachine (>= 0.12.6)
       rack (>= 1.0.0)
+    vcap_logging (0.1.0)
     yajl-ruby (0.8.2)
 
 PLATFORMS
@@ -51,10 +52,10 @@ DEPENDENCIES
   ci_reporter
   eventmachine (~> 0.12.10)
   http_parser.rb
-  logging (>= 1.5.0)
   nats (>= 0.4.10)
   rake
   rcov
   rspec
   vcap_common!
+  vcap_logging
   yajl-ruby
