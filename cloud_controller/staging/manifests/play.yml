@@ -1,0 +1,12 @@
+---
+name: "play"
+runtimes:
+  - play:
+      version: '1.2'
+      description: 'Play framework'
+      executable: /opt/play/play
+      default: true
+app_servers:
+detection:
+  - "*.java": '.'
+staged_services:

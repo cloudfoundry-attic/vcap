@@ -20,7 +20,7 @@ class App < ActiveRecord::Base
   AppStates = %w[STOPPED STARTED]
   PackageStates = %w[PENDING STAGED FAILED]
   Runtimes = %w[ruby18 ruby19 java node erlangR14B02]
-  Frameworks = %w[sinatra rails3 spring grails node otp_rebar lift unknown]
+  Frameworks = %w[sinatra rails3 spring grails node otp_rebar lift play unknown]
 
   validates_presence_of :name, :framework, :runtime
 
@@ -528,6 +528,10 @@ class App < ActiveRecord::Base
     when "lift/1.0"
       self.framework = 'lift'
       self.runtime   = 'java'
+    when "play/1.2"
+      self.framework = 'play'
+      self.runtime   = 'play'
+
     end
     self.runtime = StagingPlugin.default_runtime_for(framework) if self.runtime.nil?
     true

@@ -43,3 +43,7 @@ runtimes:
     version: ".* 5.8.3"
     version_flag: '-version'
     environment:
+  play:
+    executable: /opt/play/play
+    version: 1.2
+    environment:
