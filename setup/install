@@ -26,6 +26,8 @@ sudo ls > /dev/null
 
 read -p "Enter the password you want to use for root mysql user: " MYSQL_PASS
 
+read -p "Enter the password you want to use for root postgresql user: " POSTGRESQL_PASS
+
 echo "Installing dependencies"
 if [[ $PLATFORM == 'Linux' ]]; then
   sudo apt-get update
@@ -34,11 +36,15 @@ else
   echo "Sorry, we can't install dependencies for your system yet."
 fi
 
-# Generate random mysql password
+# Overide user-supplied mysql & postgresql passwords with random ones
+# if we know how to do it on this platform
 if [[ $PLATFORM == 'Linux' ]]; then
   MYSQL_PASS="$(cat /dev/urandom | tr -dc _A-Z-a-z-0-9 | head -c10)"
+  POSTGRESQL_PASS="$(cat /dev/urandom | tr -dc _A-Z-a-z-0-9 | head -c10)"
 elif [[ $PLATFORM == 'MacOSX' ]]; then
   MYSQL_PASS="$(md5 -qs "$(date)")"
+  sleep 1
+  POSTGRESQL_PASS="$(md5 -qs "$(date)")"
 fi
 
 echo "Patch around .bash_profile issue with RMV"
@@ -109,14 +115,14 @@ gem install vmc --no-rdoc --no-ri
 echo "Setting up vcap."
 cd ~/cloudfoundry/vcap
 
-sudo setup/vcap_setup -a -s -p "$MYSQL_PASS"
+sudo setup/vcap_setup -a -s -p "$MYSQL_PASS" -pp "$POSTGRESQL_PASS"
 
 cd ~/cloudfoundry/vcap/services/mysql/config
 sed -i.bkup -e "s/pass: root/pass: $MYSQL_PASS/" mysql_node.yml
 
 cd ~/cloudfoundry/vcap/services/postgresql/config
 sed -i.bkup -e "s/9.0/8.4/g" postgresql_gateway.yml
-sed -i.bkup -e "s/user: vcap/user: postgres/" -e "s/pass: vcap/pass: password/" postgresql_node.yml
+sed -i.bkup -e "s/user: vcap/user: postgres/" -e "s/pass: vcap/pass: $POSTGRESQL_PASS/" postgresql_node.yml
 
 echo "Restarting nginx"
 cd ~/cloudfoundry/vcap
