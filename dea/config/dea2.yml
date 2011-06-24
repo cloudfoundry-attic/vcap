@@ -5,7 +5,8 @@ filer_port: 12346
 mbus: nats://localhost:4222/
 intervals:
   heartbeat: 10
-log_level: DEBUG
+logging:
+  level: debug
 multi_tenant: true
 max_memory: 4096
 secure: false

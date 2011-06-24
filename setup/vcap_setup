@@ -11,10 +11,11 @@ OPTIONS:
   -a           Answer yes to all questions
   -s           Install all optional services
   -p PASSWORD  Preseed the MySQL password
+  -q PASSWORD  Preseed the PostgreSQL password
 EOF
 }
 
-while getopts "hasp:" OPTION
+while getopts "hasp:q:" OPTION
 do
   case $OPTION in
     h)
@@ -29,6 +30,10 @@ do
       ;;
     p)
       MYSQL_PASS="$OPTARG"
+      ;;
+    q)
+      POSTGRESQL_PASS="$OPTARG"
+      ;;
   esac
 done
 
@@ -160,6 +165,9 @@ if [[ $CC == true || $ALL == true ]]; then
 	if [[ $RELATIONAL_DBS == true || $ALL == true ]]; then
 	    echo "Installing PostgreSQL server and support"
 	    apt-get install -qqy postgresql libpq-dev
+	    if [[ -n "$POSTGRESQL_PASS" ]]; then
+		su - postgres -c "/usr/bin/psql -c \"alter role postgres password '$POSTGRESQL_PASS'\""
+	    fi
 	    echo "Installing pg gems"
 	    gem install pg --no-rdoc --no-ri
 	    echo ""

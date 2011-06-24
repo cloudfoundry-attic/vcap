@@ -5,9 +5,9 @@ class DefaultController < ApplicationController
     info = {
       :name => 'vcap',
       :build => 2222,
-      :support =>  'support@cloudfoundry.com',
+      :support =>  AppConfig[:support_address],
       :version =>  CloudController.version,
-      :description =>  'VMware\'s Cloud Application Platform'
+      :description =>  AppConfig[:description]
     }
     # If there is a logged in user, give out additional information
     if user
@@ -21,7 +21,7 @@ class DefaultController < ApplicationController
 
   def service_info
     svcs = Service.active_services.select {|svc| svc.visible_to_user?(user)}
-    logger.debug("Global service listing found #{svcs.length} services.")
+    CloudController.logger.debug("Global service listing found #{svcs.length} services.")
 
     ret = {}
     svcs.each do |svc|

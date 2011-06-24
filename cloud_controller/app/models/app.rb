@@ -218,7 +218,8 @@ class App < ActiveRecord::Base
         handle = gw.bind(req.extract)
       end
     rescue => e
-      logger.error("Exception talking to gateway: #{e}")
+      CloudController.logger.error("Exception talking to gateway: #{e}")
+      CloudController.logger.error(e)
       tok.destroy
       raise CloudError.new(CloudError::SERVICE_GATEWAY_ERROR)
     end
@@ -281,11 +282,11 @@ class App < ActiveRecord::Base
         http = VCAP::Services::Api::AsyncHttpRequest.new(endpoint, svc.token, :delete, req)
         http.callback do
           if http.response_header.status != 200
-            logger.error("Error sending unbind request #{req.extract.to_json} non 200 response from gateway #{svc.url}: #{http.response_header.status} #{http.response}")
+            CloudController.logger.error("Error sending unbind request #{req.extract.to_json} non 200 response from gateway #{svc.url}: #{http.response_header.status} #{http.response}")
           end
         end
         http.errback do
-          logger.error("Error sending unbind request #{req.extract.to_json} to gateway #{svc.url}: #{http.error}")
+          CloudController.logger.error("Error sending unbind request #{req.extract.to_json} to gateway #{svc.url}: #{http.error}")
         end
       else
         uri = URI.parse(svc.url)
@@ -294,7 +295,8 @@ class App < ActiveRecord::Base
       end
     rescue => e
       tok.destroy
-      logger.error("Error talking to service gateway (svc.url): #{e.to_s}")
+      CloudController.logger.error("Error talking to service gateway (svc.url): #{e.to_s}")
+      CloudController.logger.error(e)
       raise CloudError.new(CloudError::SERVICE_GATEWAY_ERROR)
     end
     tok.destroy

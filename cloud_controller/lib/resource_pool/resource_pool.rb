@@ -20,7 +20,7 @@ class ResourcePool
   end
 
   def logger
-    Rails.logger
+    CloudController.logger
   end
 
   def match_resources(descriptors)

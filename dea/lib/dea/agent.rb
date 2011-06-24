@@ -24,6 +24,7 @@ require 'thin'
 
 require 'vcap/common'
 require 'vcap/component'
+require 'vcap/logging'
 
 module DEA
 
@@ -73,8 +74,8 @@ module DEA
     APPS_DUMP_INTERVAL = 30*60
 
     def initialize(config)
-      @logger = VCAP.create_logger('dea', :log_file => config['log_file'], :log_rotation_interval => config['log_rotation_interval'])
-      @logger.level = config['log_level']
+      VCAP::Logging.setup_from_config(config['logging'])
+      @logger = VCAP::Logging.logger('dea')
       @secure = config['secure']
       @enforce_ulimit = config['enforce_ulimit']
 
@@ -203,6 +204,7 @@ module DEA
 
       NATS.on_error do |e|
         @logger.error("EXITING! NATS error: #{e}")
+        @logger.error(e)
         # Only snapshot app state if we had a chance to recover saved state. This prevents a connect error
         # that occurs before we can recover state from blowing existing data away.
         snapshot_app_state if @recovered_droplets
@@ -211,7 +213,7 @@ module DEA
 
       EM.error_handler do |e|
         @logger.error "Eventmachine problem, #{e}"
-        @logger.error("#{e.backtrace.join("\n")}")
+        @logger.error(e)
       end
 
       NATS.start(:uri => @nats_uri) do

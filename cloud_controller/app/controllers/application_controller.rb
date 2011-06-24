@@ -71,11 +71,16 @@ class ApplicationController < ActionController::Base
       token = UserToken.decode(auth_token_header)
       if token.valid?
         @current_user = ::User.find_by_email(token.user_name)
+        unless @current_user.nil?
+          if AppConfig[:https_required] or (@current_user.admin? and AppConfig[:https_required_for_admins])
+            raise CloudError.new(CloudError::HTTPS_REQUIRED) unless request_https?
+          end
+        end
       end
     end
     fetch_proxy_user
   rescue UserToken::DecodeError
-    logger.warn "Invalid user token in request: #{auth_token_header.inspect}"
+    CloudController.logger.warn "Invalid user token in request: #{auth_token_header.inspect}"
   end
 
   def reset_user!
@@ -122,6 +127,10 @@ class ApplicationController < ActionController::Base
     request.remote_ip != '127.0.0.1'
   end
 
+  def request_https?
+    (!request.headers["X-Forwarded_Proto"].nil? and request.headers["X-Forwarded_Proto"] =~ /^https/i) ? true : false
+  end
+
   # Called whenever an action raises a CloudError.
   # See lib/cloud_error.rb for details.
   def render_cloud_error(e)
@@ -135,8 +144,8 @@ class ApplicationController < ActionController::Base
 
   def handle_general_exception(e)
     begin
-      logger.error "Exception Caught (#{e.class.name}): #{e.to_s}"
-      logger.error "  #{e.backtrace.join("\n  ")}"
+      CloudController.logger.error "Exception Caught (#{e.class.name}): #{e.to_s}"
+      CloudController.logger.error e
     rescue
       # Do nothing
     end

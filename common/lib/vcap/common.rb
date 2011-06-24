@@ -50,10 +50,11 @@ module VCAP
     if RUBY_PLATFORM =~ /linux/
       return `cat /proc/cpuinfo | grep processor | wc -l`.to_i
     elsif RUBY_PLATFORM =~ /darwin/
-      match = /Total Number of Cores:\s*(\d)/i.match(`system_profiler SPHardwareDataType`)
-      return 1 unless match
-      return match[1].to_i
+      `hwprefs cpu_count`.strip.to_i
+    elsif RUBY_PLATFORM =~ /freebsd|netbsd/
+      `sysctl hw.ncpu`.strip.to_i
     else
+      # FIXME: wouldn't it be logical to assume there is at least 1 core!?
       return -1 # unknown..
     end
   end
@@ -130,14 +131,14 @@ module VCAP
   # @param  Hash    opts  :log_file => Filename where log messages should go
   #                       :log_rotation_interval => If supplied, rotate logs on this interval
   def self.create_logger(name, opts={})
-    log = Logging.logger[name]
-    layout = Logging.layouts.pattern(:pattern => '[%.1l, [%d] %5l -- %c: %m\n')
-    appender = Logging.appenders.stdout(:layout => layout)
+    log = ::Logging.logger[name]
+    layout = ::Logging.layouts.pattern(:pattern => '[%.1l, [%d] %5l -- %c: %m\n')
+    appender = ::Logging.appenders.stdout(:layout => layout)
     if opts[:log_file]
       if opts[:log_rotation_interval]
-        appender = Logging.appenders.rolling_file(opts[:log_file], :age => opts[:log_rotation_interval], :layout => layout)
+        appender = ::Logging.appenders.rolling_file(opts[:log_file], :age => opts[:log_rotation_interval], :layout => layout)
       else
-        appender = Logging.appenders.file(opts[:log_file], :layout => layout)
+        appender = ::Logging.appenders.file(opts[:log_file], :layout => layout)
       end
     end
     log.appenders = [appender]

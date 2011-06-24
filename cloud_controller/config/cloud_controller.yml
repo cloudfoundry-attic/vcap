@@ -1,5 +1,7 @@
 ---
 external_uri: api.vcap.me
+description: "VMware's Cloud Application Platform"
+support_address: http://support.cloudfoundry.com
 local_route: 127.0.0.1
 local_register_only: false
 
@@ -17,9 +19,18 @@ app_uris:
 #  reserved_length: 3
 
 instance_port: 9022
-# if log_file is set, it must be a fully-qualified path,
+
+# if file is set, it must be a fully-qualified path,
 # because the bin/vcap script reads it directly from the file.
-log_file:
+logging:
+  level: debug
+# file:
+
+# Settings for the rails logger
+rails_logging:
+  level: debug
+# file:
+
 directories:
   droplets: /var/vcap/shared/droplets
   resources: /var/vcap/shared/resources
@@ -27,7 +38,6 @@ directories:
   staging_manifests: staging/manifests
   tmpdir: tmp
 mbus: nats://localhost:4222/
-log_level: DEBUG
 keys:
   password: 'password key goes here'
   token: 'token key goes here'
@@ -60,6 +70,8 @@ staging:
 
 # admin support
 admins: [derek@gmail.com, foobar@vmware.com]
+https_required: false
+https_required_for_admins: false
 
 # Normal user accounts
 default_account_capacity:
@@ -71,6 +83,8 @@ default_account_capacity:
 # Services we provide, and their tokens. Avoids bootstrapping DB.
 builtin_services:
   mysql:
+    token: "0xdeadbeef"
+  postgresql:
     token: "0xdeadbeef"
   redis:
     token: "0xdeadbeef"

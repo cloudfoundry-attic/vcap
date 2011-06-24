@@ -18,18 +18,9 @@ module VCAP
 end
 
 describe Router do
-
-  before :all do
-    Router.config({})
-    VCAP::Component.setup
-    VCAP::Component.varz[:urls] = 0
-    VCAP::Component.varz[:droplets] = 0
-    VCAP::Component.varz[:tags] = {}
-  end
-
   describe 'Router.config' do
-    it 'should set up a logger' do
-      Router.log.should be_an_instance_of(Logging::Logger)
+    before :each do
+      clear_router
     end
 
     it 'should set up a session key' do
@@ -39,6 +30,9 @@ describe Router do
   end
 
   describe 'Router.register_droplet' do
+    before :each do
+      clear_router
+    end
 
     it 'should register a droplet' do
       Router.register_droplet('foo.vcap.me', '10.0.1.22', 2222, {})
@@ -47,6 +41,7 @@ describe Router do
     end
 
     it 'should allow proper lookup' do
+      Router.register_droplet('foo.vcap.me', '10.0.1.22', 2222, {})
       droplets = Router.lookup_droplet('foo.vcap.me')
       droplets.should be_instance_of Array
       droplets.should have(1).items
@@ -67,18 +62,23 @@ describe Router do
     end
 
     it 'should count droplets independent of URL' do
+      Router.register_droplet('foo.vcap.me', '10.0.1.22', 2222, {})
       Router.register_droplet('foo.vcap.me', '10.0.1.22', 2224, {})
       VCAP::Component.varz[:droplets].should == 2
       VCAP::Component.varz[:urls].should == 1
     end
 
     it 'should return multiple droplets for a url when they exist' do
+      Router.register_droplet('foo.vcap.me', '10.0.1.22', 2222, {})
+      Router.register_droplet('foo.vcap.me', '10.0.1.22', 2224, {})
       droplets = Router.lookup_droplet('foo.vcap.me')
       droplets.should be_instance_of Array
       droplets.should have(2).items
     end
 
     it 'should ignore duplicates' do
+      Router.register_droplet('foo.vcap.me', '10.0.1.22', 2222, {})
+      Router.register_droplet('foo.vcap.me', '10.0.1.22', 2224, {})
       Router.register_droplet('foo.vcap.me', '10.0.1.22', 2224, {})
       VCAP::Component.varz[:droplets].should == 2
       VCAP::Component.varz[:urls].should == 1
@@ -95,31 +95,46 @@ describe Router do
   end
 
   describe 'Router.unregister_droplet' do
+    before :each do
+      clear_router
+    end
+
     it 'should unregister a droplet' do
+      Router.register_droplet('foo.vcap.me', '10.0.1.22', 2222, {})
+      Router.register_droplet('foo.vcap.me', '10.0.1.22', 2224, {})
       Router.unregister_droplet('foo.vcap.me', '10.0.1.22', 2224)
-      VCAP::Component.varz[:droplets].should == 2
-      VCAP::Component.varz[:urls].should == 2
+      VCAP::Component.varz[:droplets].should == 1
+      VCAP::Component.varz[:urls].should == 1
     end
 
     it 'should unregister a droplet that had tags' do
+      Router.register_droplet('foo.vcap.me', '10.0.1.22', 2224, {})
+      Router.register_droplet('foobar.vcap.me', '10.0.1.22', 2225, {"component" => "test"})
       Router.unregister_droplet('foobar.vcap.me', '10.0.1.22', 2225)
       VCAP::Component.varz[:droplets].should == 1
       VCAP::Component.varz[:urls].should == 1
     end
 
     it 'should not return unregistered items' do
+      Router.register_droplet('foo.vcap.me', '10.0.1.22', 2222, {})
       Router.unregister_droplet('foo.vcap.me', '10.0.1.22', 2222)
       droplets = Router.lookup_droplet('foo.vcap.me')
       droplets.should be_nil
     end
 
     it 'should properly account for urls and droplets' do
+      Router.register_droplet('foo.vcap.me', '10.0.1.22', 2222, {})
+      Router.unregister_droplet('foo.vcap.me', '10.0.1.22', 2222)
       VCAP::Component.varz[:droplets].should == 0
       VCAP::Component.varz[:urls].should == 0
     end
   end
 
   describe 'Router.session_keys' do
+    before :each do
+      clear_router
+    end
+
     it 'should properly encrypt and decrypt session keys' do
       Router.register_droplet('foo.vcap.me', '10.0.1.22', 2222, {})
       droplets = Router.lookup_droplet('foo.vcap.me')
@@ -134,6 +149,14 @@ describe Router do
       droplet_array[1].should == droplet[:host]
       droplet_array[2].should == droplet[:port]
     end
-end
+  end
 
+  def clear_router
+    Router.config({})
+    Router.instance_variable_set(:@log, double(:black_hole).as_null_object)
+    VCAP::Component.setup
+    VCAP::Component.varz[:urls] = 0
+    VCAP::Component.varz[:droplets] = 0
+    VCAP::Component.varz[:tags] = {}
+  end
 end

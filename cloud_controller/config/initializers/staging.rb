@@ -6,4 +6,4 @@ require Rails.root.join('staging', 'common')
 StagingPlugin.load_all_manifests
 
 # Setup secure mode if asked
-SecureUserManager.instance.setup(Rails.logger) if AppConfig[:staging][:secure]
+SecureUserManager.instance.setup if AppConfig[:staging][:secure]

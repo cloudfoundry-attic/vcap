@@ -27,7 +27,7 @@ class AppManager
     end
 
     def secure_staging_dir(user, dir)
-      Rails.logger.debug("SECURE: Securing directory '#{dir}'")
+      CloudController.logger.debug("Securing directory '#{dir}'", :tags => [:staging])
       system("chown -R #{user[:user]} #{dir}")
       system("chgrp -R #{user[:group]} #{dir}")
       system("chmod -R o-rwx #{dir}")
@@ -41,7 +41,7 @@ class AppManager
     end
 
     def staging_job_expired(job)
-      Rails.logger.warn "STAGING: Killing long running staging process: #{job.inspect}"
+      CloudController.logger.warn("Killing long running staging process: #{job.inspect}", :tags => [:staging])
       job.delete(:expire_timer)
       # Forcefully take out long running stager
       `kill -9 #{job[:pid]}`
@@ -60,7 +60,7 @@ class AppManager
     def complete_running(job)
       EM.cancel_timer(job[:expire_timer]) if job[:expire_timer]
       if job[:user]
-        Rails.logger.debug("SECURE: Checking in user #{job[:user]}")
+        CloudController.logger.debug("Checking in user #{job[:user]}", :tags => [:staging, :secure])
         `sudo -u '##{job[:user][:uid]}' pkill -9 -U #{job[:user][:uid]} 2>&1`
         SecureUserManager.instance.return_secure_user(job[:user])
         job[:user] = nil
@@ -76,14 +76,14 @@ class AppManager
       job = pending.shift
       VCAP::Component.varz[:pending_stage_cmds] = pending.length
 
-      Rails.logger.debug "STAGING: starting staging command: #{job[:cmd]}"
+      CloudController.logger.debug("Starting staging command: #{job[:cmd]}", :tags => [:staging])
 
       if AppConfig[:staging][:secure]
         job[:user] = user = SecureUserManager.instance.grab_secure_user
-        Rails.logger.debug("SECURE: Checked out user #{user.inspect}")
+        CloudController.logger.debug("Checked out user #{user.inspect}", :tags => [:staging, :secure])
 
         job[:cmd] = "#{job[:cmd]} #{user[:uid]} #{user[:gid]}"
-        Rails.logger.debug("SECURE: Command changed to '#{job[:cmd]}'")
+        CloudController.logger.debug("Command changed to '#{job[:cmd]}'", :tags => [:staging, :secure])
 
         AppManager.secure_staging_dir(job[:user], job[:staging_dir])
         AppManager.secure_staging_dir(job[:user], job[:exploded_dir])
@@ -94,9 +94,9 @@ class AppManager
         pid = EM.system(job[:cmd]) do |output, status|
 
           if status.exitstatus != 0
-            Rails.logger.debug "STAGING: staging command FAILED with #{status.exitstatus}: #{output}"
+            CloudController.logger.debug("Staging command FAILED with #{status.exitstatus}: #{output}", :tags => [:staging])
           else
-            Rails.logger.debug 'STAGING: staging command SUCCEEDED'
+            CloudController.logger.debug('Staging command SUCCEEDED', :tags => [:staging])
           end
 
           Fiber.new do
@@ -110,7 +110,8 @@ class AppManager
                 manager.save_staged_app_state
               end
             rescue => e
-              Rails.logger.warn "STAGING: Exception after return from staging: #{e}"
+              CloudController.logger.warn("Exception after return from staging: #{e}", :tags => [:staging])
+              CloudController.logger.error(e, :tags => [:staging])
             ensure
               FileUtils.rm_rf(job[:staging_dir])
               FileUtils.rm_rf(job[:exploded_dir])
@@ -140,13 +141,13 @@ class AppManager
       :exploded_dir => exploded_dir
     }
 
-    Rails.logger.info("STAGING: queueing staging command #{job[:cmd]}")
+    CloudController.logger.debug("Queueing staging command #{job[:cmd]}", :tags => [:staging])
 
     AppManager.queue_staging_job(job)
   end
 
   def health_manager_message_received(payload)
-    Rails.logger.debug("[HealthManager] Received #{payload[:op]} request for app #{app.id} - #{app.name}")
+    CloudController.logger.debug("[HealthManager] Received #{payload[:op]} request for app #{app.id} - #{app.name}")
 
     indices = payload[:indices]
     message = new_message
@@ -155,15 +156,15 @@ class AppManager
     when /START/i
       # Check if App is started.
       unless app.started?
-        Rails.logger.debug("[HealthManager] App no longer running, ignoring")
+        CloudController.logger.debug("[HealthManager] App no longer running, ignoring")
         return
       end
       # Only process start requests for current version.
       unless app.generate_version == payload[:version]
-        Rails.logger.debug("[HealthManager] Request for older version of app, ignoring")
+        CloudController.logger.debug("[HealthManager] Request for older version of app, ignoring")
         return
       end
-      Rails.logger.debug("[HealthManager] Starting #{indices.length} missing instances for app: #{app.id}")
+      CloudController.logger.debug("[HealthManager] Starting #{indices.length} missing instances for app: #{app.id}")
       # FIXME - Check capacity
       indices.each { |i| start_instance(message, i) }
     when /STOP/i
@@ -195,10 +196,10 @@ class AppManager
           dea_id = find_dea_for(message)
           if dea_id
             json = Yajl::Encoder.encode(message)
-            Rails.logger.debug("Sending start message #{json} to DEA #{dea_id}")
+            CloudController.logger.debug("Sending start message #{json} to DEA #{dea_id}")
             NATS.publish("dea.#{dea_id}.start", json)
           else
-            Rails.logger.warn("No resources available to start instance #{json}")
+            CloudController.logger.warn("No resources available to start instance #{json}")
           end
         end
       end
@@ -258,7 +259,7 @@ class AppManager
     update_run_count
     if !app.save
       errors = app.errors.full_messages
-      Rails.logger.warn "STAGING: App #{app.id} was not valid after attempted staging: #{errors.join(',')}"
+      CloudController.logger.warn("App #{app.id} was not valid after attempted staging: #{errors.join(',')}", :tags => [:staging])
     end
   end
 
@@ -309,7 +310,8 @@ class AppManager
     run_staging_command(staging_script, app_source_dir, output_dir, env_json)
 
   rescue => e
-    Rails.logger.warn "STAGING: Failed on exception! #{e}"
+    CloudController.logger.error("Failed on exception! #{e}", :tags => [:staging])
+    CloudController.logger.error(e, :tags => [:staging])
     app.package_state = 'FAILED'
     save_staged_app_state
     raise e # re-raise here to propogate to the API call.
@@ -448,10 +450,10 @@ class AppManager
         dea_id = find_dea_for(message)
         if dea_id
           json = Yajl::Encoder.encode(message)
-          Rails.logger.debug("Sending start message #{json} to DEA #{dea_id}")
+          CloudController.logger.debug("Sending start message #{json} to DEA #{dea_id}")
           NATS.publish("dea.#{dea_id}.start", json)
         else
-          Rails.logger.warn("No resources available to start instance #{json}")
+          CloudController.logger.warn("No resources available to start instance #{json}")
         end
       end
       wf.resume
@@ -469,7 +471,7 @@ class AppManager
     json_msg = Yajl::Encoder.encode(find_dea_message)
     result = NATS.timed_request('dea.discover', json_msg, :timeout => 2).first
     return nil if result.nil?
-    Rails.logger.debug "Received #{result.inspect} in response to dea.discover request"
+    CloudController.logger.debug "Received #{result.inspect} in response to dea.discover request"
     Yajl::Parser.parse(result, :symbolize_keys => true)[:id]
   end
 

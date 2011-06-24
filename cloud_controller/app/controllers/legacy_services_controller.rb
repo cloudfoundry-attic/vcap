@@ -12,12 +12,12 @@ class LegacyServicesController < ApplicationController
   # Lists all services the user has provisioned
   #
   def list
-    logger.debug("Getting all provisioned services for user: #{user.id}")
+    CloudController.logger.debug("Getting all provisioned services for user: #{user.id}")
 
     cfgs = ServiceConfig.find_all_by_user_id(user.id)
-    logger.debug("Found #{cfgs.length} provisioned services for user: #{user.id}")
+    CloudController.logger.debug("Found #{cfgs.length} provisioned services for user: #{user.id}")
     ret = cfgs.map {|cfg| cfg.as_legacy}
-    logger.debug("Returning configs: #{ret.inspect}")
+    CloudController.logger.debug("Returning configs: #{ret.inspect}")
 
     render :json => ret
   end
@@ -25,11 +25,11 @@ class LegacyServicesController < ApplicationController
   # Gets specific info
   #
   def get
-    logger.debug("Getting info for provisioned service with name: #{params[:alias]}")
+    CloudController.logger.debug("Getting info for provisioned service with name: #{params[:alias]}")
 
     cfg = ServiceConfig.find_by_alias_and_user_id(params[:alias], user.id)
     raise CloudError.new(CloudError::SERVICE_NOT_FOUND) unless cfg
-    logger.debug("Returning config: #{cfg.as_legacy.inspect}")
+    CloudController.logger.debug("Returning config: #{cfg.as_legacy.inspect}")
 
     render :json => cfg.as_legacy
   end
@@ -37,7 +37,7 @@ class LegacyServicesController < ApplicationController
   # Provision an instance of an existing service
   #
   def provision
-    logger.debug("Attempting to provision service: #{request_body}")
+    CloudController.logger.debug("Attempting to provision service: #{request_body}")
 
     limit = user.account_capacity[:services]
     used  = user.account_usage[:services]
@@ -67,7 +67,7 @@ class LegacyServicesController < ApplicationController
 
   # Unprovision an instance
   def unprovision
-    logger.debug("Attempting to unprovision service: #{request_body}")
+    CloudController.logger.debug("Attempting to unprovision service: #{request_body}")
 
     cfg = ServiceConfig.find_by_user_id_and_alias(user.id, params[:alias])
     raise CloudError.new(CloudError::SERVICE_NOT_FOUND) unless cfg
