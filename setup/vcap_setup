@@ -366,7 +366,7 @@ if [ $? != 0 ]; then
     fi
 fi
 
-dpkg --get-selections | grep postgresql-[0-9] | grep install > /dev/null 2>&1
+dpkg -s postgresql > /dev/null 2>&1
 if [ $? != 0 ]; then
     if [[ $ALL_SERVICES != true ]]; then
 	read -p "Should I add PostgreSQL Server? [y/N] "
@@ -384,6 +384,7 @@ if [ $? != 0 ]; then
 	fi
 	echo "Installing pg gems"
 	gem install pg --no-rdoc --no-ri
+	echo ""
     fi
 fi
 
