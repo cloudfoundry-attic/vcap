@@ -14,7 +14,7 @@ class PlayPlugin < StagingPlugin
   end
 
   def start_command
-    "/opt/play/play run . --%cloud --http.port=$VCAP_APP_PORT --pid_file=../run.pid "
+    "/opt/play/play run . --%cloud --http.port=$VCAP_APP_PORT --pid_file=../run.pid -Xms#{application_memory}m -Xmx#{application_memory}m"
   end
 
   def start_script_template
