@@ -366,6 +366,28 @@ if [ $? != 0 ]; then
     fi
 fi
 
+X=`which psql`
+if [ $? != 0 ]; then
+    if [[ $ALL_SERVICES != true ]]; then
+	read -p "Should I add PostgreSQL Server? [y/N] "
+	if [[ $REPLY =~ ^[yY]$ ]]; then
+	    POSTGRESQL=true
+	fi
+    fi
+
+    if [[ $POSTGRESQL == true || $ALL_SERVICES == true ]]; then
+	echo "Installing PostgreSQL server and support"
+
+	apt-get install -qqy postgresql libpq-dev
+	if [[ -n "$POSTGRESQL_PASS" ]]; then
+	    su - postgres -c "/usr/bin/psql -c \"alter role postgres password '$POSTGRESQL_PASS'\""
+	fi
+	echo "Installing pg gems"
+	gem install pg --no-rdoc --no-ri
+	echo ""
+    fi
+fi
+
 REDIS_VERSION=2.2.4
 
 redis_current=`redis-server -v | grep $REDIS_VERSION`
