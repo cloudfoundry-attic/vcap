@@ -1,0 +1,8 @@
+Code-Review+2: Nicholas Kushmerick <nicholask@vmware.com>
+Code-Review+1: Tang Rui <rtang@vmware.com>
+Code-Review+1: Felix Hu <hhu@vmware.com>
+Submitted-by: Nicholas Kushmerick <nicholask@vmware.com>
+Submitted-at: Thu, 30 Jun 2011 20:59:18 +0000
+Reviewed-on: http://cloudfoundry-codereview.qa.mozycloud.com/gerrit/476
+Project: vcap
+Branch: refs/heads/devel-services
