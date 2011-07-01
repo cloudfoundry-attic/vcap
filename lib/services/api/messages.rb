@@ -44,7 +44,7 @@ module VCAP
       # Provision a service instance
       # NB: Unprovision takes all args in the url
       #
-      class ProvisionRequest < JsonMessage
+      class CloudControllerProvisionRequest < JsonMessage
         required :label, SERVICE_LABEL_REGEX
         required :name,  String
         required :plan,  String
@@ -52,7 +52,16 @@ module VCAP
         optional :plan_option
       end
 
-      class ProvisionResponse < JsonMessage
+      class GatewayProvisionRequest < JsonMessage
+        required :label, SERVICE_LABEL_REGEX
+        required :name,  String
+        required :plan,  String
+        required :email, String
+
+        optional :plan_option
+      end
+
+      class GatewayProvisionResponse < JsonMessage
         required :service_id, String
         required :data
         required :credentials
@@ -70,6 +79,7 @@ module VCAP
       class GatewayBindRequest < JsonMessage
         required :service_id,    String
         required :label,         String
+        required :email,         String
         required :binding_options
       end
 
