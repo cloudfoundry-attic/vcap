@@ -306,6 +306,7 @@ describe ServicesController do
           VCAP::Services::Api::ProvisionRequest.new(
             :label => 'bar-foo',
             :name  => 'foo',
+            :email => 'bar@foo.com',
             :plan  => 'free')
         end
         response.status.should == 404
@@ -319,6 +320,7 @@ describe ServicesController do
           VCAP::Services::Api::ProvisionRequest.new(
             :label => 'foo-bar',
             :name  => 'foo',
+            :email => 'bar@foo.com',
             :plan  => 'free')
         end
         response.status.should == 200
@@ -334,6 +336,7 @@ describe ServicesController do
           VCAP::Services::Api::ProvisionRequest.new(
             :label => 'foo-bar',
             :name  => 'foo',
+            :email => 'bar@foo.com',
             :plan  => 'free')
         end
         response.status.should == 200
@@ -342,6 +345,7 @@ describe ServicesController do
           VCAP::Services::Api::ProvisionRequest.new(
             :label => 'foo-bar',
             :name  => 'foo',
+            :email => 'bar@foo.com',
             :plan  => 'free')
         end
         response.status.should == 400

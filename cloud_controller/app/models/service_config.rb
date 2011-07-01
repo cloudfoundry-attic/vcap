@@ -35,6 +35,7 @@ class ServiceConfig < ActiveRecord::Base
       req = VCAP::Services::Api::ProvisionRequest.new(
         :label => service.label,
         :name  => cfg_alias,
+        :email => user.email,
         :plan  => plan,
         :plan_option => plan_option
       )
