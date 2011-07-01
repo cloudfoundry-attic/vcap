@@ -126,7 +126,7 @@ class ServicesController < ApplicationController
   # Asks the gateway to provision an instance of the requested service
   #
   def provision
-    req = VCAP::Services::Api::ProvisionRequest.decode(request_body)
+    req = VCAP::Services::Api::CloudControllerProvisionRequest.decode(request_body)
 
     svc = Service.find_by_label(req.label)
     raise CloudError.new(CloudError::SERVICE_NOT_FOUND) unless svc && svc.visible_to_user?(user)

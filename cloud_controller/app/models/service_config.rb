@@ -32,9 +32,10 @@ class ServiceConfig < ActiveRecord::Base
     #    will lack the handle).
 
     begin
-      req = VCAP::Services::Api::ProvisionRequest.new(
+      req = VCAP::Services::Api::GatewayProvisionRequest.new(
         :label => service.label,
         :name  => cfg_alias,
+        :email => user.email,
         :plan  => plan,
         :plan_option => plan_option
       )
@@ -48,7 +49,7 @@ class ServiceConfig < ActiveRecord::Base
         elsif http.response_header.status != 200
           raise "Error sending provision request for #{req.extract.to_json}: non 200 response from gateway #{service.url}: #{http.response_header.status} #{http.response}"
         end
-        config = VCAP::Services::Api::ProvisionResponse.decode(http.response)
+        config = VCAP::Services::Api::GatewayProvisionResponse.decode(http.response)
       else
         uri = URI.parse(service.url)
         gw = VCAP::Services::Api::ServiceGatewayClient.new(uri.host, service.token, uri.port)

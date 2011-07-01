@@ -52,7 +52,7 @@ class VCAP::Services::SynchronousServiceGateway < Sinatra::Base
   # Provisions an instance of the service
   #
   post '/gateway/v1/configurations' do
-    req = VCAP::Services::Api::ProvisionRequest.decode(request_body)
+    req = VCAP::Services::Api::GatewayProvisionRequest.decode(request_body)
 
     @logger.debug("Provision request for label=#{req.label} plan=#{req.plan}")
 
@@ -64,7 +64,7 @@ class VCAP::Services::SynchronousServiceGateway < Sinatra::Base
 
     svc = @provisioner.provision_service(version, req.plan)
     if svc
-      VCAP::Services::Api::ProvisionResponse.new(svc).encode
+      VCAP::Services::Api::GatewayProvisionResponse.new(svc).encode
     else
       SERVICE_UNAVAILABLE
     end

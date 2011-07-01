@@ -169,6 +169,7 @@ class App < ActiveRecord::Base
 
   def bind_to_config(cfg, binding_options={})
     svc = cfg.service
+    user = cfg.user
 
     # The ordering here is odd, but important; it allows us to repair our internal
     # state to match that of the gateway. The description following each operation
@@ -199,6 +200,7 @@ class App < ActiveRecord::Base
       req = VCAP::Services::Api::GatewayBindRequest.new(
         :service_id => cfg.name,
         :label      => svc.label,
+        :email      => user.email,
         :binding_options => binding_options
       )
 
