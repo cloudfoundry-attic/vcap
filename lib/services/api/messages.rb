@@ -48,6 +48,7 @@ module VCAP
         required :label, SERVICE_LABEL_REGEX
         required :name,  String
         required :plan,  String
+        required :email, String
 
         optional :plan_option
       end
@@ -70,6 +71,7 @@ module VCAP
       class GatewayBindRequest < JsonMessage
         required :service_id,    String
         required :label,         String
+        required :email,         String
         required :binding_options
       end
 
