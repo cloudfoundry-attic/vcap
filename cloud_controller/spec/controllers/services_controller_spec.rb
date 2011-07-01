@@ -303,7 +303,7 @@ describe ServicesController do
 
       it 'should return not found for unknown services' do
         post_msg :provision do
-          VCAP::Services::Api::ProvisionRequest.new(
+          VCAP::Services::Api::CloudControllerProvisionRequest.new(
             :label => 'bar-foo',
             :name  => 'foo',
             :plan  => 'free')
@@ -316,7 +316,7 @@ describe ServicesController do
         shim.stubs(:provision_service).returns({:data => {}, :service_id => 'foo', :credentials => {}})
         gw_pid = start_gateway(@svc, shim)
         post_msg :provision do
-          VCAP::Services::Api::ProvisionRequest.new(
+          VCAP::Services::Api::CloudControllerProvisionRequest.new(
             :label => 'foo-bar',
             :name  => 'foo',
             :plan  => 'free')
@@ -331,7 +331,7 @@ describe ServicesController do
         gw_pid = start_gateway(@svc, shim)
 
         post_msg :provision do
-          VCAP::Services::Api::ProvisionRequest.new(
+          VCAP::Services::Api::CloudControllerProvisionRequest.new(
             :label => 'foo-bar',
             :name  => 'foo',
             :plan  => 'free')
@@ -339,7 +339,7 @@ describe ServicesController do
         response.status.should == 200
 
         post_msg :provision do
-          VCAP::Services::Api::ProvisionRequest.new(
+          VCAP::Services::Api::CloudControllerProvisionRequest.new(
             :label => 'foo-bar',
             :name  => 'foo',
             :plan  => 'free')
