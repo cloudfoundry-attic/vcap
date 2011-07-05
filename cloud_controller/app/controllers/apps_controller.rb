@@ -48,10 +48,14 @@ class AppsController < ApplicationController
 
   # POST /apps/:name/application
   def upload
-    app_bits  = params[:application]
-    resources = json_param(:resources)
-    package = AppPackage.new(@app, app_bits, resources)
-    @app.latest_bits_from(package)
+    begin
+      app_bits  = params[:application]
+      resources = json_param(:resources)
+      package = AppPackage.new(@app, app_bits, resources)
+      @app.latest_bits_from(package)
+    ensure
+      FileUtils.rm_f(app_bits.path)
+    end
     render :nothing => true, :status => 200
   end
 
