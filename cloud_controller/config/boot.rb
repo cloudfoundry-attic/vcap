@@ -105,6 +105,9 @@ module CloudController
 
     def uploads_dir
       File.join(tmp_dir,'/uploads')
+
+    def nuke_tmp
+      AppConfig[:directories][:nuke_tmp_on_startup]
     end
 
     def database_configuration

@@ -41,7 +41,9 @@ end
 begin
   tmp_dir = CloudController.tmp_dir
   uploads_dir = CloudController.uploads_dir
-  FileUtils.rm_rf(tmp_dir)
+  if CloudController.nuke_tmp
+    FileUtils.rm_rf(tmp_dir)
+  end
   FileUtils.mkdir_p(tmp_dir)
   FileUtils.mkdir_p(uploads_dir)
 rescue
