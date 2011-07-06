@@ -78,6 +78,14 @@ module CloudController
       AppConfig[:pid]
     end
 
+    def nuke_tmp
+      AppConfig[:directories][:nuke_tmp_on_startup]
+    end
+
+    def tmp_dir
+      AppConfig[:directories][:tmpdir]
+    end
+
     def database_configuration
       # Various Railties expect this to have (recursively) string keys.
       AppConfig[:database_environment].with_indifferent_access
