@@ -36,7 +36,8 @@ directories:
   resources: /var/vcap/shared/resources
   # default values, relative to Rails.root. Leading slash for full path.
   staging_manifests: staging/manifests
-  tmpdir: tmp
+  # this directory blown away at startup, be careful.
+  tmpdir: /var/vcap/data/cloud_controller/tmp
 mbus: nats://localhost:4222/
 keys:
   password: 'password key goes here'

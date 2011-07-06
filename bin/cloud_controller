@@ -38,6 +38,15 @@ rescue
   exit 1
 end
 
+begin
+  tmp_dir = CloudController.tmp_dir
+  FileUtils.rm_rf(tmp_dir)
+  FileUtils.mkdir_p(tmp_dir)
+rescue
+  $stderr.puts "Unable to setup clean tmp dir #{tmp_dir}"
+  exit 1
+end
+
 require 'thin'
 server = Thin::Server.new(CloudController.bind_address, CloudController.instance_port)
 cc_rack = File.join(cc_root, 'config.ru')
