@@ -43,7 +43,7 @@ required = { :external_uri => 'api.vcap.me',
                                :resources         => '/var/vcap/shared/resources',
                                :staging_manifests => 'staging/manifests',
                                :staging_cache     => '/var/vcap.local/staging',
-                               :tmpdir            => 'tmp'},
+                               :tmpdir            => '/var/vcap/data/cloud_controller/tmp'},
              :mbus => 'nats://localhost:4222/',
              :logging => { :level => 'debug' },
              :keys => { :password => 'da39a3ee5e6b4b0d3255bfef95601890afd80709', :token => 'default_key'},
@@ -115,6 +115,7 @@ end
 # Normalize directories
 root = File.expand_path('../..', __FILE__)
 AppConfig[:directories].each do |type, path|
+  next if type == :nuke_tmp_on_startup
   next if path[0,1] == '/'
   AppConfig[:directories][type] = File.expand_path(File.join(root, path))
 end
