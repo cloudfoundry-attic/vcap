@@ -15,6 +15,7 @@ CloudController::Application.routes.draw do
   get    'apps/:name'                => 'apps#get',             :as => :app_get
   put    'apps/:name'                => 'apps#update',          :as => :app_update
   delete 'apps/:name'                => 'apps#delete',          :as => :app_delete
+
   put    'apps/:name/application'    => 'apps#upload',          :as => :app_upload
   get    'apps/:name/crashes'        => 'apps#crashes',         :as => :app_crashes
   post   'resources'                 => 'resource_pool#match',  :as => :resource_match
