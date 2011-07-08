@@ -1,0 +1,73 @@
+#!/usr/bin/env ruby
+
+# This script executes at app startup time because the
+# actual appserver port must be in the apache conf.
+
+apache_port = ARGV[0]
+base_dir = ARGV[1]
+vcap_services = ARGV[2]
+exit 1 unless apache_port && base_dir && vcap_services
+
+require 'erb'
+output_path = "apache/sites-available/default"
+
+template = <<-ERB
+<VirtualHost *:<%= apache_port %>>
+  ServerAdmin webmaster@localhost
+  DocumentRoot <%= base_dir %>/app
+  ErrorLog ${APACHE_LOG_DIR}/error.log
+  CustomLog ${APACHE_LOG_DIR}/access.log combined
+  SetEnv VCAP_SERVICES <%= vcap_services %>
+</VirtualHost>
+ERB
+
+template = ERB.new(template)
+File.open(File.expand_path(output_path), 'wb') do |file|
+  file.puts(template.result(binding))
+end
+
+system "cd apache/sites-enabled && ln -s ../sites-available/default 000-default && cd ../.."
+
+output_path = 'apache/envvars'
+
+template = <<-ERB
+unset HOME
+export APACHE_BASEDIR=<%= base_dir %>/apache
+export APACHE_RUN_USER=www-data
+export APACHE_RUN_GROUP=www-data
+export APACHE_PID_FILE=<%= base_dir %>/run.pid
+export APACHE_RUN_DIR=$APACHE_BASEDIR/run/apache2
+export APACHE_LOCK_DIR=$APACHE_BASEDIR/lock/apache2
+export APACHE_LOG_DIR=<%= base_dir %>/logs
+export LANG=C
+ERB
+
+template = ERB.new(template)
+File.open(File.expand_path(output_path), 'wb') do |file|
+  file.puts(template.result(binding))
+end
+
+output_path = 'apache/ports.conf'
+
+template = <<-ERB
+NameVirtualHost *:<%= apache_port %>
+Listen <%= apache_port %>
+ERB
+
+template = ERB.new(template)
+File.open(File.expand_path(output_path), 'wb') do |file|
+  file.puts(template.result(binding))
+end
+
+output_path = 'apache/start.sh'
+
+template = <<-ERB
+#!/bin/bash
+source <%= base_dir %>/apache/envvars
+/usr/sbin/apache2 -d <%= base_dir %>/apache -d <%= base_dir %>/apache -D FOREGROUND
+ERB
+
+template = ERB.new(template)
+File.open(File.expand_path(output_path), 'wb') do |file|
+  file.puts(template.result(binding))
+end

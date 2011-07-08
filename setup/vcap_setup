@@ -255,6 +255,33 @@ if [[ $DEA == true || $ALL == true ]]; then
 	rm -fr node-v$NODE_VERSION
     fi
 
+    # For PHP
+    if [[ $PLATFORM == 'Linux' ]]; then
+    apt-get install -qqy libpcre3 libpcre3-dev apache2 php5 php5-mysql php5-dev php-pear php5-gd libapr1 libaprutil1 php5-common php5-curl php5-mcrypt php5-imagick php5-xmlrpc zend-framework php5-imap
+
+    pear channel-discover pear.phpunit.de
+    pear channel-discover pear.symfony-project.com
+    pear channel-discover components.ez.no
+    pear install phpunit/PHPUnit
+    yes | pecl install apc
+    yes | pecl install memcache
+    yes | pecl install mongo
+    git clone git://github.com/owlient/phpredis.git
+    cd phpredis
+    phpize
+    ./configure
+    make && make install
+    cd ..
+    rm -rf phpredis
+
+    echo "extension=apc.so" > /etc/php5/apache2/conf.d/cf.ini
+    echo "extension=memcache.so" >> /etc/php5/apache2/conf.d/cf.ini
+    echo "extension=mongo.so" >> /etc/php5/apache2/conf.d/cf.ini
+
+    elif [[ $PLATFORM == 'MacOSX' ]]; then
+    echo -e "\033[31mFIXME: Implement for MacOSX \033[0m"
+    fi
+
     ERLANG_VERSION=R14B02
 
     if [ ! -d "/var/vcap/runtimes/erlang-$ERLANG_VERSION" ]; then
@@ -291,6 +318,10 @@ if [[ $DEA == true || $ALL == true ]]; then
 
     echo -e "\nNode should now be installed -->"
     node -v
+    echo ""
+
+    echo -e "\nPHP should now be installed -->"
+    php -v
     echo ""
 
     echo -e "\nErlang should now be installed -->"
