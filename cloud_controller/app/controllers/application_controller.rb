@@ -105,12 +105,14 @@ class ApplicationController < ActionController::Base
 
   def require_user
     unless user
+      CloudController.logger.error("Authentication failure: #{auth_token_header.inspect}", :tags => [:auth_failure])
       raise CloudError.new(CloudError::FORBIDDEN)
     end
   end
 
   def require_admin
     unless user && user.admin?
+      CloudController.logger.warn("Authentication failure: #{auth_token_header.inspect}", :tags => [:auth_failure])
       raise CloudError.new(CloudError::FORBIDDEN)
     end
   end
