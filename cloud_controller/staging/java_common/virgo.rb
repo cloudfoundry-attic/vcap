@@ -1,7 +1,7 @@
 require 'nokogiri'
 require 'fileutils'
 
-class Tomcat
+class Virgo
   AUTOSTAGING_JAR = 'auto-reconfiguration-0.6.0-BUILD-SNAPSHOT.jar'
   DEFAULT_APP_CONTEXT = "/WEB-INF/applicationContext.xml"
   DEFAULT_SERVLET_CONTEXT_SUFFIX = "-servlet.xml"
@@ -12,19 +12,19 @@ class Tomcat
 
   def self.prepare(dir)
     FileUtils.cp_r(resource_dir, dir)
-    output = %x[cd #{dir}; unzip -q resources/tomcat.zip]
-    raise "Could not unpack Tomcat: #{output}" unless $? == 0
-    webapp_path = File.join(dir, "tomcat", "webapps", "ROOT")
-    server_xml = File.join(dir, "tomcat", "conf", "server.xml")
+    output = %x[cd #{dir}; unzip -q resources/virgo.zip]
+    raise "Could not unpack Virgo: #{output}" unless $? == 0
+    webapp_path = File.join(dir, "virgo", "pickup", "ROOT")
+    server_xml = File.join(dir, "virgo", "config", "tomcat-server.xml")
     FileUtils.rm_f(server_xml)
     FileUtils.rm(File.join(dir, "resources", "tomcat.zip"))
     FileUtils.rm(File.join(dir, "resources", "virgo.zip"))
-    FileUtils.mv(File.join(dir, "resources", "droplet_tomcat.yaml"), File.join(dir, "droplet.yaml"))
+    FileUtils.mv(File.join(dir, "resources", "droplet_virgo.yaml"), File.join(dir, "droplet.yaml"))
     FileUtils.mkdir_p(webapp_path)
     webapp_path
   end
 
-  def self.configure_tomcat_application(staging_dir, webapp_root, autostaging_template, environment)
+  def self.configure_virgo_application(staging_dir, webapp_root, autostaging_template, environment)
     configure_autostaging(webapp_root, autostaging_template)
   end
 
@@ -34,7 +34,7 @@ class Tomcat
     if File.exist? web_config_file
       modify_autostaging_context(autostaging_context, web_config_file, webapp_path)
     else
-      raise "Spring / J2EE application staging failed: web.xml not found"
+      raise "Virgo application staging failed: web.xml not found"
     end
     jar_dest = File.join(webapp_path, 'WEB-INF/lib')
     copy_jar AUTOSTAGING_JAR, jar_dest

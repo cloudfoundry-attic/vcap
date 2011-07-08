@@ -1,12 +1,12 @@
-require File.expand_path('../../java_common/tomcat', __FILE__)
+require File.expand_path('../../java_common/virgo', __FILE__)
 
-class SpringPlugin < StagingPlugin
+class VirgoPlugin < StagingPlugin
   def framework
-    'spring'
+    'virgo'
   end
 
   def autostaging_template
-    File.join(File.dirname(__FILE__), '../java_common/resources', 'autostaging_template_spring.xml')
+    File.join(File.dirname(__FILE__), '../java_common/resources', 'autostaging_template_virgo.xml')
   end
 
   def skip_staging webapp_root
@@ -16,9 +16,9 @@ class SpringPlugin < StagingPlugin
   def stage_application
     Dir.chdir(destination_directory) do
       create_app_directories
-      webapp_root = Tomcat.prepare(destination_directory)
+      webapp_root = Virgo.prepare(destination_directory)
       copy_source_files(webapp_root)
-      Tomcat.configure_tomcat_application(destination_directory, webapp_root, self.autostaging_template, environment)  unless self.skip_staging(webapp_root)
+      Virgo.configure_virgo_application(destination_directory, webapp_root, self.autostaging_template, environment)  unless self.skip_staging(webapp_root)
       create_startup_script
     end
   end
@@ -27,18 +27,18 @@ class SpringPlugin < StagingPlugin
     FileUtils.mkdir_p File.join(destination_directory, 'logs')
   end
 
-  # The Tomcat start script runs from the root of the staged application.
+  # The Virgo start script runs from the root of the staged application.
   def change_directory_for_start
-    "cd tomcat"
+    "cd virgo"
   end
 
-  # We redefine this here because Tomcat doesn't want to be passed the cmdline
+  # We redefine this here because Virgo doesn't want to be passed the cmdline
   # args that were given to the 'start' script.
   def start_command
-    "./bin/catalina.sh run"
+    "./bin/dmk.sh start -jmxport $(($PORT + 1))"
   end
 
-  def configure_catalina_opts
+  def configure_memory_opts
     # We want to set this to what the user requests, *not* set a minum bar
     "-Xms#{application_memory}m -Xmx#{application_memory}m"
   end
@@ -46,7 +46,8 @@ class SpringPlugin < StagingPlugin
   private
   def startup_script
     vars = environment_hash
-    vars['CATALINA_OPTS'] = configure_catalina_opts
+    vars['JAVA_OPTS'] = configure_memory_opts
+    vars['JAVA_HOME'] = ENV['JAVA_HOME']
     generate_startup_script(vars) do
       <<-SPRING
 export CATALINA_OPTS="$CATALINA_OPTS `ruby resources/set_environment`"
@@ -63,7 +64,7 @@ if [ $PORT -lt 0 ] ; then
   echo "Missing or invalid port (-p)"
   exit 1
 fi
-ruby resources/generate_tomcat_server_xml $PORT
+ruby resources/generate_virgo_server_xml $PORT
       SPRING
     end
   end

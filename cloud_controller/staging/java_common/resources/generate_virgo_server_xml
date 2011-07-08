@@ -1,0 +1,64 @@
+#!/usr/bin/env ruby
+
+# This script executes at app startup time because the
+# actual appserver port must be in the server.xml.
+
+tomcat_port = ARGV[0]
+exit 1 unless tomcat_port
+
+require 'erb'
+OUTPUT_PATH = "virgo/config/tomcat-server.xml"
+
+TEMPLATE = <<-ERB
+<?xml version='1.0' encoding='utf-8'?>
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<Server port="-1">
+
+  <Listener className="org.apache.catalina.core.AprLifecycleListener" SSLEngine="on" />
+  <Listener className="org.apache.catalina.core.JasperListener" />
+  <Listener className="org.apache.catalina.mbeans.GlobalResourcesLifecycleListener" />
+
+  <Listener className="org.eclipse.virgo.web.tomcat.support.ServerLifecycleLoggingListener"/>
+
+  <Service name="Catalina">
+    <Connector port="<%= tomcat_port %>" protocol="HTTP/1.1"
+               connectionTimeout="20000"/>
+
+    <Engine name="Catalina" defaultHost="localhost">
+      <Realm className="org.apache.catalina.realm.JAASRealm" appName="virgo-kernel"
+          userClassNames="org.eclipse.virgo.kernel.authentication.User"
+          roleClassNames="org.eclipse.virgo.kernel.authentication.Role"/>
+
+      <Host name="localhost"  appBase="webapps"
+          unpackWARs="true" autoDeploy="true"
+          xmlValidation="false" xmlNamespaceAware="false">
+
+        <Valve className="org.apache.catalina.valves.AccessLogValve" directory="serviceability/logs/access"
+          prefix="localhost_access_log." suffix=".txt" pattern="common" resolveHosts="false"/>
+
+        <Valve className="org.eclipse.virgo.web.tomcat.support.ApplicationNameTrackingValve"/>
+      </Host>
+    </Engine>
+  </Service>
+</Server>
+ERB
+
+template = ERB.new(TEMPLATE)
+File.open(File.expand_path(OUTPUT_PATH), 'wb') do |file|
+  file.puts(template.result(binding))
+end

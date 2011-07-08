@@ -1,0 +1,20 @@
+---
+name: "virgo"
+runtimes:
+  - "java":
+      description: "Java 6"
+      version: "1.6"
+      executable: "java"
+      default: true
+app_servers:
+  - "virgo":
+      description: "Virgo"
+      executable: "false"
+      default: true
+detection:
+  - "*.war": true # TODO - this thinks everything with an XML file is Spring
+staged_services:
+  - "name": "mysql"
+    "version": "*"
+
+# vim: filetype=yaml
