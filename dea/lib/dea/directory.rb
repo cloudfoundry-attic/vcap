@@ -41,6 +41,10 @@ module DEA
       @path_info = Rack::Utils.unescape(env['PATH_INFO'])
       @path = F.expand_path(F.join(@root, @path_info))
 
+      if not File.exists? @path
+        return entity_not_found
+      end
+
       resolve_symlink
       if forbidden = check_forbidden
         forbidden
