@@ -74,7 +74,7 @@ the following steps
 
 #### Step 3: start the system
 
-    cd ~/cloudfoundry/vcap
+    cd ~/cloudfoundry/vcap && bundle install
     bin/vcap start
     bin/vcap tail  # see aggregate logs
 
