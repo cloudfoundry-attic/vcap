@@ -131,24 +131,29 @@ class ApplicationController < ActionController::Base
     (!request.headers["X-Forwarded_Proto"].nil? and request.headers["X-Forwarded_Proto"] =~ /^https/i) ? true : false
   end
 
-  # Called whenever an action raises a CloudError.
-  # See lib/cloud_error.rb for details.
-  def render_cloud_error(e)
-    @error = e
-    render :status => e.status, :json => e.to_json
-  end
 
-  def handle_locking_error
-    render_cloud_error CloudError.new(CloudError::LOCKING_ERROR)
-  end
-
-  def handle_general_exception(e)
+  def log_exception(e)
     begin
       CloudController.logger.error "Exception Caught (#{e.class.name}): #{e.to_s}"
       CloudController.logger.error e
     rescue
       # Do nothing
     end
+  end
+
+  def render_cloud_error(e)
+    log_exception(e)
+    @error = e
+    render :status => e.status, :json => e.to_json
+  end
+
+  def handle_locking_error(e)
+    log_exception(e)
+    render_cloud_error CloudError.new(CloudError::LOCKING_ERROR)
+  end
+
+  def handle_general_exception(e)
+    log_exception(e)
     render_cloud_error CloudError.new(CloudError::SYSTEM_ERROR)
   end
 

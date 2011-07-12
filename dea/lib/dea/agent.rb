@@ -117,6 +117,9 @@ module DEA
       @db_dir         = File.join(@droplet_dir, 'db')
       @app_state_file = File.join(@db_dir, APP_STATE_FILE)
 
+      #prevent use of shared directory for droplets even if available.
+      @force_http_sharing = config['force_http_sharing']
+
       # If a du of the apps dir takes excessively long we log out the directory structure
       # here.
       @last_apps_dump = nil
@@ -913,11 +916,12 @@ module DEA
       # 1. Check our own staged directory.
       # 2. Check shared directory from CloudController that could be mounted (bits_file)
       # 3. Pull from http if needed.
-      unless File.exist?(tgz_file)
-
+      if File.exist?(tgz_file)
+        @logger.debug('Found staged bits in local cache.')
+      else
         # If we have a shared volume from the CloudController we can see the bits
         # directly, just link into our staged version.
-        if File.exist?(bits_file)
+        if File.exist?(bits_file) and not @force_http_sharing
           @logger.debug("Sharing cloud controller's staging directories")
           start = Time.now
           FileUtils.cp(bits_file, tgz_file)
@@ -938,8 +942,6 @@ module DEA
           download_end = Time.now
           @logger.debug("Took #{download_end - start} to download and write file")
         end
-      else
-        @logger.debug('Bits already cached locally.')
       end
 
       start = Time.now
