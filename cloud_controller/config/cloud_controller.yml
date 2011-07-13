@@ -80,6 +80,7 @@ staging:
   max_concurrent_stagers: 10
   max_staging_runtime:    120 # secs
   secure: false
+  allow_debug: true
 
 # admin support
 admins: [derek@gmail.com, foobar@vmware.com]
@@ -105,3 +106,39 @@ builtin_services:
     token: "0xdeadbeef"
   rabbitmq:
     token: "0xdeadbeef"
+
+# format is the same as DEA config
+# used for /info/runtimes endpoint (served unfiltered as JSON)
+runtimes:
+  ruby18:
+    executable: /usr/bin/ruby
+    version: 1.8.7
+    version_flag: "-e 'puts RUBY_VERSION'"
+    additional_checks: "-e 'puts RUBY_PATCHLEVEL >= 174'"
+    environment:
+  ruby19:
+    executable: ruby
+    version: 1.9.2
+    version_flag: "-e 'puts RUBY_VERSION'"
+    additional_checks: "-e 'puts RUBY_PATCHLEVEL >= 180'"
+    environment:
+  node:
+    executable: node
+    version: 0.4.[2-9]
+    version_flag: '-v'
+    environment:
+  java:
+    executable: java
+    version: 1.6.0
+    version_flag: '-version'
+    environment:
+    debug_env:
+      run:
+        - JAVA_OPTS="$JAVA_OPTS -Xdebug -Xrunjdwp:transport=dt_socket,address=$VCAP_DEBUG_PORT,server=y,suspend=n"
+      wait:
+        - JAVA_OPTS="$JAVA_OPTS -Xdebug -Xrunjdwp:transport=dt_socket,address=$VCAP_DEBUG_PORT,server=y,suspend=y"
+  erlangR14B02:
+    executable: /var/vcap/runtimes/erlang-R14B02/bin/erl
+    version: ".* 5.8.3"
+    version_flag: '-version'
+    environment:
