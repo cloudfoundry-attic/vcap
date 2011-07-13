@@ -5,7 +5,7 @@ class DefaultController < ApplicationController
     info = {
       :name => 'vcap',
       :build => 2222,
-      :support =>  'http://support.cloudfoundry.com',
+      :support =>  'support@cloudfoundry.com',
       :version =>  CloudController.version,
       :description =>  'VMware\'s Cloud Application Platform'
     }
