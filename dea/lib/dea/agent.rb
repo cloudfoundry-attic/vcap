@@ -232,6 +232,7 @@ module DEA
 
         # Setup our listeners..
         NATS.subscribe('dea.status') { |msg, reply| process_dea_status(msg, reply) }
+        NATS.subscribe('dea.runtimes') { |msg, reply| process_dea_runtimes(msg, reply) }
         NATS.subscribe('droplet.status') { |msg, reply| process_droplet_status(msg, reply) }
         NATS.subscribe('dea.discover') { |msg, reply| process_dea_discover(msg, reply) }
         NATS.subscribe('dea.find.droplet') { |msg, reply| process_dea_find_droplet(msg, reply) }
@@ -327,6 +328,12 @@ module DEA
       NATS.publish(reply, response.to_json)
     end
 
+    def process_dea_runtimes(message, reply)
+      @logger.debug("DEA received runtimes message")
+      @logger.debug("sending back #{@runtimes.to_json}")
+      NATS.publish(reply, @runtimes.to_json)
+    end
+
     def process_dea_discover(message, reply)
       return if @shutting_down
       @logger.debug("DEA received discovery message: #{message}")
@@ -399,7 +406,8 @@ module DEA
               :state_timestamp => instance[:state_timestamp],
               :file_uri => "http://#{@local_ip}:#{@file_viewer_port}/droplets/",
               :credentials => @file_auth,
-              :staged => instance[:staged]
+              :staged => instance[:staged],
+              :debug_port => instance[:debug_port]
             }
             if include_stats && instance[:state] == :RUNNING
               response[:stats] = {
@@ -494,6 +502,7 @@ module DEA
       users = message_json['users']
       runtime = message_json['runtime']
       framework = message_json['framework']
+      debug = message_json['debug']
 
       # Limits processing
       mem     = DEFAULT_APP_MEM
@@ -560,15 +569,25 @@ module DEA
       end
 
       start_operation = proc do
-        port = VCAP.grab_ephemeral_port
-
         @logger.debug('Completed download')
-        @logger.info("Starting up instance #{instance[:log_id]} on port:#{port}")
+
+        port = VCAP.grab_ephemeral_port
+        instance[:port] = port
+
+        starting = "Starting up instance #{instance[:log_id]} on port:#{port}"
+
+        if debug
+          debug_port = VCAP.grab_ephemeral_port
+          instance[:debug_port] = debug_port
+          instance[:debug_mode] = debug
+
+          @logger.info("#{starting} with debugger:#{debug_port}")
+        else
+          @logger.info(starting)
+        end
 
         @logger.debug("Clients: #{@num_clients}")
         @logger.debug("Reserved Memory Usage: #{@reserved_mem} MB of #{@max_memory} MB TOTAL")
-
-        instance[:port] = port
 
         manifest_file = File.join(instance[:dir], 'droplet.yaml')
         manifest = {}
@@ -827,7 +846,7 @@ module DEA
         if state && state['state'] == 'RUNNING'
           block.call(true)
           timer.cancel
-        else
+        elsif instance[:debug_mode] != "wait"
           attempts += 1
           if attempts > 600 || instance[:state] != :STARTING # 5 minutes or instance was stopped
             block.call(false)
@@ -999,6 +1018,12 @@ module DEA
       env_hash.to_json
     end
 
+    def debug_env(instance)
+      return unless instance[:debug_port]
+      return unless envs = @runtimes[instance[:runtime]]['debug_env']
+      envs[instance[:debug_mode]]
+    end
+
     def setup_instance_env(instance, app_env, services)
       env = []
 
@@ -1007,6 +1032,12 @@ module DEA
       env << "VCAP_SERVICES='#{create_services_for_env(services)}'"
       env << "VCAP_APP_HOST='#{@local_ip}'"
       env << "VCAP_APP_PORT='#{instance[:port]}'"
+      env << "VCAP_DEBUG_PORT='#{instance[:debug_port]}'"
+
+      if vars = debug_env(instance)
+        @logger.info("Debugger environment variables: #{vars.inspect}")
+        env += vars
+      end
 
       # LEGACY STUFF
       env << "VMC_WARNING_WARNING='All VMC_* environment variables are deprecated, please use VCAP_* versions.'"

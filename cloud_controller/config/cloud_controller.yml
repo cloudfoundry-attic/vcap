@@ -80,6 +80,7 @@ staging:
   max_concurrent_stagers: 10
   max_staging_runtime:    120 # secs
   secure: false
+  allow_debug: true
 
 # admin support
 admins: [derek@gmail.com, foobar@vmware.com]

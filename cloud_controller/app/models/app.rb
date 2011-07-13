@@ -12,6 +12,10 @@ class App < ActiveRecord::Base
 
   before_validation :normalize_legacy_staging_strings!
 
+  serialize :metadata, Hash
+
+  after_initialize :set_defaults
+
   after_create :add_owner_as_collaborator
 
   scope :started, lambda { where("apps.state = ?", 'STARTED') }
@@ -78,6 +82,10 @@ class App < ActiveRecord::Base
     result
   end
 
+  def set_defaults
+    self.metadata ||= {}
+  end
+
   def total_memory
     instances * memory
   end
@@ -93,7 +101,10 @@ class App < ActiveRecord::Base
       :services => bound_services,
       :version => generate_version,
       :env => environment,
-      :meta => {:version => lock_version, :created => Time.now.to_i} }
+
+      # TODO: the created attribute here seems weird
+      :meta => metadata.merge({:version => lock_version, :created => Time.now.to_i})
+    }
   end
 
   # Called by AppManager when staging this app.
@@ -336,16 +347,6 @@ class App < ActiveRecord::Base
       self.package_hash = sha1
       save!
     end
-  end
-
-  def metadata
-    json = read_attribute(:metadata_json)
-    return {} if json.blank?
-    Yajl::Parser.parse(json, :symbolize_keys => true)
-  end
-
-  def metadata=(hash)
-    write_attribute(:metadata_json, Yajl::Encoder.encode(hash))
   end
 
   def environment

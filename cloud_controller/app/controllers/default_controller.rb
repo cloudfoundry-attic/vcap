@@ -19,6 +19,12 @@ class DefaultController < ApplicationController
     render :json => info
   end
 
+  def runtime_info
+    response = NATS.timed_request("dea.runtimes")
+    runtimes = response.pop
+    render :json => Yajl::Parser.parse(runtimes || "{}")
+  end
+
   def service_info
     svcs = Service.active_services.select {|svc| svc.visible_to_user?(user)}
     CloudController.logger.debug("Global service listing found #{svcs.length} services.")
