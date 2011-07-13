@@ -56,7 +56,7 @@ describe 'DEA Agent' do
       'filer_port'   => VCAP.grab_ephemeral_port,
       'mbus'         => @nats_cfg[:uri],
       'intervals'    => {'heartbeat' => 1},
-      'log_level'    => 'DEBUG',
+      'logging'      => {'level' => 'debug'},
       'multi_tenant' => true,
       'max_memory'   => 4096,
       'secure'       => false,
