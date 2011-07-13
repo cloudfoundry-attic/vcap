@@ -4,6 +4,7 @@ require File.dirname(__FILE__) + '/../spec_helper'
 require 'router/router'
 require 'logger'
 
+require 'vcap/logging'
 require 'vcap/rolling_metric'
 
 module VCAP
