@@ -10,7 +10,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20110521014004) do
+ActiveRecord::Schema.define(:version => 20110707170643) do
 
   create_table "app_collaborations", :force => true do |t|
     t.integer  "app_id"
@@ -32,7 +32,7 @@ ActiveRecord::Schema.define(:version => 20110521014004) do
     t.string   "package_state",       :default => "PENDING"
     t.string   "package_hash"
     t.text     "environment_json"
-    t.text     "metadata_json"
+    t.text     "metadata"
     t.boolean  "external_secret",     :default => false
     t.datetime "created_at"
     t.datetime "updated_at"

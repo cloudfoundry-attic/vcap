@@ -191,6 +191,7 @@ class AppManager
       f = Fiber.new do
         message = start_message.dup
         message[:executableUri] = download_app_uri(message[:executableUri])
+        message[:debug] = @app.metadata[:debug]
         (index...max_to_start).each do |i|
           message[:index] = i
           dea_id = find_dea_for(message)
@@ -317,8 +318,8 @@ class AppManager
     raise e # re-raise here to propogate to the API call.
   end
 
-  # Returns an array of hashes containing 'index', 'state', and 'since'(timestamp)
-  # for all instances running, or trying to run, the app.
+  # Returns an array of hashes containing 'index', 'state', 'since'(timestamp),
+  # and 'debug_port' for all instances running, or trying to run, the app.
   def find_instances
     return [] unless app.started?
     instances = app.instances
@@ -339,7 +340,8 @@ class AppManager
           indices[index] = {
             :index => index,
             :state => :FLAPPING,
-            :since => entry[:since]
+            :since => entry[:since],
+            :debug_port => nil
           }
         end
       end
@@ -364,7 +366,8 @@ class AppManager
           indices[index] = {
             :index => index,
             :state => instance_json[:state],
-            :since => instance_json[:state_timestamp]
+            :since => instance_json[:state_timestamp],
+            :debug_port => instance_json[:debug_port]
           }
         end
       end
@@ -373,7 +376,7 @@ class AppManager
     instances.times do |index|
       index_entry = indices[index]
       unless index_entry
-        indices[index] = { :index => index, :state => :DOWN, :since => Time.now.to_i }
+        indices[index] = { :index => index, :state => :DOWN, :since => Time.now.to_i, :debug_port => nil }
       end
     end
     indices
