@@ -30,7 +30,7 @@ class PhpPlugin < StagingPlugin
     generate_startup_script(vars) do
       <<-PHPEOF
 env > env.log
-ruby resources/generate_apache_conf $VCAP_APP_PORT $HOME $VCAP_SERVICES
+ruby resources/generate_apache_conf $VCAP_APP_PORT $HOME $VCAP_SERVICES #{application_memory}m
       PHPEOF
     end
   end
