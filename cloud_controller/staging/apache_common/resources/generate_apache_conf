@@ -6,7 +6,8 @@
 apache_port = ARGV[0]
 base_dir = ARGV[1]
 vcap_services = ARGV[2]
-exit 1 unless apache_port && base_dir && vcap_services
+php_ram = ARGV[3]
+exit 1 unless apache_port && base_dir && vcap_services && php_ram
 
 require 'erb'
 output_path = "apache/sites-available/default"
@@ -40,6 +41,7 @@ export APACHE_RUN_DIR=$APACHE_BASEDIR/run/apache2
 export APACHE_LOCK_DIR=$APACHE_BASEDIR/lock/apache2
 export APACHE_LOG_DIR=<%= base_dir %>/logs
 export LANG=C
+export PHP_INI_SCAN_DIR=$APACHE_BASEDIR/php
 ERB
 
 template = ERB.new(template)
@@ -65,6 +67,17 @@ template = <<-ERB
 #!/bin/bash
 source <%= base_dir %>/apache/envvars
 /usr/sbin/apache2 -d <%= base_dir %>/apache -d <%= base_dir %>/apache -D FOREGROUND
+ERB
+
+template = ERB.new(template)
+File.open(File.expand_path(output_path), 'wb') do |file|
+  file.puts(template.result(binding))
+end
+
+output_path = 'apache/php/php.ini'
+
+template = <<-ERB
+memory_limit = <%= php_ram %>
 ERB
 
 template = ERB.new(template)
