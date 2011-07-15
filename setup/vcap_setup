@@ -259,6 +259,9 @@ if [[ $DEA == true || $ALL == true ]]; then
     if [[ $PLATFORM == 'Linux' ]]; then
     apt-get install -qqy libpcre3 libpcre3-dev apache2 php5 php5-mysql php5-dev php-pear php5-gd libapr1 libaprutil1 php5-common php5-curl php5-mcrypt php5-imagick php5-xmlrpc zend-framework php5-imap
 
+    /etc/init.d/apache2 stop
+    update-rc.d -f apache2 remove
+
     pear channel-discover pear.phpunit.de
     pear channel-discover pear.symfony-project.com
     pear channel-discover components.ez.no
