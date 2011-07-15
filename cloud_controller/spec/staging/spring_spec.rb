@@ -413,3 +413,85 @@ describe "A Java / Spring application being staged with a Spring DispatcherServl
     end
   end
 end
+
+describe "A Java / Spring application being staged with 2 Spring DispatcherServlet in its web config containing a default servlet context config but no 'init-param' configs" do
+  before(:all) do
+    app_fixture :spring_multiple_dispatcherservlets_no_init_param
+  end
+
+  it "should have 2 init-params in its web config after staging" do
+    stage :spring do |staged_dir|
+      web_config_file = File.join(staged_dir, 'tomcat/webapps/ROOT/WEB-INF/web.xml')
+      File.exist?(web_config_file).should == true
+
+      web_config = Nokogiri::XML(open(web_config_file))
+      init_param_node =  web_config.xpath("//init-param")
+      init_param_node.length.should == 2
+    end
+  end
+
+  it "the 2 init-params in its web config after staging should be valid" do
+    stage :spring do |staged_dir|
+      web_config_file = File.join(staged_dir, 'tomcat/webapps/ROOT/WEB-INF/web.xml')
+      File.exist?(web_config_file).should == true
+
+      web_config = Nokogiri::XML(open(web_config_file))
+      init_param_nodes =  web_config.xpath("//init-param")
+      init_param_nodes.each do |init_param_node|
+        init_param_name_node = init_param_node.xpath("param-name")
+        init_param_name_node.length.should == 1
+
+        init_param_value_node = init_param_node.xpath("param-value")
+        init_param_value_node.length.should == 1
+
+      end
+    end
+  end
+
+  it "should have the auto reconfiguration jar in the webapp lib path" do
+    stage :spring do |staged_dir|
+      auto_reconfig_jar_relative_path = "tomcat/webapps/ROOT/WEB-INF/lib/#{AUTOSTAGING_JAR}"
+      auto_reconfiguration_jar_path = File.join(staged_dir, auto_reconfig_jar_relative_path)
+      File.exist?(auto_reconfiguration_jar_path).should == true
+    end
+  end
+
+end
+
+describe "A Java / Spring application being staged with 2 Spring DispatcherServlets in its web config with an 'init-param' config in each containing a 'contextConfigLocation' of 'foo' in its web config" do
+  before(:all) do
+    app_fixture :spring_multiple_dispatcherservlets_context_config_foo
+  end
+
+  it "should have the 'foo' context precede the auto-reconfiguration context in 2 the DispatcherServlet's 'contextConfigLocation' param-value" do
+    stage :spring do |staged_dir|
+      web_config_file = File.join(staged_dir, 'tomcat/webapps/ROOT/WEB-INF/web.xml')
+      web_config = Nokogiri::XML(open(web_config_file))
+      init_param_name_nodes = web_config.xpath("//init-param[contains(normalize-space(param-name), normalize-space('contextConfigLocation'))]")
+      init_param_name_nodes.length.should == 2
+
+      init_param_value_nodes = web_config.xpath("//init-param/param-value")
+      init_param_value_nodes.length.should == 2
+
+      init_param_value_nodes.each do |init_param_value_node|
+        init_param_value = init_param_value_node.content
+        foo_index = init_param_value.index('foo')
+        foo_index.should_not == nil
+
+        auto_reconfiguration_context_index = init_param_value.index('classpath:META-INF/cloud/cloudfoundry-auto-reconfiguration-context.xml')
+        auto_reconfiguration_context_index.should_not == nil
+
+        auto_reconfiguration_context_index.should > foo_index + "foo".length
+      end
+
+    end
+  end
+
+  it "should have the auto reconfiguration jar in the webapp lib path" do
+    stage :spring do |staged_dir|
+      auto_reconfig_jar_relative_path = "tomcat/webapps/ROOT/WEB-INF/lib/#{AUTOSTAGING_JAR}"
+      auto_reconfiguration_jar_path = File.join(staged_dir, auto_reconfig_jar_relative_path)
+      File.exist?(auto_reconfiguration_jar_path).should == true
+    end
+  end
+end
