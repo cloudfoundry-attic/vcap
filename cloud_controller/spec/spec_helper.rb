@@ -26,6 +26,7 @@ RSpec.configure do |config|
 
     # Set this to something appropriate if you want to test events in your controllers
     CloudController.events = stub_everything(:black_hole)
+    CloudController.logger = stub_everything(:black_hole)
 
     unless File.directory?(STAGING_TEMP)
       FileUtils.mkdir_p(STAGING_TEMP)

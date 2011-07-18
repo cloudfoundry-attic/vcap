@@ -30,11 +30,7 @@ describe 'DEA Agent' do
 
   describe '#dump_apps_dir' do
     it "should log directory summary and details" do
-      agent = DEA::Agent.new(
-        'log_file'  => File.join(UNIT_TESTS_DIR, 'test.log'),
-        'intervals' => { 'heartbeat' => 1 },
-        'base_dir'  => UNIT_TESTS_DIR
-      )
+      agent = make_test_agent
       apps_dir = create_apps_dir(UNIT_TESTS_DIR)
       File.directory?(apps_dir).should be_true
 
@@ -53,10 +49,7 @@ describe 'DEA Agent' do
 
   describe '#delete_untracked_instance_dirs' do
     it 'should not remove instance dirs for tracked apps' do
-      agent = DEA::Agent.new(
-        'intervals' => { 'heartbeat' => 1 },
-        'base_dir'  => UNIT_TESTS_DIR
-      )
+      agent = make_test_agent
       apps_dir = create_apps_dir(UNIT_TESTS_DIR)
       File.directory?(apps_dir).should be_true
 
@@ -71,10 +64,7 @@ describe 'DEA Agent' do
     end
 
     it 'should remove instance dirs for untracked apps' do
-      agent = DEA::Agent.new(
-        'intervals' => { 'heartbeat' => 1 },
-        'base_dir'  => UNIT_TESTS_DIR
-      )
+      agent = make_test_agent
       apps_dir = create_apps_dir(UNIT_TESTS_DIR)
       File.directory?(apps_dir).should be_true
 
@@ -82,7 +72,6 @@ describe 'DEA Agent' do
       FileUtils.mkdir(inst_dir)
       File.directory?(inst_dir).should be_true
 
-      agent.instance_variable_set(:@logger, double(:logger).as_null_object)
       agent.instance_variable_set(:@droplets, {})
       agent.delete_untracked_instance_dirs
 
@@ -92,10 +81,7 @@ describe 'DEA Agent' do
 
   describe '#crashes_reaper' do
     it 'should remove instance dirs for crashed apps' do
-      agent = DEA::Agent.new(
-        'intervals' => { 'heartbeat' => 1 },
-        'base_dir'  => UNIT_TESTS_DIR
-      )
+      agent = make_test_agent
       apps_dir = create_apps_dir(UNIT_TESTS_DIR)
       File.directory?(apps_dir).should be_true
 
@@ -112,7 +98,6 @@ describe 'DEA Agent' do
           },
         }
       }
-      agent.instance_variable_set(:@logger, double(:logger).as_null_object)
       agent.instance_variable_set(:@droplets, droplets)
 
       EM.run do
@@ -128,5 +113,15 @@ describe 'DEA Agent' do
     apps_dir = File.join(base_dir, 'apps')
     FileUtils.mkdir(apps_dir)
     apps_dir
+  end
+
+  def make_test_agent(overrides={})
+    config = {
+      'logging'   => {'file' => File.join(UNIT_TESTS_DIR, 'test.log') },
+      'intervals' => { 'heartbeat' => 1 },
+      'base_dir'  => UNIT_TESTS_DIR,
+    }
+    config.update(overrides)
+    DEA::Agent.new(config)
   end
 end

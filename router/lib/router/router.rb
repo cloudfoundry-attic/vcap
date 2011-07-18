@@ -18,7 +18,7 @@ class Router
     def config(config)
       @droplets = {}
       @client_connection_count = @app_connection_count = @outstanding_request_count = 0
-      VCAP::Logging.setup_from_config(config['logging'])
+      VCAP::Logging.setup_from_config(config['logging'] || {})
       @log = VCAP::Logging.logger('router')
       if config['404_redirect']
         @notfound_redirect = "HTTP/1.1 302 Not Found\r\nConnection: close\r\nLocation: #{config['404_redirect']}\r\n\r\n".freeze
