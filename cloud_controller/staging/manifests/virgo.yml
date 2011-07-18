@@ -13,6 +13,8 @@ app_servers:
       default: true
 detection:
   - "*.war": true # TODO - this thinks everything with an XML file is Spring
+  - "*.par": true
+  - "*.plan": true
 staged_services:
   - "name": "mysql"
     "version": "*"

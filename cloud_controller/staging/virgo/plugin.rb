@@ -18,8 +18,18 @@ class VirgoPlugin < StagingPlugin
       create_app_directories
       webapp_root = Virgo.prepare(destination_directory)
       copy_source_files(webapp_root)
-      Virgo.configure_virgo_application(destination_directory, webapp_root, self.autostaging_template, environment)  unless self.skip_staging(webapp_root)
       create_startup_script
+    end
+  end
+
+  def copy_source_files(dest = nil)
+    dest ||= File.join(destination_directory, 'app.war')
+    output = %x[cd #{source_directory}; zip -r #{File.join(dest, File.basename(source_directory))} *]
+    raise "Could not pack Virgo application: #{output}" unless $? == 0
+    f = File.open(dest + "/manifest", "w+")
+    f.puts("Manifests: #{manifest}")
+    ENV.each do |k, v|
+      f.puts("#{k} = #{v}")
     end
   end
 
