@@ -46,12 +46,39 @@ class AppsController < ApplicationController
     render :nothing => true, :status => 200
   end
 
+  def valid_upload_path?(path)
+    File.join(CloudController.uploads_dir, File.basename(path)) == path
+  end
+
+  def get_uploaded_file
+    if CloudController.use_nginx
+      path = params[:application_path]
+      if not valid_upload_path?(path)
+        CloudController.logger.warn "Illegal path: #{path}, passed to cloud_controller
+                                     something is badly misconfigured or insecure!!!"
+        raise CloudError.new(CloudError::FORBIDDEN)
+      end
+      wrapper_class = Class.new do
+        attr_accessor :path
+      end
+      file = wrapper_class.new
+      file.path = path
+    else
+      file = params[:application]
+    end
+    file
+  end
+
   # POST /apps/:name/application
   def upload
-    app_bits  = params[:application]
-    resources = json_param(:resources)
-    package = AppPackage.new(@app, app_bits, resources)
-    @app.latest_bits_from(package)
+    begin
+      file = get_uploaded_file
+      resources = json_param(:resources)
+      package = AppPackage.new(@app, file, resources)
+      @app.latest_bits_from(package)
+    ensure
+      FileUtils.rm_f(file.path)
+    end
     render :nothing => true, :status => 200
   end
 
@@ -70,7 +97,12 @@ class AppsController < ApplicationController
 
     path = app.staged_package_path
     if path && File.exists?(path)
-      send_file path
+      if CloudController.use_nginx
+        response.headers['X-Accel-Redirect'] = '/droplets/' + File.basename(path)
+        render :nothing => true, :status => 200
+      else
+        send_file path
+      end
     else
       raise CloudError.new(CloudError::APP_NOT_FOUND)
     end

@@ -26,7 +26,7 @@ unless AppConfig
 end
 
 env_overrides = {:local_route => 'CLOUD_CONTROLLER_HOST',
-                 :instance_port => 'CLOUD_CONTROLLER_PORT',
+                 :external_port => 'CLOUD_CONTROLLER_PORT',
                  :rails_environment => 'RAILS_ENV'}
 
 required = { :external_uri => 'api.vcap.me',
@@ -38,12 +38,12 @@ required = { :external_uri => 'api.vcap.me',
              :allow_external_app_uris => false,
              :staging => { :max_concurrent_stagers => 10,
                            :max_staging_runtime => 60 },
-             :instance_port => 9022,
+             :external_port => 9022,
              :directories => { :droplets          => '/var/vcap/shared/droplets',
                                :resources         => '/var/vcap/shared/resources',
                                :staging_manifests => 'staging/manifests',
                                :staging_cache     => '/var/vcap.local/staging',
-                               :tmpdir            => 'tmp'},
+                               :tmpdir            => '/var/vcap/data/cloud_controller/tmp'},
              :mbus => 'nats://localhost:4222/',
              :logging => { :level => 'debug' },
              :keys => { :password => 'da39a3ee5e6b4b0d3255bfef95601890afd80709', :token => 'default_key'},
@@ -115,6 +115,7 @@ end
 # Normalize directories
 root = File.expand_path('../..', __FILE__)
 AppConfig[:directories].each do |type, path|
+  next if type == :nuke_tmp_on_startup
   next if path[0,1] == '/'
   AppConfig[:directories][type] = File.expand_path(File.join(root, path))
 end
