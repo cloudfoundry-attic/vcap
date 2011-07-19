@@ -24,13 +24,8 @@ class VirgoPlugin < StagingPlugin
 
   def copy_source_files(dest = nil)
     dest ||= File.join(destination_directory, 'app.war')
-    output = %x[cd #{source_directory}; zip -r #{File.join(dest, File.basename(source_directory))} *]
+    output = %x[cd #{source_directory}; zip -r #{File.join(dest, File.basename(source_directory) + ".war")} *]
     raise "Could not pack Virgo application: #{output}" unless $? == 0
-    f = File.open(dest + "/manifest", "w+")
-    f.puts("Manifests: #{manifest}")
-    ENV.each do |k, v|
-      f.puts("#{k} = #{v}")
-    end
   end
 
   def create_app_directories
