@@ -1,0 +1,19 @@
+{
+  "name": "dea",
+  "default_attributes": {}, 
+  "override_attributes": {},
+  "json_class": "Chef::Role",
+  "description": "Cloudfoundry DEA",
+  "chef_type": "role",
+  "run_list" : [ "recipe[essentials]", 
+                 "recipe[ruby]", 
+                 "recipe[ruby::ruby18]", 
+                 "recipe[dea]", 
+                 "recipe[mongodb::source]" ,
+                 "recipe[rabbitmq]" ,
+                 "recipe[mysql]" ,
+                 "recipe[nodejs]" ,
+                 "recipe[erlang]" ,
+                 "recipe[java]" ,
+                 "recipe[redis]" ]
+}

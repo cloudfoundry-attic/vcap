@@ -1,0 +1,3 @@
+* remove proxy from /etc/apt/apt.conf if it's listed (from preseed install)
+* check contents of /etc/apt/apt.conf.d/01proxy
+* investigate apt-cacher-ng
