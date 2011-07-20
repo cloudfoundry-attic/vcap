@@ -41,7 +41,7 @@ This recipe installs the `openjdk` flavor of Java.
 sun
 ---
 
-This recipe installs the `sun` flavor of Java.  
+This recipe installs the `sun` flavor of Java.
 
 On Debian and Ubuntu systems the recipe will add the correct apt repository (`non-free` on Debian or `partner` on Ubuntu), pre-seed the package and update java alternatives.
 
@@ -51,7 +51,7 @@ On Red Hat flavored Linux (RHEL, CentOS, Fedora), the installation of the Sun fl
 Usage
 =====
 
-Simply include the `java` recipe where ever you would like Java installed.  
+Simply include the `java` recipe where ever you would like Java installed.
 
 To install Sun flavored Java on Debian or Ubuntu override the `node['java']['install_flavor']` attribute with in role:
 

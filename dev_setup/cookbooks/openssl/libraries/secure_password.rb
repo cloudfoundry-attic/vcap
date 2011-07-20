@@ -25,7 +25,7 @@ module Opscode
     module Password
       def secure_password
         pw = String.new
-        
+
         while pw.length < 20
           pw << ::OpenSSL::Random.random_bytes(1).gsub(/\W/, '')
         end

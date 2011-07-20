@@ -10,7 +10,7 @@ Tested on CentOS 5.5, Ubuntu 10.04 but should support centos, redhat, fedora, su
 
 == Cookbooks:
 
-= ATTRIBUTES: 
+= ATTRIBUTES:
 
 * postgresql[:dir] - configuration file location.
 * postgresql[:version] - Version of postgresql to use. Configured in attributes based on platform.
@@ -21,17 +21,17 @@ Tested on CentOS 5.5, Ubuntu 10.04 but should support centos, redhat, fedora, su
 For clients:
 
   include_recipe "postgresql::client"
-  
-For server: 
+
+For server:
 
   include_recipe "postgresql::server"
-  
+
 (client is already included by server). This will check the platform that the node is and include either redhat family recipe (postgresql::server_redhat) or debian family (postgresql::server_debian) because the two styles differ quite a bit.
 
 The templates provided by this cookbook will probably need to be tweaked for the local environment, no tuning parameters are specified in them. The templates are separated by family designation in the template directory, since Chef doesn't do "platform family" style file specificity.
 
 = LICENSE and AUTHOR:
-      
+
 Author:: Joshua Timberman (<joshua@opscode.com>)
 
 Copyright:: 2009-2010, Opscode, Inc

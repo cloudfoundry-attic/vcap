@@ -27,7 +27,7 @@ Include the nodejs recipe to install node from source on your system:
   include_recipe "nodejs"
 
 Include the npm recipe to install npm:
-  
+
   include_recipe "nodejs::npm"
 
 = LICENSE and AUTHOR:

@@ -8,7 +8,7 @@ require File.expand_path('vcap_defs', File.dirname(__FILE__))
 script_dir = File.expand_path(File.dirname(__FILE__))
 
 # TODO. These could be made parameters to this script
-vcap_dir = ENV["VCAP_DIR"] || File.expand_path(File.join(script_dir, "../..")) 
+vcap_dir = ENV["VCAP_DIR"] || File.expand_path(File.join(script_dir, "../.."))
 deployment_name = ENV["VCAP_DEPLOYMENT"] || DEFAULT_DEPLOYMENT_NAME
 
 deployment_config_dir = File.expand_path(File.join(vcap_dir, CONFIG_BASE_DIR, deployment_name))
@@ -63,7 +63,7 @@ case ARGV[0].upcase
 when "START"
   user_defined_config = true
 
-  #XXX This will all be replaced by appropriate yml.erb files soon. 
+  #XXX This will all be replaced by appropriate yml.erb files soon.
 
   # Setup the config files
   if !ARGV.include?("-c") && !ARGV.include?("--config")
@@ -113,6 +113,6 @@ when "START"
   else
     exec_cmd("#{ruby_path}/ruby #{vcap_dir}/bin/vcap #{ARGV.join(" ")} -c #{vcap_config_dir}")
   end
-else 
+else
   exec_cmd("#{ruby_path}/ruby #{vcap_dir}/bin/vcap #{ARGV.join(" ")}")
 end

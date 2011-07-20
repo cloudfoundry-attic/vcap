@@ -20,7 +20,7 @@ download_cloudfoundry = false
 unless ARGV[0].nil?
   deployment_config = ARGV[0]
   unless File.exists?(deployment_config)
-    puts "Cannont find deployment config file #{deployment_config}" 
+    puts "Cannont find deployment config file #{deployment_config}"
     exit 1
   end
 end
@@ -104,9 +104,9 @@ Dir.mktmpdir { |tmpdir|
 
   id = fork {
     proxy_env = Array.new
-    proxy_env << "http_proxy=#{ENV["http_proxy"]}" unless ENV["http_proxy"].nil? 
-    proxy_env << "https_proxy=#{ENV["https_proxy"]}" unless ENV["https_proxy"].nil? 
-    proxy_env << "no_proxy=#{ENV["no_proxy"]}" unless ENV["no_proxy"].nil? 
+    proxy_env << "http_proxy=#{ENV["http_proxy"]}" unless ENV["http_proxy"].nil?
+    proxy_env << "https_proxy=#{ENV["https_proxy"]}" unless ENV["https_proxy"].nil?
+    proxy_env << "no_proxy=#{ENV["no_proxy"]}" unless ENV["no_proxy"].nil?
     exec("sudo env #{proxy_env.join(" ")} chef-solo -c #{tmpdir}/solo.rb -j #{json_attribs} -l debug")
   }
   pid, status = Process.waitpid2(id)

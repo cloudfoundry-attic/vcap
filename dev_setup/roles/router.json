@@ -1,11 +1,11 @@
 {
   "name": "router",
-  "default_attributes": {}, 
+  "default_attributes": {},
   "override_attributes": {},
   "json_class": "Chef::Role",
-  "description": "Cloudfoundry cloud controller",
+  "description": "Cloudfoundry router",
   "chef_type": "role",
-  "run_list" : [ "recipe[essentials]", 
-                 "recipe[ruby]", 
+  "run_list" : [ "recipe[essentials]",
+                 "recipe[ruby]",
                  "recipe[nginx]" ]
 }

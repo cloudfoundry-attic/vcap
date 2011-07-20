@@ -20,7 +20,7 @@ attribute "rabbitmq/nodename",
   :display_name => "RabbitMQ Erlang node name",
   :description => "The Erlang node name for this server.",
   :default => "node[:hostname]"
-    
+
 attribute "rabbitmq/address",
   :display_name => "RabbitMQ server IP address",
   :description => "IP address to bind."
@@ -45,7 +45,7 @@ attribute "rabbitmq/cluster",
   :display_name => "RabbitMQ clustering",
   :description => "Whether to activate clustering.",
   :default => "no"
-  
+
 attribute "rabbitmq/cluster_config",
   :display_name => "RabbitMQ clustering configuration file",
   :description => "Path to the clustering configuration file, if cluster is yes.",
@@ -60,4 +60,4 @@ attribute "rabbitmq/cluster_disk_nodes",
 attribute "rabbitmq/erlang_cookie",
   :display_name => "RabbitMQ Erlang cookie",
   :description => "Access cookie for clustering nodes.  There is no default."
-  
+

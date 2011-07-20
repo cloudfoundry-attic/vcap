@@ -21,7 +21,7 @@ git node[:cloudfoundry][:path] do
   enable_submodules true
   action :sync
 end
- 
+
 bash "Bundle install" do
   cwd "#{node[:cloudfoundry][:path]}"
   user "#{node[:cloudfoundry][:user]}"

@@ -48,7 +48,7 @@ This LWRP provides an easy way to manage additional APT repositories.
       components ["main","stable"]
       action :add
     end
-    
+
     # add the Nginx PPA; grab key from keyserver
     apt_repository "nginx-php" do
       uri "http://ppa.launchpad.net/nginx/php5/ubuntu"
@@ -58,7 +58,7 @@ This LWRP provides an easy way to manage additional APT repositories.
       key "C300EE8C"
       action :add
     end
-    
+
     # add the Cloudkick Repo
     apt_repository "cloudkick" do
       uri "http://packages.cloudkick.com/ubuntu"
@@ -67,12 +67,12 @@ This LWRP provides an easy way to manage additional APT repositories.
       key "http://packages.cloudkick.com/cloudkick.packages.key"
       action :add
     end
-    
+
     # remove Zenoss repo
     apt_repository "zenoss" do
       action :remove
     end
-    
+
 Usage
 =====
 

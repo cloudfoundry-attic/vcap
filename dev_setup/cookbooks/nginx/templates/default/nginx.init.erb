@@ -65,7 +65,7 @@ reload() {
 }
 
 # See how we were called.
-case "$1" in 
+case "$1" in
   start)
         start
         ;;
@@ -86,7 +86,7 @@ case "$1" in
         ;;
   *)
         echo $"Usage: $0 {start|stop|status|restart|reload|force-reload|condrestart}"
-        exit 1 
+        exit 1
 esac
 
 exit $?

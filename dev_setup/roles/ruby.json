@@ -1,11 +1,11 @@
 {
   "name": "ruby",
-  "default_attributes": {}, 
+  "default_attributes": {},
   "override_attributes": {},
   "json_class": "Chef::Role",
-  "description": "Cloudfoundry cloud controller",
+  "description": "Ruby",
   "chef_type": "role",
-  "run_list" : [ "recipe[essentials]", 
+  "run_list" : [ "recipe[essentials]",
                  "recipe[ruby::ruby18]",
                  "recipe[ruby]"]
 }

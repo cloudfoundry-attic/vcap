@@ -16,7 +16,13 @@ OPTIONS:
 EOF
 }
 
-PROXY=$http_proxy
+if [ -n "$http_proxy" ]; then
+  if [ -z "$https_proxy" ]; then
+    echo "Please set https_proxy env variable."
+    exit 1
+  fi
+  PROXY=$http_proxy
+fi
 
 APT_CONFIG="-o Acquire::http::No-Cache=True -o Acquire::BrokenProxy=true -o Acquire::Retries=3"
 
@@ -41,7 +47,7 @@ do
 done
 
 function run_apt_get () {
-  if [ -z $PROXY ]; then
+  if [ -z "$PROXY" ]; then
     sudo apt-get $APT_CONFIG $*
   else
     sudo env http_proxy=$PROXY apt-get $APT_CONFIG $*
