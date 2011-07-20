@@ -4,28 +4,31 @@ require 'erb'
 require 'json'
 require 'tempfile'
 require 'uri'
+require 'fileutils'
 require 'pp'
+require File.expand_path('vcap_defs', File.dirname(__FILE__))
 
 script_dir = File.expand_path(File.dirname(__FILE__))
-config_dir = File.expand_path(File.join(script_dir, "../env"))
-vcap_dir = File.expand_path(File.join(script_dir, "../..")) 
-cloudfoundry_home = ENV["CF_HOME"] || File.expand_path(File.join(ENV["HOME"], "cloudfoundry"))
+vcap_dir = File.expand_path(File.join(script_dir, "../.."))
+deployment_config = File.expand_path(File.join(script_dir, "..", DEFAULT_DEPLOYMENT_CONFIG))
+deployment_home = DEFAULT_DEPLOYMENT_HOME
+deployment_name = DEFAULT_DEPLOYMENT_NAME
+deployment_user = ENV["USER"]
+deployment_group = `id -g`.strip
+download_cloudfoundry = false
 
-`mkdir -p #{cloudfoundry_home}/deploy`
-`mkdir -p #{cloudfoundry_home}/sys/log`
+unless ARGV[0].nil?
+  deployment_config = ARGV[0]
+  unless File.exists?(deployment_config)
+    puts "Cannont find deployment config file #{deployment_config}" 
+    exit 1
+  end
+end
 
-cloudfoundry_user = ENV["USER"]
-cloudfoundry_group = `id -g`.strip
+env_erb = ERB.new(File.read(deployment_config))
 
-run_list = Array.new
-run_list << "role[dea]"
-run_list << "role[router]"
-run_list << "role[cc]"
-
-env_erb = ERB.new(File.read(File.join(config_dir, "dev_env.json.erb")))
-
-# Find out the versions of the various packages
 JSON.parse(env_erb.dup.result).each do |package, properties|
+  # Find out the versions of the various packages
   case properties
   when Hash
     properties.each do |prop, value|
@@ -35,16 +38,37 @@ JSON.parse(env_erb.dup.result).each do |package, properties|
       end
     end
   end
+
+  # Update config defaults
+  case package
+  when "cloudfoundry"
+    vcap_dir = File.expand_path(properties["path"])
+    download_cloudfoundry = true
+    puts "vcap_dir is now #{vcap_dir}"
+  when "deployment_name"
+    deployment_name = properties
+  when "deployment_home"
+    deployment_home=properties
+  when "deployment_user"
+    deployment_user = properties
+  when "deployment_group"
+    deployment_group = properties
+  end
 end
 
+`mkdir -p #{deployment_home}/deploy;`
+`mkdir -p #{deployment_home}/sys/log`
+`chown #{deployment_user} #{deployment_home} #{deployment_home}/deploy #{deployment_home}/sys/log`
+puts "Installing deployment #{deployment_name}, deployment home dir is #{deployment_home}, vcap dir is #{vcap_dir}"
+
+run_list = Array.new
+run_list << "role[dea]"
+run_list << "role[router]"
+run_list << "role[cc]"
+run_list << "role[cloudfoundry]" if download_cloudfoundry
 
 # generate the chef-solo attributes
 env = env_erb.result
-
-# save the generated config file
-File.open(File.join(config_dir, "dev_env.json"), "w") { |f|
-  f.puts(env)
-}
 
 # Deploy all the cf components
 Dir.mktmpdir { |tmpdir|
@@ -86,25 +110,28 @@ Dir.mktmpdir { |tmpdir|
     exec("sudo env #{proxy_env.join(" ")} chef-solo -c #{tmpdir}/solo.rb -j #{json_attribs} -l debug")
   }
   pid, status = Process.waitpid2(id)
-  exit status.exitstatus if status.exitstatus != 0
+  if status.exitstatus == 0
+    # save the config of this deployment
+    config_base_dir = File.expand_path(File.join(vcap_dir, CONFIG_BASE_DIR))
+    FileUtils.mkdir_p(config_base_dir)
+    `chown #{deployment_user} #{config_base_dir}`
+
+    config_dir = File.join(config_base_dir, deployment_name)
+    FileUtils.mkdir_p(config_dir)
+    `chown #{deployment_user} #{config_dir}`
+
+    File.open(File.join(config_dir, DEPLOYMENT_FILE), "w") { |f|
+      f.puts(env)
+    }
+
+    puts "Cloudfoundry setup was successful."
+    if deployment_name != DEFAULT_DEPLOYMENT_NAME
+      puts "Config file for this deployment is in #{config_dir}."
+    end
+
+    env = JSON.parse(env)
+    ruby_path = "#{env["ruby"]["path"]}/bin"
+    puts "Note: You may need to add #{ruby_path} to your path to use vmc"
+  end
+  exit status.exitstatus
 }
-
-# Run bundler:install in cf home dir
-def exec_cmd(cmd)
-  id = fork {
-    puts "Executing #{cmd}"
-    exec(cmd)
-  }
-  pid, status = Process.waitpid2(id)
-  status.exitstatus
-end
-
-env = JSON.parse(env)
-ruby_path = "#{env["ruby"]["path"]}/bin"
-gemdir = `#{ruby_path}/gem environment gemdir`.split("\n")[0]
-ENV["PATH"] = "#{ruby_path}:#{gemdir}/bin:#{ENV["PATH"]}"
-status = exec_cmd("cd #{vcap_dir}; rake bundler:install; gem install vmc --no-rdoc --no-ri -q")
-if status == 0
-  puts "Cloudfoundry setup was successful."
-  puts "Note: You may need to add #{ruby_path} to your path to use vmc"
-end

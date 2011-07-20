@@ -12,13 +12,15 @@ OPTIONS:
   -h           Show this message
   -a           Answer yes to all questions
   -p           http proxy i.e. -p http://username:password@host:port/
+  -c           deployment config
 EOF
 }
 
 PROXY=$http_proxy
+
 APT_CONFIG="-o Acquire::http::No-Cache=True -o Acquire::BrokenProxy=true -o Acquire::Retries=3"
 
-while getopts "hap:" OPTION
+while getopts "hap:c:" OPTION
 do
   case $OPTION in
     h)
@@ -28,9 +30,13 @@ do
     a)
       ALL=true
       ;;
+    c)
+      CONFIG_FILE=$OPTARG
+      ;;
     p)
       PROXY=$OPTARG
       export http_proxy=$PROXY
+      export https_proxy=$PROXY
   esac
 done
 
@@ -42,6 +48,7 @@ function run_apt_get () {
   fi
 }
 
+# Install chef if required.
 sudo which chef-solo
 if [ $? != 0 ]; then
   if [[ $ALL != true ]]; then
@@ -62,15 +69,11 @@ fi
 
 cur_user=`id -u`
 sudo mkdir -p /var/vcap/db
-
 sudo mkdir -p /var/vcap/sys/log
 sudo mkdir -p /var/vcap/data/cloud_controller/tmp
 sudo mkdir -p /var/vcap/data/db
 sudo mkdir -p /var/vcap.local/staging
 sudo chown -R $cur_user /var/vcap /var/vcap.local
 
-$SCRIPT_DIR/chefsolo_launch.rb
-if [ $? != 0 ]; then
-  exit $?
-fi
-exit $?
+# Launch chef
+$SCRIPT_DIR/chefsolo_launch.rb $CONFIG_FILE
