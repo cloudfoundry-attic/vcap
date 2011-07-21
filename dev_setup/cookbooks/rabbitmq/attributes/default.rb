@@ -1,10 +1,3 @@
-default[:rabbitmq][:nodename]  = node[:hostname]
-default[:rabbitmq][:address]  = nil
-default[:rabbitmq][:port]  = 5672
-default[:rabbitmq][:config] = nil
-default[:rabbitmq][:logdir] = nil
-default[:rabbitmq][:mnesiadir] = nil
-#clustering
-default[:rabbitmq][:cluster] = "no"
-default[:rabbitmq][:cluster_config] = "/etc/rabbitmq/rabbitmq_cluster.config"
-default[:rabbitmq][:cluster_disk_nodes] = []
+default[:rabbitmq][:version] = "2.4.0"
+default[:rabbitmq][:version_full] = "2.4.0-1_all"
+default[:rabbitmq][:source] = "http://www.rabbitmq.com/releases/rabbitmq-server/v#{rabbitmq[:version]}/rabbitmq-server_#{rabbitmq[:version_full]}.deb"
