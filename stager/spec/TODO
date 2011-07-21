@@ -1,0 +1,5 @@
+Testing
+========================================
+- Droplet diff tool so we can include correctly staged droplets in the fixture
+  directory and use them for testing.
+- Use dea code to start the droplets/verify that they are running
