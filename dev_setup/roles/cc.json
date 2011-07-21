@@ -7,6 +7,7 @@
   "chef_type": "role",
   "run_list" : [ "recipe[essentials]",
                  "recipe[ruby]",
-                 "recipe[postgresql::server]",
-                 "recipe[mysql::server]" ]
+                 "recipe[postgresql]",
+                 "recipe[mysql::server]",
+                 "recipe[mysql]" ]
 }
