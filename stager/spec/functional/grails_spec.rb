@@ -1,14 +1,13 @@
 require 'spec_helper'
 
-AUTOSTAGING_JAR = 'auto-reconfiguration-0.6.0-BUILD-SNAPSHOT.jar'
 
 describe "A Grails application being staged without a context-param in its web config and with a default application context config" do
   before(:all) do
-    app_fixture :grails_default_appcontext_no_context_config
+    @app_fix = VCAP::Stager::Spec::JavaAppFixture.new(:grails_default_appcontext_no_context_config)
   end
 
   it "should have a context-param in its web config after staging" do
-    stage :grails do |staged_dir|
+    @app_fix.stage :grails do |staged_dir|
       web_config_file = File.join(staged_dir, 'tomcat/webapps/ROOT/WEB-INF/web.xml')
       File.exist?(web_config_file).should == true
 
@@ -19,7 +18,7 @@ describe "A Grails application being staged without a context-param in its web c
   end
 
   it "should have a 'contextConfigLocation' where the default application context precedes the auto-reconfiguration context" do
-    stage :grails do |staged_dir|
+    @app_fix.stage :grails do |staged_dir|
       web_config_file = File.join(staged_dir, 'tomcat/webapps/ROOT/WEB-INF/web.xml')
       web_config = Nokogiri::XML(open(web_config_file))
       context_param_name_node = web_config.xpath("//context-param[contains(normalize-space(param-name), normalize-space('contextConfigLocation'))]")
@@ -40,7 +39,7 @@ describe "A Grails application being staged without a context-param in its web c
   end
 
   it "should have the auto reconfiguration jar in the webapp lib path" do
-    stage :grails do |staged_dir|
+    @app_fix.stage :grails do |staged_dir|
       auto_reconfig_jar_relative_path = "tomcat/webapps/ROOT/WEB-INF/lib/#{AUTOSTAGING_JAR}"
       auto_reconfiguration_jar_path = File.join(staged_dir, auto_reconfig_jar_relative_path)
       File.exist?(auto_reconfiguration_jar_path).should == true
@@ -53,11 +52,11 @@ end
 # of a CloudFoundryGrailsPlugin which indicates that staging should not make any modifications.
 describe "A Grails application being staged without a context-param in its web config and with a default application context config and a Grails plugin file" do
   before(:all) do
-    app_fixture :grails_skip_autoconfig
+    @app_fix = VCAP::Stager::Spec::JavaAppFixture.new(:grails_skip_autoconfig)
   end
 
   it "should not be modified during staging" do
-    stage :grails do |staged_dir|
+    @app_fix.stage :grails do |staged_dir|
       web_config_file = File.join(staged_dir, 'tomcat/webapps/ROOT/WEB-INF/web.xml')
       File.exist?(web_config_file).should == true
 
@@ -68,7 +67,7 @@ describe "A Grails application being staged without a context-param in its web c
   end
 
   it "should not have the auto reconfiguration jar in the webapp lib path" do
-    stage :grails do |staged_dir|
+    @app_fix.stage :grails do |staged_dir|
       auto_reconfig_jar_relative_path = "tomcat/webapps/ROOT/WEB-INF/lib/#{AUTOSTAGING_JAR}"
       auto_reconfiguration_jar_path = File.join(staged_dir, auto_reconfig_jar_relative_path)
       File.exist?(auto_reconfiguration_jar_path).should == false

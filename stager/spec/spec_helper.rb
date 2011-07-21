@@ -4,6 +4,8 @@ $LOAD_PATH.unshift(File.expand_path('../../lib', __FILE__))
 require 'vcap/common'
 require 'vcap/stager'
 
+# XXX - Move gem cache out of home dir...
+
 # Requires supporting ruby files with custom matchers and macros, etc,
 # in spec/support/ and its subdirectories.
 Dir[File.expand_path('../support/**/*.rb', __FILE__)].each {|f| require f}
@@ -16,7 +18,6 @@ STAGING_TEMP = File.join(tmproot, '.vcap_staging_temp')
 ENV['STAGING_CONFIG_DIR'] = STAGING_TEMP
 
 RSpec.configure do |config|
-  config.include StagingSpecHelpers
   config.before(:all) do
     unless File.directory?(STAGING_TEMP)
       FileUtils.mkdir_p(STAGING_TEMP)
