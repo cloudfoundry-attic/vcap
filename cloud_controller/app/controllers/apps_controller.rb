@@ -167,17 +167,25 @@ class AppsController < ApplicationController
     url, auth = AppManager.new(@app).get_file_url(params[:instance_id], params[:path])
     raise CloudError.new(CloudError::APP_FILE_ERROR, params[:path] || '/') unless url
 
-    # FIXME, need to stream responses. Seems broken with Fibers, EM,
-    # and response_body=proc
-
-    # will Fiber.yield
-    http = http_aget(url, auth)
-    if http.response_header.status != 200
-      raise CloudError.new(CloudError::APP_FILE_ERROR, params[:path] || '/')
+    if CloudController.use_nginx
+      CloudController.logger.debug "X-Accel-Redirect for #{url}"
+      auth_info = Base64.strict_encode64("#{auth[0]}:#{auth[1]}")
+      auth_str = "Basic #{auth_info}"
+      response.headers['X-Auth'] = auth_str
+      response.headers['X-Accel-Redirect'] = '/internal_redirect/'+ url
+      render :nothing => true, :status => 200
+    else
+      # FIXME, need to stream responses. Seems broken with Fibers, EM,
+      # and response_body=proc
+      # will Fiber.yield
+      http = http_aget(url, auth)
+      if http.response_header.status != 200
+        raise CloudError.new(CloudError::APP_FILE_ERROR, params[:path] || '/')
+      end
+      # We ignore headers here since upstream will redo as they see fit
+      #render :text => http.response, :status => 200
+      self.response_body = http.response
     end
-    # We ignore headers here since upstream will redo as they see fit
-    #render :text => http.response, :status => 200
-    self.response_body = http.response
   end
 
   private
