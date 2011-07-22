@@ -2,22 +2,33 @@
 # Cookbook Name:: mongodb
 # Recipe:: default
 #
-# Author:: Gerhard Lazu (<gerhard.lazu@papercavalier.com>)
+# Copyright 2011, VMware
 #
-# Copyright 2010, Paper Cavalier, LLC
+# All rights reserved - Do Not Redistribute
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
+remote_file "/tmp/mongodb-linux-#{node[:kernel][:machine]}-#{node[:mongodb][:version]}.tgz" do
+  owner node[:mongodb][:user]
+  source node[:mongodb][:source]
+  not_if { ::File.exists?("/tmp/mongodb-linux-#{node[:kernel][:machine]}-#{node[:mongodb][:version]}.tgz") }
+end
 
-include_recipe "mongodb::apt"
-include_recipe "mongodb::server"
+directory "#{node[:mongodb][:path]}/bin" do
+  owner node[:mongodb][:user]
+  group node[:mongodb][:group]
+  mode "0755"
+  recursive true
+  action :create
+end
+
+bash "Install Mongodb" do
+  cwd "/tmp"
+  user node[:mongodb][:user]
+  code <<-EOH
+  tar xvzf mongodb-linux-#{node[:kernel][:machine]}-#{node[:mongodb][:version]}.tgz
+  cd mongodb-linux-#{node[:kernel][:machine]}-#{node[:mongodb][:version]}
+  cp bin/* #{node[:mongodb][:path]}/bin
+  EOH
+  not_if do
+    ::File.exists?("#{node[:mongodb][:path]}/bin/mongo")
+  end
+end

@@ -71,7 +71,7 @@ end
 # Workaround for random failures while installing gems. Try first while ignoring
 # failures.
 # Looks like newer versions of chef support a "retries" option
-%w[ rack eventmachine thin sinatra ].each do |gem|
+%w[ rack eventmachine thin sinatra mysql pg].each do |gem|
   gem_package gem do
     ignore_failure true
     gem_binary "#{ruby_path}/bin/gem"
@@ -79,7 +79,7 @@ end
 end
 
 # Dont ignore failures
-%w[ rack eventmachine thin sinatra ].each do |gem|
+%w[ rack eventmachine thin sinatra mysql pg].each do |gem|
   gem_package gem do
     gem_binary "#{ruby_path}/bin/gem"
   end

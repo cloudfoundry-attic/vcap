@@ -39,9 +39,8 @@ end
 
 ruby_path = "#{deployment_env["ruby"]["path"]}/bin"
 gemdir = `#{ruby_path}/gem environment gemdir`.split("\n")[0]
-redis_path = "#{deployment_env["redis"]["path"]}/bin"
 
-ENV["PATH"] = "#{ruby_path}:#{gemdir}/bin:#{redis_path}:#{ENV["PATH"]}"
+ENV["PATH"] = "#{ruby_path}:#{gemdir}/bin:#{ENV["PATH"]}"
 
 # Set both http_proxy and HTTP_PROXY
 %w(http_proxy https_proxy no_proxy).each do |var|
@@ -93,12 +92,16 @@ when "START"
     staging_config_dir = File.join(vcap_config_dir, "staging")
     FileUtils.mkdir_p(staging_config_dir)
     FileUtils.cp(Dir.glob("#{vcap_dir}/cloud_controller/staging/manifests/*.yml"), "#{staging_config_dir}")
-
     ["rails3.yml", "sinatra.yml"].each do |cfg_file|
       `cd #{staging_config_dir} && sed -i.bkup -e 's%executable: "/usr/bin/ruby"%executable: "#{deployment_env["ruby18"]["path"]}/bin/ruby"%' #{cfg_file}`
       `cd #{staging_config_dir} && sed -i.bkup -e 's%executable: "ruby"%executable: "#{deployment_env["ruby"]["path"]}/bin/ruby"%' #{cfg_file}`
     end
-    `cd #{staging_config_dir} && sed -i.bkup -e "s%executable: node%executable: #{deployment_env["nodejs"]["dir"]}/bin/node%" node.yml`
+    `cd #{staging_config_dir} && sed -i.bkup -e "s%executable: node%executable: #{deployment_env["nodejs"]["path"]}/bin/node%" node.yml`
+    `cd #{staging_config_dir} && sed -i.bkup -e "s%executable: /var/vcap/runtimes/erlang-R14B02/bin/erl%executable: #{deployment_env["erlang"]["path"]}/bin/erl%" otp_rebar.yml`
+
+    # Fixup services
+    `cd #{vcap_config_dir} && sed -i.bkup -e "s%mongod_path: mongod%mongod_path: #{deployment_env["mongodb"]["path"]}/bin/mongod%" mongodb_node.yml`
+    `cd #{vcap_config_dir} && sed -i.bkup -e "s%redis_path: redis-server%redis_path: #{deployment_env["redis"]["path"]}/bin/redis-server%" redis_node.yml`
 
     # Setup ccdb passwords
     `cd #{vcap_config_dir} && sed -i.bkup -e "s/pass: root/pass: #{deployment_env["mysql"]["server_root_password"]}/" mysql_node.yml`
