@@ -480,7 +480,7 @@ class App < ActiveRecord::Base
   end
 
   def generate_version
-    version = staged_package_hash || package_hash || VCAP.fast_uuid
+    version = staged_package_hash || package_hash || VCAP.secure_uuid
     "#{version}-#{run_count}"
   end
 
