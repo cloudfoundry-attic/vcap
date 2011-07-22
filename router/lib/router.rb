@@ -160,7 +160,7 @@ EM.run do
 
   VCAP::Component.varz[:tags] = {}
 
-  @router_id = VCAP.fast_uuid
+  @router_id = VCAP.secure_uuid
   @hello_message = { :id => @router_id, :version => Router::VERSION }.to_json.freeze
 
   Router.log_connection_stats

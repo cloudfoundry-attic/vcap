@@ -479,7 +479,7 @@ module DEA
       message_json = JSON.parse(message)
       @logger.debug("DEA received start message: #{message}")
 
-      instance_id = VCAP.fast_uuid
+      instance_id = VCAP.secure_uuid
 
       droplet_id = message_json['droplet']
       instance_index = message_json['index']
@@ -1446,7 +1446,7 @@ module DEA
       success = false
       begin
         apps_dir = @apps_dir
-        @file_auth = [VCAP.fast_uuid, VCAP.fast_uuid]
+        @file_auth = [VCAP.secure_uuid, VCAP.secure_uuid]
         auth = @file_auth
         @file_viewer_server = Thin::Server.new(@local_ip, @file_viewer_port, :signals => false) do
           Thin::Logging.silent = true
