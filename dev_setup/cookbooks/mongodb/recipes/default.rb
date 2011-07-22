@@ -4,7 +4,6 @@
 #
 # Copyright 2011, VMware
 #
-# All rights reserved - Do Not Redistribute
 #
 remote_file "/tmp/mongodb-linux-#{node[:kernel][:machine]}-#{node[:mongodb][:version]}.tgz" do
   owner node[:mongodb][:user]
