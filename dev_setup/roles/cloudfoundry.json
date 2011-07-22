@@ -1,0 +1,11 @@
+{
+  "name": "cloudfoundry",
+  "default_attributes": {},
+  "override_attributes": {},
+  "json_class": "Chef::Role",
+  "description": "Cloudfoundry components",
+  "chef_type": "role",
+  "run_list" : [ "recipe[essentials]",
+                 "recipe[ruby]",
+                 "recipe[cloudfoundry]" ]
+}

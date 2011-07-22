@@ -1,0 +1,85 @@
+#!/bin/bash
+# Copyright (c) 2011 VMware, Inc.
+# Install vcap components on Ubuntu systems.
+
+SCRIPT_DIR=`cd "$(dirname $0)"; pwd`
+
+usage() {
+cat <<EOF
+usage: $0 options
+
+OPTIONS:
+  -h           Show this message
+  -a           Answer yes to all questions
+  -p           http proxy i.e. -p http://username:password@host:port/
+  -c           deployment config
+EOF
+}
+
+if [ -n "$http_proxy" ]; then
+  if [ -z "$https_proxy" ]; then
+    echo "Please set https_proxy env variable."
+    exit 1
+  fi
+  PROXY=$http_proxy
+fi
+
+APT_CONFIG="-o Acquire::http::No-Cache=True -o Acquire::BrokenProxy=true -o Acquire::Retries=3"
+
+while getopts "hap:c:" OPTION
+do
+  case $OPTION in
+    h)
+      usage
+      exit 1
+      ;;
+    a)
+      ALL=true
+      ;;
+    c)
+      CONFIG_FILE=$OPTARG
+      ;;
+    p)
+      PROXY=$OPTARG
+      export http_proxy=$PROXY
+      export https_proxy=$PROXY
+  esac
+done
+
+function run_apt_get () {
+  if [ -z "$PROXY" ]; then
+    sudo apt-get $APT_CONFIG $*
+  else
+    sudo env http_proxy=$PROXY apt-get $APT_CONFIG $*
+  fi
+}
+
+# Install chef if required.
+sudo which chef-solo
+if [ $? != 0 ]; then
+  if [[ $ALL != true ]]; then
+    read -p "chef-solo is required, should I install it? [Y/n]"
+    if [[ $REPLY =~ ^[nN]$ ]]; then
+      exit 0
+    fi
+  fi
+
+  echo "deb http://apt.opscode.com/ `lsb_release -cs`-0.10 main" | sudo tee /etc/apt/sources.list.d/opscode.list
+  wget -qO - http://apt.opscode.com/packages@opscode.com.gpg.key | sudo apt-key add -
+  echo chef chef/chef_server_url select none | sudo /usr/bin/debconf-set-selections
+  run_apt_get update
+  run_apt_get install -qym chef
+else
+  run_apt_get update
+fi
+
+cur_user=`id -u`
+sudo mkdir -p /var/vcap/db
+sudo mkdir -p /var/vcap/sys/log
+sudo mkdir -p /var/vcap/data/cloud_controller/tmp
+sudo mkdir -p /var/vcap/data/db
+sudo mkdir -p /var/vcap.local/staging
+sudo chown -R $cur_user /var/vcap /var/vcap.local
+
+# Launch chef
+$SCRIPT_DIR/chefsolo_launch.rb $CONFIG_FILE

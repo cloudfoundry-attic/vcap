@@ -14,7 +14,7 @@ class SecureUserManager
   SECURE_USER_GREP_MAC     = "#{SECURE_USER_STRING}[0-9]"
   SECURE_USER_PATTERN      = /(vcap-cc-user-\d+):[^:]+:(\d+):(\d+)/
   DEFAULT_SECURE_GROUP     = 'vcap-dea'
-  SECURE_UID_BASE          = 22000
+  SECURE_UID_BASE          = 21000
   DEFAULT_NUM_SECURE_USERS = 32
 
   attr_reader :isLinux, :isMacOSX, :secure
