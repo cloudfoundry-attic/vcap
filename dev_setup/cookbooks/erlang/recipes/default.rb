@@ -4,7 +4,6 @@
 #
 # Copyright 2011, VMware
 #
-# All rights reserved - Do Not Redistribute
 #
 %w[ build-essential libncurses5-dev openssl libssl-dev ].each do |pkg|
   package pkg
