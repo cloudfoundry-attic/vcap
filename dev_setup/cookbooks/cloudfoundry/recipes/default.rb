@@ -4,7 +4,6 @@
 #
 # Copyright 2011, VMWare
 #
-# All rights reserved - Do Not Redistribute
 #
 
 directory node[:cloudfoundry][:path] do

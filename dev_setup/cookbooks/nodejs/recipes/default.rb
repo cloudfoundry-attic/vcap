@@ -4,7 +4,6 @@
 #
 # Copyright 2011, VMware
 #
-# All rights reserved - Do Not Redistribute
 #
 %w[ build-essential ].each do |pkg|
   package pkg
