@@ -251,6 +251,10 @@ class AppsController < ApplicationController
       if changed.include?('instances')
         manager.change_running_instances(delta_instances)
         manager.updated
+        
+        user_email = user ? user.email : 'N/A'
+        CloudController.events.user_event(user_email, app.name, "Changing instances to #{app.instances}", :SUCCEEDED)  
+
       end
     end
 
