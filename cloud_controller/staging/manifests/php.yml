@@ -1,0 +1,12 @@
+---
+name: "php"
+runtimes:
+  - php5:
+      version: '5'
+      description: 'PHP5'
+      executable: php
+      default: true
+app_servers:
+detection:
+  - "*.php": '.'
+staged_services:
