@@ -76,14 +76,14 @@ module VCAP
       end
 
       def register(opts)
-        uuid = VCAP.fast_uuid
+        uuid = VCAP.secure_uuid
         type = opts[:type]
         index = opts[:index]
         uuid = "#{index}-#{uuid}" if index
         host = opts[:host] || VCAP.local_ip
         port = opts[:port] || VCAP.grab_ephemeral_port
         nats = opts[:nats] || NATS
-        auth = [opts[:user] || VCAP.fast_uuid, opts[:password] || VCAP.fast_uuid]
+        auth = [opts[:user] || VCAP.secure_uuid, opts[:password] || VCAP.secure_uuid]
 
         # Discover message limited
         @discover = {
