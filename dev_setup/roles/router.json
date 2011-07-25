@@ -7,5 +7,6 @@
   "chef_type": "role",
   "run_list" : [ "recipe[essentials]",
                  "recipe[ruby]",
-                 "recipe[nginx]" ]
+                 "recipe[nginx]",
+                 "recipe[router]"]
 }

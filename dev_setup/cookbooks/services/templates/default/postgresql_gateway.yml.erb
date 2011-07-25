@@ -1,0 +1,14 @@
+---
+# cloud_controller_uri: api.vcap.me
+service:
+  name: postgresql
+  version: "9.0"
+  description: 'PostgreSQL database service'
+  plans: ['free']
+  tags: ['postgresql', 'postgresql-9.0', 'relational']
+host: localhost
+token: "0xdeadbeef"
+log_level: DEBUG
+mbus: nats://localhost:4222
+pid: /var/vcap/sys/run/postgresql_service.pid
+node_timeout: 2
