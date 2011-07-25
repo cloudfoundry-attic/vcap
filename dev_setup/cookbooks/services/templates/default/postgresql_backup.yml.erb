@@ -1,0 +1,6 @@
+---
+service_name: postgresql
+backup_path: /opt/backup_nfs/
+backup_cmd: /usr/bin/pg_dump --host=:host --username=:user --file=:full_path/:name.sql :name
+compress_cmd: /bin/gzip :full_path/:name.sql
+logfile: /tmp/postgresql_backup.log

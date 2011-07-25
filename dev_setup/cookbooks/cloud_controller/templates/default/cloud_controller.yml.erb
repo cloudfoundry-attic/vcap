@@ -1,0 +1,107 @@
+---
+external_uri: api.vcap.me
+description: "VMware's Cloud Application Platform"
+support_address: http://support.cloudfoundry.com
+local_route: 127.0.0.1
+local_register_only: false
+
+# Legacy (FIXME REMOVE)
+allow_external_app_uris: false
+
+# This dicatates what the uri namespace rules
+# are for apps. Admins can overide any of the
+# below accept taking a used uri.
+
+app_uris:
+  allow_external: false
+#  reserved_file:
+#  reserved_list: [www, test, dash, register, foo, bar]
+#  reserved_length: 3
+
+external_port: 9022 #public CC port
+
+#nginx proxy provide multiple functions including
+#offloading of file uploads/downloads.
+nginx:
+  use_nginx: false   #nginx proxy in front of CC?
+  #instance_socket: /tmp/cloud_controller.sock
+  insecure_instance_port: 9025 #debug only!!!! -- not for production use.
+
+# if log_file is set, it must be a fully-qualified path,
+# because the bin/vcap script reads it directly from the file.
+logging:
+  level: debug
+# file:
+
+# Settings for the rails logger
+rails_logging:
+  level: debug
+# file:
+
+directories:
+  droplets: /var/vcap/shared/droplets
+  resources: /var/vcap/shared/resources
+  # default values, relative to Rails.root. Leading slash for full path.
+  staging_manifests: <%= node[:deployment][:config_path] %>/staging
+
+  # set to true to prevent filesystem resource leaks
+  # nukes tmpdir on startup -- be careful!
+  nuke_tmp_on_startup: false
+
+  tmpdir: /var/vcap/data/cloud_controller/tmp
+
+mbus: nats://localhost:4222/
+keys:
+  password: 'password key goes here'
+  token: 'token key goes here'
+pid: /var/vcap/sys/run/cloudcontroller.pid
+rails_environment: development
+database_environment: # replaces database.yml
+  production:
+    database: cloudcontroller
+    host: localhost
+    port: 5432
+    encoding: utf8
+    username: postgres
+    password: postgres
+    adapter: postgresql
+    timeout: 2000
+    template: template0 # Required for utf8 encoding
+  development:
+    adapter: sqlite3
+    database: db/cloudcontroller.sqlite3
+    encoding: utf8
+  test:
+    adapter: sqlite3
+    database: db/test.sqlite3
+    encoding: utf8
+
+staging:
+  max_concurrent_stagers: 10
+  max_staging_runtime:    120 # secs
+  secure: false
+
+# admin support
+admins: [derek@gmail.com, foobar@vmware.com]
+https_required: false
+https_required_for_admins: false
+
+# Normal user accounts
+default_account_capacity:
+  memory:   2048
+  app_uris: 4
+  services: 16
+  apps:     20
+
+# Services we provide, and their tokens. Avoids bootstrapping DB.
+builtin_services:
+  mysql:
+    token: "0xdeadbeef"
+  postgresql:
+    token: "0xdeadbeef"
+  redis:
+    token: "0xdeadbeef"
+  mongodb:
+    token: "0xdeadbeef"
+  rabbitmq:
+    token: "0xdeadbeef"
