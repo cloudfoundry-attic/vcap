@@ -1,0 +1,33 @@
+---
+local_route: 127.0.0.1
+mbus: nats://localhost:4222/
+logging:
+  level: debug
+pid: /var/vcap/sys/run/healthmanager.pid
+database_environment: # replaces database.yml
+  production:
+    database: cloudcontroller
+    host: localhost
+    port: 5432
+    encoding: utf8
+    username: postgres
+    password: postgres
+    adapter: postgresql
+    timeout: 2000
+    template: template0 # Required for utf8 encoding
+  development:
+    adapter: sqlite3
+    database: db/cloudcontroller.sqlite3 # sqlite3 paths are relative to CC root.
+    encoding: utf8
+  test:
+    adapter: sqlite3
+    database: db/test.sqlite3
+    encoding: utf8
+intervals:
+  database_scan:        60
+  droplet_lost:         30
+  droplets_analysis:    10
+  flapping_death:        3
+  flapping_timeout:    180
+  restart_timeout:      20
+  stable_state:         60

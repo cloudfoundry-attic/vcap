@@ -1,0 +1,16 @@
+---
+local_db: sqlite3:/var/vcap/services/mongodb/mongodb_node.db
+mbus: nats://localhost:4222
+index: 0
+base_dir: /var/vcap/services/mongodb/instances
+log_level: DEBUG
+pid: /var/vcap/sys/run/mongodb_node.pid
+available_memory: 4096
+max_memory: 128
+node_id: mongodb_node_1
+mongod_path: <%= node[:mongodb][:path] %>/bin/mongod
+mongorestore_path: mongorestore
+port_range:
+  first: 25001
+  last: 45000
+migration_nfs: /mnt/migration

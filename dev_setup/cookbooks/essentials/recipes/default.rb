@@ -12,3 +12,19 @@
     action [:install]
   end
 end
+
+directory node[:deployment][:cfg_path] do
+  owner node[:deployment][:user]
+  group node[:deployment][:group]
+  mode "0755"
+  recursive true
+  action :create
+end
+
+directory File.join(node[:deployment][:cfg_path], "staging") do
+  owner node[:deployment][:user]
+  group node[:deployment][:group]
+  mode "0755"
+  recursive true
+  action :create
+end

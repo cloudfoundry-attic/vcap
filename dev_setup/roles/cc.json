@@ -9,5 +9,6 @@
                  "recipe[ruby]",
                  "recipe[postgresql]",
                  "recipe[mysql::server]",
-                 "recipe[mysql]" ]
+                 "recipe[mysql]",
+                 "recipe[cloud_controller]"]
 }

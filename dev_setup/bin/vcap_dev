@@ -3,41 +3,58 @@
 require 'erb'
 require 'json'
 require 'fileutils'
+require 'optparse'
 require File.expand_path('vcap_defs', File.dirname(__FILE__))
 
 script_dir = File.expand_path(File.dirname(__FILE__))
 
-# TODO. These could be made parameters to this script
-vcap_dir = ENV["VCAP_DIR"] || File.expand_path(File.join(script_dir, "../.."))
-deployment_name = ENV["VCAP_DEPLOYMENT"] || DEFAULT_DEPLOYMENT_NAME
-
-deployment_config_dir = File.expand_path(File.join(vcap_dir, CONFIG_BASE_DIR, deployment_name))
-vcap_config_dir = File.join(deployment_config_dir, "vcap")
-staging_config_dir = File.join(vcap_config_dir, "staging")
-
-unless File.exists?("#{vcap_dir}/bin/vcap")
-  puts "Cannot find vcap repo. Did you set the VCAP_DIR env variable?"
-  exit 1
+# TODO: Once we integrate better with bin/vcap, this option parsing should
+# become more robust
+options = {"name" => DEPLOYMENT_DEFAULT_NAME}
+opts = OptionParser.new do |opts|
+  opts.banner = "Usage: #{$0} [--deployment name] [--home deployment_home] [start|stop|restart|tail|status] [COMPONENT] [--no-color] [--config CONFIGDIR]"
+  opts.on("-d", "--deployment name", "Name of the deployment") do |n|
+    options["name"] = n.to_s
+  end
+  opts.on("-h", "--home path", "Home directory of the deployment") do |n|
+    options["home"] = n.to_s
+  end
 end
-
-unless File.exists?("#{deployment_config_dir}")
-  puts "Cannot find deployment #{deployment_name}. Did you set the VCAP_DEPLOYMENT and VCAP_DIR env variables?"
-  exit 1
-end
+opts.order!(ARGV)
 
 if ARGV[0].nil? || !%w[start stop restart tail status].include?(ARGV[0].downcase)
-    STDERR.puts "Usage: #{$0} [start|stop|restart|tail|status] [COMPONENT] [--no-color] [--config CONFIGDIR]"
+    STDERR.puts "Usage: #{$0} [--deployment name] [--home deployment_home] [start|stop|restart|tail|status] [COMPONENT] [--no-color] [--config CONFIGDIR]"
     exit 1
 end
 
-begin
-  deployment_env = JSON.parse(File.read(File.join(deployment_config_dir, DEPLOYMENT_FILE)))
-rescue => e
-  STDERR.puts "You need to setup vcap developer environment first. Have you run vcap_dev_setup?"
-  exit
+if options["home"].nil?
+  deployment_home = Deployment.get_home(options["name"])
+else
+  deployment_home = options["home"]
 end
 
-ruby_path = "#{deployment_env["ruby"]["path"]}/bin"
+deployment_cfg_path = Deployment.get_config_path(deployment_home)
+
+begin
+  cfg = JSON.parse(File.read(Deployment.get_cfg_file(deployment_cfg_path)))
+rescue => e
+  STDERR.puts "Could not parse deployment config file #{Deployment.get_cfg_file(deployment_cfg_path)}. Please specify the deployment name or the deployment home directory where to find the config file"
+  exit 1
+end
+
+if cfg["cloudfoundry"].nil? || cfg["cloudfoundry"]["path"].nil?
+  vcap_dir = File.expand_path(File.join(script_dir, "../.."))
+else
+  vcap_dir = cfg["cloudfoundry"]["path"]
+end
+staging_config_dir = File.join(deployment_cfg_path, "staging")
+
+unless File.exists?("#{vcap_dir}/bin/vcap")
+  puts "Cannot find vcap repo. Please specify the deployment name or the deployment home directory where to find the config file"
+  exit 1
+end
+
+ruby_path = "#{cfg["ruby"]["path"]}/bin"
 gemdir = `#{ruby_path}/gem environment gemdir`.split("\n")[0]
 
 ENV["PATH"] = "#{ruby_path}:#{gemdir}/bin:#{ENV["PATH"]}"
@@ -60,61 +77,11 @@ end
 cmd = nil
 case ARGV[0].upcase
 when "START"
-  user_defined_config = true
-
-  #XXX This will all be replaced by appropriate yml.erb files soon.
-
-  # Setup the config files
   if !ARGV.include?("-c") && !ARGV.include?("--config")
-    puts "Setting up cloudfoundry config in #{vcap_config_dir}"
-    user_defined_config = false
-    FileUtils.mkdir_p(vcap_config_dir)
-    %w(cloud_controller router dea health_manager).each do |component|
-      FileUtils.cp("#{vcap_dir}/#{component}/config/#{component}.yml", "#{vcap_config_dir}")
-    end
-
-    %w(redis mysql mongodb postgres).each do |component|
-      begin
-        FileUtils.cp("#{vcap_dir}/services/#{component}/config/#{component}_node.yml", "#{vcap_config_dir}")
-        FileUtils.cp("#{vcap_dir}/services/#{component}/config/#{component}_gateway.yml", "#{vcap_config_dir}")
-      rescue => e
-      end
-    end
-
-    `cd #{vcap_config_dir} && sed -i.bkup -e "s%executable: /usr/bin/ruby%executable: #{deployment_env["ruby18"]["path"]}/bin/ruby%" dea.yml`
-    `cd #{vcap_config_dir} && sed -i.bkup -e "s%executable: ruby%executable: #{deployment_env["ruby"]["path"]}/bin/ruby%" dea.yml`
-    `cd #{vcap_config_dir} && sed -i.bkup -e "s%executable: node%executable: #{deployment_env["nodejs"]["dir"]}/bin/node%" dea.yml`
-    `cd #{vcap_config_dir} && sed -i.bkup -e "s%staging_manifests: staging/manifests%staging_manifests: #{staging_config_dir}%" cloud_controller.yml`
-
-
-    # Setup the staging manifests files
-    ENV["STAGING_CONFIG_DIR"]=staging_config_dir
-    staging_config_dir = File.join(vcap_config_dir, "staging")
-    FileUtils.mkdir_p(staging_config_dir)
-    FileUtils.cp(Dir.glob("#{vcap_dir}/cloud_controller/staging/manifests/*.yml"), "#{staging_config_dir}")
-    ["rails3.yml", "sinatra.yml"].each do |cfg_file|
-      `cd #{staging_config_dir} && sed -i.bkup -e 's%executable: "/usr/bin/ruby"%executable: "#{deployment_env["ruby18"]["path"]}/bin/ruby"%' #{cfg_file}`
-      `cd #{staging_config_dir} && sed -i.bkup -e 's%executable: "ruby"%executable: "#{deployment_env["ruby"]["path"]}/bin/ruby"%' #{cfg_file}`
-    end
-    `cd #{staging_config_dir} && sed -i.bkup -e "s%executable: node%executable: #{deployment_env["nodejs"]["path"]}/bin/node%" node.yml`
-    `cd #{staging_config_dir} && sed -i.bkup -e "s%executable: /var/vcap/runtimes/erlang-R14B02/bin/erl%executable: #{deployment_env["erlang"]["path"]}/bin/erl%" otp_rebar.yml`
-
-    # Fixup services
-    `cd #{vcap_config_dir} && sed -i.bkup -e "s%mongod_path: mongod%mongod_path: #{deployment_env["mongodb"]["path"]}/bin/mongod%" mongodb_node.yml`
-    `cd #{vcap_config_dir} && sed -i.bkup -e "s%redis_path: redis-server%redis_path: #{deployment_env["redis"]["path"]}/bin/redis-server%" redis_node.yml`
-
-    # Setup ccdb passwords
-    `cd #{vcap_config_dir} && sed -i.bkup -e "s/pass: root/pass: #{deployment_env["mysql"]["server_root_password"]}/" mysql_node.yml`
-
-    if File.directory? "#{script_dir}/../vcap/services/postgresql/config"
-      `cd #{vcap_config_dir} && sed -i.bkup -e "s/9.0/8.4/g" postgresql_gateway.yml&& sed -i.bkup -e "s/user: vcap/user: postgres/" -e "s/pass: vcap/pass: #{deployment_env["postgresql"]["server_password"]}/" postgresql_node.yml`
-    end
-  end
-
-  if user_defined_config
-    exec_cmd("#{ruby_path}/ruby #{vcap_dir}/bin/vcap #{ARGV.join(" ")}")
+    puts "Using cloudfoundry config from #{deployment_cfg_path}"
+    exec_cmd("#{ruby_path}/ruby #{vcap_dir}/bin/vcap #{ARGV.join(" ")} -c #{deployment_cfg_path}")
   else
-    exec_cmd("#{ruby_path}/ruby #{vcap_dir}/bin/vcap #{ARGV.join(" ")} -c #{vcap_config_dir}")
+    exec_cmd("#{ruby_path}/ruby #{vcap_dir}/bin/vcap #{ARGV.join(" ")}")
   end
 else
   exec_cmd("#{ruby_path}/ruby #{vcap_dir}/bin/vcap #{ARGV.join(" ")}")

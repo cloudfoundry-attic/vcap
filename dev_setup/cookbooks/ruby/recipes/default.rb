@@ -10,14 +10,14 @@ rake_version = node[:rubygems][:rake][:version]
 end
 
 remote_file "/tmp/ruby-#{ruby_version}.tar.gz" do
-  owner node[:ruby][:user]
+  owner node[:deployment][:user]
   source ruby_source
   not_if { ::File.exists?("/tmp/ruby-#{ruby_version}.tar.gz") }
 end
 
 directory ruby_path do
-  owner node[:ruby][:user]
-  group node[:ruby][:group]
+  owner node[:deployment][:user]
+  group node[:deployment][:group]
   mode "0755"
   recursive true
   action :create
@@ -25,7 +25,7 @@ end
 
 bash "Install Ruby" do
   cwd "/tmp"
-  user node[:ruby][:user]
+  user node[:deployment][:user]
   code <<-EOH
   tar xzf ruby-#{ruby_version}.tar.gz
   cd ruby-#{ruby_version}
@@ -39,14 +39,14 @@ bash "Install Ruby" do
 end
 
 remote_file "/tmp/rubygems-#{rubygems_version}.tgz" do
-  owner node[:ruby][:user]
+  owner node[:deployment][:user]
   source "http://production.cf.rubygems.org/rubygems/rubygems-#{rubygems_version}.tgz"
   not_if { ::File.exists?("/tmp/rubygems-#{rubygems_version}.tgz") }
 end
 
 bash "Install RubyGems" do
   cwd "/tmp"
-  user node[:ruby][:user]
+  user node[:deployment][:user]
   code <<-EOH
   tar xzf rubygems-#{rubygems_version}.tgz
   cd rubygems-#{rubygems_version}
