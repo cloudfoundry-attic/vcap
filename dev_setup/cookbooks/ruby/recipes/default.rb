@@ -10,14 +10,14 @@ rake_version = node[:rubygems][:rake][:version]
 end
 
 remote_file "/tmp/ruby-#{ruby_version}.tar.gz" do
-  owner node[:ruby][:user]
+  owner node[:deployment][:user]
   source ruby_source
   not_if { ::File.exists?("/tmp/ruby-#{ruby_version}.tar.gz") }
 end
 
 directory ruby_path do
-  owner node[:ruby][:user]
-  group node[:ruby][:group]
+  owner node[:deployment][:user]
+  group node[:deployment][:group]
   mode "0755"
   recursive true
   action :create
@@ -25,7 +25,7 @@ end
 
 bash "Install Ruby" do
   cwd "/tmp"
-  user node[:ruby][:user]
+  user node[:deployment][:user]
   code <<-EOH
   tar xzf ruby-#{ruby_version}.tar.gz
   cd ruby-#{ruby_version}
@@ -39,14 +39,14 @@ bash "Install Ruby" do
 end
 
 remote_file "/tmp/rubygems-#{rubygems_version}.tgz" do
-  owner node[:ruby][:user]
+  owner node[:deployment][:user]
   source "http://production.cf.rubygems.org/rubygems/rubygems-#{rubygems_version}.tgz"
   not_if { ::File.exists?("/tmp/rubygems-#{rubygems_version}.tgz") }
 end
 
 bash "Install RubyGems" do
   cwd "/tmp"
-  user node[:ruby][:user]
+  user node[:deployment][:user]
   code <<-EOH
   tar xzf rubygems-#{rubygems_version}.tgz
   cd rubygems-#{rubygems_version}
@@ -68,17 +68,8 @@ gem_package "rake" do
   gem_binary "#{ruby_path}/bin/gem"
 end
 
-# Workaround for random failures while installing gems. Try first while ignoring
-# failures.
-# Looks like newer versions of chef support a "retries" option
-%w[ rack eventmachine thin sinatra mysql pg].each do |gem|
-  gem_package gem do
-    ignore_failure true
-    gem_binary "#{ruby_path}/bin/gem"
-  end
-end
-
-# Dont ignore failures
+# Looks like newer versions of chef support a "retries" option. Maybe a good
+# idea to use it to circumvent transient failures around installing ruby gems
 %w[ rack eventmachine thin sinatra mysql pg].each do |gem|
   gem_package gem do
     gem_binary "#{ruby_path}/bin/gem"

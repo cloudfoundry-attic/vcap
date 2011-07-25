@@ -10,14 +10,14 @@
 end
 
 remote_file "/tmp/otp_src_#{node[:erlang][:version]}.tar.gz" do
-  owner node[:erlang][:user]
+  owner node[:deployment][:user]
   source node[:erlang][:source]
   not_if { ::File.exists?("/tmp/otp_src_#{node[:erlang][:version]}.tar.gz") }
 end
 
 directory node[:erlang][:path] do
-  owner node[:erlang][:user]
-  group node[:erlang][:group]
+  owner node[:deployment][:user]
+  group node[:deployment][:group]
   mode "0755"
   recursive true
   action :create
@@ -25,7 +25,7 @@ end
 
 bash "Install Erlang" do
   cwd "/tmp"
-  user node[:erlang][:user]
+  user node[:deployment][:user]
   code <<-EOH
   tar xvzf otp_src_#{node[:erlang][:version]}.tar.gz
   cd otp_src_#{node[:erlang][:version]}

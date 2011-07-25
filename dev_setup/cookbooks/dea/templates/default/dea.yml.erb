@@ -1,0 +1,50 @@
+---
+base_dir: /var/vcap.local/dea
+local_route: 127.0.0.1
+filer_port: 12345
+mbus: nats://localhost:4222/
+intervals:
+  heartbeat: 10
+logging:
+  level: debug
+multi_tenant: true
+max_memory: 4096
+secure: false
+enforce_ulimit: false
+pid: /var/vcap/sys/run/dea.pid
+
+#Force droplets to be downloaded over http even when
+#there is a shared directory containing the droplet.
+force_http_sharing: true
+
+# This is where the execution agent determines its available runtimes.
+# version flags are assumed to be '-v' unless noted below.
+
+runtimes:
+  ruby18:
+    executable: <%= node[:ruby18][:path] %>/bin/ruby
+    version: 1.8.7
+    version_flag: "-e 'puts RUBY_VERSION'"
+    additional_checks: "-e 'puts RUBY_PATCHLEVEL >= 174'"
+    environment:
+  ruby19:
+    executable: <%= node[:ruby][:path] %>/bin/ruby
+    version: 1.9.2
+    version_flag: "-e 'puts RUBY_VERSION'"
+    additional_checks: "-e 'puts RUBY_PATCHLEVEL >= 180'"
+    environment:
+  node:
+    executable: <%= node[:nodejs][:path] %>/bin/node
+    version: 0.4.[2-9]
+    version_flag: '-v'
+    environment:
+  java:
+    executable: java
+    version: 1.6.0
+    version_flag: '-version'
+    environment:
+  erlangR14B02:
+    executable: <%= node[:erlang][:path] %>/bin/erl
+    version: ".* 5.8.3"
+    version_flag: '-version'
+    environment:
