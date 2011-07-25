@@ -1,5 +1,5 @@
 {
-  "name": "cc",
+  "name": "cloud_controller",
   "default_attributes": {},
   "override_attributes": {},
   "json_class": "Chef::Role",
@@ -9,5 +9,6 @@
                  "recipe[ruby]",
                  "recipe[postgresql]",
                  "recipe[mysql::server]",
-                 "recipe[mysql]" ]
+                 "recipe[mysql]",
+                 "recipe[cloud_controller]"]
 }

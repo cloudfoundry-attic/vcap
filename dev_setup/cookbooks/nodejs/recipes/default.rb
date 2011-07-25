@@ -10,14 +10,14 @@
 end
 
 remote_file "/tmp/node-v#{node[:nodejs][:version]}.tar.gz" do
-  owner node[:nodejs][:user]
+  owner node[:deployment][:user]
   source node[:nodejs][:source]
   not_if { ::File.exists?("/tmp/node-v#{node[:nodejs][:version]}.tar.gz") }
 end
 
 directory node[:nodejs][:path] do
-  owner node[:nodejs][:user]
-  group node[:nodejs][:group]
+  owner node[:deployment][:user]
+  group node[:deployment][:group]
   mode "0755"
   recursive true
   action :create
@@ -25,7 +25,7 @@ end
 
 bash "Install Nodejs" do
   cwd "/tmp"
-  user node[:nodejs][:user]
+  user node[:deployment][:user]
   code <<-EOH
   tar xzf node-v#{node[:nodejs][:version]}.tar.gz
   cd node-v#{node[:nodejs][:version]}
