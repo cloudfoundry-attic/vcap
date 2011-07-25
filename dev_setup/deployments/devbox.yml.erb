@@ -1,0 +1,68 @@
+---
+#deployment:
+  # Name of this deployment, defaults to "devbox"
+  # name: "some_name"
+
+  # Defaults to $HOME/.cloudfoundry/<deployment_name>
+  # home: "/path/to/deployments/deployment_name"
+
+  # User as which cloudfoundry will run, defaults to the user running the setup
+  # script
+  # user: "some_user"
+
+  # Group for cloudfoundry, defaults to the group of the user running the setup
+  # script
+  # group: "some_group"
+
+#
+#cloudfoundry:
+#  path: "path to the cloud foundry code, defaults to base vcap dir containing the setup script"
+#  revision: "Optional argument, if present specifies the version of
+#             cloud foundry code that should be downloaded, If absent no code is
+#             dowloaded.
+#
+cloudfoundry:
+  revision: "HEAD"
+  path: "<%= deployment_home %>/vcap"
+
+#------------------------------------------------------------
+#NOTE: There are no default values for the following options.
+#------------------------------------------------------------
+ruby:
+  version: "1.9.2-p180"
+  path: "<%= deployment_home %>/deploy/rubies/ruby-<%= @ruby_version %>"
+ruby18:
+  version: "1.8.7-p334"
+  path: "<%= deployment_home %>/deploy/rubies/ruby-<%= @ruby18_version %>"
+rubygems:
+  version: "1.5.2"
+  bundler:
+    version: "1.0.10"
+  rake:
+    version: "0.8.7"
+mongodb:
+  version: "1.8.1"
+  path: "<%= deployment_home %>/deploy/mongodb"
+redis:
+  version: "2.2.4"
+  path: "<%= deployment_home %>/deploy/redis"
+  runner: "<%= deployment_user %>"
+nodejs:
+  version: "0.4.8"
+  path: "<%= deployment_home %>/deploy/nodejs"
+nginx:
+  vcap_log: "<%= deployment_home %>/sys/log/vcap.access.log"
+mysql:
+  server_root_password: "root"
+  server_repl_password: "root"
+  bind_address: "127.0.0.1"
+postgresql:
+  server_root_password: "root"
+erlang:
+  version: "R14B02"
+  path: "<%= deployment_home %>/deploy/erlang"
+services:
+  - redis
+  - mysql
+  - mongodb
+  - postgresql
