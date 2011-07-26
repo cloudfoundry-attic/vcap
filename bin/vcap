@@ -127,7 +127,8 @@ class Component
       pid = fork do
         # Capture STDOUT when no log file is configured
         if !log_file?
-          stdout = File.open(log_file, 'w')
+          stdout = File.open(log_file, 'a')
+          stdout.truncate(0)
           STDOUT.reopen(stdout)
           stderr = File.open(log_file, 'a')
           STDERR.reopen(stderr)
