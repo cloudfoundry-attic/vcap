@@ -13,6 +13,7 @@ module GemfileSupport
   #    compile them and cache compilation results (using the same cache as in step 3).
   # 5. Finally we just copy all these files back to a well-known location the app honoring
   #    Rubygems path structure.
+  #
   # NB: ideally this should be refactored into a set of saner helper classes, as it's really
   # hard to follow who calls what and where.
   def compile_gems

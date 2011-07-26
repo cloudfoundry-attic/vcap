@@ -5,6 +5,7 @@ PATH
       eventmachine (~> 0.12.10)
       logging (>= 1.5.0)
       nats
+      posix-spawn
       thin
       yajl-ruby
 
@@ -80,6 +81,7 @@ GEM
     nokogiri (1.4.4)
     pg (0.10.1)
     polyglot (0.3.1)
+    posix-spawn (0.3.6)
     rack (1.2.2)
     rack-fiber_pool (0.9.1)
     rack-mount (0.6.14)

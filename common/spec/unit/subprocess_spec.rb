@@ -19,19 +19,28 @@ describe VCAP::Subprocess do
     end
 
     it 'should raise exceptions on exit status mismatch' do
-      Open3.stub!(:capture3).and_return(['foo', 'bar', 127])
       begin
         ex_thrown = false
-        @subprocess.run('zazzle')
-      rescue VCAP::SubprocessError => se
+        @subprocess.run('exit 10')
+      rescue VCAP::SubprocessStatusError => se
         ex_thrown = true
-        se.command.should == 'zazzle'
-        se.stdout.should  == 'foo'
-        se.stderr.should  == 'bar'
-        se.exit_status.should == 127
+        se.exit_status.exitstatus.should == 10
       ensure
         ex_thrown.should be_true
       end
+    end
+
+    it 'should kill processes that run too long' do
+      expect do
+        VCAP::Subprocess.run('sleep 5', 0, 1)
+      end.to raise_error(VCAP::SubprocessTimeoutError)
+    end
+
+    it 'should call previously installed SIGCHLD handlers' do
+      handler_called = false
+      trap('CLD') { handler_called = true }
+      VCAP::Subprocess.run('echo foo')
+      handler_called.should be_true
     end
   end
 end

@@ -1,5 +1,6 @@
 require 'nokogiri'
 require 'fileutils'
+require 'thread'
 
 class Tomcat
   AUTOSTAGING_JAR = 'auto-reconfiguration-0.6.0-BUILD-SNAPSHOT.jar'
@@ -12,6 +13,7 @@ class Tomcat
 
   def self.prepare(dir)
     FileUtils.cp_r(resource_dir, dir)
+    #`cp -a #{resource_dir} #{dir}`
     output = %x[cd #{dir}; unzip -q resources/tomcat.zip]
     raise "Could not unpack Tomcat: #{output}" unless $? == 0
     webapp_path = File.join(dir, "tomcat", "webapps", "ROOT")
