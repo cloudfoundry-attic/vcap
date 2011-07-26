@@ -278,6 +278,8 @@ class AppManager
   def stage
     return if app.package_hash.blank? || app.staged?
 
+    CloudController.logger.debug "app: #{app.id} Staging starting"
+
     manifest = manifest_for_framework(app.framework)
 
     unless manifest && manifest['runtimes']
@@ -308,6 +310,10 @@ class AppManager
     staging_script = "#{CloudController.current_ruby} #{File.join(staging_plugin_dir, 'stage')}"
     # Perform staging command
     run_staging_command(staging_script, app_source_dir, output_dir, env_json)
+
+    once_app_is_staged do
+      CloudController.logger.debug "app: #{app.id} Staging complete"
+    end
 
   rescue => e
     CloudController.logger.error("Failed on exception! #{e}", :tags => [:staging])
