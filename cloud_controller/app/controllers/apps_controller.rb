@@ -118,6 +118,7 @@ class AppsController < ApplicationController
 
   # PUT /apps/:name/update
   def start_update
+    CloudController.logger.debug "app: #{@app.id} start_update"
     raise CloudError.new(CloudError::APP_STOPPED) unless @app.started?
     # Simulate a start call
     error_on_lock_mismatch(@app)
@@ -206,6 +207,8 @@ class AppsController < ApplicationController
   # Checks to make sure the update can proceed, then updates the given
   # App from the request params and makes the necessary AppManager calls.
   def update_app_from_params(app)
+    CloudController.logger.debug "app: #{app.id || "nil"} update_from_parms"
+
     error_on_lock_mismatch(app)
     app.lock_version += 1
 
@@ -220,13 +223,14 @@ class AppsController < ApplicationController
     delta_instances = update_app_instances(app)
 
     changed = app.changed
+    CloudController.logger.debug "app: #{app.id} Updating #{changed.inspect}"
 
     # 'app.save' can actually raise an exception, if whatever is
     # invalid happens all the way down at the DB layer.
     begin
       app.save!
     rescue
-      CloudController.logger.debug "Failed to save new app, app invalid"
+      CloudController.logger.debug "app: #{app.id} Failed to save new app, app invalid"
       raise CloudError.new(CloudError::APP_INVALID)
     end
 
@@ -315,7 +319,7 @@ class AppsController < ApplicationController
       end
     end
     unless app.framework
-      CloudController.logger.debug "No app framework indicated"
+      CloudController.logger.debug "app: #{app.id} No app framework indicated"
       raise CloudError.new(CloudError::APP_INVALID_FRAMEWORK, 'NONE')
     end
   end
@@ -338,8 +342,8 @@ class AppsController < ApplicationController
     return if body_params.nil?
     added_configs, removed_configs = app.diff_configs(body_params[:services])
     return if added_configs.empty? && removed_configs.empty?
-    CloudController.logger.debug "Adding services: #{added_configs.inspect}"
-    CloudController.logger.debug "Removing services: #{removed_configs.inspect}"
+    CloudController.logger.debug "app: #{app.id} Adding services: #{added_configs.inspect}"
+    CloudController.logger.debug "app: #{app.id} Removing services: #{removed_configs.inspect}"
 
     # Bind services
     added_configs.each do |cfg_alias|
