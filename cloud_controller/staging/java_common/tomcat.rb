@@ -127,7 +127,7 @@ class Tomcat
     context_param_value_node = Nokogiri::XML::Node.new 'param-value', webapp_config
     context_param_value_node.content = context_param_value
 
-    parent.add_child autostaging_context_param_name_node
+    parent.add_child autostaging_context_param_name_node.dup
     parent.add_child context_param_value_node
 
     webapp_config
@@ -173,8 +173,8 @@ class Tomcat
     unless default_servlet_context_file == nil
       webapp_config = configure_default_context webapp_path, webapp_config, autostaging_init_param_name_node, autostaging_init_param_value, init_param_node, default_servlet_context
     else
-      init_param_node.add_child autostaging_init_param_name_node
-      init_param_node.add_child autostaging_init_param_value_node
+      init_param_node.add_child autostaging_init_param_name_node.dup
+      init_param_node.add_child autostaging_init_param_value_node.dup
     end
     webapp_config
   end

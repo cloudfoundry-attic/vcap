@@ -123,8 +123,8 @@ module DEA
       # If a du of the apps dir takes excessively long we log out the directory structure
       # here.
       @last_apps_dump = nil
-      if config['log_file']
-        @apps_dump_dir = File.dirname(config['log_file'])
+      if config['logging'] && config['logging']['file']
+        @apps_dump_dir = File.dirname(config['logging']['file'])
       else
         @apps_dump_dir = ENV['TMPDIR'] || '/tmp'
       end

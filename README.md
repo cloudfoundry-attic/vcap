@@ -53,6 +53,7 @@ server VM.
 * setup a VM with a pristine Ubuntu 10.04.2 server 64bit image,
   [download here](http://www.ubuntu.com/download/ubuntu/download)
 * you may wish to snapshot your VM now in case things go pear shaped.
+* setup your VM with 500MB or more of memory
 * great snapshot spots are here and after step 4
 * to enable remote access (more fun than using the console), install ssh.
 
@@ -78,7 +79,7 @@ the following steps
     bin/vcap start
     bin/vcap tail  # see aggregate logs
 
-#### Step 4: *Optional, mac users only*, create a local ssh tunnel
+#### Step 4: *Optional, mac/linux users only*, create a local ssh tunnel
 
 From your VM, run `ifconfig` and note your eth0 IP address, which will look something like: `192.168.252.130`
 
