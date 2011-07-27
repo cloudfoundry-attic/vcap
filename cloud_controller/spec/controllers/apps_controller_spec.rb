@@ -37,7 +37,7 @@ describe AppsController do
       @args['env'] = ["vmc_foo=bar"]
       headers_for(@user, nil, @args).each {|key, value| request.env[key] = value }
       post :create
-    
+
       get :get, :name => @app_name
       Yajl::Parser.parse(response.body)['env'].should == []
     end
