@@ -23,9 +23,16 @@ class VirgoPlugin < StagingPlugin
   end
 
   def copy_source_files(dest = nil)
-    dest ||= File.join(destination_directory, 'app.war')
-    output = %x[cd #{source_directory}; zip -r #{File.join(dest, File.basename(source_directory) + ".war")} *]
-    raise "Could not pack Virgo application: #{output}" unless $? == 0
+    extension = Virgo.detect_file_extension(source_directory)
+    dest ||= File.join(destination_directory, "app.#{extension}")
+    if extension === "plan"
+      system "cp -a #{File.join(source_directory, "*")} #{dest}"
+      system "cp -rf #{File.join(dest, Virgo.repository, "*")} #{File.join(dest, "..", Virgo.repository)}"
+      system "rm -rf #{File.join(dest, Virgo.repository)}"
+    else
+      output = %x[cd #{source_directory}; zip -r #{File.join(dest, File.basename(source_directory) + ".#{extension}")} *]
+      raise "Could not pack Virgo application: #{output}" unless $? == 0
+    end
   end
 
   def create_app_directories
