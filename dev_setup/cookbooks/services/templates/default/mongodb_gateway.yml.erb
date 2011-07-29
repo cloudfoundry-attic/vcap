@@ -1,0 +1,15 @@
+---
+# cloud_controller_uri: api.vcap.me
+service:
+  name: mongodb
+  version: "1.8"
+  description: 'MongoDB NoSQL store'
+  plans: ['free']
+  tags: ['mongodb', 'mongodb-1.6', 'nosql']
+host: localhost
+index: 0
+token: "0xdeadbeef"
+mbus: nats://localhost:4222
+log_level: DEBUG
+pid: /var/vcap/sys/run/mongodb_service.pid
+# allow_over_provisioning: false
