@@ -1,0 +1,35 @@
+---
+name: "sinatra"
+runtimes:
+  - "ruby18":
+      version: "1.8.7" # FIXME change to 1.8.7-p334
+      description: "Ruby 1.8.7"
+      executable: "<%= node[:ruby18][:path] %>/bin/ruby"
+      default: true
+      environment:
+       rails_env: "production"
+       bundle_gemfile:
+       rack_env: "production"
+  - "ruby19":
+      version: "1.9.2p180"
+      description: "Ruby 1.9.2"
+      executable: "<%= node[:ruby][:path] %>/bin/ruby"
+      environment:
+       rails_env: "production"
+       bundle_gemfile:
+       rack_env: "production"
+app_servers:
+  - "thin":
+      description: "Thin"
+      executable: false # determined during staging
+      default: true
+detection:
+  - "*.rb": "require 'sinatra'|require \"sinatra\"" # .rb files in the root dir containing a require?
+  - "config/environment.rb": false # and config/environment.rb must not exist
+staged_services:
+  - "name": "mysql"
+    "version": "*"
+  - "name": "postgresql"
+    "version": "*"
+  - "name": "redis"
+    "version": "2"

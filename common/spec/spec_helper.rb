@@ -7,3 +7,11 @@ require "vcap/common"
 require "vcap/component"
 require "vcap/rolling_metric"
 require "vcap/json_schema"
+require "vcap/subprocess"
+require "vcap/process_utils"
+require "vcap/config"
+
+def fixture_path(*args)
+  base = File.expand_path("../", __FILE__)
+  File.join(base, 'fixtures', *args)
+end

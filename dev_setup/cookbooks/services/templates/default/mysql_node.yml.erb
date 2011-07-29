@@ -1,0 +1,22 @@
+---
+local_db: sqlite3:/var/vcap/services/mysql/mysql_node.db
+base_dir: /var/vcap/services/mysql/
+mysqldump_bin: mysqldump
+gzip_bin: gzip
+mysql_bin: mysql
+ip_route: 127.0.0.1
+mbus: nats://localhost:4222
+index: 0
+log_level: DEBUG
+pid: /var/vcap/sys/run/mysql_node.pid
+available_storage: 1024
+node_id: mysql_node_1
+max_db_size: 20
+max_long_query: 3
+max_long_tx: 30
+migration_nfs: /mnt/migration
+mysql:
+  host: localhost
+  port: 3306
+  user: root
+  pass: <%= node[:mysql][:server_root_password] %>

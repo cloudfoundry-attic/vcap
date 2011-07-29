@@ -1,1 +1,1 @@
-default[:postgres][:server_password] = "temp"
+default[:postgres][:server_root_password] = "temp"
