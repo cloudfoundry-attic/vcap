@@ -7,8 +7,8 @@ service:
   plans: ['free']
   tags: ['postgresql', 'postgresql-9.0', 'relational']
 host: localhost
-token: "0xdeadbeef"
+token: <%= node[:service][:postgresql][:token] %>
 log_level: DEBUG
-mbus: nats://localhost:4222
+mbus: nats://<%= node[:nats][:user] %>:<%= node[:nats][:password] %>@<%= node[:nats][:host] %>:<%= node[:nats][:port] %>/
 pid: /var/vcap/sys/run/postgresql_service.pid
 node_timeout: 2

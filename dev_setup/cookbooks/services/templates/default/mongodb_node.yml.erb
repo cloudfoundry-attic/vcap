@@ -1,13 +1,13 @@
 ---
 local_db: sqlite3:/var/vcap/services/mongodb/mongodb_node.db
-mbus: nats://localhost:4222
-index: 0
+mbus: nats://<%= node[:nats][:user] %>:<%= node[:nats][:password] %>@<%= node[:nats][:host] %>:<%= node[:nats][:port] %>/
+index: <%= node[:service][:mongodb][:index] %>
 base_dir: /var/vcap/services/mongodb/instances
 log_level: DEBUG
 pid: /var/vcap/sys/run/mongodb_node.pid
-available_memory: 4096
-max_memory: 128
-node_id: mongodb_node_1
+available_memory: <%= node[:service][:mongodb][:available_memory] %>
+max_memory: <%= node[:service][:mongodb][:max_memory] %>
+node_id: <%= "mongodb_node_#{node[:service][:mongodb][:index]}" %>
 mongod_path: <%= node[:mongodb][:path] %>/bin/mongod
 mongorestore_path: mongorestore
 port_range:

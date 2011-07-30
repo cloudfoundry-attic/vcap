@@ -1,0 +1,137 @@
+---
+# Deployment
+# ----------
+deployment:
+  # Name of this deployment, defaults to "devbox"
+  name: "rest"
+
+  # Defaults to $HOME/.cloudfoundry/<deployment_name>
+  # home: "/path/to/deployments/deployment_name"
+
+  # User as which cloudfoundry will run, defaults to the user running the setup
+  # script
+  # user: "some_user"
+
+  # Group for cloudfoundry, defaults to the group of the user running the setup
+  # script
+  # group: "some_group"
+
+#
+#cloudfoundry:
+#  path: "path to the cloud foundry code, defaults to base vcap dir containing the setup script"
+#  revision: "Optional argument, if present specifies the version of
+#             cloud foundry code that should be downloaded, If absent no code is
+#             dowloaded.
+#
+cloudfoundry:
+  revision: "HEAD"
+  path: "<%= deployment_home %>/vcap"
+
+
+# Package Metadata
+# ----------------
+# NOTE: These fields are all mandatory.
+ruby:
+  version: "1.9.2-p180"
+  path: "<%= deployment_home %>/deploy/rubies/ruby-<%= @ruby_version %>"
+ruby18:
+  version: "1.8.7-p334"
+  path: "<%= deployment_home %>/deploy/rubies/ruby-<%= @ruby18_version %>"
+rubygems:
+  version: "1.5.2"
+  bundler:
+    version: "1.0.10"
+  rake:
+    version: "0.8.7"
+mongodb:
+  version: "1.8.1"
+  path: "<%= deployment_home %>/deploy/mongodb"
+redis:
+  version: "2.2.4"
+  path: "<%= deployment_home %>/deploy/redis"
+  runner: "<%= deployment_user %>"
+nodejs:
+  version: "0.4.8"
+  path: "<%= deployment_home %>/deploy/nodejs"
+nginx:
+  vcap_log: "<%= deployment_home %>/sys/log/vcap.access.log"
+erlang:
+  version: "R14B02"
+  path: "<%= deployment_home %>/deploy/erlang"
+
+# JOBS
+# ----
+#
+# Jobs represents the various installable components of cloud foundry
+# They are divided into 2 groups
+#  - install (Jobs that should be installed on this server/host)
+#  - installed (Jobs that have been installed on other server/hosts whose properties are required by the #               jobs that are scheduled to be installed on this server/host)
+#
+#  e.g.
+#   Lets say "nats" is installed on server_A. Next, you would like to install
+#  the "router" on server_B. In this case, the deployment config file for
+#  server_B will look like the following.
+#
+# jobs:
+#   install:
+#     - router
+#   installed:
+#     - nats:
+#         uri: "nats://<user>:<passwd>@<server A>"
+#
+#
+# List of all supported jobs
+#   - all (deploys all cloudfoundry components)
+#   - nats
+#   - router
+#   - cloud_controller
+#   - health_manager
+#   - dea
+#   - ccdb
+#   - mysql
+#   - redis
+#   - mongodb
+#   - postgresql
+#
+# List of properties that should be specified for installed jobs.
+# installed:
+#   nats:
+#     host: (hostname/ip of machine running nats server)
+#     port:
+#     user:
+#     password:
+#   cloud_controller:
+#     uri:
+#   ccdb
+#     host:
+#     dbname:
+#     port:
+#     user:
+#     password:
+#     adapter:
+#   mysql:
+#     server_root_password:
+#     bind_address:
+#   postgresql:
+#     server_root_password:
+jobs:
+  install:
+    - cloud_controller:
+        builtin_services:
+          - redis
+          - mongodb
+          - mysql
+    - ccdb
+    - dea
+    - health_manager
+    - router
+    - mysql
+    - postgresql
+    - redis
+    - mongodb
+  installed:
+    - nats:
+        host: "10.138.68.210"
+        port: "4222"
+        user: "nats"
+        password: "nats"

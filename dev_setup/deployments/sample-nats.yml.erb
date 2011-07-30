@@ -1,7 +1,9 @@
 ---
-#deployment:
+# Deployment
+# ----------
+deployment:
   # Name of this deployment, defaults to "devbox"
-  # name: "some_name"
+  name: "nats_box"
 
   # Defaults to $HOME/.cloudfoundry/<deployment_name>
   # home: "/path/to/deployments/deployment_name"
@@ -25,9 +27,9 @@ cloudfoundry:
   revision: "HEAD"
   path: "<%= deployment_home %>/vcap"
 
-#------------------------------------------------------------
-#NOTE: There are no default values for the following options.
-#------------------------------------------------------------
+
+# Package Metadata
+# ----------------
 ruby:
   version: "1.9.2-p180"
   path: "<%= deployment_home %>/deploy/rubies/ruby-<%= @ruby_version %>"
@@ -52,25 +54,75 @@ nodejs:
   path: "<%= deployment_home %>/deploy/nodejs"
 nginx:
   vcap_log: "<%= deployment_home %>/sys/log/vcap.access.log"
-mysql:
-  server_root_password: "root"
-  server_repl_password: "root"
-  bind_address: "127.0.0.1"
-postgresql:
-  server_root_password: "root"
 erlang:
   version: "R14B02"
   path: "<%= deployment_home %>/deploy/erlang"
-services:
-  - redis
-  - mysql
-  - mongodb
-  - postgresql
+
+# JOBS
+# ----
+#
+# Jobs represents the various installable components of cloud foundry
+# They are divided into 2 groups
+#  - install (Jobs that should be installed on this server/host)
+#  - installed (Jobs that have been installed on other server/hosts whose properties are required by the #               jobs that are scheduled to be installed on this server/host)
+#
+#  e.g.
+#   Lets say "nats" is installed on server_A. Next, you would like to install
+#  the "router" on server_B. In this case, the deployment config file for
+#  server_B will look like the following.
+#
+# jobs:
+#   install:
+#     - router
+#   installed:
+#     - nats:
+#         uri: "nats://<user>:<passwd>@<server A>"
+#
+#
+# List of all supported jobs
+#   - all (deploys all cloudfoundry components)
+#   - nats
+#   - router
+#   - cloud_controller
+#   - health_manager
+#   - dea
+#   - ccdb
+#   - mysql
+#   - redis
+#   - mongodb
+#   - postgresql
+#
+# List of properties that should be specified for installed jobs.
+# installed:
+#   nats:
+#     host:
+#     port:
+#     user:
+#     password:
+#   cloud_controller:
+#     uri:
+#     builtin_services:
+#       - redis
+#       - mongodb
+#       - mysql
+#       - postgresql
+#       - rabbitmq
+#   ccdb
+#     host:
+#     dbname:
+#     port:
+#     user:
+#     password:
+#     adapter:
+#   mysql:
+#     server_root_password:
+#     bind_address:
+#   postgresql:
+#     server_root_password:
 jobs:
   install:
-    - router
     - nats:
-        host: "localhost"
+        host: 10.138.68.210
         port: "4222"
         user: "nats"
         password: "nats"

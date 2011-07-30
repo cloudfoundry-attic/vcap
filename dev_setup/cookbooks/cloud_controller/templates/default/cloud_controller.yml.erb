@@ -50,7 +50,7 @@ directories:
 
   tmpdir: /var/vcap/data/cloud_controller/tmp
 
-mbus: nats://localhost:4222/
+mbus: nats://<%= node[:nats][:user] %>:<%= node[:nats][:password] %>@<%= node[:nats][:host] %>:<%= node[:nats][:port] %>/
 keys:
   password: 'password key goes here'
   token: 'token key goes here'
@@ -95,13 +95,7 @@ default_account_capacity:
 
 # Services we provide, and their tokens. Avoids bootstrapping DB.
 builtin_services:
-  mysql:
-    token: "0xdeadbeef"
-  postgresql:
-    token: "0xdeadbeef"
-  redis:
-    token: "0xdeadbeef"
-  mongodb:
-    token: "0xdeadbeef"
-  rabbitmq:
-    token: "0xdeadbeef"
+  <% @builtin_services.each do |service_name| %>
+  <%= service_name %>:
+    token: <%= node[:service][service_name.to_sym][:token] %>
+  <% end %>
