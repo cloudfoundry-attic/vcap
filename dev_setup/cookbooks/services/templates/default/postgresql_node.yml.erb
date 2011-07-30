@@ -2,7 +2,7 @@
 local_db: sqlite3:/var/vcap/services/postgresql/postgresql_node.db
 base_dir: /var/vcap/services/postgresql/
 ip_route: 127.0.0.1
-mbus: nats://localhost:4222
+mbus: nats://<%= node[:nats][:user] %>:<%= node[:nats][:password] %>@<%= node[:nats][:net] %>:<%= node[:nats][:port] %>/
 log_level: DEBUG
 pid: /var/vcap/sys/run/postgresql_node.pid
 available_storage: 1024

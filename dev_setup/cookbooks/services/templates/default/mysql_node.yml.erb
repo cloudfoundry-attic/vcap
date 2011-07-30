@@ -5,7 +5,7 @@ mysqldump_bin: mysqldump
 gzip_bin: gzip
 mysql_bin: mysql
 ip_route: 127.0.0.1
-mbus: nats://localhost:4222
+mbus: nats://<%= node[:nats][:user] %>:<%= node[:nats][:password] %>@<%= node[:nats][:net] %>:<%= node[:nats][:port] %>/
 index: 0
 log_level: DEBUG
 pid: /var/vcap/sys/run/mysql_node.pid

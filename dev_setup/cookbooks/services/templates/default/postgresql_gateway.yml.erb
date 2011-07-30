@@ -9,6 +9,6 @@ service:
 host: localhost
 token: "0xdeadbeef"
 log_level: DEBUG
-mbus: nats://localhost:4222
+mbus: nats://<%= node[:nats][:user] %>:<%= node[:nats][:password] %>@<%= node[:nats][:net] %>:<%= node[:nats][:port] %>/
 pid: /var/vcap/sys/run/postgresql_service.pid
 node_timeout: 2

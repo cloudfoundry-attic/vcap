@@ -1,0 +1,12 @@
+{
+  "name": "Postgresql",
+  "default_attributes": {},
+  "override_attributes": {},
+  "json_class": "Chef::Role",
+  "description": "Postgresql db for apps",
+  "chef_type": "role",
+  "run_list" : ["recipe[essentials]",
+                "recipe[ruby]",
+                "recipe[postgresql]",
+                "role[services]"]
+}

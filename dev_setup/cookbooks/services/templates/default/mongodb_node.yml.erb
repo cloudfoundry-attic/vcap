@@ -1,6 +1,6 @@
 ---
 local_db: sqlite3:/var/vcap/services/mongodb/mongodb_node.db
-mbus: nats://localhost:4222
+mbus: nats://<%= node[:nats][:user] %>:<%= node[:nats][:password] %>@<%= node[:nats][:net] %>:<%= node[:nats][:port] %>/
 index: 0
 base_dir: /var/vcap/services/mongodb/instances
 log_level: DEBUG

@@ -66,3 +66,11 @@ services:
   - mysql
   - mongodb
   - postgresql
+jobs:
+  install:
+    - router
+    - nats:
+        net: "localhost"
+        port: "4222"
+        user: "nats"
+        password: "nats"

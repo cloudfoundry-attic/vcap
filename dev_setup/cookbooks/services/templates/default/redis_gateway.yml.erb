@@ -10,6 +10,6 @@ host: localhost
 index: 0
 token: "0xdeadbeef"
 log_level: DEBUG
-mbus: nats://localhost:4222
+mbus: nats://<%= node[:nats][:user] %>:<%= node[:nats][:password] %>@<%= node[:nats][:net] %>:<%= node[:nats][:port] %>/
 pid: /var/vcap/sys/run/redis_service.pid
 # allow_over_provisioning: false

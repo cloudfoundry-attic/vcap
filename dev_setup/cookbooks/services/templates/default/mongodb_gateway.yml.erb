@@ -9,7 +9,7 @@ service:
 host: localhost
 index: 0
 token: "0xdeadbeef"
-mbus: nats://localhost:4222
+mbus: nats://<%= node[:nats][:user] %>:<%= node[:nats][:password] %>@<%= node[:nats][:net] %>:<%= node[:nats][:port] %>/
 log_level: DEBUG
 pid: /var/vcap/sys/run/mongodb_service.pid
 # allow_over_provisioning: false
