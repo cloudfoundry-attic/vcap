@@ -2,17 +2,18 @@
 local_db: sqlite3:/var/vcap/services/postgresql/postgresql_node.db
 base_dir: /var/vcap/services/postgresql/
 ip_route: 127.0.0.1
-mbus: nats://localhost:4222
+index: <%= node[:service][:postgresql][:index] %>
+mbus: nats://<%= node[:nats][:user] %>:<%= node[:nats][:password] %>@<%= node[:nats][:host] %>:<%= node[:nats][:port] %>/
 log_level: DEBUG
 pid: /var/vcap/sys/run/postgresql_node.pid
-available_storage: 1024
-node_id: postgresql_node_1
-max_db_size: 20
+available_storage: <%= node[:service][:postgresql][:available_storage] %>
+node_id: <%= "mysql_node_#{node[:service][:postgresql][:index]}" %>
+max_db_size: <%= node[:service][:postgresql][:max_db_size] %>
 max_long_query: 3
 max_long_tx: 30
 postgresql:
-  host: 127.0.0.1
+  host: <%= node[:service][:postgresql][:host] %>
   port: 5432
-  user: vcap
-  pass: <%= node[:postgres][:server_root_password] %>
-  database: postgres
+  user: <%= node[:service][:postgresql][:server_root_user] %>
+  pass: <%= node[:service][:postgresql][:server_root_password] %>
+  database: <%= node[:service][:postgresql][:database] %>

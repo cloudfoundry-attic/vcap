@@ -24,10 +24,6 @@
 cloudfoundry:
   revision: "HEAD"
   path: "<%= deployment_home %>/vcap"
-
-#------------------------------------------------------------
-#NOTE: There are no default values for the following options.
-#------------------------------------------------------------
 ruby:
   version: "1.9.2-p180"
   path: "<%= deployment_home %>/deploy/rubies/ruby-<%= @ruby_version %>"
@@ -61,8 +57,6 @@ postgresql:
 erlang:
   version: "R14B02"
   path: "<%= deployment_home %>/deploy/erlang"
-services:
-  - redis
-  - mysql
-  - mongodb
-  - postgresql
+jobs:
+  install:
+    - all

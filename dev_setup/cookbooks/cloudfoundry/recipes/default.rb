@@ -11,6 +11,7 @@ directory node[:cloudfoundry][:path] do
   group node[:deployment][:group]
   mode "0755"
   action :create
+  not_if { node[:cloudfoundry][:revision].nil? }
 end
 
 git node[:cloudfoundry][:path] do
@@ -19,6 +20,7 @@ git node[:cloudfoundry][:path] do
   user node[:deployment][:user]
   enable_submodules true
   action :sync
+  not_if { node[:cloudfoundry][:revision].nil? }
 end
 
 # Gem packages have transient failures, so try once while ignoring failures

@@ -8,8 +8,8 @@ service:
   tags: ['mongodb', 'mongodb-1.6', 'nosql']
 host: localhost
 index: 0
-token: "0xdeadbeef"
-mbus: nats://localhost:4222
+token: <%= node[:service][:mongodb][:token] %>
+mbus: nats://<%= node[:nats][:user] %>:<%= node[:nats][:password] %>@<%= node[:nats][:host] %>:<%= node[:nats][:port] %>/
 log_level: DEBUG
 pid: /var/vcap/sys/run/mongodb_service.pid
 # allow_over_provisioning: false
