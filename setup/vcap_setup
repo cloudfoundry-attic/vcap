@@ -337,10 +337,10 @@ else
     echo "MongoDB Server (version $MONGODB_VERSION) is current"
 fi
 
-NEO4J_VERSION=enterprise-1.4.M02
-NEO4J_DIST_FILE=neo4j-enterprise-1.4.M02-unix.tar.gz
+NEO4J_VERSION=community-1.4.1
+NEO4J_DIST_FILE=neo4j-community-1.4.1-unix.tar.gz
 NEO4J_SERVICE_DIR=/var/vcap/services/neo4j
-NEO4J_HOSTING_EXTENSION=neo4j-hosting-extension-1.4.M02.jar
+NEO4J_HOSTING_EXTENSION=authentication-extension-1.4.jar
 if [[ -f "$NEO4J_SERVICE_DIR/$NEO4J_DIST_FILE" ]]; then
    echo "Neo4j ($NEO4J_VERSION) is current"
 else
@@ -356,9 +356,6 @@ if [[ $REPLY =~ ^[yY]$ ]]; then
     curl -O  http://dist.neo4j.org/$NEO4J_HOSTING_EXTENSION
     rm neo4j-hosting-extension.jar
     ln -s $NEO4J_HOSTING_EXTENSION neo4j-hosting-extension.jar
-    rm neo4j
-    jar xf neo4j-hosting-extension.jar neo4j
-    chmod +x neo4j
     popd
 fi
 fi
