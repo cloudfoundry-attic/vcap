@@ -11,6 +11,7 @@ require 'spec_helper'
 #TODO: test that droplets have a chance to restart
 
 describe HealthManager do
+
   def build_user_and_app
     @user = ::User.find_by_email('test@example.com')
     unless @user
@@ -33,8 +34,8 @@ describe HealthManager do
   end
 
   after(:all) do
-    ::User.destroy_all
-    ::App.destroy_all
+    #::User.destroy_all
+    #::App.destroy_all
   end
 
   before(:each) do
@@ -70,8 +71,7 @@ describe HealthManager do
     NATS.should_receive(:publish).with('vcap.component.announce', /\{.*\}/)
   end
 
-  it "should not do anything when everything is running" do
-
+  pending "should not do anything when everything is running" do
     EM.run do
       @hm.stub!(:register_error_handler)
       @hm.run
