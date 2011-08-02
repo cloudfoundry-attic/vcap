@@ -63,7 +63,7 @@ if [ $PORT -lt 0 ] ; then
   echo "Missing or invalid port (-p)"
   exit 1
 fi
-ruby resources/generate_server_xml $PORT
+ruby resources/generate_tomcat_server_xml $PORT
       SPRING
     end
   end

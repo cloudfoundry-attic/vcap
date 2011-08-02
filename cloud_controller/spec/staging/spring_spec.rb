@@ -33,7 +33,7 @@ if [ $PORT -lt 0 ] ; then
   echo "Missing or invalid port (-p)"
   exit 1
 fi
-ruby resources/generate_server_xml $PORT
+ruby resources/generate_tomcat_server_xml $PORT
 cd tomcat
 ./bin/catalina.sh run > ../logs/stdout.log 2> ../logs/stderr.log &
 STARTED=$!
@@ -70,7 +70,7 @@ if [ $PORT -lt 0 ] ; then
   echo "Missing or invalid port (-p)"
   exit 1
 fi
-ruby resources/generate_server_xml $PORT
+ruby resources/generate_tomcat_server_xml $PORT
 cd tomcat
 ./bin/catalina.sh run > ../logs/stdout.log 2> ../logs/stderr.log &
 STARTED=$!
