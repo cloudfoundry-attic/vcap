@@ -105,6 +105,8 @@ builtin_services:
     token: "0xdeadbeef"
   rabbitmq:
     token: "0xdeadbeef"
+  neo4j:
+    token: "0xdeadbeef"
 
 # used for /info/runtimes endpoint (served unfiltered as JSON)
 runtimes:
