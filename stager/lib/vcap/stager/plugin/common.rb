@@ -24,6 +24,7 @@ require 'tmpdir' # TODO - Replace this with something less absurd.
 # You Have Been Warned.
 
 
+require 'vcap/stager/plugin/config'
 require 'vcap/stager/plugin/gemfile_support'
 require 'vcap/stager/plugin/gemfile_task'
 require 'vcap/stager/plugin/gem_cache'
@@ -37,8 +38,12 @@ class StagingPlugin
     File.expand_path('..', __FILE__)
   end
 
+  def self.manifest_root=(dir)
+    @@manifest_root = dir
+  end
+
   def self.manifest_root
-    ENV['STAGING_CONFIG_DIR'] || File.join(staging_root, 'manifests')
+    @@manifest_root ||= File.join(staging_root, 'manifests')
   end
 
   # This is a digestable version for the outside world
@@ -55,6 +60,12 @@ class StagingPlugin
     YAML.load_file(path)
   end
 
+  # Called by the CC during the 'final stage' of initialization. This should
+  # really be per plugin, not a single method across all plugins...
+  #
+  # NB: load_all_manifests() needs to be called before this is called,
+  #     otherwise check_ruby_runtimes() will blow up due to an empty
+  #     @@manifests hash
   def self.validate_configuration!
     config = platform_config
     staging_cache_dir = config['cache']
@@ -133,6 +144,7 @@ class StagingPlugin
     end
   end
 
+  # Called by the CC during initialization
   def self.load_all_manifests
     pattern = File.join(manifest_root, '*.yml')
     Dir[pattern].each do |yaml_file|
@@ -166,6 +178,8 @@ class StagingPlugin
     exit 1
   end
 
+  # XXX - Never called!
+  #
   # This returns the staging framework names that claim to recognize the app
   # found in the given +dir+. Order is not specified, and the caller must decide what
   # it plans to do if multiple frameworks can be found in the given directory.
@@ -180,6 +194,7 @@ class StagingPlugin
     matched
   end
 
+  # Called by the App model if the runtime isn't specified.
   def self.default_runtime_for(framework)
     manifest = manifests[framework]
     return nil unless manifest && manifest['runtimes']
@@ -192,22 +207,22 @@ class StagingPlugin
 
   # Exits the process with a nonzero status if ARGV does not contain valid
   # staging args. If you call this in-process in an app server you deserve your fate.
-  def self.validate_arguments!
-    source, dest, env, manifest_dir, uid, gid = *ARGV
-    argfail! unless source && dest && env
-    argfail! unless File.directory?(File.expand_path(source))
-    argfail! unless File.directory?(File.expand_path(dest))
-    argfail! unless String === env
+  def self.validate_arguments!(*args)
+    source, dest, env, manifest_dir, uid, gid = args
+    argfail!(args) unless source && dest && env
+    argfail!(args) unless File.directory?(File.expand_path(source))
+    argfail!(args) unless File.directory?(File.expand_path(dest))
     if manifest_dir
       argfail! unless File.directory?(File.expand_path(manifest_dir))
     end
   end
 
-  def self.argfail!
-    puts "Invalid arguments for staging: #{ARGV.inspect}"
+  def self.argfail!(args)
+    puts "Invalid arguments for staging: #{args.inspect}"
     exit 1
   end
 
+  # XXX - Never called!
   def self.rule_matches_directory?(rule, dir)
     dir = File.expand_path(dir)
     results = rule.map do |glob, what|
@@ -249,6 +264,32 @@ class StagingPlugin
     end
   end
 
+  # Loads arguments from a file and instantiates a new instance.
+  # @param  arg_filename String  Path to yaml file
+  def self.from_file(cfg_filename)
+    config = StagingPlugin::Config.from_file(cfg_filename)
+
+    uid = gid = nil
+    if config[:secure_user]
+      uid = config[:secure_user][:uid]
+      gid = config[:secure_user][:gid]
+    end
+
+    validate_arguments!(config[:source_dir],
+                        config[:dest_dir],
+                        config[:environment],
+                        config[:manifest_dir],
+                        uid,
+                        gid)
+
+    self.new(config[:source_dir],
+             config[:dest_dir],
+             config[:environment],
+             config[:manifest_dir],
+             uid,
+             gid)
+  end
+
   # If you re-implement this in a subclass:
   # A) Do not change the method signature
   # B) Make sure you call 'super'
@@ -258,13 +299,26 @@ class StagingPlugin
   #   super
   #   whatever_you_have_planned
   # end
-  def initialize(source_directory, destination_directory, environment_json = nil, manifest_dir = nil, uid=nil, gid=nil)
+  #
+  # NB: Environment is not what you think it is (better named app_properties?). It is a hash of:
+  #   :services  => [service_binding_hash]  # See ServiceBinding#for_staging in cloud_controller/app/models/service_binding.rb
+  #   :framework => framework_name
+  #   :runtime   => runtime_name
+  #   :resources => {                       # See App#resource_requirements or App#limits (they return identical hashes)
+  #     :memory => mem limits in MB         # in cloud_controller/app/models/app.rb
+  #     :disk   => disk limits in MB
+  #     :fds    => fd limits
+  #   }
+  def initialize(source_directory, destination_directory, environment = {}, manifest_dir = nil, uid=nil, gid=nil)
     @source_directory = File.expand_path(source_directory)
     @destination_directory = File.expand_path(destination_directory)
-    @environment_json = environment_json || '{}'
+    @environment = environment
     @manifest_dir = nil
     if manifest_dir
-      @manifest_dir = ENV['STAGING_CONFIG_DIR'] = File.expand_path(manifest_dir)
+      # This is kind of weird, but this maintains  the previous behavior. (Except we directly set StagingPlugin.manifest_root,
+      # instead of setting it indirectly by setting ENV['STAGING_CONFIG_DIR']
+      @manifest_dir = File.expand_path(manifest_dir)
+      StagingPlugin.manifest_root = @manifest_dir
     end
 
     # Drop privs before staging
@@ -282,9 +336,10 @@ class StagingPlugin
   end
 
   def environment
-    @environment ||= Yajl::Parser.parse(environment_json, :symbolize_keys => true)
+    @environment
   end
 
+  # XXX - Not used! Also, none of the staging manifests have this property set...
   def staging_command
     runtime['staging']
   end
@@ -485,6 +540,8 @@ wait $STARTED
 
   # If the manifest specifies a workable ruby, returns that.
   # Otherwise, returns the path to the ruby we were started with.
+  #
+  # NB: Called by GemfileSupport.compile_gems
   def ruby
     @ruby ||= \
     begin

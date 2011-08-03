@@ -19,6 +19,14 @@ module VCAP
         config = VCAP.symbolize_keys(config) if symbolize_keys
         config
       end
+
+      def to_file(config, out_filename)
+        @schema.validate(config)
+        File.open(out_filename, 'w+') do |f|
+          YAML.dump(config, f)
+        end
+      end
     end
+
   end
 end

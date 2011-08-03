@@ -1,0 +1,72 @@
+#!/usr/bin/env ruby
+ENV['BUNDLE_GEMFILE'] ||= File.expand_path('../../Gemfile', __FILE__)
+
+require 'rubygems'
+require 'bundler/setup'
+
+$LOAD_PATH.unshift(File.expand_path('../../lib', __FILE__))
+
+require 'eventmachine'
+require 'resque'
+
+require 'vcap/common'
+require 'vcap/component'
+require 'vcap/stager'
+
+sleep_interval = 5
+config_file = VCAP::Stager::Config::DEFAULT_CONFIG_PATH
+
+OptionParser.new do |op|
+  op.on('-c', '--config [FILENAME]', 'Config filename') do |val|
+    config_file = val
+  end
+
+  op.on('-s', '--sleep-interval [SECONDS]', 'How long to sleep between dequeing') do |val|
+    sleep_interval = val.to_i
+  end
+end.parse!
+
+begin
+  config = VCAP::Stager::Config.from_file(config_file)
+rescue VCAP::JsonSchema::ValidationError => ve
+  puts "ERROR: There was a problem validating the supplied config: #{ve}"
+  exit 1
+rescue => e
+  puts "ERROR: Failed loading config from file '#{config_file}': #{e}"
+  exit 1
+end
+
+begin
+  pid_file = VCAP::PidFile.new(config[:pid_filename])
+  pid_file.unlink_at_exit
+rescue => e
+  puts "ERROR: Can't create stager pid file #{config[:pid_filename]}"
+  exit 1
+end
+
+VCAP::Stager.init(config)
+
+worker = Resque::Worker.new(*config[:queues])
+Thread.new do
+  EM.error_handler do |e|
+    logger = VCAP::Logging.logger('vcap.stager.component')
+    logger.error("EventMachine error: #{e}")
+    logger.error(e)
+    raise e
+  end
+
+  NATS.on_error do |e|
+    logger = VCAP::Logging.logger('vcap.stager.component')
+    logger.error("NATS error: #{e}")
+    logger.error(e)
+    raise e
+  end
+
+  NATS.start(:uri => config[:nats_uri]) do
+    VCAP::Component.register(:type     => 'stager',
+                             :local_ip => VCAP.local_ip(config[:local_route]),
+                             :config   => config,
+                             :index    => config[:index])
+  end
+end.abort_on_exception = true
+worker.work(sleep_interval)
