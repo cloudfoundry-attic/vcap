@@ -2,7 +2,7 @@
 base_dir: /var/vcap.local/dea
 local_route: 127.0.0.1
 filer_port: 12345
-mbus: nats://localhost:4222/
+mbus: nats://<%= node[:nats][:user] %>:<%= node[:nats][:password] %>@<%= node[:nats][:host] %>:<%= node[:nats][:port] %>/
 intervals:
   heartbeat: 10
 logging:

@@ -1,17 +1,17 @@
 ---
 local_db: sqlite3:/var/vcap/services/redis/redis_node.db
-mbus: nats://localhost:4222
-index: 0
+mbus: nats://<%= node[:nats][:user] %>:<%= node[:nats][:password] %>@<%= node[:nats][:host] %>:<%= node[:nats][:port] %>/
+index: <%= node[:service][:redis][:index] %>
 base_dir: /var/vcap/services/redis/instances
 ip_route: 127.0.0.1
 log_level: DEBUG
 pid: /var/vcap/sys/run/redis_node.pid
-available_memory: 4096
-max_memory: 16
+available_memory: <%= node[:service][:redis][:available_memory] %>
+max_memory: <%= node[:service][:redis][:max_memory] %>
 max_swap: 32
-node_id: redis_node_1
+node_id: <%= "redis_node_#{node[:service][:redis][:index]}" %>
 redis_server_path: <%= node[:redis][:path] %>/bin/redis-server
 port_range:
   first: 5000
   last: 25000
-migration_nfs: /mnt/appcloud
+migration_nfs: /mnt/vcap

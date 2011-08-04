@@ -1,7 +1,7 @@
 port: 2222
 inet: 0.0.0.0
 sock: /tmp/router.sock
-mbus: nats://localhost:4222
+mbus: nats://<%= node[:nats][:user] %>:<%= node[:nats][:password] %>@<%= node[:nats][:host] %>:<%= node[:nats][:port] %>/
 logging:
   level: info
 pid: /var/vcap/sys/run/router.pid
