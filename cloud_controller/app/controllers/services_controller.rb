@@ -29,6 +29,14 @@ class ServicesController < ApplicationController
       attrs.delete(:label)
       # Keep DB in sync with configs if the token changes in the config
       attrs[:token] = @service_auth_token if svc.is_builtin?
+      # Special support for changing a service offering's ACLs from
+      # private to public. The call to ServiceOfferingRequest.decode
+      # (actually, JsonMessage.from_decoded_json) discards keys with
+      # nil values, which is the case for key :acls when switching
+      # from private to public.  This issue is more general than just
+      # :acls, but to avoid breaking anything as a side efffect, we do
+      # this only for :acls.
+      attrs[:acls] = nil unless attrs.has_key?(:acls)
       svc.update_attributes!(attrs)
     else
       # Service doesn't exist yet. This can only happen for builtin services since service providers must
