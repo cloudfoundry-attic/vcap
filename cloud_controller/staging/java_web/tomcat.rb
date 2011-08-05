@@ -24,17 +24,15 @@ class Tomcat
   end
 
   def self.configure_tomcat_application(staging_dir, webapp_root, autostaging_template, environment)
-    configure_autostaging(webapp_root, autostaging_template)
+    if autostaging_template
+      configure_autostaging(webapp_root, autostaging_template)
+    end
   end
 
   def self.configure_autostaging(webapp_path, autostaging_template)
     web_config_file = File.join(webapp_path, 'WEB-INF/web.xml')
     autostaging_context = get_autostaging_context autostaging_template
-    if File.exist? web_config_file
-      modify_autostaging_context(autostaging_context, web_config_file, webapp_path)
-    else
-      raise "Spring / J2EE application staging failed: web.xml not found"
-    end
+    modify_autostaging_context(autostaging_context, web_config_file, webapp_path)
     jar_dest = File.join(webapp_path, 'WEB-INF/lib')
     copy_jar AUTOSTAGING_JAR, jar_dest
   end
