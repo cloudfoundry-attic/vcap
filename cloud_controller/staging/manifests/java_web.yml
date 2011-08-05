@@ -1,0 +1,22 @@
+---
+name: "java_web"
+runtimes:
+  - "java":
+      description: "Java 6"
+      version: "1.6"
+      executable: "java"
+      default: true
+app_servers:
+  - "tomcat":
+      description: "Tomcat"
+      executable: "false"
+      default: true
+detection:
+  - "*.war": true
+staged_services:
+  - "name": "mysql"
+    "version": "*"
+  - "name": "postgresql"
+    "version": "*"
+
+# vim: filetype=yaml
