@@ -23,6 +23,41 @@ A special framework called "Django" exists to also perform Django-specific
 staging actions. At the moment, this runs `syncdb` non-interactively to
 initialize the database.
 
+### Accessing the database
+
+Cloud Foundry makes the service connection credentials available as JSON via the
+`VCAP_SERVICES` environment variable. Using this knowledge, you can use the
+following snippet in your own settings.py:
+
+    ## Pull in CloudFoundry's production settings
+    if 'VCAP_SERVICES' in os.environ:
+        import json
+        vcap_services = json.loads(os.environ['VCAP_SERVICES'])
+        # XXX: avoid hardcoding here
+        mysql_srv = vcap_services['mysql-5.1'][0]
+        cred = mysql_srv['credentials']
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.mysql',
+                'NAME': cred['name'],
+                'USER': cred['user'],
+                'PASSWORD': cred['password'],
+                'HOST': cred['hostname'],
+                'PORT': cred['port'],
+                }
+            }
+    else:
+        DATABASES = {
+            "default": {
+                "ENGINE": "django.db.backends.sqlite3",
+                "NAME": "dev.db",
+                "USER": "",
+                "PASSWORD": "",
+                "HOST": "",
+                "PORT": "",
+                }
+            }
+
 ### Limitations
 
 * Django admin (if your app uses it) will be unusable as superusers are not
@@ -31,28 +66,3 @@ initialize the database.
 * Migration workflow, such as that of [South](http://south.aeracode.org/) are
   not supported.
 
-## Sample applications
-
-### A hello world WSGI application
-
-Here's a sample WSGI application using the "bottle" web framework.
-
-    $ mkdir myapp && cd myapp
-    $ cat > wsgi.py
-    import os
-    import sys
-    import bottle
-
-    @bottle.route('/')
-    def index():
-        pyver = '.'.join(map(str, tuple(sys.version_info)[:3]))
-        return 'Hello World! (from <b>Python %s</b>)' % (pyver,)
-
-    application = bottle.default_app()
-
-    if __name__ == '__main__':
-        bottle.run(host='localhost', port=8000)
-
-    $ cat > requirements.txt
-    bottle
-    $
