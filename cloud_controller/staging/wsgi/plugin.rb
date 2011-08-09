@@ -23,7 +23,7 @@ class WsgiPlugin < StagingPlugin
     if uses_pip?
       cmds << install_requirements
     end
-    cmds << "gunicorn -c ../gunicorn.config wsgi:application"
+    cmds << "../env/bin/gunicorn -c ../gunicorn.config wsgi:application"
     cmds.join("\n")
   end
 

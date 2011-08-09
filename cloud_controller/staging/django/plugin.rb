@@ -23,7 +23,7 @@ class DjangoPlugin < StagingPlugin
     if uses_pip?
       cmds << install_requirements
     end
-    cmds << "gunicorn_django -c ../gunicorn.config"
+    cmds << "../env/bin/gunicorn_django -c ../gunicorn.config"
     cmds.join("\n")
   end
 
