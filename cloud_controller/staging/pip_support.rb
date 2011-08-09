@@ -7,7 +7,7 @@ module PipSupport
   end
 
   def install_requirements
-    "pip install -r #{REQUIREMENTS_FILE}"
+    "../env/bin/pip install -r #{REQUIREMENTS_FILE} > ../logs/pip.log 2>&1"
   end
 
 end
