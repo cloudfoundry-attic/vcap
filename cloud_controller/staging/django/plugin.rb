@@ -1,5 +1,4 @@
 class DjangoPlugin < StagingPlugin
-  include VirtualenvSupport
   include PipSupport
 
   REQUIREMENTS = ['django', 'gunicorn']
@@ -19,12 +18,11 @@ class DjangoPlugin < StagingPlugin
 
   def start_command
     cmds = []
-    cmds << "source ../env/bin/activate"
     if uses_pip?
       cmds << install_requirements
     end
-    cmds << "../env/bin/python manage.py syncdb --noinput >> ../logs/startup.log 2>&1"
-    cmds << "../env/bin/gunicorn_django -c ../gunicorn.config"
+    cmds << "python manage.py syncdb --noinput >> ../logs/startup.log 2>&1"
+    cmds << "../python/bin/gunicorn_django -c ../gunicorn.config"
     cmds.join("\n")
   end
 
@@ -33,7 +31,7 @@ class DjangoPlugin < StagingPlugin
   def startup_script
     vars = environment_hash
     generate_startup_script(vars) do
-      setup_virtualenv(REQUIREMENTS)
+      setup_python_env(REQUIREMENTS)
     end
   end
 
