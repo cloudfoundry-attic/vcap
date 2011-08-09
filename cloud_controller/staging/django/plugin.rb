@@ -23,6 +23,7 @@ class DjangoPlugin < StagingPlugin
     if uses_pip?
       cmds << install_requirements
     end
+    cmds << "../env/bin/python manage.py syncdb --noinput >> ../logs/startup.log 2>&1"
     cmds << "../env/bin/gunicorn_django -c ../gunicorn.config"
     cmds.join("\n")
   end
