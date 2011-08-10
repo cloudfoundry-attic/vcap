@@ -3,7 +3,6 @@
 
 require 'spec_helper'
 
-AUTOSTAGING_JAR = 'auto-reconfiguration-0.6.0-BUILD-SNAPSHOT.jar'
 LIFT_FILTER_CLASS = 'net.liftweb.http.LiftFilter'
 CF_LIFT_PROPERTIES_GENERATOR_CLASS =
   'org.cloudfoundry.reconfiguration.CloudLiftServicesPropertiesGenerator';
@@ -14,7 +13,7 @@ describe "A Lift application being staged without a web.xml in its web config wi
   end
 
   it "should be fail the staging" do
-    lambda { stage :lift }.should raise_error("Scala / Lift application staging failed: web.xml not found")
+    lambda { stage :lift }.should raise_error("Web application staging failed: web.xml not found")
   end
 end
 
