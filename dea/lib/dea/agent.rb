@@ -1129,7 +1129,7 @@ module DEA
       remove_instance_resources(instance)
       @usage.delete(instance[:pid]) if instance[:pid]
       # clean up the in memory instance and directory only if the instance didn't crash
-      unless instance[:state] == :CRASHED
+      if instance[:state] != :CRASHED
         if droplet = @droplets[instance[:droplet_id]]
           droplet.delete(instance[:instance_id])
           @droplets.delete(instance[:droplet_id]) if droplet.empty?
@@ -1139,6 +1139,10 @@ module DEA
           @logger.debug("#{instance[:name]}: Cleaning up dir #{instance[:dir]}")
           EM.system("rm -rf #{instance[:dir]}")
         end
+      # Rechown crashed application directory using uid and gid of DEA
+      else
+        @logger.debug("#{instance[:name]}: Chowning crashed dir #{instance[:dir]}")
+        FileUtils.chown_R(Process.euid, Process.egid, instance[:dir])
       end
     end
 
