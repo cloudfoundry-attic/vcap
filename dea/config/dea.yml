@@ -48,3 +48,9 @@ runtimes:
     version: ".* 5.8.3"
     version_flag: '-version'
     environment:
+  clojure:
+    executable: lein
+    version: "1.6.*"
+    version_flag: 'version'
+    environment:
+
