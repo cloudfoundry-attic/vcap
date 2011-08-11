@@ -94,13 +94,13 @@ rm ~/.rvm/gemsets/global.gems
 echo "Installing various rubies"
 rvm install 1.9.2-p180
 rvm --default 1.9.2-p180
-rvm install 1.8.7
+rvm install 1.8.7-p352
 
 # install only rake 0.8.7
-rvm use 1.8.7
+rvm use 1.8.7-p352
 gem install rake --version '0.8.7' --no-rdoc --no-ri
 
-rvm use 1.9.2
+rvm use 1.9.2-p180
 gem install rake --version '0.8.7' --no-rdoc --no-ri
 
 echo "Getting vcap"
