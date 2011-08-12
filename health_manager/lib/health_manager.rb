@@ -247,8 +247,8 @@ class HealthManager
         framework_stats = stats[:frameworks][droplet_entry[:framework]] ||= create_runtime_metrics
         runtime_stats = stats[:runtimes][droplet_entry[:runtime]] ||= create_runtime_metrics
 
-        framework_stats[:running_apps] += 1
-        runtime_stats[:running_apps] += 1
+        framework_stats[:apps] += 1
+        runtime_stats[:apps] += 1
 
         framework_stats[:crashes] += droplet_entry[:crashes].length
         runtime_stats[:crashes] += droplet_entry[:crashes].length
@@ -304,7 +304,7 @@ class HealthManager
   def analyze_all_apps(collect_stats = true)
     start = Time.now
     instances = crashed = 0
-    stats = { :running => 0, :down => 0, :frameworks => {}, :runtimes => {} }
+    stats = {:running => 0, :down => 0, :frameworks => {}, :runtimes => {}}
 
     @droplets.each do |id, droplet_entry|
       analyze_app(id, droplet_entry, stats) if collect_stats
@@ -318,18 +318,9 @@ class HealthManager
 
     if collect_stats
       VCAP::Component.varz[:running_instances] = stats[:running]
-      VCAP::Component.varz[:down_instances]    = stats[:down]
-
-      [:frameworks, :runtimes].each do |key|
-        VCAP::Component.varz[key].each do |name, metrics|
-          metrics.merge!(create_runtime_metrics) unless stats[key].include?(name)
-        end
-
-        stats[key].each do |name, metrics|
-          (VCAP::Component.varz[key][name] ||= {}).merge!(metrics)
-        end
-      end
-
+      VCAP::Component.varz[:down_instances] = stats[:down]
+      VCAP::Component.varz[:running][:frameworks] = stats[:frameworks]
+      VCAP::Component.varz[:running][:runtimes] = stats[:runtimes]
       @logger.info("Analyzed #{stats[:running]} running and #{stats[:down]} down apps in #{elapsed_time_in_ms(start)}")
     else
       @logger.info("Analyzed #{@droplets.size} apps in #{elapsed_time_in_ms(start)}")
@@ -338,11 +329,21 @@ class HealthManager
 
   def create_runtime_metrics
     {
-      :running_apps => 0,
+      :apps => 0,
       :crashes => 0,
       :running_instances => 0,
       :missing_instances => 0,
       :flapping_instances => 0
+    }
+  end
+
+  def create_db_metrics
+    {
+      :apps => 0,
+      :started_apps => 0,
+      :instances => 0,
+      :started_instances => 0,
+      :memory => 0
     }
   end
 
@@ -548,34 +549,46 @@ class HealthManager
     @logger.info("Database scan took #{elapsed_time_in_ms(start)} and found #{@droplets.size} apps")
 
     start = Time.now
-    App.count(:group => "framework").each do |framework, count|
-      framework_stats = VCAP::Component.varz[:frameworks][framework] ||= {}
-      framework_stats[:total_apps] = count
+
+    VCAP::Component.varz[:total] = {
+      :frameworks => {},
+      :runtimes => {}
+    }
+
+    App.count(:group => ["framework", "runtime", "state"]).each do |grouping, count|
+      framework, runtime, state = grouping
+
+      framework_stats = VCAP::Component.varz[:total][:frameworks][framework] ||= create_db_metrics
+      framework_stats[:apps] += count
+      framework_stats[:started_apps] += count if state == "STARTED"
+
+      runtime_stats = VCAP::Component.varz[:total][:runtimes][runtime] ||= create_db_metrics
+      runtime_stats[:apps] += count
+      runtime_stats[:started_apps] += count if state == "STARTED"
     end
 
-    App.count(:group => "runtime").each do |runtime, count|
-      runtime_stats = VCAP::Component.varz[:runtimes][runtime] ||= {}
-      runtime_stats[:total_apps] = count
+    App.sum(:instances, :group => ["framework", "runtime", "state"]).each do |grouping, count|
+      framework, runtime, state = grouping
+
+      framework_stats = VCAP::Component.varz[:total][:frameworks][framework] ||= create_db_metrics
+      framework_stats[:instances] += count
+      framework_stats[:started_instances] += count if state == "STARTED"
+
+      runtime_stats = VCAP::Component.varz[:total][:runtimes][runtime] ||= create_db_metrics
+      runtime_stats[:instances] += count
+      runtime_stats[:started_instances] += count if state == "STARTED"
     end
 
-    App.sum(:instances, :group => "framework").each do |framework, count|
-      framework_stats = VCAP::Component.varz[:frameworks][framework] ||= {}
-      framework_stats[:total_instances] = count
-    end
+    App.sum("instances * memory", :group => ["framework", "runtime"]).each do |grouping, count|
+      # for some reason count is returned as a string
+      count = count.to_i
+      framework, runtime = grouping
 
-    App.sum(:instances, :group => "runtime").each do |runtime, count|
-      runtime_stats = VCAP::Component.varz[:runtimes][runtime] ||= {}
-      runtime_stats[:total_instances] = count
-    end
+      framework_stats = VCAP::Component.varz[:total][:frameworks][framework] ||= create_db_metrics
+      framework_stats[:memory] += count
 
-    App.sum("instances * memory", :group => "framework").each do |framework, count|
-      framework_stats = VCAP::Component.varz[:frameworks][framework] ||= {}
-      framework_stats[:total_memory] = count
-    end
-
-    App.sum("instances * memory", :group => "runtime").each do |runtime, count|
-      runtime_stats = VCAP::Component.varz[:runtimes][runtime] ||= {}
-      runtime_stats[:total_memory] = count
+      runtime_stats = VCAP::Component.varz[:total][:runtimes][runtime] ||= create_db_metrics
+      runtime_stats[:memory] += count
     end
 
     @logger.info("Database stat scan took #{elapsed_time_in_ms(start)}")
@@ -678,8 +691,15 @@ class HealthManager
     VCAP::Component.varz[:crashed_instances] = -1
     VCAP::Component.varz[:down_instances]    = -1
 
-    VCAP::Component.varz[:frameworks] = {}
-    VCAP::Component.varz[:runtimes] = {}
+    VCAP::Component.varz[:total] = {
+      :frameworks => {},
+      :runtimes => {}
+    }
+
+    VCAP::Component.varz[:running] = {
+      :frameworks => {},
+      :runtimes => {}
+    }
 
     VCAP::Component.varz[:nats_latency] = VCAP::RollingMetric.new(60)
 
