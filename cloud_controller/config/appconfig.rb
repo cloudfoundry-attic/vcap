@@ -4,6 +4,7 @@
 # we are starting in production mode.
 
 require 'vcap/common'
+require 'vcap/staging/plugin/common'
 
 config_file = ENV['CLOUD_CONTROLLER_CONFIG'] || File.expand_path('../cloud_controller.yml', __FILE__)
 begin
@@ -41,7 +42,7 @@ required = { :external_uri => 'api.vcap.me',
              :external_port => 9022,
              :directories => { :droplets          => '/var/vcap/shared/droplets',
                                :resources         => '/var/vcap/shared/resources',
-                               :staging_manifests => 'staging/manifests',
+                               :staging_manifests => StagingPlugin::DEFAULT_MANIFEST_ROOT,
                                :staging_cache     => '/var/vcap.local/staging',
                                :tmpdir            => '/var/vcap/data/cloud_controller/tmp'},
              :mbus => 'nats://localhost:4222/',
