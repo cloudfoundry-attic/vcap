@@ -1,0 +1,8 @@
+Verified+1: Vadim Spivak <vspivak@vmware.com>
+Code-Review+1: Oleg Shaldybin <olegs@vmware.com>
+Code-Review+2: Patrick Bozeman <pbozeman@vmware.com>
+Submitted-by: Vadim Spivak <vspivak@vmware.com>
+Submitted-at: Fri, 12 Aug 2011 18:23:07 +0000
+Reviewed-on: http://cloudfoundry-codereview.qa.mozycloud.com/gerrit/872
+Project: vcap
+Branch: refs/heads/master
