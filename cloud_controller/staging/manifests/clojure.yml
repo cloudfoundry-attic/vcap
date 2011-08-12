@@ -1,0 +1,26 @@
+---
+name: "clojure"
+runtimes:
+  - "clojure":
+      description: "Clojure 1.2"
+      version: "1.2"
+      executable: "lein"
+      default: true
+app_servers:
+  - "jetty":
+      description: "Jetty"
+      executable: false # determined during staging
+      default: true
+detection:
+  - "project.clj": true
+staged_services:
+  - "name": "mysql"
+    "version": "*"
+  - "name": "postgresql"
+    "version": "*"
+  - "name": "mongo"
+    "version": "*"
+  - "name": "redis"
+    "version": "*"
+
+# vim: filetype=yaml

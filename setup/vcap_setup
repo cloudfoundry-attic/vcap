@@ -237,10 +237,22 @@ if [[ $DEA == true || $ALL == true ]]; then
 	fi
     fi
 
-    # Node and Erlang frameworks
     pushd .
     cd /tmp
 
+    # Clojure & Leiningen    
+    wget https://raw.github.com/technomancy/leiningen/stable/bin/lein
+    sudo install lein /usr/local/bin/lein
+    # Install the Noir plugin...
+    lein plugin install lein-noir 1.1.0
+    # ...and create a blank site just to prime the Maven cache
+    lein noir new empty
+    cd empty
+    lein deps
+    cd ..
+    rm -rf empty
+
+    # Node and Erlang frameworks
     NODE_VERSION=0.4.7
 
     if [[ ! `node -v` == 'v'$NODE_VERSION ]]; then
