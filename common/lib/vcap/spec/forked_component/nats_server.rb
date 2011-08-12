@@ -15,7 +15,7 @@ class VCAP::Spec::ForkedComponent::NatsServer < VCAP::Spec::ForkedComponent::Bas
   attr_reader :uri, :port, :parsed_uri
 
   def initialize(pid_filename, port, output_basedir='tmp')
-    cmd = "ruby -S bundle exec nats-server -p #{port} -P #{pid_filename} -V"
+    cmd = "ruby -S bundle exec nats-server -p #{port} -P #{pid_filename} -V -D"
     super(cmd, 'nats', output_basedir, pid_filename)
     @port = port
     @uri  = "nats://127.0.0.1:#{@port}"

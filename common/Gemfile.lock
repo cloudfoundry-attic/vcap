@@ -13,7 +13,7 @@ GEM
   remote: http://rubygems.org/
   specs:
     addressable (2.2.4)
-    daemons (1.1.2)
+    daemons (1.1.4)
     diff-lcs (1.1.2)
     em-http-request (1.0.0.beta.3)
       addressable (>= 2.2.3)
@@ -26,7 +26,7 @@ GEM
     http_parser.rb (0.5.1)
     json_pure (1.5.3)
     little-plugger (1.1.2)
-    logging (1.5.2)
+    logging (1.6.0)
       little-plugger (>= 1.1.2)
     nats (0.4.10)
       daemons (>= 1.1.0)
@@ -46,7 +46,7 @@ GEM
       daemons (>= 1.0.9)
       eventmachine (>= 0.12.6)
       rack (>= 1.0.0)
-    yajl-ruby (0.8.2)
+    yajl-ruby (0.8.3)
 
 PLATFORMS
   ruby
