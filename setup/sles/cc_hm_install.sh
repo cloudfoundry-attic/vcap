@@ -6,7 +6,7 @@ function set_proxy {
 	echo "Setting proxy ..."
 	export http_proxy=$PROXY_URL
 	export https_proxy=$PROXY_URL
-	export no_proxy=localhost,127.0.0.1
+	export no_proxy=localhost,127.0.0.1,.wdf.sap.corp
 }
 function unset_proxy {
 	echo "Unsetting proxy ..."
@@ -15,20 +15,32 @@ function unset_proxy {
 	export no_proxy=
 }
 function add_repo {
-	URL=$1
-	zypper ar $URL chef_repo
+	[ -z REPOSITORY_URL ] && return
+	CNT=0
+	(IFS=,
+	for URL in $REPOSITORY_URL; do
+		CNT=$((CNT+1))
+		zypper ar $URL temp_repo$CNT
+	done)
 }
 function del_repo {
-	zypper rr chef_repo
+	[ -z REPOSITORY_URL ] && return
+	CNT=0
+	(IFS=,
+	for URL in $REPOSITORY_URL; do
+		CNT=$((CNT+1))
+		zypper rr temp_repo$CNT
+	done)
 }
 
-
+RVM=/usr/local/bin/rvm
 REPOSITORY_URL=
 PROXY_URL=
 MESSAGE_BUS=
 EXT_URI=
 PACKAGE1_URL=
 PACKAGE2_URL=
+RUBY192=1.9.2-p180
 
 usage()
 {
@@ -39,13 +51,14 @@ This script downloads and packages CloudFoundry binaries.
 
 OPTIONS:
    -h|--help         Show this message
-   -r|--repo         Repository url for git rpms
-   -p|--proxy		 The proxy url for internet access if any (optional) ex. http://proxy:8080/
-   -c|--carch		 The archive package url of Cloud controller (for local packages use file:///path/file)
-   -e|--earch		 The archive package url of Health manager (for local packages use file:///path/file)
-   -m|--mbus		 The URL of the messagebus ex. "10.68.32.11:4222"
-   -u|--exturl       The external URL of the Cloudfoundry instance(usually the one where the router is installed) ex. cloudfoundry.com
+   -r|--repo         A comma separated list of repository urls for required rpms (optional) ex. "http://repo1/rpms,http://repo2/rpms"
+   -p|--proxy        The proxy url for internet access if any (optional) ex. http://proxy:8080/
+   -c|--carch        The archive package url of Cloud controller (for local packages use file:///path/file)
+   -e|--earch        The archive package url of Health manager (for local packages use file:///path/file)
+   -m|--mbus         The URL of the messagebus ex. "10.68.32.11:4222"
+   -u|--exturl       The external URL of the Cloudfoundry instance(usually the one where the router is installed) ex. api.vcap.me
 EOF
+exit 0
 }
 
 for arg
@@ -83,10 +96,9 @@ while getopts ":hr:c:e:p:m:u:" opt; do
         ;;
     esac
 done
-if [[ -z $REPOSITORY_URL ]] || [[ -z $PACKAGE1_URL ]] || [[ -z $PACKAGE2_URL ]] || [[ -z $MESSAGE_BUS ]] || [[ -z $EXT_URI ]]
+if [[ -z $PACKAGE1_URL ]] || [[ -z $PACKAGE2_URL ]] || [[ -z $MESSAGE_BUS ]] || [[ -z $EXT_URI ]]
 then
      usage
-     exit 1
 fi
 
 if [ "$(id -u)" != "0" ]; then
@@ -95,7 +107,7 @@ if [ "$(id -u)" != "0" ]; then
 fi
 
 echo "Adding repository for git installation: $REPOSITORY_URL ..."
-add_repo $REPOSITORY_URL
+add_repo
 [ $? -eq 0 ] && echo SUCCESS
 [ $? -ne 0 ] && exit 1
 
@@ -109,6 +121,9 @@ then
 fi
 del_repo
 set_proxy
+
+# Sourcing RVM just in case
+#source /etc/profile.d/rvm.sh
 cd /opt/cloudfoundry/
 if [[ $PACKAGE1_URL =~ (/([^/]*)$) ]]; then
      PACKAGE1_NAME=`echo ${BASH_REMATCH[2]}`
@@ -122,14 +137,17 @@ tar -vzxf $PACKAGE1_NAME
 [ $? -ne 0 ] && exit 1
 rm $PACKAGE1_NAME
 
-rvm use 1.9.2
+$RVM use $RUBY192
+[ $? -ne 0 ] && exit 1
 gem install pg -v 0.10.1 --no-rdoc --no-ri
 pushd cloud_controller/vendor/cache
 gem install * --no-rdoc --no-ri
 popd
 gem pristine --all
+[ $? -ne 0 ] && exit 1
+#in case of problems with rake use - "bundle exec rake bundler:install"
 rake bundler:install
-
+[ $? -ne 0 ] && exit 1
 echo "Editing cloud_controller/config/cloud_controller.yml to change local_route to ip address of the node, change the domain name of your installation and mbus configuration ..."
 sed -i "s/^.*local_route.*$/local_route: `hostname -i`/" cloud_controller/config/cloud_controller.yml
 sed -i "s/^.*external_uri.*$/external_uri : $EXT_URI/" cloud_controller/config/cloud_controller.yml
@@ -151,7 +169,7 @@ tar -vzxf $PACKAGE2_NAME
 [ $? -eq 0 ] && echo SUCCESS
 [ $? -ne 0 ] && exit 1
 rm $PACKAGE2_NAME
-rake bundler:install
+bundle exec rake bundler:install
 [ $? -eq 0 ] && echo SUCCESS
 [ $? -ne 0 ] && exit 1
 

@@ -6,7 +6,7 @@ function set_proxy {
 	echo "Setting proxy ..."
 	export http_proxy=$PROXY_URL
 	export https_proxy=$PROXY_URL
-	export no_proxy=localhost,127.0.0.1
+	export no_proxy=localhost,127.0.0.1,.wdf.sap.corp
 }
 function unset_proxy {
 	echo "Unsetting proxy ..."
@@ -15,14 +15,25 @@ function unset_proxy {
 	export no_proxy=
 }
 function add_repo {
-	URL=$1
-	zypper ar $URL chef_repo
+	[ -z REPOSITORY_URL ] && return
+	CNT=0
+	(IFS=,
+	for URL in $REPOSITORY_URL; do
+		CNT=$((CNT+1))
+		zypper ar $URL temp_repo$CNT
+	done)
 }
 function del_repo {
-	zypper rr chef_repo
+	[ -z REPOSITORY_URL ] && return
+	CNT=0
+	(IFS=,
+	for URL in $REPOSITORY_URL; do
+		CNT=$((CNT+1))
+		zypper rr temp_repo$CNT
+	done)
 }
 
-#RVM=/usr/local/rvm/bin/rvm
+RVM=/usr/local/bin/rvm
 #RAKE=/usr/local/rvm/gems/`ls /usr/local/rvm/rubies/ | grep 1.9`/bin/rake
 #GEM=/usr/local/rvm/rubies/`ls /usr/local/rvm/rubies/ | grep 1.9`/bin/gem
 
@@ -30,6 +41,7 @@ REPOSITORY_URL=
 PROXY_URL=
 PACKAGE_URL=
 MESSAGE_BUS=
+RUBY192=1.9.2-p180
 
 usage()
 {
@@ -40,11 +52,12 @@ This script downloads and packages CloudFoundry binaries.
 
 OPTIONS:
    -h|--help         Show this message
-   -r|--repo         Repository url for git rpms
-   -p|--proxy		 The proxy url for internet access if any (optional) ex. http://proxy:8080/
-   -a|--archive		 The archive package url (for local packages use file:///path/file)
-   -m|--mbus		 The URL of the messagebus ex. "10.68.32.11:4222"
+   -r|--repo         A comma separated list of repository urls for required rpms (optional) ex. "http://repo1/rpms,http://repo2/rpms"
+   -p|--proxy        The proxy url for internet access if any (optional) ex. http://proxy:8080/
+   -a|--archive      The archive package url (for local packages use file:///path/file)
+   -m|--mbus         The URL of the messagebus ex. "10.68.32.11:4222"
 EOF
+exit 0
 }
 
 for arg
@@ -78,10 +91,9 @@ while getopts ":hr:a:p:m:" opt; do
         ;;
     esac
 done
-if [[ -z $REPOSITORY_URL ]] || [[ -z $PACKAGE_URL ]] || [[ -z $MESSAGE_BUS ]]
+if [[ -z $PACKAGE_URL ]] || [[ -z $MESSAGE_BUS ]]
 then
      usage
-     exit 1
 fi
 
 if [ "$(id -u)" != "0" ]; then
@@ -90,11 +102,11 @@ if [ "$(id -u)" != "0" ]; then
 fi
 
 echo "Adding repository for git installation: $REPOSITORY_URL ..."
-add_repo $REPOSITORY_URL
+add_repo
 [ $? -eq 0 ] && echo SUCCESS
 [ $? -ne 0 ] && exit 1
 
-zypper --no-gpg-checks --non-interactive install -l --force --force-resolution --no-recommends java-1_6_0-openjdk java-1_6_0-openjdk-devel ruby-devel rubygem-rmagick postgresql rubygem-postgres postgresql-libs ruby-mysql libmysqlclient-devel lsof psmisc nodejs
+zypper --no-gpg-checks --non-interactive install -l --force --force-resolution --no-recommends sapjvm6 ruby-devel rubygem-rmagick postgresql rubygem-postgres postgresql-libs ruby-mysql libmysqlclient-devel lsof psmisc nodejs
 [ $? -eq 0 ] && echo SUCCESS
 if [ $? -ne 0 ] 
 then
@@ -104,17 +116,20 @@ then
 fi
 del_repo
 echo "--- Updating java alternatives ..."
-update-alternatives --install java java /usr/lib64/jvm/java-1.6.0-openjdk-1.6.0/bin/java 1000
+update-alternatives --install java java /opt/sapjvm_6/bin/java 1000
 [ $? -ne 0 ] && exit 1
-update-alternatives --set java /usr/lib64/jvm/java-1.6.0-openjdk-1.6.0/bin/java
+update-alternatives --set java /opt/sapjvm_6/bin/java
 [ $? -ne 0 ] && exit 1
 echo "--- Editting /etc/profile to include java ..."
-sed -i '$aexport JAVA_HOME=/usr/lib64/jvm/java-1.6.0-openjdk-1.6.0/' /etc/profile.local
+[ ! -e /etc/profile.local ] && echo "export PATH=\$PATH" >> /etc/profile.local
+sed -i '$aexport JAVA_HOME=/opt/sapjvm_6' /etc/profile.local
 [ $? -ne 0 ] && exit 1
-sed -i '/export PATH/s|$|:/usr/lib64/jvm/java-1.6.0-openjdk-1.6.0|' /etc/profile.local
+sed -i '/export PATH/s|$|:/opt/sapjvm_6/bin|' /etc/profile.local
 [ $? -eq 0 ] && echo SUCCESS
 [ $? -ne 0 ] && exit 1
 
+# Sourcing RVM just in case
+#source /etc/profile.d/rvm.sh
 cd /opt/cloudfoundry
 if [[ $PACKAGE_URL =~ (/([^/]*)$) ]]; then
      PACKAGE_NAME=`echo ${BASH_REMATCH[2]}`
@@ -128,8 +143,9 @@ tar -vzxf $PACKAGE_NAME
 [ $? -ne 0 ] && exit 1
 rm $PACKAGE_NAME
 
-rvm use 1.9.2
+$RVM use $RUBY192
 gem pristine --all
+[ $? -ne 0 ] && exit 1
 rake bundler:install
 [ $? -eq 0 ] && echo SUCCESS
 [ $? -ne 0 ] && exit 1

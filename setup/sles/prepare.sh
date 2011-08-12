@@ -6,7 +6,7 @@ function set_proxy {
 	echo "Setting proxy ..."
 	export http_proxy=$PROXY_URL
 	export https_proxy=$PROXY_URL
-	export no_proxy=localhost,127.0.0.1
+	export no_proxy=localhost,127.0.0.1,.wdf.sap.corp
 }
 function unset_proxy {
 	echo "Unsetting proxy ..."
@@ -15,11 +15,22 @@ function unset_proxy {
 	export no_proxy=
 }
 function add_repo {
-	URL=$1
-	zypper ar $URL chef_repo
+	[ -z REPOSITORY_URL ] && return
+	CNT=0
+	(IFS=,
+	for URL in $REPOSITORY_URL; do
+		CNT=$((CNT+1))
+		zypper ar $URL temp_repo$CNT
+	done)
 }
 function del_repo {
-	zypper rr chef_repo
+	[ -z REPOSITORY_URL ] && return
+	CNT=0
+	(IFS=,
+	for URL in $REPOSITORY_URL; do
+		CNT=$((CNT+1))
+		zypper rr temp_repo$CNT
+	done)
 }
 
 REPOSITORY_URL=
@@ -34,9 +45,10 @@ This script downloads and packages CloudFoundry binaries.
 
 OPTIONS:
    -h|--help         Show this message
-   -r|--repo         Repository url for git rpms
+   -r|--repo         A comma separated list of repository urls for required rpms (optional) ex. "http://repo1/rpms,http://repo2/rpms"
    -p|--proxy        The proxy url for internet access if any (optional) ex. http://proxy:8080/
 EOF
+exit 0
 }
 
 for arg
@@ -66,11 +78,6 @@ while getopts ":hr:p:" opt; do
         ;;
     esac
 done
-if [[ -z $REPOSITORY_URL ]]
-then
-     usage
-     exit 1
-fi
 
 if [ "$(id -u)" != "0" ]; then
    echo "This script must be run as root or using sudo!" 1>&2
@@ -78,7 +85,7 @@ if [ "$(id -u)" != "0" ]; then
 fi
 
 echo "Adding repository for git installation: $REPOSITORY_URL ..."
-add_repo $REPOSITORY_URL
+add_repo
 [ $? -eq 0 ] && echo SUCCESS
 [ $? -ne 0 ] && exit 1
 

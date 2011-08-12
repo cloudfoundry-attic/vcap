@@ -6,7 +6,7 @@ function set_proxy {
 	echo "Setting proxy ..."
 	export http_proxy=$PROXY_URL
 	export https_proxy=$PROXY_URL
-	export no_proxy=localhost,127.0.0.1
+	export no_proxy=localhost,127.0.0.1,.wdf.sap.corp
 }
 function unset_proxy {
 	echo "Unsetting proxy ..."
@@ -15,14 +15,26 @@ function unset_proxy {
 	export no_proxy=
 }
 function add_repo {
-	URL=$1
-	zypper ar $URL chef_repo
+	[ -z REPOSITORY_URL ] && return
+	CNT=0
+	(IFS=,
+	for URL in $REPOSITORY_URL; do
+		CNT=$((CNT+1))
+		zypper ar $URL temp_repo$CNT
+	done)
 }
 function del_repo {
-	zypper rr chef_repo
+	[ -z REPOSITORY_URL ] && return
+	CNT=0
+	(IFS=,
+	for URL in $REPOSITORY_URL; do
+		CNT=$((CNT+1))
+		zypper rr temp_repo$CNT
+	done)
 }
 
-RVM=/usr/local/rvm/bin/rvm
+RVM=/usr/local/bin/rvm
+RUBY192=1.9.2-p180
 
 REPOSITORY_URL=
 PROXY_URL=
@@ -37,10 +49,11 @@ This script downloads and packages CloudFoundry binaries.
 
 OPTIONS:
    -h|--help         Show this message
-   -r|--repo         Repository url for git rpms
-   -p|--proxy		 The proxy url for internet access if any (optional) ex. http://proxy:8080/
-   -a|--archive		 The archive package url (for local packages use file:///path/file)
+   -r|--repo         A comma separated list of repository urls for required rpms (optional) ex. "http://repo1/rpms,http://repo2/rpms"
+   -p|--proxy        The proxy url for internet access if any (optional) ex. http://proxy:8080/
+   -a|--archive      The archive package url (for local packages use file:///path/file)
 EOF
+exit 0
 }
 
 for arg
@@ -72,10 +85,9 @@ while getopts ":hr:a:p:" opt; do
         ;;
     esac
 done
-if [[ -z $REPOSITORY_URL ]] || [[ -z $PACKAGE_URL ]]
+if [[ -z $PACKAGE_URL ]]
 then
      usage
-     exit 1
 fi
 
 if [ "$(id -u)" != "0" ]; then
@@ -84,11 +96,11 @@ if [ "$(id -u)" != "0" ]; then
 fi
 # set_proxy # only if behind a corporate firewall
 echo "Adding repository for git installation: $REPOSITORY_URL ..."
-add_repo $REPOSITORY_URL
+add_repo
 [ $? -eq 0 ] && echo SUCCESS
 [ $? -ne 0 ] && exit 1
 zypper --no-gpg-checks --non-interactive install -l --force --force-resolution --no-recommends ruby rubygems git
-zypper --no-gpg-checks --non-interactive install -l --force --force-resolution --no-recommends coreutils autoconf curl bison MyODBC-unixODBC libgio-fam liblzmadec0 lzma qt3 zlib-devel libopenssl-devel libcurl-devel libxml2-devel libxslt-devel rubygem-sqlite3 sqlite3-devel rubygem-rake gcc-c++ bzip2 readline-devel zlib-devel libxml2-devel libxslt-devel libyaml-devel libopenssl-devel libffi45-devel
+zypper --no-gpg-checks --non-interactive install -l --force --force-resolution --no-recommends coreutils autoconf curl bison MyODBC-unixODBC libgio-fam liblzmadec0 lzma qt3 zlib-devel libopenssl-devel libcurl-devel libxml2-devel libxslt-devel rubygem-sqlite3 sqlite3-devel rubygem-rake gcc-c++ bzip2 readline-devel zlib-devel libxml2-devel libxslt-devel libyaml-devel libopenssl-devel libffi45-devel libmysqlclient-devel
 [ $? -eq 0 ] && echo SUCCESS
 if [ $? -ne 0 ] 
 then
@@ -103,15 +115,15 @@ bash < <( curl -L http://rvm.beginrescueend.com/releases/rvm-install-head )
 [ $? -eq 0 ] && echo SUCCESS
 [ $? -ne 0 ] && exit 1
 echo "Updating rvm..."
-rvm get head ; rvm reload
+$RVM get head ; $RVM reload
 [ $? -ne 0 ] && exit 1
 echo "Installing ruby ..."
-rvm install 1.9.2
+$RVM install $RUBY192
 [ $? -ne 0 ] && exit 1
-rvm install 1.8.7
+$RVM install 1.8.7
 [ $? -ne 0 ] && exit 1
-echo "Setting ruby 1.9.2 as default ..."
-rvm --default use 1.9.2
+echo "Setting ruby $RUBY192 as default ..."
+$RVM --default use $RUBY192
 
 GEM=/usr/local/rvm/rubies/`ls /usr/local/rvm/rubies/ | grep 1.9`/bin/gem
 

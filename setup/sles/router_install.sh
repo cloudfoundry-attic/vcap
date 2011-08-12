@@ -6,7 +6,7 @@ function set_proxy {
 	echo "Setting proxy ..."
 	export http_proxy=$PROXY_URL
 	export https_proxy=$PROXY_URL
-	export no_proxy=localhost,127.0.0.1
+	export no_proxy=localhost,127.0.0.1,.wdf.sap.corp
 }
 function unset_proxy {
 	echo "Unsetting proxy ..."
@@ -15,18 +15,30 @@ function unset_proxy {
 	export no_proxy=
 }
 function add_repo {
-	URL=$1
-	zypper ar $URL chef_repo
+	[ -z REPOSITORY_URL ] && return
+	CNT=0
+	(IFS=,
+	for URL in $REPOSITORY_URL; do
+		CNT=$((CNT+1))
+		zypper ar $URL temp_repo$CNT
+	done)
 }
 function del_repo {
-	zypper rr chef_repo
+	[ -z REPOSITORY_URL ] && return
+	CNT=0
+	(IFS=,
+	for URL in $REPOSITORY_URL; do
+		CNT=$((CNT+1))
+		zypper rr temp_repo$CNT
+	done)
 }
 
-
+RVM=/usr/local/bin/rvm
 REPOSITORY_URL=
 PROXY_URL=
 PACKAGE_URL=
 MESSAGE_BUS=
+RUBY192=1.9.2-p180
 
 usage()
 {
@@ -37,11 +49,12 @@ This script downloads and packages CloudFoundry binaries.
 
 OPTIONS:
    -h|--help         Show this message
-   -r|--repo         Repository url for git rpms
-   -p|--proxy		 The proxy url for internet access if any (optional) ex. http://proxy:8080/
-   -a|--archive		 The archive package url (for local packages use file:///path/file)
-   -m|--mbus		 The URL of the messagebus ex. "10.68.32.11:4222"
+   -r|--repo         A comma separated list of repository urls for required rpms (optional) ex. "http://repo1/rpms,http://repo2/rpms"
+   -p|--proxy        The proxy url for internet access if any (optional) ex. http://proxy:8080/
+   -a|--archive      The archive package url (for local packages use file:///path/file)
+   -m|--mbus         The URL of the messagebus ex. "10.68.32.11:4222"
 EOF
+exit 0
 }
 
 for arg
@@ -75,10 +88,9 @@ while getopts ":hr:a:p:m:" opt; do
         ;;
     esac
 done
-if [[ -z $REPOSITORY_URL ]] || [[ -z $PACKAGE_URL ]] || [[ -z $MESSAGE_BUS ]]
+if [[ -z $PACKAGE_URL ]] || [[ -z $MESSAGE_BUS ]]
 then
      usage
-     exit 1
 fi
 
 if [ "$(id -u)" != "0" ]; then
@@ -87,7 +99,7 @@ if [ "$(id -u)" != "0" ]; then
 fi
 
 echo "Adding repository for git installation: $REPOSITORY_URL ..."
-add_repo $REPOSITORY_URL
+add_repo
 [ $? -eq 0 ] && echo SUCCESS
 [ $? -ne 0 ] && exit 1
 
@@ -99,9 +111,11 @@ then
 	echo "If you have missing dependencies in your installation go to http://software.opensuse.org and add the necessary repositories."
 	exit 1
 fi
-
+del_repo
+# Sourcing RVM just in case
+#source /etc/profile.d/rvm.sh
 cd /opt/cloudfoundry
-rvm use 1.9.2
+$RVM use $RUBY192
 if [[ $PACKAGE_URL =~ (/([^/]*)$) ]]; then
      PACKAGE_NAME=`echo ${BASH_REMATCH[2]}`
 fi
@@ -116,9 +130,13 @@ rm $PACKAGE_NAME
 cp setup/simple.nginx.conf /etc/nginx/nginx.conf
 sed -i "s/^.*user www-data.*$/user root;/" /etc/nginx/nginx.conf
 service nginx restart
+pushd router/vendor/cache
+gem install * --no-rdoc --no-ri
+popd
 gem pristine --all
+[ $? -ne 0 ] && exit 1
 rake bundler:install
-
+[ $? -ne 0 ] && exit 1
 echo "Modifying /home/cloudfoundry/router/config/router.yml to change mbus to ip address of the cloud controller node ..."
 sed -i "s/^.*mbus.*$/mbus: nats:\/\/$MESSAGE_BUS/" router/config/router.yml
 
