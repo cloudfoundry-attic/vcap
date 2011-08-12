@@ -237,7 +237,7 @@ if [[ $DEA == true || $ALL == true ]]; then
 	fi
     fi
 
-    # Node and Erlang frameworks
+    # Node 
     pushd .
     cd /tmp
 
@@ -255,6 +255,28 @@ if [[ $DEA == true || $ALL == true ]]; then
 	rm -fr node-v$NODE_VERSION
     fi
 
+    # Playframework
+    pushd .
+    cd /tmp
+
+    PLAY_VERSION=1.2.1
+    PLAY_PATH=/opt/play
+
+    if [[ ! -d $PLAY_PATH ]];then
+        echo "Install Playframework in $PLAY_PATH"
+        wget http://download.playframework.org/releases/play-$PLAY_VERSION.zip
+        unzip play-$PLAY_VERSION.zip
+        mv play-$PLAY_VERSION $PLAY_PATH-$PLAY_VERSION
+        ln -s $PLAY_PATH-$PLAY_VERSION $PLAY_PATH 
+
+        # retrieve play--cloudfoundry module
+        git clone https://github.com/bcourtine/play--cloudfondry.git
+        mv play--cloudfoundry $PLAY_PATH/modules/
+    else
+        echo "Playframework is already install in $PLAY_PATH"
+    fi
+
+    # Erlang frameworks
     ERLANG_VERSION=R14B02
 
     if [ ! -d "/var/vcap/runtimes/erlang$ERLANG_VERSION" ]; then
