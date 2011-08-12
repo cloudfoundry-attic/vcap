@@ -6,7 +6,7 @@ function set_proxy {
 	echo "Setting proxy ..."
 	export http_proxy=$PROXY_URL
 	export https_proxy=$PROXY_URL
-	export no_proxy=localhost,127.0.0.1,.wdf.sap.corp
+	export no_proxy=localhost,127.0.0.1
 }
 function unset_proxy {
 	echo "Unsetting proxy ..."
