@@ -1,3 +1,5 @@
+require 'vcap/stager'
+
 class AppManager
   attr_reader :app
 

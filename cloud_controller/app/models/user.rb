@@ -106,4 +106,14 @@ class User < ActiveRecord::Base
       count
     end
   end
+
+
+  def uses_new_stager?(cfg=AppConfig)
+    if cfg[:staging][:new_stager_percent] \
+       && ((self.id % 100) < cfg[:staging][:new_stager_percent])
+      true
+    else
+      false
+    end
+  end
 end

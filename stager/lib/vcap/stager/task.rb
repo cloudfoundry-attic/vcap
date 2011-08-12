@@ -1,13 +1,16 @@
+require 'fiber'
 require 'fileutils'
-require 'redis'
-require 'redis-namespace'
+require 'nats/client'
 require 'tmpdir'
 require 'uri'
+require 'yajl'
 
+require 'vcap/common'
 require 'vcap/logging'
 require 'vcap/staging/plugin/common'
-require 'vcap/subprocess'
 
+require 'vcap/stager/constants'
+require 'vcap/stager/task_error'
 require 'vcap/stager/task_result'
 
 module VCAP
@@ -15,31 +18,32 @@ module VCAP
   end
 end
 
-# TODO - Need VCAP::Stager::Task.enqueue(args) w/ validation
-
-# NB: This code is run after the parent worker process forks
 class VCAP::Stager::Task
-  @queue = :staging
+  DEFAULTS = {
+    :nats                       => NATS,
+    :manifest_dir               => StagingPlugin::DEFAULT_MANIFEST_ROOT,
+    :max_staging_duration       => 120, # 2 min
+    :download_app_helper_path   => File.join(VCAP::Stager::BIN_DIR, 'download_app'),
+    :upload_droplet_helper_path => File.join(VCAP::Stager::BIN_DIR, 'upload_droplet'),
+  }
 
   class << self
-    def perform(*args)
-      task = self.new(*args)
-      task.perform
+    def decode(msg)
+      dec_msg = Yajl::Parser.parse(msg)
+      VCAP::Stager::Task.new(dec_msg['app_id'],
+                             dec_msg['properties'],
+                             dec_msg['download_uri'],
+                             dec_msg['upload_uri'],
+                             dec_msg['notify_subj'])
+    end
+
+    def set_defaults(defaults={})
+      DEFAULTS.update(defaults)
     end
   end
 
-  attr_reader   :app_id
-  attr_reader   :result
-
-  attr_accessor :tmpdir_base
-  attr_accessor :max_staging_duration
-  attr_accessor :run_plugin_path
-  attr_accessor :manifest_dir
-  attr_accessor :ruby_path
-  attr_accessor :secure_user
-
-  attr_accessor :redis_opts
-  attr_accessor :nats_uri
+  attr_reader :task_id, :app_id, :result
+  attr_accessor :user
 
   # @param  app_id        Integer Globally unique id for app
   # @param  props         Hash    App properties. Keys are
@@ -52,96 +56,107 @@ class VCAP::Stager::Task
   # @param  download_uri  String  Where the stager can fetch the zipped application from.
   # @param  upload_uri    String  Where the stager should PUT the gzipped droplet
   # @param  notify_subj   String  NATS subject that the stager will publish the result to.
-  def initialize(app_id, props, download_uri, upload_uri, notify_subj)
+  def initialize(app_id, props, download_uri, upload_uri, notify_subj, opts={})
+    @task_id      = VCAP.secure_uuid
     @app_id       = app_id
     @app_props    = props
     @download_uri = download_uri
     @upload_uri   = upload_uri
     @notify_subj  = notify_subj
-    @tmpdir_base  = nil              # Temporary directories are created under this path
-    @vcap_logger  = VCAP::Logging.logger('vcap.stager.task')
 
-    # XXX - Not super happy about this, but I'm not sure of a better way to do this
-    #       given that resque forks after reserving work
-    @max_staging_duration = VCAP::Stager.config[:max_staging_duration]
-    @run_plugin_path      = VCAP::Stager.config[:run_plugin_path]
-    @ruby_path            = VCAP::Stager.config[:ruby_path]
-    @redis_opts           = VCAP::Stager.config[:redis]
-    @nats_uri             = VCAP::Stager.config[:nats_uri]
-    @secure_user          = VCAP::Stager.config[:secure_user]
-    @manifest_dir         = VCAP::Stager.config[:dirs][:manifests]
+    @vcap_logger = VCAP::Logging.logger('vcap.stager.task')
+    @nats                 = option(opts, :nats)
+    @max_staging_duration = option(opts, :max_staging_duration)
+    @run_plugin_path      = option(opts, :run_plugin_path)
+    @ruby_path            = option(opts, :ruby_path)
+    @manifest_dir         = option(opts, :manifest_dir)
+    @tmpdir_base          = opts[:tmpdir]
+    @user                 = opts[:user]
+    @download_app_helper_path = option(opts, :download_app_helper_path)
+    @upload_droplet_helper_path = option(opts, :upload_droplet_helper_path)
   end
 
-  def perform
-    task_logger = VCAP::Stager::TaskLogger.new(@vcap_logger)
-    begin
-      task_logger.info("Starting staging operation")
-      @vcap_logger.debug("App id: #{@app_id}, Properties: #{@app_props}")
-      @vcap_logger.debug("download_uri=#{@download_uri} upload_uri=#{@upload_uri} notify_sub=#{@notify_subj}")
-
-      task_logger.info("Setting up temporary directories")
-      staging_dirs = create_staging_dirs(@tmpdir_base)
-
-      task_logger.info("Fetching application bits from the Cloud Controller")
-      zipped_app_path = File.join(staging_dirs[:base], 'app.zip')
-      VCAP::Stager::Util.fetch_zipped_app(@download_uri, zipped_app_path)
-
-      task_logger.info("Unzipping application")
-      VCAP::Subprocess.run("unzip -q #{zipped_app_path} -d #{staging_dirs[:unstaged]}")
-
-      task_logger.info("Staging application")
-      run_staging_plugin(staging_dirs)
-
-      task_logger.info("Creating droplet")
-      zipped_droplet_path = File.join(staging_dirs[:base], 'droplet.tgz')
-      VCAP::Subprocess.run("cd #{staging_dirs[:staged]}; COPYFILE_DISABLE=true tar -czf #{zipped_droplet_path} *")
-
-      task_logger.info("Uploading droplet")
-      VCAP::Stager::Util.upload_droplet(@upload_uri, zipped_droplet_path)
-
-      @result = VCAP::Stager::TaskResult.new(@app_id,
-                                             VCAP::Stager::TaskResult::ST_SUCCESS,
-                                             task_logger.public_log)
-      task_logger.info("Notifying Cloud Controller")
-      save_result
-      publish_result
-      task_logger.info("Done!")
-
-    rescue VCAP::Stager::ResultPublishingError => e
-      # Don't try to publish to nats again if it failed the first time
-      task_logger.error("Staging FAILED")
-      @result = VCAP::Stager::TaskResult.new(@app_id,
-                                             VCAP::Stager::TaskResult::ST_FAILED,
-                                             task_logger.public_log)
-      save_result
-      raise e
-
-    rescue => e
-      task_logger.error("Staging FAILED")
-      @vcap_logger.error("Caught exception: #{e}")
-      @vcap_logger.error(e)
-      @result = VCAP::Stager::TaskResult.new(@app_id,
-                                             VCAP::Stager::TaskResult::ST_FAILED,
-                                             task_logger.public_log)
-      save_result
+  # Performs the staging task, calls the supplied callback upon completion.
+  #
+  # NB: We use a fiber internally to avoid descending into callback hell. This
+  # method could easily end up looking like the following:
+  #  create_staging_dirs do
+  #    download_app do
+  #      unzip_app do
+  #        etc...
+  #
+  # @param  callback  Block  Block to be called when the task completes (upon both success
+  #                          and failure). This will be called with an instance of VCAP::Stager::TaskResult
+  def perform(&callback)
+    Fiber.new do
       begin
-           publish_result
+        task_logger = VCAP::Stager::TaskLogger.new(@vcap_logger)
+        task_logger.info("Starting staging operation")
+        @vcap_logger.debug("app_id=#{@app_id}, properties=#{@app_props}")
+        @vcap_logger.debug("download_uri=#{@download_uri} upload_uri=#{@upload_uri} notify_sub=#{@notify_subj}")
+
+        task_logger.info("Setting up temporary directories")
+        dirs = create_staging_dirs(@tmpdir_base)
+
+        task_logger.info("Fetching application bits from the Cloud Controller")
+        download_app(dirs[:unstaged], dirs[:base])
+
+        task_logger.info("Staging application")
+        run_staging_plugin(dirs[:unstaged], dirs[:staged], dirs[:base])
+
+        task_logger.info("Uploading droplet")
+        upload_droplet(dirs[:staged], dirs[:base])
+
+        task_logger.info("Done!")
+        @result = VCAP::Stager::TaskResult.new(@task_id, task_logger.public_log)
+        @nats.publish(@notify_subj, @result.encode)
+        callback.call(@result)
+
+      rescue VCAP::Stager::TaskError => te
+        task_logger.error("Error: #{te}")
+        @result = VCAP::Stager::TaskResult.new(@task_id, task_logger.public_log, te)
+        @nats.publish(@notify_subj, @result.encode)
+        callback.call(@result)
+
       rescue => e
-        # Let the original exception stay as the cause of failure
-        @vcap_logger.error("Failed publishing error to NATS: #{e}")
+        @vcap_logger.error("Unrecoverable error: #{e}")
         @vcap_logger.error(e)
+        err = VCAP::Stager::InternalError.new
+        @result = VCAP::Stager::TaskResult.new(@task_id, task_logger.public_log, err)
+        @nats.publish(@notify_subj, @result.encode)
+        raise e
+
+      ensure
+        EM.system("rm -rf #{dirs[:base]}") if dirs
       end
-      # Let resque catch and log the exception too
-      raise e
 
-    ensure
-      FileUtils.rm_rf(staging_dirs[:base]) if staging_dirs
-    end
+    end.resume
+  end
 
+  def encode
+    h = {
+      :app_id       => @app_id,
+      :properties   => @app_props,
+      :download_uri => @download_uri,
+      :upload_uri   => @upload_uri,
+      :notify_subj  => @notify_subj,
+    }
+    Yajl::Encoder.encode(h)
+  end
 
+  def enqueue(queue)
+    @nats.publish("vcap.stager.#{queue}", encode())
   end
 
   private
+
+  def option(hash, key)
+    if hash.has_key?(key)
+      hash[key]
+    else
+      DEFAULTS[key]
+    end
+  end
 
   # Creates a temporary directory with needed layout for staging, along
   # with the correct permissions
@@ -167,52 +182,109 @@ class VCAP::Stager::Task
     ret
   end
 
-  # Stages our app into _staged_dir_ looking for the source in _unstaged_dir_
-  def run_staging_plugin(staging_dirs)
+  # Downloads the zipped application at @download_uri, unzips it, and stores it
+  # in dst_dir.
+  #
+  # NB: We write the url to a file that only we can read in order to avoid
+  # exposing auth information. This actually shells out to a helper script in
+  # order to avoid putting long running code (the stager) on the data
+  # path. We are sacrificing performance for reliability here...
+  #
+  # @param  dst_dir  String  Where to store the downloaded app
+  # @param  tmp_dir  String
+  def download_app(dst_dir, tmp_dir)
+    uri_path = File.join(tmp_dir, 'stager_dl_uri')
+    zipped_app_path = File.join(tmp_dir, 'app.zip')
+
+    File.open(uri_path, 'w+') {|f| f.write(@download_uri) }
+    cmd = "#{@download_app_helper_path} #{uri_path} #{zipped_app_path}"
+    res = run_logged(cmd)
+    unless res[:success]
+      @vcap_logger.error("Failed downloading app from '#{@download_uri}'")
+      raise VCAP::Stager::AppDownloadError
+    end
+
+    res = run_logged("unzip -q #{zipped_app_path} -d #{dst_dir}")
+    unless res[:success]
+      raise VCAP::Stager::AppUnzipError
+    end
+
+  ensure
+    FileUtils.rm_f(uri_path)
+    FileUtils.rm_f(zipped_app_path)
+  end
+
+  # Stages our app into dst_dir, looking for the app source in src_dir
+  #
+  # @param  src_dir  String  Location of the unstaged app
+  # @param  dst_dir  String  Where to place the staged app
+  # @param  work_dir String  Directory to use to place scratch files
+  def run_staging_plugin(src_dir, dst_dir, work_dir)
     plugin_config = {
-      'source_dir'    => staging_dirs[:unstaged],
-      'dest_dir'      => staging_dirs[:staged],
+      'source_dir'    => src_dir,
+      'dest_dir'      => dst_dir,
       'environment'   => @app_props,
     }
-    plugin_config['secure_user'] = @secure_user if @secure_user
+    plugin_config['secure_user']  = {'uid' => @user[:uid], 'gid' => @user[:gid]}  if @user
     plugin_config['manifest_dir'] = @manifest_dir if @manifest_dir
-
-    plugin_config_path = File.join(staging_dirs[:base], 'plugin_config.yaml')
+    plugin_config_path = File.join(work_dir, 'plugin_config.yaml')
     StagingPlugin::Config.to_file(plugin_config, plugin_config_path)
     cmd = "#{@ruby_path} #{@run_plugin_path} #{@app_props['framework']} #{plugin_config_path}"
+
     @vcap_logger.debug("Running staging command: '#{cmd}'")
-    res = VCAP::Subprocess.run(cmd, 0, @max_staging_duration)
-    @vcap_logger.debug("Staging command exited with status: #{res[0]}")
-    @vcap_logger.debug("STDOUT: #{res[1]}")
-    @vcap_logger.debug("STDERR: #{res[2]}")
-    res
+    res = run_logged(cmd, 0, @max_staging_duration)
+
+    if res[:timed_out]
+      @vcap_logger.error("Staging timed out")
+      raise VCAP::Stager::StagingTimeoutError
+    elsif !res[:success]
+      @vcap_logger.error("Staging plugin exited with status '#{res[:status]}'")
+      raise VCAP::Stager::StagingPluginError, "#{res[:stderr]}"
+    end
+  ensure
+    FileUtils.rm_f(plugin_config_path) if plugin_config_path
   end
 
-  def publish_result
-    begin
-      EM.run do
-        nats = NATS.connect(:uri => @nats_uri) do
-          nats.publish(@notify_subj, @result.encode) { EM.stop }
-        end
-      end
-    rescue => e
-      @vcap_logger.error("Failed publishing to NATS (uri=#{@nats_uri}). Error: #{e}")
-      @vcap_logger.error(e)
-      raise VCAP::Stager::ResultPublishingError, "Error while publishing to #{@nats_uri}"
+  # Packages and uploads the droplet in staged_dir
+  #
+  # NB: See download_app for an explanation of why we shell out here...
+  #
+  # @param staged_dir  String
+  def upload_droplet(staged_dir, tmp_dir)
+    droplet_path = File.join(tmp_dir, 'droplet.tgz')
+    cmd = "cd #{staged_dir} && COPYFILE_DISABLE=true tar -czf #{droplet_path} *"
+    res = run_logged(cmd)
+    unless res[:success]
+      raise VCAP::Stager::DropletCreationError
     end
+
+    uri_path = File.join(tmp_dir, 'stager_ul_uri')
+    File.open(uri_path, 'w+') {|f| f.write(@upload_uri); f.path }
+
+    cmd = "#{@upload_droplet_helper_path} #{uri_path} #{droplet_path}"
+    res = run_logged(cmd)
+    unless res[:success]
+      @vcap_logger.error("Failed uploading app to '#{@upload_uri}'")
+      raise VCAP::Stager::DropletUploadError
+    end
+  ensure
+    FileUtils.rm_f(droplet_path) if droplet_path
+    FileUtils.rm_f(uri_path) if uri_path
   end
 
-  # Failure to save our result to redis shouldn't impact whether or not
-  # the staging operation succeeds. Consequently, this doesn't throw exceptions.
-  def save_result
-    begin
-      redis = Redis.new(@redis_opts)
-      redis = Redis::Namespace.new(@redis_opts[:namespace], :redis => redis)
-      @result.save(redis)
-    rescue => e
-      @vcap_logger.error("Failed saving result to redis: #{e}")
-      @vcap_logger.error(e)
-    end
+  # Runs a command, logging the result at the debug level on success, or error level
+  # on failure. See VCAP::Stager::Util for a description of the arguments.
+  def run_logged(command, expected_exitstatus=0, timeout=nil)
+    f = Fiber.current
+    VCAP::Stager::Util.run_command(command, expected_exitstatus, timeout) {|res| f.resume(res) }
+    ret = Fiber.yield
+
+    level = ret[:success] ? :debug : :error
+    @vcap_logger.send(level, "Command '#{command}' exited with status='#{ret[:status]}', timed_out=#{ret[:timed_out]}")
+    @vcap_logger.send(level, "stdout: #{ret[:stdout]}") if ret[:stdout] != ''
+    @vcap_logger.send(level, "stderr: #{ret[:stderr]}") if ret[:stderr] != ''
+
+    ret
   end
 
 end

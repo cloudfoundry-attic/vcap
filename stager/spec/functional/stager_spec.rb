@@ -1,4 +1,3 @@
-require 'resque'
 require 'sinatra/base'
 require 'spec_helper'
 
@@ -20,9 +19,9 @@ class DummyHandler < Sinatra::Base
     end
   end
 
-  put '/droplets/:name' do
+  post '/droplets/:name' do
     dest_path = File.join(settings.upload_path, params[:name] + '.tgz')
-    File.open(dest_path, 'w+') {|f| f.write(request.body.read) }
+    File.open(dest_path, 'w+') {|f| f.write(params[:upload][:droplet]) }
     [200, "Success!"]
   end
 
@@ -34,7 +33,7 @@ end
 describe VCAP::Stager do
   before :all do
     # Set this to true if you want to save the output of each component
-    @save_logs = false
+    @save_logs = ENV['VCAP_TEST_LOG'] == 'true'
     @app_props = {
       'framework'   => 'sinatra',
       'runtime'     => 'ruby18',
@@ -52,17 +51,14 @@ describe VCAP::Stager do
     @uploads      = {}
     @http_server  = start_http_server(@tmp_dirs[:upload], @tmp_dirs[:download], @tmp_dirs[:http])
     @http_port    = @http_server.port
-    @redis_server = start_redis(@tmp_dirs[:redis])
     @nats_server  = start_nats(@tmp_dirs[:nats])
-    @stager       = start_stager(@redis_server.port,
-                                 @nats_server.port,
+    @stager       = start_stager(@nats_server.port,
                                  StagingPlugin.manifest_root,
                                  @tmp_dirs[:stager])
   end
 
   after :each do
     @stager.stop
-    @redis_server.stop
     @http_server.stop
     @nats_server.stop
     if @save_logs
@@ -83,22 +79,16 @@ describe VCAP::Stager do
 
       # Wait for the stager to tell us it is done
       task_result = wait_for_task_result(@nats_server.uri,
-                                         @redis_server.port,
                                          subj,
                                          [app_id, @app_props, dl_uri, ul_uri, subj])
       task_result.should_not be_nil
       task_result.was_success?.should be_true
-
-      # Check result in redis
-      result = VCAP::Stager::TaskResult.fetch(app_id, Redis.new(:host => '127.0.0.1', :port => @redis_server.port))
-      result.should_not be_nil
-      result.was_success?.should be_true
     end
   end
 
   def create_tmp_dirs
     tmp_dirs = {:base => Dir.mktmpdir}
-    for d in [:upload, :download, :redis, :nats, :stager, :http]
+    for d in [:upload, :download, :nats, :stager, :http]
       tmp_dirs[d] = File.join(tmp_dirs[:base], d.to_s)
       Dir.mkdir(tmp_dirs[d])
     end
@@ -121,16 +111,6 @@ describe VCAP::Stager do
     http_server
   end
 
-  def start_redis(redis_dir)
-    # XXX - Should this come from a config?
-    redis_path = `which redis-server`.chomp
-    redis_path.should_not == ''
-    port = VCAP.grab_ephemeral_port
-    redis = VCAP::Stager::Spec::ForkedRedisServer.new(redis_path, port, redis_dir)
-    redis.start.wait_ready.should be_true
-    redis
-  end
-
   def start_nats(nats_dir)
     port = VCAP.grab_ephemeral_port
     pid_file = File.join(nats_dir, 'nats.pid')
@@ -139,22 +119,31 @@ describe VCAP::Stager do
     nats
   end
 
-  def start_stager(redis_port, nats_port, manifest_dir, stager_dir)
-    stager = VCAP::Stager::Spec::ForkedStager.new(redis_port, nats_port, manifest_dir, stager_dir)
-    stager.start.wait_ready.should be_true
+  def start_stager(nats_port, manifest_dir, stager_dir)
+    stager = VCAP::Stager::Spec::ForkedStager.new(nats_port, manifest_dir, stager_dir)
+    ready = false
+    NATS.start(:uri => "nats://127.0.0.1:#{nats_port}") do
+      EM.add_timer(30) { EM.stop }
+      NATS.subscribe('vcap.component.announce') do
+        ready = true
+        EM.stop
+      end
+      NATS.publish('zazzle', "BLAH")
+      stager.start
+    end
+    ready.should be_true
     stager
   end
 
-  def wait_for_task_result(nats_uri, redis_port, subj, task_args)
+  def wait_for_task_result(nats_uri, subj, task_args)
     task_result = nil
     NATS.start(:uri => nats_uri) do
-      EM.add_timer(30) { NATS.stop }
+      EM.add_timer(5) { NATS.stop }
       NATS.subscribe(subj) do |msg|
         task_result = VCAP::Stager::TaskResult.decode(msg)
         NATS.stop
       end
-      Resque.redis = Redis.new(:host => '127.0.0.1', :port => redis_port)
-      Resque.enqueue(VCAP::Stager::Task, *task_args)
+      VCAP::Stager::Task.new(*task_args).enqueue('staging')
     end
     task_result
   end

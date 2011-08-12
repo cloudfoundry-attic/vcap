@@ -60,6 +60,14 @@ module VCAP
       end
    end
 
+    class BoolSchema < BaseSchema
+      def validate(dec_json)
+        unless dec_json.kind_of?(TrueClass) || dec_json.kind_of?(FalseClass)
+          raise TypeError, "Expected instance of TrueClass or FalseClass, got #{dec_json.class}"
+        end
+      end
+    end
+
     # Checks that supplied value is an instance of a given class
     class TypeSchema < BaseSchema
       def initialize(klass)
@@ -169,6 +177,8 @@ module VCAP
 
       def parse(schema_def)
         case schema_def
+        when VCAP::JsonSchema::BaseSchema
+          schema_def
         when Hash
           schema = VCAP::JsonSchema::HashSchema.new
           for k, v in schema_def
