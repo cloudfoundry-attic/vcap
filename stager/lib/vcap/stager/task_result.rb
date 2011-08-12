@@ -1,4 +1,7 @@
+require 'fiber'
 require 'yajl'
+
+require 'vcap/logging'
 
 module VCAP
   module Stager
@@ -19,6 +22,36 @@ class VCAP::Stager::TaskResult
       key = key_for_id(task_id)
       result = redis.get(key)
       result ? decode(result) : nil
+    end
+
+    def fetch_fibered(task_id, timeout=5, redis=nil)
+      redis ||= @redis
+      f = Fiber.current
+      key = key_for_id(task_id)
+      logger = VCAP::Logging.logger('vcap.stager.task_result.fetch_fibered')
+
+      logger.debug("Fetching result for key '#{key}' from redis")
+
+      get_def = redis.get(key)
+      get_def.timeout(timeout)
+      get_def.errback do |e|
+        e = VCAP::Stager::TaskResultTimeoutError.new("Timed out fetching result") if e == nil
+        logger.error("Failed fetching result for key '#{key}': #{e}")
+        logger.error(e)
+        f.resume([false, e])
+      end
+      get_def.callback do |result|
+        logger.debug("Fetched result for key '#{key}' => '#{result}'")
+        f.resume([true, result])
+      end
+
+      was_success, result = Fiber.yield
+
+      if was_success
+        result ? decode(result) : nil
+      else
+        raise result
+      end
     end
 
     def decode(enc_res)

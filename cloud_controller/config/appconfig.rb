@@ -157,3 +157,8 @@ if pw_len < c.key_len
   $stderr.puts "The supplied password is too short (#{pw_len} bytes), must be at least #{c.key_len} bytes. (Though only the first #{c.key_len} will be used.)"
   exit 1
 end
+
+if AppConfig[:staging][:new_stager_percent] && !AppConfig[:redis]
+  $stderr.puts "You must supply a redis config to use the new stager"
+  exit 1
+end

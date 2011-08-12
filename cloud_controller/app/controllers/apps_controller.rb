@@ -1,3 +1,5 @@
+require 'staging_task_manager'
+
 class AppsController < ApplicationController
   before_filter :require_user, :except => [:download_staged]
   before_filter :find_app_by_name, :except => [:create, :list, :download_staged]
@@ -83,7 +85,7 @@ class AppsController < ApplicationController
   end
 
   def download
-    path = @app.package_path
+    path = @app.unstaged_package_path
     if path && File.exists?(path)
       send_file path
     else
@@ -124,7 +126,13 @@ class AppsController < ApplicationController
     error_on_lock_mismatch(@app)
     @app.lock_version += 1
     manager = AppManager.new(@app)
-    manager.stage if @app.needs_staging?
+    if @app.needs_staging?
+      if user.uses_new_stager?
+        stage_app(@app)
+      else
+        manager.stage
+      end
+    end
     manager.stop_all
     manager.started
     render :nothing => true, :status => 204
@@ -168,6 +176,18 @@ class AppsController < ApplicationController
     url, auth = AppManager.new(@app).get_file_url(params[:instance_id], params[:path])
     raise CloudError.new(CloudError::APP_FILE_ERROR, params[:path] || '/') unless url
 
+    # XXX - Yuck. This will have to do until we update VMC with a real
+    #       way to fetch staging logs.
+    if user.uses_new_stager? && (params[:path] == 'logs/staging.log')
+      result = VCAP::Stager::TaskResult.fetch_fibered(@app.id)
+      if result
+        render :text => result.details
+      else
+        render :nothing => true, :status => 404
+      end
+      return
+    end
+
     if CloudController.use_nginx
       CloudController.logger.debug "X-Accel-Redirect for #{url}"
       auth_info = Base64.strict_encode64("#{auth[0]}:#{auth[1]}")
@@ -191,6 +211,37 @@ class AppsController < ApplicationController
 
   private
 
+  def stage_app(app)
+    task_mgr = StagingTaskManager.new(:logger  => CloudController.logger,
+                                      :timeout => AppConfig[:staging][:max_staging_runtime])
+    dl_uri = StagingController.download_app_uri(app)
+    ul_hdl = StagingController.create_upload(app)
+
+    result = task_mgr.run_staging_task(app, dl_uri, ul_hdl.upload_uri)
+    success_str = result.was_success? ? 'succeeded' : 'failed'
+    CloudController.logger.debug("Staging task for app_id=#{app.id} #{success_str}", :tags => [:staging])
+    CloudController.logger.debug1("Details: #{result.details}", :tags => [:staging])
+
+    # Update run count to be consistent with previous staging code
+    if result.was_success?
+      app.update_staged_package(ul_hdl.upload_path)
+      app.package_state = 'STAGED'
+      app.run_count = 0
+    else
+      # It may be the case that upload from the stager will happen sometime in the future.
+      # Mark the upload as completed so that any upload that occurs in the future will fail.
+      StagingController.complete_upload(ul_hdl)
+      FileUtils.rm_f(ul_hdl.upload_path)
+      app.package_state = 'FAILED'
+      app.run_count += 1
+    end
+
+    app.save!
+    unless result.was_success?
+      raise CloudError.new(CloudError::APP_STAGING_ERROR, result.details)
+    end
+  end
+
   def find_app_by_name
     # XXX - What do we want semantics to be like for multiple apps w/ same name (possible w/ contribs)
     @app = user.apps_owned.find_by_name(params[:name])
@@ -207,8 +258,6 @@ class AppsController < ApplicationController
   # Checks to make sure the update can proceed, then updates the given
   # App from the request params and makes the necessary AppManager calls.
   def update_app_from_params(app)
-    CloudController.logger.debug "app: #{app.id || "nil"} update_from_parms"
-
     error_on_lock_mismatch(app)
     app.lock_version += 1
 
@@ -247,7 +296,14 @@ class AppsController < ApplicationController
 
     # Process any changes that require action on out part here.
     manager = AppManager.new(app)
-    manager.stage if app.needs_staging?
+
+    if app.needs_staging?
+      if user.uses_new_stager?
+        stage_app(app)
+      else
+        manager.stage
+      end
+    end
 
     if changed.include?('state')
       if app.stopped?
@@ -405,4 +461,6 @@ class AppsController < ApplicationController
       raise CloudError.new(CloudError::ACCOUNT_NOT_ENOUGH_MEMORY, "#{mem_quota}M")
     end
   end
+
+
 end

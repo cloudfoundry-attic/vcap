@@ -181,10 +181,19 @@ class VCAP::Stager::Task
     StagingPlugin::Config.to_file(plugin_config, plugin_config_path)
     cmd = "#{@ruby_path} #{@run_plugin_path} #{@app_props['framework']} #{plugin_config_path}"
     @vcap_logger.debug("Running staging command: '#{cmd}'")
-    res = VCAP::Subprocess.run(cmd, 0, @max_staging_duration)
-    @vcap_logger.debug("Staging command exited with status: #{res[0]}")
-    @vcap_logger.debug("STDOUT: #{res[1]}")
-    @vcap_logger.debug("STDERR: #{res[2]}")
+    begin
+      res = VCAP::Subprocess.run("#{cmd}", 0, @max_staging_duration)
+      @vcap_logger.debug("Staging command exited with status: #{res[0]}")
+      @vcap_logger.debug("STDOUT: #{res[1]}")
+      @vcap_logger.debug("STDERR: #{res[2]}")
+
+    rescue VCAP::SubprocessError, VCAP::SubprocessStatusError => e
+      @vcap_logger.error("Staging command failed: #{e}")
+      @vcap_logger.error("stdout: #{e.stdout}")
+      @vcap_logger.error("stderr: #{e.stderr}")
+      raise e
+    end
+
     res
   end
 
