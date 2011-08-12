@@ -1,0 +1,15 @@
+#!/usr/bin/env ruby
+require 'uri'
+
+# TODO : replace this with a helper running in Tomcat that sets these up, since it's very hard (if not impossible)
+# to escape these (NO_PROXY regexp) in the command line.
+
+env = []
+{'HTTP_PROXY' => 'http', 'HTTPS_PROXY' => 'https'}.each do |env_var, protocol|
+  proxy = ENV[env_var]
+  if proxy
+    uri = URI.parse(proxy)
+    env << "-D#{protocol}.proxyHost=#{uri.host} -D#{protocol}.proxyPort=#{uri.port}"
+  end
+end
+puts env.join(' ')
