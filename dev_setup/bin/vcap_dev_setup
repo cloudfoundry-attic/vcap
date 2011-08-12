@@ -3,6 +3,7 @@
 # Install vcap components on Ubuntu systems.
 
 SCRIPT_DIR=`cd "$(dirname $0)"; pwd`
+CHEF_WRAPPER_DIR=`cd $SCRIPT_DIR/../lib; pwd`
 
 usage() {
 cat <<EOF
@@ -46,16 +47,27 @@ do
   esac
 done
 
-function run_apt_get () {
+function run_cmd () {
   if [ -z "$PROXY" ]; then
-    sudo apt-get $APT_CONFIG $*
+    sudo $*
   else
-    sudo env http_proxy=$PROXY apt-get $APT_CONFIG $*
+    sudo env http_proxy=$PROXY $*
   fi
 }
 
+# Check if we have access to the web
+which wget > /dev/null
+if [ $? == 0 ]; then
+  echo "Checking web connectivity."
+  wget -q -T 2 -t 2 -O - http://api.cloudfoundry.com/info | grep "Cloud Application Platform" > /dev/null
+  if [ $? != 0 ]; then
+    echo "Giving up. Cannot connect to the web. Check your proxy settings if you are behind a proxy."
+    exit 1
+  fi
+fi
+
 # Install chef if required.
-sudo which chef-solo
+which chef-solo
 if [ $? != 0 ]; then
   if [[ $ALL != true ]]; then
     read -p "chef-solo is required, should I install it? [Y/n]"
@@ -67,10 +79,17 @@ if [ $? != 0 ]; then
   echo "deb http://apt.opscode.com/ `lsb_release -cs`-0.10 main" | sudo tee /etc/apt/sources.list.d/opscode.list
   wget -qO - http://apt.opscode.com/packages@opscode.com.gpg.key | sudo apt-key add -
   echo chef chef/chef_server_url select none | sudo /usr/bin/debconf-set-selections
-  run_apt_get update
-  run_apt_get install -qym chef
+  run_cmd apt-get $APT_CONFIG update
+  run_cmd apt-get $APT_CONFIG install -qym chef
 else
-  run_apt_get update
+  run_cmd apt-get $APT_CONFIG update
+fi
+
+# Our deployment code needs this gem. Using bundler seems like an overkill for
+# the deployment code. So for now just manually install the required gem.
+gem list rake -i > /dev/null
+if [ $? != 0 ]; then
+  gem install rake -q --no-ri --no-rdoc > /dev/null 2>&1
 fi
 
 cur_user=`id -u`
@@ -82,4 +101,4 @@ sudo mkdir -p /var/vcap.local/staging
 sudo chown -R $cur_user /var/vcap /var/vcap.local
 
 # Launch chef
-$SCRIPT_DIR/chefsolo_launch.rb $CONFIG_FILE
+$CHEF_WRAPPER_DIR/chefsolo_launch.rb $CONFIG_FILE

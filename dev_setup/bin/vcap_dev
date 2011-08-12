@@ -4,7 +4,7 @@ require 'erb'
 require 'json'
 require 'fileutils'
 require 'optparse'
-require File.expand_path('vcap_defs', File.dirname(__FILE__))
+require File.expand_path(File.join("..", "lib", "vcap_defs"), File.dirname(__FILE__))
 
 script_dir = File.expand_path(File.dirname(__FILE__))
 

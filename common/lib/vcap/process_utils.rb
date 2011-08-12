@@ -18,9 +18,9 @@ module VCAP
         flags = STAT_FIELDS.map {|f| "-o #{f[:name]}=" }.join(' ')
         begin
           stdout, stderr, status = VCAP::Subprocess.run("ps #{flags} -p #{pid}")
-        rescue VCAP::SubprocessError => se
+        rescue VCAP::SubprocessStatusError => se
           # Process not running
-          if se.exit_status == 1
+          if se.exit_status.exitstatus == 1
             return nil
           else
             raise se

@@ -1,0 +1,19 @@
+ENV['BUNDLE_GEMFILE'] ||= File.expand_path('../../Gemfile', __FILE__)
+
+require 'rubygems'
+require 'bundler/setup'
+
+$LOAD_PATH.unshift(File.expand_path('../../lib', __FILE__))
+
+require 'vcap/stager/plugin'
+
+unless ARGV.length == 2
+  puts "Usage: run_staging_plugin [plugin name] [plugin config file]"
+  exit 1
+end
+
+plugin_name, config_path = ARGV
+
+klass  = StagingPlugin.load_plugin_for(plugin_name)
+plugin = klass.from_file(config_path)
+plugin.stage_application

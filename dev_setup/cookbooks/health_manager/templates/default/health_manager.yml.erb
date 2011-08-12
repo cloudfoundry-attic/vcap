@@ -1,6 +1,6 @@
 ---
 local_route: 127.0.0.1
-mbus: nats://localhost:4222/
+mbus: nats://<%= node[:nats][:user] %>:<%= node[:nats][:password] %>@<%= node[:nats][:host] %>:<%= node[:nats][:port] %>/
 logging:
   level: debug
 pid: /var/vcap/sys/run/healthmanager.pid
@@ -10,8 +10,8 @@ database_environment: # replaces database.yml
     host: localhost
     port: 5432
     encoding: utf8
-    username: postgres
-    password: postgres
+    username: <%= node[:health_manager][:database][:username] %>
+    password: <%= node[:health_manager][:database][:password] %>
     adapter: postgresql
     timeout: 2000
     template: template0 # Required for utf8 encoding

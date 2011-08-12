@@ -1,7 +1,5 @@
 require 'spec_helper'
 
-AUTOSTAGING_JAR = 'auto-reconfiguration-0.6.0-BUILD-SNAPSHOT.jar'
-
 describe "A Grails application being staged without a context-param in its web config and with a default application context config" do
   before(:all) do
     app_fixture :grails_default_appcontext_no_context_config
