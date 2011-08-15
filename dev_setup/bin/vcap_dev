@@ -1,5 +1,5 @@
 #!/usr/bin/env ruby
-#
+
 require 'erb'
 require 'json'
 require 'fileutils'
@@ -12,52 +12,45 @@ script_dir = File.expand_path(File.dirname(__FILE__))
 # become more robust
 options = {"name" => DEPLOYMENT_DEFAULT_NAME}
 opts = OptionParser.new do |opts|
-  opts.banner = "Usage: #{$0} [--deployment name] [--home deployment_home] [start|stop|restart|tail|status] [COMPONENT] [--no-color] [--config CONFIGDIR]"
-  opts.on("-d", "--deployment name", "Name of the deployment") do |n|
+  opts.banner = "Usage: #{$0} [--name deployment_name] [--dir cloudfoundry_home_dir] [start|stop|restart|tail|status]"
+  opts.on("-n", "--name deployment_name", "Name of the deployment") do |n|
     options["name"] = n
   end
-  opts.on("-h", "--home path", "Home directory of the deployment") do |n|
+  opts.on("-d", "--dir cloud_foundry_home_dir", "Cloud foundry home directory") do |n|
     options["home"] = n
   end
 end
 opts.order!(ARGV)
 
 if ARGV[0].nil? || !%w[start stop restart tail status].include?(ARGV[0].downcase)
-    STDERR.puts "Usage: #{$0} [--deployment name] [--home deployment_home] [start|stop|restart|tail|status] [COMPONENT] [--no-color] [--config CONFIGDIR]"
+    STDERR.puts "Usage: #{$0} [-n deployment_name] [-d cloudfoundry_home_dir] [start|stop|restart|tail|status]"
     exit 1
 end
 
-if options["home"].nil?
-  deployment_home = Deployment.get_home(options["name"])
-else
-  deployment_home = options["home"]
-end
-
-deployment_config_path = Deployment.get_config_path(deployment_home)
+deployment_config_path = Deployment.get_config_path(options["name"], options["home"])
 
 begin
-  config = JSON.parse(File.read(Deployment.get_config_file(deployment_config_path)))
+  vcap_components = JSON.parse(File.read(Deployment.get_vcap_config_file(deployment_config_path)))
+  deployment_info = JSON.parse(File.read(Deployment.get_deployment_info_file(deployment_config_path)))
 rescue => e
-  STDERR.puts "Could not parse deployment config file #{Deployment.get_config_file(deployment_config_path)}. Please specify the deployment name or the deployment home directory where to find the config file"
+  STDERR.puts "#{e.inspect}. Could not parse deployment config files . Please check your deployment."
   exit 1
 end
 
-if config["cloudfoundry"].nil? || config["cloudfoundry"]["path"].nil?
-  vcap_dir = File.expand_path(File.join(script_dir, "..", ".."))
-else
-  vcap_dir = config["cloudfoundry"]["path"]
-end
-staging_config_dir = File.join(deployment_config_path, "staging")
-
-unless File.exists?(File.join(vcap_dir, "bin", "vcap"))
+unless File.exists?(File.join(deployment_info["cloudfoundry_path"], "bin", "vcap"))
   puts "Cannot find vcap repo. Please specify the deployment name or the deployment home directory where to find the config file"
   exit 1
 end
 
-ruby_path = File.join(config["ruby"]["path"], "bin")
-gemdir = `#{File.join(ruby_path, "gem")} environment gemdir`.split("\n")[0]
+ruby_bin_dir = deployment_info["ruby_bin_dir"]
+gemdir = `#{File.join(ruby_bin_dir, "gem")} environment gemdir`.split("\n")[0]
+ENV["PATH"] = "#{ruby_bin_dir}:#{File.join(gemdir, "bin")}:#{ENV["PATH"]}"
 
-ENV["PATH"] = "#{ruby_path}:#{File.join(gemdir, "bin")}:#{ENV["PATH"]}"
+if vcap_components["components"].include?("cloud_controller")
+  puts "Setting up cloud controller environment"
+  ENV["CLOUD_CONTROLLER_CONFIG"]="#{deployment_config_path}/cloud_controller.yml"
+  ENV["RAILS_ENV"]="production"
+end
 
 # Set both http_proxy and HTTP_PROXY
 %w(http_proxy https_proxy no_proxy).each do |var|
@@ -74,18 +67,9 @@ def exec_cmd(cmd)
   status.exitstatus
 end
 
-ruby_binary = File.join(ruby_path, "ruby")
-vcap_binary = File.join(vcap_dir, "bin", "vcap")
+ruby_binary = File.join(ruby_bin_dir, "ruby")
+vcap_path = File.join(deployment_info["cloudfoundry_path"], "bin")
+vcap_launch = File.join(script_dir, "vcap")
 
-cmd = nil
-case ARGV[0].upcase
-when "START"
-  if !ARGV.include?("-c") && !ARGV.include?("--config")
-    puts "Using cloudfoundry config from #{deployment_config_path}"
-    exec_cmd("#{ruby_binary} #{vcap_binary} #{ARGV.join(" ")} -c #{deployment_config_path}")
-  else
-    exec_cmd("#{ruby_binary} #{vcap_binary} #{ARGV.join(" ")}")
-  end
-else
-  exec_cmd("#{ruby_binary} #{vcap_binary} #{ARGV.join(" ")}")
-end
+puts "Using cloudfoundry config from #{deployment_config_path}"
+exec_cmd("#{ruby_binary} #{vcap_launch} #{ARGV[0].downcase} #{vcap_components["components"].join(" ")} -c #{deployment_config_path} -v #{vcap_path}")
