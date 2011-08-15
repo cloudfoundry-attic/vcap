@@ -19,6 +19,8 @@ require File.expand_path('../gem_cache', __FILE__)
 # TODO - Separate the common staging helper methods from the 'StagingPlugin' base class, for more clarity.
 # Staging plugins (at least the ones written in Ruby) are expected to subclass this. See ruby/sinatra for a simple example.
 class StagingPlugin
+  DEFAULT_MANIFEST_ROOT = File.join(File.expand_path('..', __FILE__), 'manifests')
+
   attr_accessor :source_directory, :destination_directory, :environment_json
 
   def self.staging_root

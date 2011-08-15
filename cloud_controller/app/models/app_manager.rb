@@ -264,15 +264,12 @@ class AppManager
   end
 
   def manifest_for_framework(framework)
-    candidate_paths = [
-      File.join(AppManager.staging_manifest_directory, "#{framework}.yml"),
-      Rails.root.join('staging', 'manifests', "#{framework}.yml").to_s
-    ]
-
-    candidate_paths.each do |path|
-      return StagingPlugin.load_manifest(path) if File.exists?(path)
+    manifest_path = File.join(AppManager.staging_manifest_directory, "#{framework}.yml")
+    if File.exists?(manifest_path)
+      return StagingPlugin.load_manifest(manifest_path)
+    else
+      nil
     end
-    nil
   end
 
   def stage
@@ -297,17 +294,12 @@ class AppManager
 
     env_json = Yajl::Encoder.encode(app.staging_environment)
 
-    staging_plugin_dir = Rails.root.join('staging', app.framework.to_s)
-
-    unless File.exists?(staging_plugin_dir)
-      raise CloudError.new(CloudError::APP_INVALID_FRAMEWORK, app.framework)
-    end
-
     app_source_dir = Dir.mktmpdir
     app.explode_into(app_source_dir)
     output_dir = Dir.mktmpdir
     # Call the selected staging script without changing directories.
-    staging_script = "#{CloudController.current_ruby} #{File.join(staging_plugin_dir, 'stage')}"
+    run_plugin_path = Rails.root.join('script', 'run_plugin.rb')
+    staging_script  = "#{CloudController.current_ruby} #{run_plugin_path} #{app.framework}"
     # Perform staging command
     run_staging_command(staging_script, app_source_dir, output_dir, env_json)
 
