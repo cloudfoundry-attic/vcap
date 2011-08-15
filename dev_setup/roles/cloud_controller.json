@@ -3,12 +3,12 @@
   "default_attributes": {},
   "override_attributes": {},
   "json_class": "Chef::Role",
-  "description": "Cloudfoundry cloud controller",
+  "description": "Cloudfoundry Cloud Controller",
   "chef_type": "role",
-  "run_list" : [ "recipe[essentials]",
+  "run_list" : [ "recipe[deployment]",
+                 "recipe[essentials]",
                  "recipe[ruby]",
-                 "recipe[postgresql]",
-                 "recipe[mysql::server]",
-                 "recipe[mysql]",
+                 "recipe[ruby::ruby18]",
+                 "recipe[ccdb]",
                  "recipe[cloud_controller]"]
 }

@@ -4,7 +4,7 @@ runtimes:
   - node:
       version: '0.4.5'
       description: 'Node.js'
-      executable: <%= node[:nodejs][:path] %>/bin/node
+      executable: <%= File.join(node[:nodejs][:path], "bin", "node") %>
       default: true
 app_servers:
 detection:

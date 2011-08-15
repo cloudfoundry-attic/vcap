@@ -16,17 +16,23 @@ when "ubuntu"
     echo mysql-server-5.1 mysql-server/root_password_again select #{node[:mysql][:server_root_password]} | debconf-set-selections
     EOH
     not_if do
-      ::File.exists?("/usr/sbin/mysqld")
+      ::File.exists?(File.join("", "usr", "sbin", "mysqld"))
     end
   end
 
   package "mysql-server"
 
-  template "/etc/mysql/my.cnf" do
+  template File.join("", "etc", "mysql", "my.cnf") do
     source "ubuntu.cnf.erb"
     owner "root"
     group "root"
     mode "0600"
+    notifies :restart, "service[mysql]"
+  end
+
+  service "mysql" do
+    supports :status => true, :restart => true, :reload => true
+    action [ :enable, :start ]
   end
 else
   Chef::Log.error("Installation of mysql not supported on this platform.")

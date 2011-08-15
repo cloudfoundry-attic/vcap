@@ -9,10 +9,10 @@
   package pkg
 end
 
-remote_file "/tmp/otp_src_#{node[:erlang][:version]}.tar.gz" do
+remote_file File.join("", "tmp", "otp_src_#{node[:erlang][:version]}.tar.gz") do
   owner node[:deployment][:user]
   source node[:erlang][:source]
-  not_if { ::File.exists?("/tmp/otp_src_#{node[:erlang][:version]}.tar.gz") }
+  not_if { ::File.exists?(File.join("", "tmp", "otp_src_#{node[:erlang][:version]}.tar.gz")) }
 end
 
 directory node[:erlang][:path] do
@@ -24,16 +24,16 @@ directory node[:erlang][:path] do
 end
 
 bash "Install Erlang" do
-  cwd "/tmp"
+  cwd File.join("", "tmp")
   user node[:deployment][:user]
   code <<-EOH
   tar xvzf otp_src_#{node[:erlang][:version]}.tar.gz
   cd otp_src_#{node[:erlang][:version]}
-  ./configure --prefix=#{node[:erlang][:path]}
+  #{File.join(".", "configure")} --prefix=#{node[:erlang][:path]}
   make
   make install
   EOH
   not_if do
-    ::File.exists?("#{node[:erlang][:path]}/bin/erl")
+    ::File.exists?(File.join(node[:erlang][:path], "bin", "erl"))
   end
 end

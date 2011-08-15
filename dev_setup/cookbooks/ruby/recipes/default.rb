@@ -9,10 +9,10 @@ rake_version = node[:rubygems][:rake][:version]
   package pkg
 end
 
-remote_file "/tmp/ruby-#{ruby_version}.tar.gz" do
+remote_file File.join("", "tmp", "ruby-#{ruby_version}.tar.gz") do
   owner node[:deployment][:user]
   source ruby_source
-  not_if { ::File.exists?("/tmp/ruby-#{ruby_version}.tar.gz") }
+  not_if { ::File.exists?(File.join("", "tmp", "ruby-#{ruby_version}.tar.gz")) }
 end
 
 directory ruby_path do
@@ -24,7 +24,7 @@ directory ruby_path do
 end
 
 bash "Install Ruby" do
-  cwd "/tmp"
+  cwd File.join("", "tmp")
   user node[:deployment][:user]
   code <<-EOH
   tar xzf ruby-#{ruby_version}.tar.gz
@@ -34,38 +34,38 @@ bash "Install Ruby" do
   make install
   EOH
   not_if do
-    ::File.exists?("#{ruby_path}/bin/ruby")
+    ::File.exists?(File.join(ruby_path, "bin", "ruby"))
   end
 end
 
-remote_file "/tmp/rubygems-#{rubygems_version}.tgz" do
+remote_file File.join("", "tmp", "rubygems-#{rubygems_version}.tgz") do
   owner node[:deployment][:user]
   source "http://production.cf.rubygems.org/rubygems/rubygems-#{rubygems_version}.tgz"
-  not_if { ::File.exists?("/tmp/rubygems-#{rubygems_version}.tgz") }
+  not_if { ::File.exists?(File.join("", "tmp", "rubygems-#{rubygems_version}.tgz")) }
 end
 
 bash "Install RubyGems" do
-  cwd "/tmp"
+  cwd File.join("", "tmp")
   user node[:deployment][:user]
   code <<-EOH
   tar xzf rubygems-#{rubygems_version}.tgz
   cd rubygems-#{rubygems_version}
-  #{ruby_path}/bin/ruby setup.rb
+  #{File.join(ruby_path, "bin", "ruby")} setup.rb
   EOH
   not_if do
-    ::File.exists?("#{ruby_path}/bin/gem") &&
-        system("#{ruby_path}/bin/gem -v | grep -q '#{rubygems_version}$'")
+    ::File.exists?(File.join(ruby_path, "bin", "gem")) &&
+        system("#{File.join(ruby_path, "bin", "gem")} -v | grep -q '#{rubygems_version}$'")
   end
 end
 
 gem_package "bundler" do
   version bundler_version
-  gem_binary "#{ruby_path}/bin/gem"
+  gem_binary File.join(ruby_path, "bin", "gem")
 end
 
 gem_package "rake" do
   version rake_version
-  gem_binary "#{ruby_path}/bin/gem"
+  gem_binary File.join(ruby_path, "bin", "gem")
 end
 
 # The default chef installed with Ubuntu 10.04 does not support the "retries" option
@@ -73,6 +73,6 @@ end
 # chef package gets updated.
 %w[ rack eventmachine thin sinatra mysql pg].each do |gem|
   gem_package gem do
-    gem_binary "#{ruby_path}/bin/gem"
+    gem_binary File.join(ruby_path, "bin", "gem")
   end
 end

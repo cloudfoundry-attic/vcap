@@ -1,21 +1,21 @@
 #! /bin/sh
 ### BEGIN INIT INFO
-# Provides:          nats-server
+# Provides:          nats_server
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
 # Description:       Starts the nats message bus server
 ### END INIT INFO
 
 # Author: VMware
-PATH=<%= node[:ruby][:path] %>/bin:/sbin:/usr/sbin:/bin:/usr/bin
+PATH=<%= File.join(node[:ruby][:path], "bin") %>:/sbin:/usr/sbin:/bin:/usr/bin
 
 DESC="nats-server"
 NAME=nats-server
 DAEMON_NAME=nats-server
-DAEMON=<%= node[:ruby][:path] %>/bin/nats-server
-DAEMON_ARGS="-d -c <%= node[:nats][:config] %>"
+DAEMON=<%= File.join(node[:ruby][:path], "bin", "nats-server") %>
+DAEMON_ARGS="-d -c <%= node[:nats_server][:config] %>"
 
-PIDFILE=/var/run/nats-server.pid
+PIDFILE=/var/run/nats_server.pid
 SCRIPTNAME=/etc/init.d/$NAME
 
 # Exit if the package is not installed

@@ -8,46 +8,46 @@ $LOAD_PATH.unshift(File.dirname(__FILE__))
 
 class JobManager
   ALL = "all"
-  NATS = "nats"
+  NATS = "nats_server"
   ROUTER = "router"
   CC = "cloud_controller"
+  CCDB = "ccdb"
   CF = "cloudfoundry"
   HM = "health_manager"
   DEA = "dea"
-  CCDB = "ccdb"
-  CCDB_POSTGRES = "ccdb_postgres"
-  MYSQL_GATEWAY = "mysql_gateway"
-  MYSQL_NODE = "mysql_node"
-  REDIS_GATEWAY = "redis_gateway"
-  REDIS_NODE = "redis_node"
-  MONGO_GATEWAY = "mongodb_gateway"
-  MONGO_NODE = "mongodb_node"
-  RABBIT_GATEWAY = "rabbit_gateway"
-  RABBIT_NODE = "rabbit_node"
-  REDIS = "redis"
-  MYSQL = "mysql"
-  MONGODB = "mongodb"
-  POSTGRESQL = "postgresql"
-  MANDATORY_PROPERTY = "cf_mandatory_property"
+
+  SERVICES = ["redis", "mysql", "mongodb", "postgresql"]
+  SERVICES_GATEWAY = SERVICES.map do |service|
+    "#{service}_gateway"
+  end
+
+  SERVICES.each do |service|
+    # Service name constant e.g. REDIS -> "redis"
+    const_set(service.upcase, service)
+  end
 
   # All supported jobs
-  JOBS = [ALL, NATS, ROUTER, CF, CC, HM, DEA, CCDB, REDIS, MYSQL, MONGODB, POSTGRESQL]
-
+  JOBS = [ALL, NATS, ROUTER, CF, CC, HM, DEA, CCDB] + SERVICES + SERVICES_GATEWAY
   SYSTEM_JOB = [CF]
 
-  # List of the required properties and their default values
-  JOB_PROPERTIES = {NATS => {"host" => "localhost", "port" => "4222",
-                             "user" => "nats", "password" => "nats"},
-                    CC =>   {"uri" => "api.vcap.me",
-                             "builtin_services" => MANDATORY_PROPERTY},
-                    CCDB => {"host" => "localhost", "dbname" => "cloudcontroller", "port" => "5432",
-                             "user" => "postgres", "password" => "postgres", "adapter" => "postgres"},
-                    MYSQL => {"server_root_password" => "root", "bind_address" => "127.0.0.1"},
-                    POSTGRESQL => {"server_root_password" => "root"}}
+  # List of the required properties for jobs
+  INSTALLED_JOB_PROPERTIES = {NATS => ["host"], CC => ["service_api_uri", "builtin_services"],
+                              CCDB => ["host"]}
+  INSTALL_JOB_PROPERTIES = {CC => ["builtin_services"], MYSQL => ["index"], MONGODB => ["index"], REDIS => ["index"]}
 
-  # List of supported services
-  SERVICES = [REDIS, MYSQL, MONGODB, POSTGRESQL]
+  # Dependency between JOBS and  components that are consumed by "vcap_dev" when cf is started or
+  # stopped
+  SERVICE_RUN_COMPONENTS = Hash.new
+  SERVICES.each do |service|
+    SERVICE_RUN_COMPONENTS[service] = ["#{service}_node", "#{service}_backup"]
+  end
 
+  SERVICE_GATEWAY_RUN_COMPONENTS = Hash.new
+  SERVICES_GATEWAY.each do |gateway|
+    SERVICE_GATEWAY_RUN_COMPONENTS[gateway] = gateway
+  end
+
+  RUN_COMPONENTS = {ROUTER => ROUTER, CC => CC, HM => HM, DEA => DEA}.update(SERVICE_RUN_COMPONENTS).update(SERVICE_GATEWAY_RUN_COMPONENTS)
 
   class << self
     if defined?(Rake::DSL)
@@ -112,57 +112,26 @@ class JobManager
       end
     end
 
-    def validate_properties(jobs, missing_keys_ok=false)
+    def validate_properties(jobs, required_properties)
       return if jobs.nil?
 
       missing_keys = {}
-      missing_mandatory_keys = {}
-      bad_keys = {}
       jobs.each do |job, properties|
         # Check if this job needs properties
-        if JOB_PROPERTIES[job].nil?
-          next if properties.nil?
-          bad_keys[job] ||= []
-          bad_keys[job] << properties.keys
-          next
-        end
+        next if required_properties[job].nil?
 
-        expected = Set.new(JOB_PROPERTIES[job].keys)
+        expected = Set.new(required_properties[job])
         given = properties.nil? ? Set.new : Set.new(properties.keys)
-
-        # Check if we recognize all the given properties
-        if !given.nil? && !given.subset?(expected)
-          bad_keys[job] ||= []
-          bad_keys[job] << (given - expected).to_a
-        end
 
         # Check if all the required properties are given
         if !expected.subset?(given)
           missing_keys[job] ||= []
           missing_keys[job] << (expected - given).to_a
         end
-
-        # Verify mandatory properties
-        mandatory_properties = Set.new
-        JOB_PROPERTIES[job].map do |k, v|
-          mandatory_properties << k if v == MANDATORY_PROPERTY
-        end
-        if !mandatory_properties.subset?(given)
-          missing_mandatory_keys[job] ||= []
-          missing_mandatory_keys[job] << (mandatory_properties - given).to_a
-        end
       end
 
-      if !bad_keys.empty?
-        puts "Input Error: The following job properties are not recognized #{bad_keys.pretty_inspect}"
-        exit 1
-      end
-      if !missing_keys_ok && !missing_keys.empty?
-        puts "Input Error: The following job properties are mandatory and need to be specified #{missing_keys.pretty_inspect}"
-        exit 1
-      end
-      if !missing_mandatory_keys.empty?
-        puts "Input Error: The following mandatory job properties are missing #{missing_mandatory_keys.pretty_inspect}"
+      if !missing_keys.empty?
+        puts "Input Error: The following mandatory job properties are missing #{missing_keys.pretty_inspect}"
         exit 1
       end
     end
@@ -180,49 +149,43 @@ class JobManager
     # Case 3, is a dependecy failure.
     def install(job)
       unless @all_install
-        if !@config["jobs"]["installed"].nil? && @config["jobs"]["installed"].has_key?(job)
-          unless JOB_PROPERTIES[job].nil?
-            @spec[job] = @config["jobs"]["installed"][job].dup
-          end
+        if !@config["jobs"]["installed"].nil? && !@config["jobs"]["installed"][job].nil?
+          @spec[job] = @config["jobs"]["installed"][job].dup
           return
         end
 
-        unless @config["jobs"]["install"].has_key?(job) || SYSTEM_JOB.include?(job) 
+        unless @config["jobs"]["install"].has_key?(job) || SYSTEM_JOB.include?(job)
           puts "Dependecy check error: job #{job} is needed by one of the jobs in the install list, please add job #{job} to the install or installed list"
           exit 1
         end
 
-        unless JOB_PROPERTIES[job].nil?
-          default_properties = JOB_PROPERTIES[job].dup
-          given_properties = @config["jobs"]["install"][job].nil? ? {} : @config["jobs"]["install"][job].dup
-          given_properties = default_properties.merge(given_properties)
-          @spec[job] = given_properties
+        if !@config["jobs"]["install"][job].nil?
+          @spec[job] = @config["jobs"]["install"][job].dup
         end
       end
 
-      if SERVICES.include?(job)
-        @services << job
+      # Prepare the run list for this job
+      if RUN_COMPONENTS.has_key?(job)
+        case RUN_COMPONENTS[job]
+        when String
+          @run_list << RUN_COMPONENTS[job]
+        when Array
+          RUN_COMPONENTS[job].each do |component|
+            @run_list << component
+          end
+        end
       end
+
       @roles << job
     end
 
-    def go(config)
-      @spec = {}
-      @roles = []
-      @services = []
-      @valid_jobs = Set.new(JOBS)
-      @config = config.dup
-      @all_install = false
-
-      # Load the job dependecies
-      Rake.application.rake_require("job_dependency")
-
+    def process_jobs
       # Default to all jobs
       if @config["jobs"].nil?
         # Install all jobs
         @all_install = true
         Rake.application[ALL].invoke
-        return @spec, @roles, @services
+        return
       end
 
       # Make sure that the "install" and "installed" jobs specified are valid
@@ -251,21 +214,35 @@ class JobManager
 
         @all_install = true
         Rake.application[ALL].invoke
-        return @spec, @roles, @services
+        return
       end
 
       # Sanity check the given properties
-      validate_properties(@config["jobs"]["installed"])
-      validate_properties(@config["jobs"]["install"], true)
+      validate_properties(@config["jobs"]["installed"], INSTALLED_JOB_PROPERTIES)
+      validate_properties(@config["jobs"]["install"], INSTALL_JOB_PROPERTIES)
 
       # Let the install rake task do the dependency management
       @config["jobs"]["install"].keys.each do |job|
         Rake.application[job].invoke
       end
+    end
 
-      # All dependencies are resolved, return the job property spec, the chef
-      # roles and services that should be deployed
-      return @spec, @roles, @services
+    def go(config)
+      @spec = {}
+      @roles = []
+      @run_list = Set.new
+      @valid_jobs = Set.new(JOBS)
+      @config = config.dup
+      @all_install = false
+
+      # Load the job dependecies
+      Rake.application.rake_require("job_dependency")
+
+      process_jobs
+
+      # All dependencies are resolved, return the job property spec, chef
+      # roles and the vcap run list
+      return @spec, @roles, @run_list.to_a
     end
   end
 end

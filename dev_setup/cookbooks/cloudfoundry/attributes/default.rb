@@ -1,2 +1,2 @@
-default[:cloudfoundry][:repo] = "https://github.com/cloudfoundry/vcap.git"
-default[:cloudfoundry][:path] = "/var/vcap/src/vcap"
+default[:cloudfoundry][:home] = File.join(ENV["HOME"], "cloudfoundry")
+default[:cloudfoundry][:path] = File.join(cloudfoundry[:home], "vcap")

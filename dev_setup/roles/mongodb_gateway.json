@@ -1,0 +1,12 @@
+{
+  "name": "mongodb_gateway",
+  "default_attributes": {
+    "services" : [ "mongodb" ],
+    "service_components" : ["mongodb_gateway"]
+  },
+  "override_attributes": {},
+  "json_class": "Chef::Role",
+  "description": "MongoDB services gateway",
+  "chef_type": "role",
+  "run_list" : ["role[services]"]
+}

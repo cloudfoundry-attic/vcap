@@ -1,12 +1,17 @@
 {
-  "name": "Postgresql",
-  "default_attributes": {},
+  "name": "postgresql",
+  "default_attributes": {
+    "services" : [ "postgresql" ],
+    "service_components" : ["postgresql_node", "postgresql_backup"]
+  },
   "override_attributes": {},
   "json_class": "Chef::Role",
-  "description": "Postgresql db for apps",
+  "description": "PostgreSQL database for apps",
   "chef_type": "role",
-  "run_list" : ["recipe[essentials]",
+  "run_list" : ["recipe[deployment]",
+                "recipe[essentials]",
                 "recipe[ruby]",
                 "recipe[postgresql]",
+                "recipe[postgresql::service]",
                 "role[services]"]
 }

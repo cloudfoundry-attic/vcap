@@ -10,7 +10,7 @@ case node['platform']
 when "ubuntu"
   package "nginx"
   template "nginx.conf" do
-    path "#{node[:nginx][:dir]}/nginx.conf"
+    path File.join(node[:nginx][:dir], "nginx.conf")
     source "ubuntu-nginx.conf.erb"
     owner "root"
     group "root"

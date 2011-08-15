@@ -1,8 +1,8 @@
 ---
 base_dir: /var/vcap.local/dea
-local_route: 127.0.0.1
+local_route: <%= node[:dea][:local_route] %>
 filer_port: 12345
-mbus: nats://<%= node[:nats][:user] %>:<%= node[:nats][:password] %>@<%= node[:nats][:host] %>:<%= node[:nats][:port] %>/
+mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
 intervals:
   heartbeat: 10
 logging:
@@ -22,19 +22,19 @@ force_http_sharing: true
 
 runtimes:
   ruby18:
-    executable: <%= node[:ruby18][:path] %>/bin/ruby
+    executable: <%= File.join(node[:ruby18][:path], "bin", "ruby") %>
     version: 1.8.7
     version_flag: "-e 'puts RUBY_VERSION'"
     additional_checks: "-e 'puts RUBY_PATCHLEVEL >= 174'"
     environment:
   ruby19:
-    executable: <%= node[:ruby][:path] %>/bin/ruby
+    executable: <%= File.join(node[:ruby][:path], "bin", "ruby") %>
     version: 1.9.2
     version_flag: "-e 'puts RUBY_VERSION'"
     additional_checks: "-e 'puts RUBY_PATCHLEVEL >= 180'"
     environment:
   node:
-    executable: <%= node[:nodejs][:path] %>/bin/node
+    executable: <%= File.join(node[:nodejs][:path], "bin", "node") %>
     version: 0.4.[2-9]
     version_flag: '-v'
     environment:
@@ -44,7 +44,7 @@ runtimes:
     version_flag: '-version'
     environment:
   erlangR14B02:
-    executable: <%= node[:erlang][:path] %>/bin/erl
+    executable: <%= File.join(node[:erlang][:path], "bin", "erl") %>
     version: ".* 5.8.3"
     version_flag: '-version'
     environment:

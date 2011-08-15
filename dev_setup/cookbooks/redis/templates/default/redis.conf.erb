@@ -1,11 +1,11 @@
 daemonize no
-pidfile <%= node[:redis][:path] %>/var/redis.pid
+pidfile <%= File.join(node[:redis][:path], "var", "redis.pid") %>
 port <%= node[:redis][:port] %>
 timeout 300
 loglevel notice
 logfile stdout
 databases 16
-dir <%= node[:redis][:path] %>/var
+dir <%= File.join(node[:redis][:path], "var") %>
 requirepass <%= node[:redis][:password] %>
 maxclients 0
 maxmemory-policy noeviction
