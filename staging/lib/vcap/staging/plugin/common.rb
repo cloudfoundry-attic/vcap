@@ -1,14 +1,4 @@
 require 'rubygems'
-gemfile = File.expand_path('../../../../../Gemfile', __FILE__)
-if defined?(Bundler)
-  if File.realpath(gemfile) != File.realpath(ENV['BUNDLE_GEMFILE'])
-    puts "Incorrect BUNDLE_GEMFILE at staging startup: #{ENV['BUNDLE_GEMFILE']}"
-    exit 1
-  end
-else
-  ENV['BUNDLE_GEMFILE'] = gemfile
-  require 'bundler/setup'
-end
 
 require 'yaml'
 require 'yajl'
