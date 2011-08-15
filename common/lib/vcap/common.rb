@@ -17,13 +17,8 @@ module VCAP
     Socket.do_not_reverse_lookup = orig
   end
 
-  def self.fast_uuid
-    values = [
-      rand(0x0010000),rand(0x0010000),rand(0x0010000),
-      rand(0x0010000),rand(0x0010000),rand(0x1000000),
-      rand(0x1000000),
-    ]
-    "%04x%04x%04x%04x%04x%06x%06x" % values
+  def self.secure_uuid
+    result = File.open('/dev/urandom') { |x| x.read(16).unpack('H*')[0] }
   end
 
   def self.grab_ephemeral_port

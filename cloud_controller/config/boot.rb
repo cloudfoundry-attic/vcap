@@ -76,6 +76,7 @@ module CloudController
     end
 
     def use_nginx
+      return false if AppConfig[:nginx] == nil
       AppConfig[:nginx][:use_nginx]
     end
 

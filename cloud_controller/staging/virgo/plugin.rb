@@ -1,12 +1,9 @@
-require File.expand_path('../../java_common/virgo', __FILE__)
+require File.expand_path('../../common', __FILE__)
+require File.join(File.expand_path('../', __FILE__), 'tomcat.rb')
 
 class VirgoPlugin < StagingPlugin
   def framework
     'virgo'
-  end
-
-  def autostaging_template
-    File.join(File.dirname(__FILE__), '../java_common/resources', 'autostaging_template_virgo.xml')
   end
 
   def skip_staging webapp_root

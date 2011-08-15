@@ -257,7 +257,7 @@ if [[ $DEA == true || $ALL == true ]]; then
 
     ERLANG_VERSION=R14B02
 
-    if [ ! -d "/var/vcap/runtimes/erlang$ERLANG_VERSION" ]; then
+    if [ ! -d "/var/vcap/runtimes/erlang-$ERLANG_VERSION" ]; then
         if [[ $PLATFORM == 'Linux' ]]; then
             apt-get -qqy install build-essential libncurses5-dev openssl libssl-dev
         elif [[ $PLATFORM == 'MacOSX' ]]; then
@@ -363,6 +363,28 @@ if [ $? != 0 ]; then
 	    echo "Installing mysql gems"
 	    gem install mysql --no-rdoc --no-ri
 	    echo ""
+    fi
+fi
+
+X=`which psql`
+if [ $? != 0 ]; then
+    if [[ $ALL_SERVICES != true ]]; then
+	read -p "Should I add PostgreSQL Server? [y/N] "
+	if [[ $REPLY =~ ^[yY]$ ]]; then
+	    POSTGRESQL=true
+	fi
+    fi
+
+    if [[ $POSTGRESQL == true || $ALL_SERVICES == true ]]; then
+	echo "Installing PostgreSQL server and support"
+
+	apt-get install -qqy postgresql libpq-dev
+	if [[ -n "$POSTGRESQL_PASS" ]]; then
+	    su - postgres -c "/usr/bin/psql -c \"alter role postgres password '$POSTGRESQL_PASS'\""
+	fi
+	echo "Installing pg gems"
+	gem install pg --no-rdoc --no-ri
+	echo ""
     fi
 fi
 

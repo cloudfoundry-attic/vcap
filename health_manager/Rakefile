@@ -2,7 +2,9 @@ ENV["BUNDLE_GEMFILE"] = File.expand_path("../../cloud_controller/Gemfile", __FIL
 require 'rake'
 
 desc "Run specs"
-task "spec" => ["prepare_test_db","bundler:install:test","test:spec"]
+
+# TODO - Add back in 'prepare_test_db' when tests are re-enabled
+task "spec" => ["bundler:install:test","test:spec"]
 
 # FIXME - This does not honor the test db set in
 # config/health_manager.yml

@@ -1,7 +1,5 @@
 require 'spec_helper'
 
-AUTOSTAGING_JAR = 'auto-reconfiguration-0.6.0-BUILD-SNAPSHOT.jar'
-
 describe "A Spring application being staged" do
   before do
     app_fixture :spring_guestbook
@@ -85,7 +83,7 @@ wait $STARTED
   end
 end
 
-describe "A Java / Spring application being staged without a web config" do
+describe "A Spring web application being staged without a web config" do
   before do
     app_fixture :spring_no_web_config
   end
@@ -95,7 +93,7 @@ describe "A Java / Spring application being staged without a web config" do
   end
 end
 
-describe "A Java / Spring application being staged without a context-param in its web config and without a default application context config" do
+describe "A Spring web application being staged without a context-param in its web config and without a default application context config" do
   before do
     app_fixture :spring_no_context_config
   end
@@ -120,7 +118,7 @@ describe "A Java / Spring application being staged without a context-param in it
   end
 end
 
-describe "A Java / Spring application being staged without a context-param in its web config and with a default application context config" do
+describe "A Spring web application being staged without a context-param in its web config and with a default application context config" do
   before(:all) do
     app_fixture :spring_default_appcontext_no_context_config
   end
@@ -167,7 +165,7 @@ describe "A Java / Spring application being staged without a context-param in it
 
 end
 
-describe "A Java / Spring application being staged with a context-param but without a 'contextConfigLocation' param-name in its web config and with a default application context config" do
+describe "A Spring web application being staged with a context-param but without a 'contextConfigLocation' param-name in its web config and with a default application context config" do
   before(:all) do
     app_fixture :spring_default_appcontext_context_param_no_context_config
   end
@@ -203,7 +201,7 @@ describe "A Java / Spring application being staged with a context-param but with
 
 end
 
-describe "A Java / Spring application being staged with a context-param containing a 'contextConfigLocation' of 'foo' in its web config" do
+describe "A Spring web application being staged with a context-param containing a 'contextConfigLocation' of 'foo' in its web config" do
   before(:all) do
     app_fixture :spring_context_config_foo
   end
@@ -235,7 +233,7 @@ describe "A Java / Spring application being staged with a context-param containi
 
 end
 
-describe "A Java / Spring application being staged without a Spring DispatcherServlet in its web config" do
+describe "A Spring web application being staged without a Spring DispatcherServlet in its web config" do
   before(:all) do
     app_fixture :spring_context_config_foo
   end
@@ -253,7 +251,7 @@ describe "A Java / Spring application being staged without a Spring DispatcherSe
   end
 end
 
-describe "A Java / Spring application being staged with a Spring DispatcherServlet in its web config that does not have a default servlet context config or an 'init-param' config" do
+describe "A Spring web application being staged with a Spring DispatcherServlet in its web config that does not have a default servlet context config or an 'init-param' config" do
   before(:all) do
     app_fixture :spring_servlet_no_init_param
   end
@@ -294,7 +292,7 @@ describe "A Java / Spring application being staged with a Spring DispatcherServl
   end
 end
 
-describe "A Java / Spring application being staged with a Spring DispatcherServlet in its web config and containing a default servlet context config but no 'init-param' config" do
+describe "A Spring web application being staged with a Spring DispatcherServlet in its web config and containing a default servlet context config but no 'init-param' config" do
   before(:all) do
     app_fixture :spring_default_servletcontext_no_init_param
   end
@@ -341,7 +339,7 @@ describe "A Java / Spring application being staged with a Spring DispatcherServl
   end
 end
 
-describe "A Java / Spring application being staged with a Spring DispatcherServlet in its web config and containing a default servlet context config but no 'contextConfigLocation' in its 'init-param' config" do
+describe "A Spring web application being staged with a Spring DispatcherServlet in its web config and containing a default servlet context config but no 'contextConfigLocation' in its 'init-param' config" do
   before(:all) do
     app_fixture :spring_default_servletcontext_init_param_no_context_config
   end
@@ -378,7 +376,7 @@ describe "A Java / Spring application being staged with a Spring DispatcherServl
 
 end
 
-describe "A Java / Spring application being staged with a Spring DispatcherServlet in its web config with an 'init-param' config containing a 'contextConfigLocation' of 'foo' in its web config" do
+describe "A Spring web application being staged with a Spring DispatcherServlet in its web config with an 'init-param' config containing a 'contextConfigLocation' of 'foo' in its web config" do
   before(:all) do
     app_fixture :spring_servlet_context_config_foo
   end
@@ -414,7 +412,7 @@ describe "A Java / Spring application being staged with a Spring DispatcherServl
   end
 end
 
-describe "A Java / Spring application being staged with 2 Spring DispatcherServlet in its web config containing a default servlet context config but no 'init-param' configs" do
+describe "A Spring web application being staged with 2 Spring DispatcherServlet in its web config containing a default servlet context config but no 'init-param' configs" do
   before(:all) do
     app_fixture :spring_multiple_dispatcherservlets_no_init_param
   end
@@ -458,7 +456,7 @@ describe "A Java / Spring application being staged with 2 Spring DispatcherServl
 
 end
 
-describe "A Java / Spring application being staged with 2 Spring DispatcherServlets in its web config with an 'init-param' config in each containing a 'contextConfigLocation' of 'foo' in its web config" do
+describe "A Spring web application being staged with 2 Spring DispatcherServlets in its web config with an 'init-param' config in each containing a 'contextConfigLocation' of 'foo' in its web config" do
   before(:all) do
     app_fixture :spring_multiple_dispatcherservlets_context_config_foo
   end

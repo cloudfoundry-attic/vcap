@@ -118,6 +118,7 @@ class AppsController < ApplicationController
 
   # PUT /apps/:name/update
   def start_update
+    CloudController.logger.debug "app: #{@app.id} start_update"
     raise CloudError.new(CloudError::APP_STOPPED) unless @app.started?
     # Simulate a start call
     error_on_lock_mismatch(@app)
@@ -206,6 +207,8 @@ class AppsController < ApplicationController
   # Checks to make sure the update can proceed, then updates the given
   # App from the request params and makes the necessary AppManager calls.
   def update_app_from_params(app)
+    CloudController.logger.debug "app: #{app.id || "nil"} update_from_parms"
+
     error_on_lock_mismatch(app)
     app.lock_version += 1
 
@@ -220,13 +223,14 @@ class AppsController < ApplicationController
     delta_instances = update_app_instances(app)
 
     changed = app.changed
+    CloudController.logger.debug "app: #{app.id} Updating #{changed.inspect}"
 
     # 'app.save' can actually raise an exception, if whatever is
     # invalid happens all the way down at the DB layer.
     begin
       app.save!
     rescue
-      CloudController.logger.debug "Failed to save new app, app invalid"
+      CloudController.logger.error "app: #{app.id} Failed to save new app errors: #{app.errors}"
       raise CloudError.new(CloudError::APP_INVALID)
     end
 
@@ -251,6 +255,10 @@ class AppsController < ApplicationController
       if changed.include?('instances')
         manager.change_running_instances(delta_instances)
         manager.updated
+
+        user_email = user ? user.email : 'N/A'
+        CloudController.events.user_event(user_email, app.name, "Changing instances to #{app.instances}", :SUCCEEDED)
+
       end
     end
 
@@ -267,7 +275,10 @@ class AppsController < ApplicationController
 
   def update_app_env(app)
     return unless body_params && body_params[:env]
-    app.environment = body_params[:env].uniq
+    env = body_params[:env].uniq
+    env_new = env.delete_if {|e| e =~ /^(vcap|vmc)_/i }
+    raise CloudError.new(CloudError::FORBIDDEN) if env != env_new
+    app.environment = env
   end
 
   def update_app_instances(app)
@@ -315,7 +326,7 @@ class AppsController < ApplicationController
       end
     end
     unless app.framework
-      CloudController.logger.debug "No app framework indicated"
+      CloudController.logger.error "app: #{app.id} No app framework indicated"
       raise CloudError.new(CloudError::APP_INVALID_FRAMEWORK, 'NONE')
     end
   end
@@ -338,8 +349,8 @@ class AppsController < ApplicationController
     return if body_params.nil?
     added_configs, removed_configs = app.diff_configs(body_params[:services])
     return if added_configs.empty? && removed_configs.empty?
-    CloudController.logger.debug "Adding services: #{added_configs.inspect}"
-    CloudController.logger.debug "Removing services: #{removed_configs.inspect}"
+    CloudController.logger.debug "app: #{app.id} Adding services: #{added_configs.inspect}"
+    CloudController.logger.debug "app: #{app.id} Removing services: #{removed_configs.inspect}"
 
     # Bind services
     added_configs.each do |cfg_alias|

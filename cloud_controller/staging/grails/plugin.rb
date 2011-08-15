@@ -1,15 +1,15 @@
-require File.expand_path('../../java_common/tomcat', __FILE__)
+require File.join(File.expand_path('../../java_web', __FILE__), 'plugin.rb')
 require 'nokogiri'
 
 
-class GrailsPlugin < StagingPlugin
+class GrailsPlugin < JavaWebPlugin
   VMC_GRAILS_PLUGIN = "CloudFoundryGrailsPlugin"
   def framework
     'grails'
   end
 
   def autostaging_template
-    File.join(File.dirname(__FILE__), '../java_common/resources', 'autostaging_template_grails.xml')
+    File.join(File.dirname(__FILE__), 'autostaging_template_grails.xml')
   end
 
   # Staging is skipped if the Grails configuration in ""WEB-INF/grails.xml" contains

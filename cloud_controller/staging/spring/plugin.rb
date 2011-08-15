@@ -1,12 +1,12 @@
-require File.expand_path('../../java_common/tomcat', __FILE__)
+require File.join(File.expand_path('../../java_web', __FILE__), 'plugin.rb')
 
-class SpringPlugin < StagingPlugin
+class SpringPlugin < JavaWebPlugin
   def framework
     'spring'
   end
 
   def autostaging_template
-    File.join(File.dirname(__FILE__), '../java_common/resources', 'autostaging_template_spring.xml')
+    File.join(File.dirname(__FILE__), 'autostaging_template_spring.xml')
   end
 
   def skip_staging webapp_root

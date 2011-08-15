@@ -5,6 +5,7 @@ PATH
       eventmachine (~> 0.12.10)
       logging (>= 1.5.0)
       nats
+      posix-spawn
       thin
       yajl-ruby
 
@@ -34,6 +35,7 @@ GEM
       daemons (>= 1.1.0)
       eventmachine (>= 0.12.10)
       json_pure (>= 1.5.1)
+    posix-spawn (0.3.6)
     rack (1.2.2)
     rake (0.8.7)
     rcov (0.9.9)

@@ -1,7 +1,5 @@
 # Copyright (c) 2009-2011 VMware, Inc.
-$:.unshift(File.dirname(__FILE__))
-
-require 'spec_helper'
+require File.join(File.dirname(__FILE__), 'spec_helper')
 
 require 'digest/sha1'
 require 'fileutils'

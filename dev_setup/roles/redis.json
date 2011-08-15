@@ -1,0 +1,12 @@
+{
+  "name": "Redis",
+  "default_attributes": {},
+  "override_attributes": {},
+  "json_class": "Chef::Role",
+  "description": "Redis key value store for apps",
+  "chef_type": "role",
+  "run_list" : ["recipe[essentials]",
+                "recipe[ruby]",
+                "recipe[redis]",
+                "role[services]"]
+}
