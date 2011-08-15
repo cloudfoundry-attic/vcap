@@ -1,5 +1,5 @@
 ---
-# cloud_controller_uri: api.vcap.me
+cloud_controller_uri: <%= node[:cloud_controller][:service_api_uri] %>
 service:
   name: redis
   version: "2.2"

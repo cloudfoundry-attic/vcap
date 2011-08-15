@@ -1,0 +1,89 @@
+---
+# Deployment
+# ----------
+deployment:
+  # Name of this deployment, defaults to "devbox"
+  name: "dea"
+
+  # Defaults to $HOME/.cloudfoundry/<deployment_name>
+  # home: "/path/to/deployments/deployment_name"
+
+  # User as which cloudfoundry will run, defaults to the user running the setup
+  # script
+  # user: "some_user"
+
+  # Group for cloudfoundry, defaults to the group of the user running the setup
+  # script
+  # group: "some_group"
+
+#
+#cloudfoundry:
+#  path: "path to the cloud foundry code, defaults to base vcap dir containing the setup script"
+#  revision: "Optional argument, if present specifies the version of
+#             cloud foundry code that should be downloaded, If absent no code is
+#             dowloaded.
+#
+cloudfoundry:
+  revision: "HEAD"
+
+# JOBS
+# ----
+#
+# Jobs represents the various installable components of cloud foundry
+# They are divided into 2 groups
+#  - install (Jobs that should be installed on this server/host)
+#  - installed (Jobs that have been installed on other server/hosts whose properties are required by the #               jobs that are scheduled to be installed on this server/host)
+#
+#  e.g.
+#   Lets say "nats" is installed on server_A. Next, you would like to install
+#  the "router" on server_B. In this case, the deployment config file for
+#  server_B will look like the following.
+#
+# jobs:
+#   install:
+#     - router
+#   installed:
+#     - nats:
+#         uri: "nats://<user>:<passwd>@<server A>"
+#
+#
+# List of supported jobs
+#   - all (deploys all cloudfoundry components)
+#   - nats
+#   - router
+#   - cloud_controller
+#   - health_manager
+#   - dea
+#   - mysql
+#   - redis
+#   - mongodb
+#   - postgresql
+#
+# List of properties that should be specified for jobs.
+# installed/install:
+#   nats:
+#     host: (hostname/ip of machine running nats server)
+#     port:
+#     user:
+#     password:
+#   cloud_controller:
+#     uri:
+#     builtin_services:
+#       - redis
+#       - mongodb
+#       - mysql
+#       - rabbitmq
+#   mysql:
+#     server_root_password:
+#     bind_address:
+#   postgresql:
+#     server_root_password:
+jobs:
+  install:
+    - dea
+  installed:
+    - nats:
+        host: "172.31.4.12"
+        port: "4222"
+        user: "nats"
+        password: "nats"
