@@ -1,6 +1,6 @@
 ---
 base_dir: /var/vcap.local/dea
-local_route: 127.0.0.1
+local_route: <%= node[:dea][:local_route] %>
 filer_port: 12345
 mbus: nats://<%= node[:nats][:user] %>:<%= node[:nats][:password] %>@<%= node[:nats][:host] %>:<%= node[:nats][:port] %>/
 intervals:

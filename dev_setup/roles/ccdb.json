@@ -1,11 +1,14 @@
 {
-  "name": "ccdb",
-  "default_attributes": {},
+  "name": "Postgresql",
+  "default_attributes": {
+    "services" : [ "postgresql" ],
+    "service_components" : ["postgresql_node", "postgresql_backup"]
+  },
   "override_attributes": {},
   "json_class": "Chef::Role",
-  "description": "Cloudfoundry cloud controller database",
+  "description": "Postgresql db for apps",
   "chef_type": "role",
-  "run_list" : [ "recipe[essentials]",
-                 "recipe[mysql::server]",
-                 "recipe[mysql]" ]
+  "run_list" : ["recipe[deployment]",
+                "recipe[postgresql]",
+                "recipe[ccdb]"]
 }

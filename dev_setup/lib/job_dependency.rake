@@ -1,5 +1,5 @@
 class JobManager
-  [NATS, CCDB, CF].each do |job|
+  [NATS, CF, CCDB].each do |job|
     task job.to_sym do
       install(job)
     end
@@ -17,8 +17,14 @@ class JobManager
     end
   end
 
-  [MYSQL, REDIS, MONGODB, POSTGRESQL].each do |job|
-    task job.to_sym => [CF.to_sym, CC.to_sym] do
+  SERVICES.each do |job|
+    task job.to_sym => [CF.to_sym, NATS.to_sym] do
+      install(job)
+    end
+  end
+
+  SERVICES_GATEWAY.each do |job|
+    task job.to_sym => [CF.to_sym, CC.to_sym, NATS.to_sym] do
       install(job)
     end
   end
