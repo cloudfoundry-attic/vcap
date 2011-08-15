@@ -1,7 +1,5 @@
 source :rubygems
 
-gem 'active_support'
-gem 'i18n' # Active support apparently requires this but it isn't in the Gemfile??
 gem 'nokogiri', '>= 1.4.4'
 gem 'rake'
 gem 'yajl-ruby', '>= 0.7.9'

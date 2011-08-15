@@ -13,7 +13,6 @@ end
 require 'yaml'
 require 'yajl'
 require 'erb'
-require 'active_support/core_ext'
 require 'rbconfig'
 
 require 'tmpdir' # TODO - Replace this with something less absurd.
@@ -72,6 +71,33 @@ class StagingPlugin
     get_ver  = %{-e "print RUBY_VERSION,'p',RUBY_PATCHLEVEL"}
     `env -i PATH=#{ENV['PATH']} #{exe} #{get_ver}`
   end
+
+
+  # NB: Stolen from ActiveSupport
+  #
+  # By default, +camelize+ converts strings to UpperCamelCase. If the argument to +camelize+
+  # is set to <tt>:lower</tt> then +camelize+ produces lowerCamelCase.
+  #
+  # +camelize+ will also convert '/' to '::' which is useful for converting paths to namespaces.
+  #
+  # Examples:
+  #   "active_record".camelize                # => "ActiveRecord"
+  #   "active_record".camelize(:lower)        # => "activeRecord"
+  #   "active_record/errors".camelize         # => "ActiveRecord::Errors"
+  #   "active_record/errors".camelize(:lower) # => "activeRecord::Errors"
+  #
+  # As a rule of thumb you can think of +camelize+ as the inverse of +underscore+,
+  # though there are cases where that does not hold:
+  #
+  #   "SSLError".underscore.camelize # => "SslError"
+  def self.camelize(lower_case_and_underscored_word, first_letter_in_uppercase = true)
+    if first_letter_in_uppercase
+      lower_case_and_underscored_word.to_s.gsub(/\/(.?)/) { "::#{$1.upcase}" }.gsub(/(?:^|_)(.)/) { $1.upcase }
+    else
+      lower_case_and_underscored_word.to_s[0].chr.downcase + camelize(lower_case_and_underscored_word)[1..-1]
+    end
+  end
+
 
   # Checks the existence and version of the Ruby runtimes specified
   # by the sinatra and rails staging manifests.
@@ -149,7 +175,7 @@ class StagingPlugin
     # manifest directory, and it finds a framework.yml file, it will replace this.
     manifest_path = File.join(manifest_root, "#{framework}.yml")
     load_manifest(manifest_path)
-    Object.const_get("#{framework.camelize}Plugin")
+    Object.const_get("#{camelize(framework)}Plugin")
   end
 
   def self.load_manifest(path)
@@ -226,7 +252,7 @@ class StagingPlugin
 
   def self.scan_files(base_dir, glob)
     found = []
-    base_dir << '/' unless base_dir.ends_with?('/')
+    base_dir << '/' unless base_dir.end_with?('/')
     Dir[glob].each do |full_path|
       matched = block_given? ? yield(full_path) : true
       if matched
