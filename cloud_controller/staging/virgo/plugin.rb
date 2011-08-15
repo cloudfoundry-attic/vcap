@@ -1,5 +1,5 @@
 require File.expand_path('../../common', __FILE__)
-require File.join(File.expand_path('../', __FILE__), 'tomcat.rb')
+require File.join(File.expand_path('../', __FILE__), 'virgo.rb')
 
 class VirgoPlugin < StagingPlugin
   def framework
@@ -73,7 +73,7 @@ if [ $PORT -lt 0 ] ; then
   echo "Missing or invalid port (-p)"
   exit 1
 fi
-ruby resources/generate_virgo_server_xml $PORT
+ruby resources/generate_server_xml $PORT
       SPRING
     end
   end
