@@ -14,7 +14,6 @@ require File.expand_path('vcap_defs', File.dirname(__FILE__))
 require File.expand_path('job_manager', File.dirname(__FILE__))
 
 script_dir = File.expand_path(File.dirname(__FILE__))
-vcap_path = File.expand_path(File.join(script_dir, "..", ".."))
 deployment_spec = File.expand_path(File.join(script_dir, "..", DEPLOYMENT_DEFAULT_SPEC))
 deployment_name = DEPLOYMENT_DEFAULT_NAME
 deployment_home = Deployment.get_home(deployment_name)
@@ -54,10 +53,7 @@ YAML.load(spec_erb.result).each do |package, properties|
 end
 deployment_config_path = Deployment.get_config_path(deployment_home)
 
-FileUtils.mkdir_p(File.join(deployment_home, "deploy"))
-FileUtils.mkdir_p(File.join(deployment_home, "sys", "log"))
-FileUtils.chown(deployment_user, deployment_group, [deployment_home, File.join(deployment_home, "deploy"), File.join(deployment_home, "sys", "log")])
-puts "Installing deployment #{deployment_name}, deployment home dir is #{deployment_home}, vcap dir is #{vcap_path}"
+puts "Installing deployment #{deployment_name}, deployment home dir is #{deployment_home}"
 
 # Fill in default config attributes
 spec = YAML.load(spec_erb.result)
@@ -68,11 +64,9 @@ spec["deployment"]["user"] = deployment_user
 spec["deployment"]["group"] = deployment_group
 spec["deployment"]["config_path"] = deployment_config_path
 
-spec["cloudfoundry"] ||= {}
-spec["cloudfoundry"]["path"] ||= vcap_path
-
 # Resolve all job dependencies
-job_specs, job_roles, job_services = JobManager.go(spec)
+vcap_run_list = {}
+job_specs, job_roles, vcap_run_list["components"] = JobManager.go(spec)
 if job_roles.nil?
   puts "You haven't specified any install jobs"
   exit 0
@@ -84,9 +78,6 @@ job_roles.each do |role|
   run_list << "role[#{role}]"
 end
 spec["run_list"] = run_list
-
-# Add services if specified
-spec["services"] = job_services unless job_services.nil?
 
 # Merge the job specs
 spec.merge!(job_specs)
@@ -117,6 +108,9 @@ Dir.mktmpdir do |tmpdir|
   json_attribs = File.join(tmpdir, "solo.json")
   File.open(json_attribs, "w") { |f| f.puts(spec.to_json) }
 
+  # Save the chef-solo attributes to a file in /tmp, useful for debugging
+  File.open(File.join("", "tmp", "solo.json"), "w") { |f| f.puts(spec.to_json) }
+
   id = fork do
     proxy_env = []
     # Setup proxy
@@ -137,23 +131,22 @@ Dir.mktmpdir do |tmpdir|
   end
 
   # save the config of this deployment
-  FileUtils.mkdir_p(deployment_config_path)
-  FileUtils.chown(deployment_user, deployment_group, deployment_config_path)
-
   File.open(Deployment.get_config_file(deployment_config_path), "w") { |f| f.puts(spec.to_json) }
+
+  # save the list of components that should be started for this deployment
+  File.open(Deployment.get_vcap_config_file(deployment_config_path), "w") { |f| f.puts(vcap_run_list.to_json) }
 
   puts "---------------"
   puts "Deployment info"
   puts "---------------"
   puts "Status: successful"
-  ruby_path = File.join(spec["ruby"]["path"], "bin")
-  puts "Note: Ruby for cloud foundry components was installed in #{ruby_path}"
 
+  vcap_dev_path = File.expand_path(File.join(script_dir, "..", "bin", "vcap_dev"))
   if deployment_name != DEPLOYMENT_DEFAULT_NAME
     puts "Config files: #{deployment_config_path}"
     puts "Deployment name: #{deployment_name}"
-    puts "Command to run cloudfoundry: vcap_dev -d #{deployment_name} start"
+    puts "Command to run cloudfoundry: #{vcap_dev_path} -d #{deployment_name} start"
   else
-    puts "Command to run Cloudfoundry: vcap_dev start"
+    puts "Command to run Cloudfoundry: #{vcap_dev_path} start"
   end
 end

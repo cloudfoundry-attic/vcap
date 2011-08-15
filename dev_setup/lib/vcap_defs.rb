@@ -2,6 +2,8 @@ DEPLOYMENT_DEFAULT_SPEC = "deployments/devbox.yml.erb"
 DEPLOYMENT_DEFAULT_NAME = "devbox"
 DEPLOYMENT_CONFIG_DIR_NAME = "config"
 DEPLOYMENT_CONFIG_FILE_NAME = "deploy.json"
+DEPLOYMENT_VCAP_CONFIG_FILE_NAME = "vcap_components.json"
+DEPLOYMENT_INFO_FILE_NAME = "deployment_info.json"
 
 class Deployment
   class << self
@@ -15,6 +17,14 @@ class Deployment
 
     def get_config_file(config_path)
       File.expand_path(File.join(config_path, DEPLOYMENT_CONFIG_FILE_NAME))
+    end
+
+    def get_vcap_config_file(config_path)
+      File.expand_path(File.join(config_path, DEPLOYMENT_VCAP_CONFIG_FILE_NAME))
+    end
+
+    def get_deployment_info_file(config_path)
+      File.expand_path(File.join(config_path, DEPLOYMENT_INFO_FILE_NAME))
     end
   end
 end
