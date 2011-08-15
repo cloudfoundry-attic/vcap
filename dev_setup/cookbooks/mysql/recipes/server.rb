@@ -27,6 +27,12 @@ when "ubuntu"
     owner "root"
     group "root"
     mode "0600"
+    notifies :restart, "service[mysql]"
+  end
+
+  service "mysql" do
+    supports :status => true, :restart => true, :reload => true
+    action [ :enable, :start ]
   end
 else
   Chef::Log.error("Installation of mysql not supported on this platform.")

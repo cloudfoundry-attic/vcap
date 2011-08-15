@@ -1,9 +1,8 @@
 ---
 local_db: sqlite3:/var/vcap/services/redis/redis_node.db
 mbus: nats://<%= node[:nats][:user] %>:<%= node[:nats][:password] %>@<%= node[:nats][:host] %>:<%= node[:nats][:port] %>/
-index: <%= node[:service][:redis][:index] %>
+index: <%= node[:redis][:index] %>
 base_dir: /var/vcap/services/redis/instances
-ip_route: 127.0.0.1
 log_level: DEBUG
 pid: /var/vcap/sys/run/redis_node.pid
 available_memory: <%= node[:service][:redis][:available_memory] %>

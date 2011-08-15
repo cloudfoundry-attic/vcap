@@ -1,0 +1,12 @@
+{
+  "name": "mysql_gateway",
+  "default_attributes": {
+    "services" : [ "mysql" ],
+    "service_components" : ["mysql_gateway"]
+  },
+  "override_attributes": {},
+  "json_class": "Chef::Role",
+  "description": "MySQL services gateway",
+  "chef_type": "role",
+  "run_list" : ["role[services]"]
+}
