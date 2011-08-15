@@ -92,13 +92,5 @@ if [ $? != 0 ]; then
   gem install rake -q --no-ri --no-rdoc > /dev/null 2>&1
 fi
 
-cur_user=`id -u`
-sudo mkdir -p /var/vcap/db
-sudo mkdir -p /var/vcap/sys/log
-sudo mkdir -p /var/vcap/data/cloud_controller/tmp
-sudo mkdir -p /var/vcap/data/db
-sudo mkdir -p /var/vcap.local/staging
-sudo chown -R $cur_user /var/vcap /var/vcap.local
-
 # Launch chef
 $CHEF_WRAPPER_DIR/chefsolo_launch.rb $CONFIG_FILE

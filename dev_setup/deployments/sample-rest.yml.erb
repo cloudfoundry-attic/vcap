@@ -87,7 +87,6 @@ erlang:
 #   - cloud_controller
 #   - health_manager
 #   - dea
-#   - ccdb
 #   - mysql
 #   - redis
 #   - mongodb
@@ -107,13 +106,6 @@ erlang:
 #       - mongodb
 #       - mysql
 #       - rabbitmq
-#   ccdb
-#     host:
-#     dbname:
-#     port:
-#     user:
-#     password:
-#     adapter:
 #   mysql:
 #     server_root_password:
 #     bind_address:
@@ -126,7 +118,6 @@ jobs:
           - redis
           - mongodb
           - mysql
-    - ccdb
     - dea
     - health_manager
     - router
