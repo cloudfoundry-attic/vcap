@@ -40,7 +40,6 @@ module StagingSpecHelpers
   # automatically deletes it when the block returns.
   def stage(framework, env = {})
     raise "Call 'app_fixture :name_of_app' before staging" unless @app_fixture
-    environment_json = Yajl::Encoder.encode(env)
     plugin_klass = StagingPlugin.load_plugin_for(framework)
     working_dir = Dir.mktmpdir("#{@app_fixture}-staged")
     source_tempdir = nil
@@ -52,7 +51,7 @@ module StagingSpecHelpers
                  else
                    app_source
                  end
-    stager = plugin_klass.new(source_dir, working_dir, environment_json)
+    stager = plugin_klass.new(source_dir, working_dir, env)
     stager.stage_application
     return working_dir unless block_given?
     Dir.chdir(working_dir) do

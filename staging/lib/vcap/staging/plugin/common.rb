@@ -11,6 +11,7 @@ require 'tmpdir' # TODO - Replace this with something less absurd.
 # You Have Been Warned.
 
 
+require File.expand_path('../config', __FILE__)
 require File.expand_path('../gemfile_support', __FILE__)
 require File.expand_path('../gemfile_task', __FILE__)
 require File.expand_path('../gem_cache', __FILE__)
@@ -27,8 +28,13 @@ class StagingPlugin
     File.expand_path('..', __FILE__)
   end
 
+  def self.manifest_root=(dir)
+    @@manifest_root = dir
+  end
+
   def self.manifest_root
-    ENV['STAGING_CONFIG_DIR'] || File.join(staging_root, 'manifests')
+    @@manifest_root ||= DEFAULT_MANIFEST_ROOT
+    @@manifest_root
   end
 
   # This is a digestable version for the outside world
@@ -197,19 +203,18 @@ class StagingPlugin
 
   # Exits the process with a nonzero status if ARGV does not contain valid
   # staging args. If you call this in-process in an app server you deserve your fate.
-  def self.validate_arguments!
-    source, dest, env, manifest_dir, uid, gid = *ARGV
-    argfail! unless source && dest && env
-    argfail! unless File.directory?(File.expand_path(source))
-    argfail! unless File.directory?(File.expand_path(dest))
-    argfail! unless String === env
+  def self.validate_arguments!(*args)
+    source, dest, env, manifest_dir, uid, gid = args
+    argfail!(args) unless source && dest && env
+    argfail!(args) unless File.directory?(File.expand_path(source))
+    argfail!(args) unless File.directory?(File.expand_path(dest))
     if manifest_dir
-      argfail! unless File.directory?(File.expand_path(manifest_dir))
+      argfail!(args) unless File.directory?(File.expand_path(manifest_dir))
     end
   end
 
-  def self.argfail!
-    puts "Invalid arguments for staging: #{ARGV.inspect}"
+  def self.argfail!(args)
+    puts "Invalid arguments for staging: #{args.inspect}"
     exit 1
   end
 
@@ -254,6 +259,32 @@ class StagingPlugin
     end
   end
 
+  # Loads arguments from a file and instantiates a new instance.
+  # @param  arg_filename String  Path to yaml file
+  def self.from_file(cfg_filename)
+    config = StagingPlugin::Config.from_file(cfg_filename)
+
+    uid = gid = nil
+    if config[:secure_user]
+      uid = config[:secure_user][:uid]
+      gid = config[:secure_user][:gid]
+    end
+
+    validate_arguments!(config[:source_dir],
+                        config[:dest_dir],
+                        config[:environment],
+                        config[:manifest_dir],
+                        uid,
+                        gid)
+
+    self.new(config[:source_dir],
+             config[:dest_dir],
+             config[:environment],
+             config[:manifest_dir],
+             uid,
+             gid)
+  end
+
   # If you re-implement this in a subclass:
   # A) Do not change the method signature
   # B) Make sure you call 'super'
@@ -262,14 +293,27 @@ class StagingPlugin
   # def initialize(source, dest, env = nil, manifest_dir = nil)
   #   super
   #   whatever_you_have_planned
+  #
+  # NB: Environment is not what you think it is (better named app_properties?). It is a hash of:
+  #   :services  => [service_binding_hash]  # See ServiceBinding#for_staging in cloud_controller/app/models/service_binding.rb
+  #   :framework => framework_name
+  #   :runtime   => runtime_name
+  #   :resources => {                       # See App#resource_requirements or App#limits (they return identical hashes)
+  #     :memory => mem limits in MB         # in cloud_controller/app/models/app.rb
+  #     :disk   => disk limits in MB
+  #     :fds    => fd limits
+  #   }
   # end
-  def initialize(source_directory, destination_directory, environment_json = nil, manifest_dir = nil, uid=nil, gid=nil)
+  def initialize(source_directory, destination_directory, environment = {}, manifest_dir = nil, uid=nil, gid=nil)
     @source_directory = File.expand_path(source_directory)
     @destination_directory = File.expand_path(destination_directory)
-    @environment_json = environment_json || '{}'
+    @environment = environment
     @manifest_dir = nil
     if manifest_dir
-      @manifest_dir = ENV['STAGING_CONFIG_DIR'] = File.expand_path(manifest_dir)
+      # This is kind of weird, but this maintains  the previous behavior. (Except we directly set StagingPlugin.manifest_root,
+      # instead of setting it indirectly by setting ENV['STAGING_CONFIG_DIR']
+      @manifest_dir = File.expand_path(manifest_dir)
+      StagingPlugin.manifest_root = @manifest_dir
     end
 
     # Drop privs before staging
@@ -287,7 +331,7 @@ class StagingPlugin
   end
 
   def environment
-    @environment ||= Yajl::Parser.parse(environment_json, :symbolize_keys => true)
+    @environment
   end
 
   def staging_command
