@@ -12,7 +12,6 @@ require 'vcap/stager'
 # Requires supporting ruby files with custom matchers and macros, etc,
 # in spec/support/ and its subdirectories.
 Dir[File.expand_path('../support/**/*.rb', __FILE__)].each {|f| require f}
-MANIFEST_DIR = File.expand_path('../../lib/vcap/stager/plugin/manifests', __FILE__)
 
 # Created as needed, removed at the end of the spec run.
 # Allows us to override staging paths.
@@ -22,7 +21,7 @@ StagingPlugin.manifest_root = STAGING_TEMP
 RSpec.configure do |config|
   config.before(:all) do
     begin
-      VCAP::Subprocess.run("cp -a #{File.join(MANIFEST_DIR, '*.yml')} #{STAGING_TEMP}")
+      VCAP::Subprocess.run("cp -a #{File.join(StagingPlugin::DEFAULT_MANIFEST_ROOT, '*.yml')} #{STAGING_TEMP}")
     rescue VCAP::SubprocessStatusError => e
       puts "Unable to copy staging manifests. Permissions problem?"
       puts "#{e}"
