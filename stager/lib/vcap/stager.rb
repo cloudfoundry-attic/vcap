@@ -3,7 +3,6 @@ require 'resque'
 
 require 'vcap/stager/errors'
 require 'vcap/stager/config'
-require 'vcap/stager/plugin'
 require 'vcap/stager/task'
 require 'vcap/stager/task_logger'
 require 'vcap/stager/task_result'
