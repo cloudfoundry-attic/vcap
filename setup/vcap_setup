@@ -239,7 +239,7 @@ if [[ $DEA == true || $ALL == true ]]; then
 
     # Python support
     if [[ $PLATFORM == 'Linux' ]]; then
-      apt-get install python-setuptools python-dev
+      apt-get install -qyy python-setuptools python-dev
     fi
     easy_install pip
 
