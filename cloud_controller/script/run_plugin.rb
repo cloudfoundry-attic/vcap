@@ -4,6 +4,8 @@ ENV['BUNDLE_GEMFILE'] ||= File.expand_path('../../Gemfile', __FILE__)
 require 'rubygems'
 require 'bundler/setup'
 
+require 'yajl'
+
 require 'vcap/staging/plugin/common'
 
 unless ARGV.length > 0
@@ -12,6 +14,17 @@ unless ARGV.length > 0
 end
 
 name = ARGV.shift
+args = ARGV.dup
+
+if args.length > 2
+  begin
+    args[2] = Yajl::Parser.parse(args[2], :symbolize_keys => true)
+  rescue => e
+    puts "ERROR DECODING ENVIRONMENT: #{e}"
+    exit 1
+  end
+end
+
 plugin_class = StagingPlugin.load_plugin_for(name)
-plugin_class.validate_arguments!
-plugin_class.new(*ARGV).stage_application
+plugin_class.validate_arguments!(*args)
+plugin_class.new(*args).stage_application
