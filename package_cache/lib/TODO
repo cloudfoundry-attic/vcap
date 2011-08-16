@@ -1,0 +1,4 @@
+-better error handing in UserOps
+-finish unit tests for UserOps
+-unit tests for UserPool
+-find a better git strategy.
