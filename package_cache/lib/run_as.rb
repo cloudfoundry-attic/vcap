@@ -6,10 +6,10 @@ class UserOps
       child_status = $?
 
       if child_status.exitstatus != 0
-        puts("subcommand failed")
+        @logger.debug("run_as: command #{cmd} exited non-zero status #{child_status.exitstatus}")
         nil
       else
-        puts("Success!")
+        @logger.debug("run_as: exit success!")
       end
     else #child --  move, cleanup, do it!
       Dir.chdir(home_dir)
