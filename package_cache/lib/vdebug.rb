@@ -5,9 +5,3 @@ def pdebug(*args)
   file = File.basename(file)
   print 'D>>',file,':',line,':',method,' :  ',*args,"\n"
 end
-
-def bar
-  pdebug 'foo'
-end
-
-bar
