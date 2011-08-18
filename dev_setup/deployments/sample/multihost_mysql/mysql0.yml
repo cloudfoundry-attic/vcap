@@ -1,0 +1,10 @@
+---
+deployment:
+  name: "mysql0"
+jobs:
+  install:
+    - mysql:
+        index: "0"
+  installed:
+    - nats_server:
+        host: "172.31.4.13"
