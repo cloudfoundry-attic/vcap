@@ -1191,7 +1191,7 @@ module DEA
       # Rechown crashed application directory using uid and gid of DEA
       else
         @logger.debug("#{instance[:name]}: Chowning crashed dir #{instance[:dir]}")
-        FileUtils.chown_R(Process.euid, Process.egid, instance[:dir])
+        EM.system("chown -R #{Process.euid}:#{Process.egid} #{instance[:dir]}")
       end
     end
 
