@@ -34,6 +34,26 @@ module VCAP
     socket.close
     return port
   end
+   
+  def self.grab_port_in_range port_range  
+      port_array = port_range.to_a
+      while (port_array.size > 0)
+       begin
+         index = rand(port_array.size)
+         port = port_array[index]
+         socket = TCPServer.new('127.0.0.1', port)
+         socket.setsockopt(Socket::SOL_SOCKET, Socket::SO_REUSEADDR, true)
+         Socket.do_not_reverse_lookup = true
+         p = socket.addr[1]
+         socket.close
+         return p
+       rescue
+         port_array.delete_at index
+       end
+     end
+
+    return nil
+  end
 
   def self.uptime_string(delta)
     num_seconds = delta.to_i
