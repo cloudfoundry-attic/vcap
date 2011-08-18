@@ -1,5 +1,7 @@
+$:.unshift(File.join(File.dirname(__FILE__)))
 require 'fileutils'
 require 'logger'
+require 'lib/vdebug'
 
 class PackageCache
   def initialize(cache_dir, logger = nil)
@@ -37,7 +39,7 @@ class PackageCache
   end
 
   def purge!
-    FileUtils.rm_f Dir.glob("@cache_dir/*")
+    FileUtils.rm_f Dir.glob("#{@cache_dir}/*")
   end
 
   private
