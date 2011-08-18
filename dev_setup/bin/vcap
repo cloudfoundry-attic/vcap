@@ -37,12 +37,25 @@ class Component
     if core?
       @path = File.join(DIR, name)
       # Sane default for location of configuration file
-      @configuration_path ||= File.join(DIR, "..", name, "config", "#{name}.yml")
+      if @configuration_path.nil?
+        if $config_dir
+          @configuration_path = File.join($config_dir, "#{name}.yml")
+        else
+          @configuration_path = File.join(DIR, "..", name, "config", "#{name}.yml")
+        end
+      end
     else
       @path = File.join(SERVICE_DIR, name)
       # Sane default for location of service configuration file
       pre = name.sub(/_node|_gateway/,'')
-      @configuration_path ||= File.join(DIR, "../services", pre, "config", "#{name}.yml")
+      # Sane default for location of configuration file
+      if @configuration_path.nil?
+        if $config_dir
+          @configuration_path = File.join($config_dir, "#{name}.yml")
+        else
+          @configuration_path ||= File.join(DIR, "../services", pre, "config", "#{name}.yml")
+        end
+      end
     end
   end
 
@@ -105,8 +118,8 @@ class Component
 
   def component_start_path
     exec_path = path.dup
-    if $configdir
-      config_file = File.join($configdir, "#{name}.yml")
+    if $config_dir
+      config_file = File.join($config_dir, "#{name}.yml")
       if File.exists?(config_file)
         exec_path << " -c #{config_file}"
       end
@@ -526,15 +539,16 @@ end
 args = ARGV.dup
 opts_parser = OptionParser.new do |opts|
   opts.on('--port PORT')                           { |port| $port = port.to_i }
-  opts.on('--configdir CONFIGDIR', '-c CONFIGDIR') { |dir| $configdir = File.expand_path(dir.to_s) }
-  opts.on('--config CONFIGDIR')                    { |dir| $configdir = File.expand_path(dir.to_s) }
+  opts.on('--configdir CONFIGDIR', '-c CONFIGDIR') { |dir| $config_dir = File.expand_path(dir.to_s) }
+  opts.on('--config CONFIGDIR')                    { |dir| $config_dir = File.expand_path(dir.to_s) }
   opts.on('--vcapdir VCAP_DIR', '-v VCAP_DIR')     { |dir| $vcap_dir = File.expand_path(dir.to_s) }
   opts.on('--no-color', '--nocolor', '--nc')       { $nocolor = true }
   opts.on('--noprompt', '-n')                      { $noprompt = true }
 end
 args = opts_parser.parse!(args)
 
-DIR = $vcap_dir
+DIR = $vcap_dir || File.expand_path("../../../bin", __FILE__)
+
 SERVICE_DIR = File.join(DIR, '/services')
 TMP = "/tmp/vcap-run"
 FileUtils.mkdir_p(TMP)
