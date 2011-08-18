@@ -1,4 +1,4 @@
-DEPLOYMENT_DEFAULT_SPEC = File.join("deployments", "devbox.yml.erb")
+DEPLOYMENT_DEFAULT_SPEC = File.join("deployments", "devbox.yml")
 DEPLOYMENT_DEFAULT_NAME = "devbox"
 DEPLOYMENT_CONFIG_DIR_NAME = "config"
 DEPLOYMENT_CONFIG_FILE_NAME = "deploy.json"

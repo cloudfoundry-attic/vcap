@@ -1,6 +1,5 @@
 #!/usr/bin/env ruby
 require 'rubygems'
-require 'erb'
 require 'json'
 require 'tempfile'
 require 'uri'
@@ -16,10 +15,7 @@ require File.expand_path('job_manager', File.dirname(__FILE__))
 
 script_dir = File.expand_path(File.dirname(__FILE__))
 cloudfoundry_home = Deployment.get_cloudfoundry_home
-deployment_name = DEPLOYMENT_DEFAULT_NAME
 deployment_spec = File.expand_path(File.join(script_dir, "..", DEPLOYMENT_DEFAULT_SPEC))
-deployment_user = ENV["USER"]
-deployment_group = `id -g`.strip
 
 args = ARGV.dup
 opts_parser = OptionParser.new do |opts|
@@ -29,47 +25,33 @@ end
 args = opts_parser.parse!(args)
 
 unless File.exists?(deployment_spec)
-  puts "Cannot find deployment spec #{deployment_spec}"
+  puts "Cannot find config file #{deployment_spec}"
   puts "Usage: #{$0} -c config_file -d cloud_foundry_home"
   exit 1
 end
 
-spec_erb = ERB.new(File.read(deployment_spec))
+spec = YAML.load_file(deployment_spec)
 
-YAML.load(spec_erb.result).each do |package, properties|
-  # Find out the versions of the various packages
-  case properties
-  when Hash
-    properties.each do |prop, value|
-      if prop == "version"
-        package_version = "@" + package + "_version"
-        instance_variable_set(package_version.to_sym, value)
-      end
-    end
-  end
+# Fill in default config attributes
+spec["deployment"] ||= {}
+spec["deployment"]["name"] ||= DEPLOYMENT_DEFAULT_NAME
+spec["deployment"]["user"] ||= ENV["USER"]
+spec["deployment"]["group"] ||= `id -g`.strip
+spec["cloudfoundry"] ||= {}
+spec["cloudfoundry"]["home"] ||= cloudfoundry_home
+spec["cloudfoundry"]["home"] = File.expand_path(spec["cloudfoundry"]["home"])
 
-  # Update config defaults
-  case package
-  when "deployment"
-    deployment_name = properties["name"] || deployment_name
-    deployment_user = properties["user"] || deployment_user
-    deployment_group = properties["group"] || deployment_group
-  when "cloudfoundry"
-    cloudfoundry_home = File.expand_path(properties["home"] || cloudfoundry_home)
-  end
+if cloudfoundry_home != Deployment.get_cloudfoundry_home && cloudfoundry_home != spec["cloudfoundry"]["home"] 
+  puts "Conflicting values for cloudfoundry home directory, command line argument says #{cloudfoundry_home} but config file says #{spec["cloudfoundry"]["home"]}"
+  exit 1
 end
+
+# convenience variables
+cloudfoundry_home = spec["cloudfoundry"]["home"]
+deployment_name = spec["deployment"]["name"]
 deployment_config_path = Deployment.get_config_path(deployment_name, cloudfoundry_home)
 
 puts "Installing deployment #{deployment_name}, cloudfoundry home dir is #{cloudfoundry_home}"
-
-# Fill in default config attributes
-spec = YAML.load(spec_erb.result)
-spec["deployment"] ||= {}
-spec["deployment"]["name"] = deployment_name
-spec["deployment"]["user"] = deployment_user
-spec["deployment"]["group"] = deployment_group
-spec["cloudfoundry"] ||= {}
-spec["cloudfoundry"]["home"] = cloudfoundry_home
 
 # Resolve all job dependencies
 vcap_run_list = {}
