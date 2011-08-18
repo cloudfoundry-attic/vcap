@@ -1,4 +1,4 @@
 $:.unshift(File.join(File.dirname(__FILE__)))
 require 'rubygems'
-require 'pcache'
+require 'server'
 run PackageCacheApi
