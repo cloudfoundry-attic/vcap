@@ -36,6 +36,6 @@ begin
   end
 
 ensure
-  #FileUtils.rm_rf(TEST_ROOT)
+  FileUtils.rm_rf(TEST_ROOT)
 end
 
