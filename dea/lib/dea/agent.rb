@@ -623,7 +623,7 @@ module DEA
             process.send_data("umask 077\n")
           end
           app_env.each { |env| process.send_data("export #{env}\n") }
-          process.send_data("#{@dea_ruby} ./prepare true ./startup -p #{port}\n")
+          process.send_data("./startup -p #{port}\n")
           process.send_data("exit\n")
         end
 
@@ -637,7 +637,7 @@ module DEA
         # before we start..
         kill_all_procs_for_user(user) if @secure
 
-        Bundler.with_clean_env { EM.system(sh_command, exec_operation, exit_operation) }
+        Bundler.with_clean_env { EM.system("#{@dea_ruby} -- #{prepare_script} true #{sh_command}", exec_operation, exit_operation) }
 
         instance[:staged] = instance_dir.sub("#{@apps_dir}/", '')
 
