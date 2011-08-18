@@ -37,12 +37,25 @@ class Component
     if core?
       @path = File.join(DIR, name)
       # Sane default for location of configuration file
-      @configuration_path ||= File.join(DIR, "..", name, "config", "#{name}.yml")
+      if @configuration_path.nil?
+        if $configdir
+          @configuration_path = File.join($configdir, "#{name}.yml")
+        else
+          @configuration_path = File.join(DIR, "..", name, "config", "#{name}.yml")
+        end
+      end
     else
       @path = File.join(SERVICE_DIR, name)
       # Sane default for location of service configuration file
       pre = name.sub(/_node|_gateway/,'')
-      @configuration_path ||= File.join(DIR, "../services", pre, "config", "#{name}.yml")
+      # Sane default for location of configuration file
+      if @configuration_path.nil?
+        if $configdir
+          @configuration_path = File.join($configdir, "#{name}.yml")
+        else
+          @configuration_path ||= File.join(DIR, "../services", pre, "config", "#{name}.yml")
+        end
+      end
     end
   end
 
@@ -534,7 +547,8 @@ opts_parser = OptionParser.new do |opts|
 end
 args = opts_parser.parse!(args)
 
-DIR = $vcap_dir
+DIR = $vcap_dir || File.expand_path("../../../bin", __FILE__)
+
 SERVICE_DIR = File.join(DIR, '/services')
 TMP = "/tmp/vcap-run"
 FileUtils.mkdir_p(TMP)
