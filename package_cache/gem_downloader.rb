@@ -2,6 +2,7 @@ $:.unshift(File.join(File.dirname(__FILE__),'../../common/lib'))
 require 'logger'
 require 'tmpdir'
 require 'fileutils'
+require 'vcap/subprocess'
 
 
 module PackageCache
@@ -12,17 +13,14 @@ module PackageCache
       @used = false
     end
 
-    def gem_to_url(gem_name)
-      "http://production.s3.rubygems.org/gems/#{gem_name}"
-    end
-
     def download(gem_name)
       Dir.chdir(@tmp_dir) {
-        tmp_file = random_file_name(suffix = '.incomplete')
+        tmp_file = random_file_name(:suffix => '.incomplete')
         url = gem_to_url(gem_name)
         VCAP::Subprocess.new.run("wget --quiet -O #{tmp_file} --retry-connrefused --connect-timeout=5 --no-check-certificate #{url}")
         File.rename(tmp_file, gem_name)
       }
+      true
     end
 
     def contains?(gem_name)
@@ -44,11 +42,16 @@ module PackageCache
 
     private
 
+    def gem_to_url(gem_name)
+      "http://production.s3.rubygems.org/gems/#{gem_name}"
+    end
+
+
     def gem_path(gem_name)
       File.join @tmp_dir, gem_name
     end
 
-    def random_filename(opts={})
+    def random_file_name(opts={})
         opts = {:chars => ('0'..'9').to_a + ('A'..'F').to_a + ('a'..'f').to_a,
                 :length => 16, :prefix => '', :suffix => '',
                 :verify => true, :attempts => 10}.merge(opts)
