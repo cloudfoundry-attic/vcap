@@ -37,6 +37,7 @@ module PackageCache
     end
 
     def purge!
+      @logger.debug("purging downloads directory #{@tmp_dir}")
       FileUtils.rm_f Dir.glob("#{@tmp_dir}/*")
     end
 
