@@ -8,12 +8,18 @@ require 'lib/vdebug'
 require 'gem_downloader'
 require 'gem_builder'
 require 'lib/user_pool'
+require 'lib/debug_formatter'
 
 module PackageCache
   class PackageCacheApi < Sinatra::Base
     def initialize
       super
       @logger = Logger.new(STDOUT)
+      @logger.formatter = DebugFormatter.new
+      if Process.uid != 0
+        @logger.error "Package Cache must be run as root."
+        exit 1
+      end
       @logger.info("Bringing up package cache...")
       set_directories
       begin
@@ -40,12 +46,14 @@ module PackageCache
       @inbox_dir = 'test/inbox'
       @downloads_dir = 'test/downloads'
       @cache_dir = 'test/cache'
+      @build_dir = 'test/builds'
     end
 
     def install_directories
       FileUtils.mkdir_p(@inbox_dir) if not Dir.exists? @inbox_dir
       FileUtils.mkdir_p(@downloads_dir) if not Dir.exists? @downloads_dir
       FileUtils.mkdir_p(@cache_dir)  if not Dir.exists? @cache_dir
+      FileUtils.mkdir_p(@build_dir)  if not Dir.exists? @build_dir
     end
 
     def setup_components
@@ -61,13 +69,19 @@ module PackageCache
       @cache = PackageCache::Cache.new(@cache_dir, @logger)
     end
 
-    put '/load/:type/:name' do |type, name|
+    put '/load/:type/:name' do |type, gem_name|
       if type == 'remote'
-        @downloader.download(name)
+        @downloader.download(gem_name)
         gem_path = @downloader.get_gem_path(gem_name)
+        user = @user_pool.alloc_user
+        builder = PackageCache::GemBuilder.new(user[:uid], @build_dir, @logger)
+        builder.import_gem(gem_path, :rename)
+        builder.build
+        package_path = builder.get_package
+        @cache.add_by_rename(package_path)
+        builder.clean_up!
+        @user_pool.free_user(user[:user_name])
 
-        #build gem
-        #add to cache
       elsif type == 'local'
         puts type,name
         #@loader.load_local_gem(name)
