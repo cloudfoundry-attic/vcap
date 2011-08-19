@@ -1,3 +1,5 @@
+-add configur file reader.
+
 -refactor everything containing a purge! method, should have a file_store class
  that they inherit from.
 
@@ -14,4 +16,6 @@
 
 -move to using thin.
 
-
+-purging downloads and inbox at startup to prevent resource leaks,
+ have startup check in place to ensure everything lives under a
+ sane root. 
