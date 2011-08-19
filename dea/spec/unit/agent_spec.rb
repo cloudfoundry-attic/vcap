@@ -107,6 +107,32 @@ describe 'DEA Agent' do
     end
   end
 
+  describe '#stage_app_dir' do
+    before :each do
+      @tmp_dir = Dir.mktmpdir
+      @bad_tgz = File.join(@tmp_dir, 'test.tgz')
+      File.open(@bad_tgz, 'w+') {|f| f.write("Hello!") }
+    end
+
+    after :each do
+      FileUtils.rm_rf(@tmp_dir)
+    end
+
+    it 'should return false if creating the instance dir fails' do
+      agent = make_test_agent
+      # Foo doesn't exist, so creating foo/bar should fail
+      inst_dir = File.join(@tmp_dir, 'foo', 'bar')
+      agent.stage_app_dir(nil, nil, nil, @bad_tgz, inst_dir, nil).should be_false
+    end
+
+    it 'should return false if creating the instance dir fails' do
+      agent = make_test_agent
+      inst_dir = File.join(@tmp_dir, 'foo')
+      # @bad_tgz isn't a valid tar file, so extraction should fail
+      agent.stage_app_dir(nil, nil, nil, @bad_tgz, inst_dir, nil).should be_false
+    end
+  end
+
   def create_apps_dir(base_dir)
     apps_dir = File.join(base_dir, 'apps')
     FileUtils.mkdir(apps_dir)

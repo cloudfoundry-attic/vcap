@@ -673,8 +673,37 @@ module DEA
 
       # Stage and start the droplet instance.
       f = Fiber.new do
-        stage_app_dir(bits_file, bits_uri, sha1, tgz_file, instance_dir, runtime)
-        start_operation.call
+        success = stage_app_dir(bits_file, bits_uri, sha1, tgz_file, instance_dir, runtime)
+        # If we failed to stage the app's instance dir, don't attempt to start it.
+        # The HM will notice that the app didn't start successfully and will take
+        # action to correct the error.
+        if success
+          start_operation.call
+        else
+          @logger.warn("Failed staging app dir '#{instance_dir}', not starting app #{instance[:log_id]}")
+          # This should do the right thing despite the app never being started.
+          # It will notify both the routers and the HM that the app has gone
+          # away in a CRASHED state, put the secure user back into the user
+          # pool, and release resources (memory, fds, etc) that were reserved
+          # for the app.
+          instance[:state]           = :CRASHED
+          instance[:exit_reason]     = :CRASHED
+          instance[:state_timestamp] = Time.now.to_i
+          stop_droplet(instance)
+
+          # The first call to cleanup_droplet() via stop_droplet() won't remove
+          # our instance from internal structures because we set the state to
+          # :CRASHED. We do that explicitly here instead of waiting for the
+          # crashes reaper to do so. This code is duplicated from
+          # cleanup_droplet() (gross, I know). The other option would be to set
+          # the state to STOPPED and call cleanup_droplet(). Not sure which is
+          # worse.
+          if droplet = @droplets[instance[:droplet_id]]
+            droplet.delete(instance[:instance_id])
+            @droplets.delete(instance[:droplet_id]) if droplet.empty?
+            schedule_snapshot
+          end
+        end
       end
       f.resume
 
@@ -948,8 +977,27 @@ module DEA
 
       # Explode the app into its directory and optionally bind its
       # local runtime.
-      `mkdir #{instance_dir}; cd #{instance_dir}; tar -xzf #{tgz_file}`
-      @logger.warn("Problems staging file #{tgz_file}") if $? != 0
+
+      st, stdout, stderr = run_command("mkdir #{instance_dir}")
+      unless st == 0
+        @logger.warn("Failed creating instance dir '#{instance_dir}', command exited with status #{st}")
+        @logger.warn("stdout: #{stdout}")
+        @logger.warn("stderr: #{stderr}")
+        FileUtils.rm_f(tgz_file) unless @disable_dir_cleanup
+        return false
+      end
+
+      st, stdout, stderr = run_command("cd #{instance_dir} && tar -xzf #{tgz_file}")
+      unless st == 0
+        @logger.warn("Failed unzipping droplet, command exited with status #{st}")
+        @logger.warn("stdout: #{stdout}")
+        @logger.warn("stderr: #{stderr}")
+        unless @disable_dir_cleanup
+          FileUtils.rm_rf(instance_dir)
+          FileUtils.rm_f(tgz_file)
+        end
+        return false
+      end
 
       # Removed the staged bits
       FileUtils.rm_f(tgz_file) unless @disable_dir_cleanup
@@ -957,6 +1005,7 @@ module DEA
       bind_local_runtime(instance_dir, runtime)
 
       @logger.debug("Took #{Time.now - start} to stage the app directory")
+      true
     end
 
     # The format used by VCAP_SERVICES
@@ -1567,6 +1616,16 @@ module DEA
       test_file = File.join(dir, "dea.#{Process.pid}.sentinel")
       FileUtils.touch(test_file)
       FileUtils.rm_f(test_file)
+    end
+
+
+    def run_command(cmd)
+      outdir = Dir.mktmpdir
+      stderr_path = File.join(outdir, 'stderr.log')
+      stdout = `#{cmd} 2> #{stderr_path}`
+      stderr = File.read(stderr_path)
+      FileUtils.rm_rf(outdir)
+      [$?, stdout, stderr]
     end
 
   end
