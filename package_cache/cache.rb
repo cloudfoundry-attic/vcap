@@ -46,7 +46,7 @@ module PackageCache
     private
 
     def set_cache_permissions(path)
-      raise "package_cache must own its root!" if not File.owned?(path)
+      #raise "package_cache must own its root!" if not File.owned?(path)
       #clients can access cache contents, but not list them.
       File.chmod(0711, path)
     end
