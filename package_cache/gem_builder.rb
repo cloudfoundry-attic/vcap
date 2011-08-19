@@ -6,8 +6,9 @@ require 'gem_util'
 
 module PackageCache
   class GemBuilder
-    def initialize(uid, build_root)
+    def initialize(uid, build_root, logger = nil)
       raise "invalid build_root" if not Dir.exists?(build_root)
+      @logger = logger || Logger.new(STDOUT)
       @build_dir = Dir.mktmpdir(nil, build_root)
       @uid = uid
       @gem_name = nil
