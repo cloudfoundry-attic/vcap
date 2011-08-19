@@ -39,7 +39,7 @@ module PackageCache
     def set_inbox_permissions
       File.chown(Process.uid, Process.gid, @inbox_dir)
       #clients can write to inbox, but not overwrite others files.
-      File.chmod(01744, @inbox_dir)
+      File.chmod(01722, @inbox_dir)
     end
   end
 end
