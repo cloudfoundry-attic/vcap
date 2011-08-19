@@ -14,12 +14,16 @@ class GemBuilder
     @package_path = nil
   end
 
-  #XXX add optional import_method parameter with copy or rename support
-  def import_gem(gem_src)
+  #XXX using a parameter hash could prettify this.
+  def import_gem(gem_src, import_method = nil)
     raise "invalid path #{gem_src}" if not File.exists?(gem_src)
     @gem_name = File.basename(gem_src)
     @gem_path = File.join(@build_dir, @gem_name)
-    FileUtils.cp(gem_src, @gem_path)
+    if import_method == :rename
+      File.rename(gem_src, @gem_path)
+    else
+      FileUtils.cp(gem_src, @gem_path)
+    end
     File.chown(@uid, nil, @gem_path)
   end
 
