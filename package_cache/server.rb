@@ -2,12 +2,12 @@ $:.unshift(File.join(File.dirname(__FILE__)))
 require 'sinatra/base'
 require 'logger'
 require 'inbox'
-require 'support'
 require 'cache'
 require 'fileutils'
 require 'lib/vdebug'
 require 'gem_downloader'
 require 'gem_builder'
+require 'lib/user_pool'
 
 module PackageCache
   class PackageCacheApi < Sinatra::Base
@@ -49,18 +49,25 @@ module PackageCache
     end
 
     def setup_components
+      @user_pool = UserPool.new(@logger)
+      @user_pool.install_pool($test_pool)
+
       @inbox = PackageCache::Inbox.new(@inbox_dir, :server, @logger)
       @inbox.purge!
+
       @downloader = PackageCache::GemDownloader.new(@downloads_dir, @logger)
       @downloader.purge!
+
       @cache = PackageCache::Cache.new(@cache_dir, @logger)
     end
 
     put '/load/:type/:name' do |type, name|
       if type == 'remote'
+        @downloader.download(name)
+        gem_path = @downloader.get_gem_path(gem_name)
 
-
-        #@loader.load_remote_gem(name)
+        #build gem
+        #add to cache
       elsif type == 'local'
         puts type,name
         #@loader.load_local_gem(name)
