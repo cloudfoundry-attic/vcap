@@ -14,6 +14,7 @@ class GemBuilder
     @package_path = nil
   end
 
+  #XXX add optional import_method parameter with copy or rename support
   def import_gem(gem_src)
     raise "invalid path #{gem_src}" if not File.exists?(gem_src)
     @gem_name = File.basename(gem_src)
