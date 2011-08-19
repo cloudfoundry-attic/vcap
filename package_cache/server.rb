@@ -7,6 +7,7 @@ require 'cache'
 require 'fileutils'
 require 'lib/vdebug'
 require 'gem_downloader'
+require 'gem_builder'
 
 module PackageCache
   class PackageCacheApi < Sinatra::Base
@@ -49,13 +50,16 @@ module PackageCache
 
     def setup_components
       @inbox = PackageCache::Inbox.new(@inbox_dir, :server, @logger)
+      @inbox.purge!
       @downloader = PackageCache::GemDownloader.new(@downloads_dir, @logger)
+      @downloader.purge!
       @cache = PackageCache::Cache.new(@cache_dir, @logger)
     end
 
     put '/load/:type/:name' do |type, name|
       if type == 'remote'
-        puts type,name
+
+
         #@loader.load_remote_gem(name)
       elsif type == 'local'
         puts type,name
