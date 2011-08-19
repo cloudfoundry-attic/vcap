@@ -34,3 +34,7 @@
  alloc_user.
 
 -check if gem already in cache, if so, return immediately without building.
+
+-add gitignore for test directories.
+
+-rework/eliminate gem_util.rb
