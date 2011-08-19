@@ -86,6 +86,8 @@ module DEA
 
       @downloads_pending = {}
 
+      @port_range = process_range config['port_range'] if config['port_range']
+
       @shutting_down = false
 
       # Path to the ruby executable the dea should use when executing the prepare script.
@@ -131,6 +133,31 @@ module DEA
 
       # XXX(mjp) - Ugh, this is needed for VCAP::Component.register(). Find a better solution when time permits.
       @config = config.dup()
+    end
+
+    def process_range port_range
+      case port_range.count('.')
+         when 2     # we have an inclusive upper bound
+             ports = port_range.split('..')
+             Float(ports[0])  # ugly testing whether we have valid numbers
+             Float(ports[1])
+             if (ports[0].to_i <= ports[1].to_i and ports[0].to_i > 0)  # check whether the port range makes sense
+               return Range.new(ports[0].to_i, ports[1].to_i)
+             end
+         when 3    # we have an exclusive upper bound
+             ports = port_range.split('...')
+             Float(ports[0])
+             Float(ports[1])
+             if (ports[0].to_i < ports[1].to_i and ports[0].to_i > 0)  # check whether the port range makes sense
+               return Range.new(ports[0].to_i, ports[1].to_i - 1)
+             end
+         end
+
+      return nil
+
+      # wrongly formatted number. return nil
+      rescue
+        return nil
     end
 
     def run()
@@ -557,7 +584,12 @@ module DEA
       end
 
       start_operation = proc do
-        port = VCAP.grab_ephemeral_port
+        # fallback variant in case we cannot get a port in the configured range: use an ephemeral port
+        if @port_range
+          port = VCAP.grab_port_in_range @port_range || VCAP.grab_ephemeral_port
+        else
+          port =  VCAP.grab_ephemeral_port
+        end
 
         @logger.debug('Completed download')
         @logger.info("Starting up instance #{instance[:log_id]} on port:#{port}")
