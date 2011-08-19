@@ -60,23 +60,7 @@ class JavaWebPlugin < StagingPlugin
       <<-JAVA
 export CATALINA_OPTS="$CATALINA_OPTS `ruby resources/set_environment`"
 env > env.log
-PORT=-1
-SSL="false"
-while getopts ":p:s" opt; do
-  case $opt in
-    p)
-      PORT=$OPTARG
-      ;;
-    s)
-      SSL="true"
-      ;;
-  esac
-done
-if [ $PORT -lt 0 ] ; then
-  echo "Missing or invalid port (-p)"
-  exit 1
-fi
-ruby resources/generate_server_xml $PORT $SSL
+ruby resources/generate_server_xml $BACKEND_PORT
       JAVA
     end
   end

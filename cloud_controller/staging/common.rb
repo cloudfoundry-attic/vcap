@@ -1,4 +1,5 @@
 require 'rubygems'
+require 'fileutils'
 gemfile = File.expand_path('../../Gemfile', __FILE__)
 if defined?(Bundler)
   if File.realpath(gemfile) != File.realpath(ENV['BUNDLE_GEMFILE'])
@@ -31,6 +32,10 @@ require File.expand_path('../gem_cache', __FILE__)
 # Staging plugins (at least the ones written in Ruby) are expected to subclass this. See ruby/sinatra for a simple example.
 class StagingPlugin
   attr_accessor :source_directory, :destination_directory, :environment_json
+  
+  def self.resource_dir
+    File.join(File.dirname(__FILE__), 'resources')
+  end
 
   def self.staging_root
     File.expand_path('..', __FILE__)
@@ -377,18 +382,61 @@ class StagingPlugin
   def change_directory_for_start
     "cd app"
   end
+  
+  def process_opts
+    script = <<-SCRIPT
+PORT=-1
+SSL=""
+while getopts ":p:b:s" opt; do
+  case $opt in
+    p)
+      PORT=$OPTARG      
+      ;;
+    b)
+      BACKEND_PORT=$OPTARG
+      ;;
+    s)
+      SSL="true"
+      ;;
+  esac
+done
+if [ $PORT -lt 0 ] ; then
+  echo "Missing or invalid port (-p)"
+  exit 1
+fi
+if [ $BACKEND_PORT -lt 0 ] ; then
+  echo "Missing or invalid backend port (-b)"
+  exit 1
+fi
+SPATH=$(dirname $(readlink -f $0))
+if [[ $SPATH =~ (/([^/]*)$) ]]; then
+    DIRN=`echo ${BASH_REMATCH[2]}`
+fi
+    SCRIPT
+  end
+  
+  def configure_nginx
+    <<-SCRIPT
+ruby $PWD/../resources/generate_vhost_conf $PORT $BACKEND_PORT $DIRN $SSL
+kill -HUP `cat /var/run/nginx.pid`
+    SCRIPT
+  end  
 
   def generate_startup_script(env_vars = {})
     after_env_before_script = block_given? ? yield : "\n"
     template = <<-SCRIPT
 #!/bin/bash
 <%= environment_statements_for(env_vars) %>
+<%= process_opts %>
 <%= after_env_before_script %>
 <%= change_directory_for_start %>
 <%= start_command %> > ../logs/stdout.log 2> ../logs/stderr.log &
+<%= configure_nginx %>
 STARTED=$!
 echo "$STARTED" >> ../run.pid
 echo "#!/bin/bash" >> ../stop
+echo "rm -r /etc/nginx/vhosts/$DIRN.conf" >> ../stop
+echo "kill -HUP `cat /var/run/nginx.pid`" >> ../stop
 echo "kill -9 $STARTED" >> ../stop
 echo "kill -9 $PPID" >> ../stop
 chmod 755 ../stop

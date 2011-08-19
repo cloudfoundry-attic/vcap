@@ -5,7 +5,6 @@
 
 tomcat_port = ARGV[0]
 exit 1 unless tomcat_port
-use_ssl = ARGV[1]
 
 require 'erb'
 OUTPUT_PATH = "tomcat/conf/server.xml"
@@ -41,20 +40,8 @@ TEMPLATE = <<-ERB
 
   <Service name="Catalina">
 
-    <% if use_ssl == "true"  %>
-
-       <Connector port="<%= tomcat_port %>" protocol="HTTP/1.1"
-               connectionTimeout="20000"
-               scheme="https" secure="true" SSLEnabled="true"
-               keystoreFile="conf/default.jks" keystorePass="cloudfoundry"
-               clientAuth="false" sslProtocol="TLS"/>
-
-    <% else %>
-
        <Connector port="<%= tomcat_port %>" protocol="HTTP/1.1"
                connectionTimeout="20000" />
-
-    <% end %>
 
     <Engine name="Catalina" defaultHost="localhost">
 

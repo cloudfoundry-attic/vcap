@@ -13,9 +13,9 @@ class Rails3Plugin < StagingPlugin
     if uses_bundler?
       # Specify Thin if the app bundled it; otherwise let Rails figure it out.
       server_script = thin? ? "server thin" : "server"
-      "#{local_runtime} #{gem_bin_dir}/bundle exec #{local_runtime} #{gem_bin_dir}/rails #{server_script} $@"
+      "#{local_runtime} #{gem_bin_dir}/bundle exec #{local_runtime} #{gem_bin_dir}/rails #{server_script} -p $BACKEND_PORT"
     else
-      "#{local_runtime} -S thin -R config.ru $@ start"
+      "#{local_runtime} -S thin -R config.ru -p $BACKEND_PORT start"
     end
   end
 
@@ -34,6 +34,7 @@ class Rails3Plugin < StagingPlugin
 
   def stage_application
     Dir.chdir(destination_directory) do
+      FileUtils.cp_r(StagingPlugin.resource_dir, destination_directory)
       create_app_directories
       copy_source_files
       compile_gems

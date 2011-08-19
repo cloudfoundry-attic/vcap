@@ -6,6 +6,7 @@ class SinatraPlugin < StagingPlugin
 
   def stage_application
     Dir.chdir(destination_directory) do
+      FileUtils.cp_r(StagingPlugin.resource_dir, destination_directory)
       create_app_directories
       copy_source_files
       compile_gems
@@ -18,9 +19,9 @@ class SinatraPlugin < StagingPlugin
   def start_command
     sinatra_main = detect_main_file
     if uses_bundler?
-      "#{local_runtime} ./rubygems/ruby/#{library_version}/bin/bundle exec #{local_runtime} ./#{sinatra_main} $@"
+      "#{local_runtime} ./rubygems/ruby/#{library_version}/bin/bundle exec #{local_runtime} ./#{sinatra_main} -p $BACKEND_PORT"
     else
-      "#{local_runtime} #{sinatra_main} $@"
+      "#{local_runtime} #{sinatra_main} -p $BACKEND_PORT"
     end
   end
 

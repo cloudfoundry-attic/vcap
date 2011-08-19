@@ -7,6 +7,7 @@ class NodePlugin < StagingPlugin
 
   def stage_application
     Dir.chdir(destination_directory) do
+      FileUtils.cp_r(StagingPlugin.resource_dir, destination_directory)
       create_app_directories
       copy_source_files
       create_startup_script
@@ -15,7 +16,7 @@ class NodePlugin < StagingPlugin
 
   # Let DEA fill in as needed..
   def start_command
-    "%VCAP_LOCAL_RUNTIME% #{detect_main_file} $@"
+    "export VMC_APP_PORT=$BACKEND_PORT\n%VCAP_LOCAL_RUNTIME% #{detect_main_file} "
   end
 
   private

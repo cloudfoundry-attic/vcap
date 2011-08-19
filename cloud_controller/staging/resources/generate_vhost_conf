@@ -1,0 +1,43 @@
+port = ARGV[0]
+backend_port = ARGV[1]
+droplet_name = ARGV[2]
+ssl_enabled = ARGV[3]
+exit 1 unless port and backend_port and droplet_name and ssl_enabled
+
+require 'erb'
+
+OUTPUT_PATH = "/etc/nginx/vhosts/#{droplet_name}.conf"
+
+TEMPLATE = <<-ERB
+server {
+    listen       <%= port %>;
+    server_name  _;
+
+    access_log   /var/vcap/sys/log/vcap.access.<%= droplet_name %>.<%= port %>.log main;
+    server_name_in_redirect off;
+
+<% if ssl_enabled == "true" %>
+    ssl on;
+    ssl_certificate /etc/nginx/cert/server.crt;
+    ssl_certificate_key /etc/nginx/cert/server.key;
+<% end %>
+
+    location / {
+        proxy_buffering                 off;
+        proxy_set_header                Host $host;
+        proxy_set_header                X-Real_IP $remote_addr;
+        proxy_set_header                X-Forwarded_For $proxy_add_x_forwarded_for;
+        proxy_set_header                X-Forwarded_Proto http;
+        proxy_redirect                  off;
+        proxy_connect_timeout           100;
+        proxy_send_timeout              300;
+        proxy_read_timeout              300;
+        proxy_pass                      http://localhost:<%= backend_port %>;
+    }
+}
+ERB
+
+template = ERB.new(TEMPLATE)
+File.open(File.expand_path(OUTPUT_PATH), 'wb') do |file|
+  file.puts(template.result(binding))
+end

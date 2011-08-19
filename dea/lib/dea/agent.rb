@@ -563,6 +563,7 @@ module DEA
 
       start_operation = proc do
         port = VCAP.grab_ephemeral_port
+        backend_port = VCAP.grab_ephemeral_port
 
         @logger.debug('Completed download')
         @logger.info("Starting up instance #{instance[:log_id]} on port:#{port}")
@@ -626,7 +627,7 @@ module DEA
           end
           app_env.each { |env| process.send_data("export #{env}\n") }
 
-          prepare_command = "#{@dea_ruby} ./prepare true ./startup -p #{port}"
+          prepare_command = "#{@dea_ruby} ./prepare true ./startup -p #{port} -b #{backend_port}"
 
           if @enable_ssl
             prepare_command += " -s"
