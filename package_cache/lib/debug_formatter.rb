@@ -4,9 +4,9 @@ require "logger"
 class DebugFormatter < Logger::Formatter
   # Provide a call() method that returns the formatted message.
   def call(severity, time, program_name, message)
-      file,line,method = caller[0].split(':')
+      file,line,method = caller[3].split(':')
       file = File.basename(file)
-      "DEBUG:#{file}:#{line}:#{method}>> #{String(message)}\n"
+      "#{severity}:#{file}:#{line}:#{method}>> #{String(message)}\n"
   end
 end
 
