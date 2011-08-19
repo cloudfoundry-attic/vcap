@@ -5,3 +5,9 @@ mbus: nats://localhost:4222
 logging:
   level: info
 pid: /var/vcap/sys/run/router.pid
+
+# This will force the router to reencrypt the traffic to services, cc, dea, etc.
+#ssl:
+#   private_key_file: '/etc/nginx/cert/server.key'
+#   cert_chain_file: '/etc/nginx/cert/server.crt'
+#   verify_peer: false

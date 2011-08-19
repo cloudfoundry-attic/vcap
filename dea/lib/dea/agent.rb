@@ -79,6 +79,8 @@ module DEA
       @secure = config['secure']
       @enforce_ulimit = config['enforce_ulimit']
 
+      @enable_ssl = config['ssl']
+
       @droplets = {}
       @usage = {}
       @snapshot_scheduled = false
@@ -623,7 +625,16 @@ module DEA
             process.send_data("umask 077\n")
           end
           app_env.each { |env| process.send_data("export #{env}\n") }
-          process.send_data("#{@dea_ruby} ./prepare true ./startup -p #{port}\n")
+
+          prepare_command = "#{@dea_ruby} ./prepare true ./startup -p #{port}"
+
+          if @enable_ssl
+            prepare_command += " -s"
+          end
+
+          prepare_command += "\n"
+
+          process.send_data(prepare_command)
           process.send_data("exit\n")
         end
 
@@ -862,7 +873,12 @@ module DEA
     def download_app_bits(bits_uri, sha1, tgz_file)
       f = Fiber.current
       @downloads_pending[sha1] = []
-      http = EventMachine::HttpRequest.new(bits_uri).get
+
+      if @enable_ssl
+         http = EventMachine::HttpRequest.new(bits_uri).get @enable_ssl
+      else
+         http = EventMachine::HttpRequest.new(bits_uri).get
+      end      
 
       # Use a tmp file here so other queue up and fail the File.exists?
       pending_tgz_file = File.join(@staged_dir, "#{sha1}.pending")

@@ -58,10 +58,12 @@ if not CloudController.use_nginx
 else
   socket = CloudController.instance_socket
   port =   CloudController.instance_port
-  if socket and port
-    $stderr.puts "only one of instance_socket or insecure_instance_port should be enabled in config file...quiting..."
-    exit 1
-  end
+  # This limitation is a problem when there is a nginx server in front, and an SSL configuration.
+  # The socket is needed for the nginx communication, while the port is needed for CC external clients.
+  #if socket and port
+  #  $stderr.puts "only one of instance_socket or insecure_instance_port should be enabled in config file...quiting..."
+  #  exit 1
+  #end
   if socket
     server = Thin::Server.new(socket)
   else

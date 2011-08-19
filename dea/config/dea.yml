@@ -13,6 +13,13 @@ secure: false
 enforce_ulimit: false
 pid: /var/vcap/sys/run/dea.pid
 
+# This will make SSL capable frameworks to use SSL
+# DEA will use these settings also for downloading droplets via HTTPS
+#ssl:
+#   private_key_file: '/tmp/cert/server.key'
+#   cert_chain_file: '/tmp/cert/server.crt'
+#   verify_peer: false
+
 #Force droplets to be downloaded over http even when
 #there is a shared directory containing the droplet.
 force_http_sharing: true
