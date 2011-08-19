@@ -1,5 +1,3 @@
-port: 2222
-inet: 0.0.0.0
 sock: /tmp/router.sock
 mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
 logging:

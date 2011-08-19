@@ -44,7 +44,7 @@ http {
 
     server {
         listen       *:80;
-        server_name  _;
+        server_name  "<%= node[:deployment][:domain] %>";
 
         access_log   <%= node[:nginx][:vcap_log] %> main;
 	server_name_in_redirect off;

@@ -1,0 +1,24 @@
+---
+deployment:
+  domain: "yourdomain.com"
+  name: "rest"
+jobs:
+  install:
+    - nats_server
+    - cloud_controller:
+        builtin_services:
+          - redis
+          - mongodb
+          - mysql
+    - health_manager
+    - redis:
+        index: "0"
+    - redis_gateway
+    - ccdb
+    - dea
+    - mysql:
+        index: "0"
+    - mysql_gateway
+    - mongodb_gateway
+    - mongodb:
+        index: "0"
