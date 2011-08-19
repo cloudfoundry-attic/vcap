@@ -1,0 +1,17 @@
+-refactor everything containing a purge! method, should have a file_store class
+ that they inherit from.
+
+-fix everything up to use the PackageCache level logger, kibitz about this.
+
+--testing
+
+-check unit tests are complete.
+-have unit tests check file permissions
+-rewrite all unit tests to use rspec.
+
+-put in protection from massive gems being downloaded!
+ e.g. run_as + quota's.
+
+-move to using thin.
+
+
