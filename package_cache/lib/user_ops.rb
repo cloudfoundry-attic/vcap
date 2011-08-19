@@ -6,8 +6,8 @@ require 'vcap/subprocess'
 
 module UserOps
   class << self
-    def init
-      @logger = Logger.new(STDOUT)
+    def init(logger = nil)
+      @logger = logger || Logger.new(STDOUT)
     end
 
     def run(cmd)

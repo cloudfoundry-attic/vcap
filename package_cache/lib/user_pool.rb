@@ -17,11 +17,11 @@ class UserPool
   attr_accessor :busy_users
 
   def initialize(logger = nil)
-    UserOps.init
     @logger = logger ||  Logger.new(STDOUT)
     @free_users = []
     @busy_users = []
     @users_mutex = Mutex.new
+    UserOps.init(@logger)
   end
 
   #this does a hard setup of a new pool,
