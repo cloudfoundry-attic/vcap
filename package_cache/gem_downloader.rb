@@ -8,18 +8,20 @@ require 'vcap/subprocess'
 module PackageCache
   class GemDownloader
     def initialize(tmp_dir, logger = nil)
-      @logger = Logger.new(STDOUT)
+      @logger = logger || Logger.new(STDOUT)
       @tmp_dir = tmp_dir
       @used = false
     end
 
     def download(gem_name)
+      @logger.debug("Downloading gem #{gem_name}")
       Dir.chdir(@tmp_dir) {
         tmp_file = random_file_name(:suffix => '.incomplete')
         url = gem_to_url(gem_name)
         VCAP::Subprocess.new.run("wget --quiet -O #{tmp_file} --retry-connrefused --connect-timeout=5 --no-check-certificate #{url}")
         File.rename(tmp_file, gem_name)
       }
+      @logger.debug("#{gem_name} download completed.")
       true
     end
 
