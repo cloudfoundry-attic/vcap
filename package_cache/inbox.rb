@@ -27,6 +27,7 @@ module PackageCache
     end
 
     def purge!
+      @logger.debug("purging inbox directory #{@inbox_dir}")
       FileUtils.rm_f Dir.glob("#{@inbox_dir}/*")
     end
 
