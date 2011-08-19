@@ -110,7 +110,7 @@ class UserPool
     @logger.debug "free()'d user #{user_name}"
   end
 
-  private:
+  private
 
   #helpers.. don't acquire mutex.
   def users

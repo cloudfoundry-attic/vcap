@@ -8,9 +8,6 @@ pp up.free_users
 puts "printing busy list users"
 pp up.busy_users
 
-puts "printing all users"
-pp up.users
-
 user1 = up.alloc_user
 user2 = up.alloc_user
 up.free_user(user1)
