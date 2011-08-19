@@ -2,7 +2,6 @@
 base_dir: /var/vcap.local/dea
 local_route: 127.0.0.1
 filer_port: 12345
-port_range: 34600..45000
 mbus: nats://localhost:4222/
 intervals:
   heartbeat: 10
