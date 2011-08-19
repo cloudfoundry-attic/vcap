@@ -2,14 +2,23 @@ load 'user_pool.rb'
 require 'pp'
 up = UserPool.new
 up.install_pool($test_pool)
-puts "printing free user list"
+ puts "printing free user list"
 pp up.free_users
 
 puts "printing busy list users"
 pp up.busy_users
 
+puts "allocating users"
 user1 = up.alloc_user
+if up.user_in_use?(user1)
+  puts "alloc succeeded!"
+else
+  puts "alloc failed!"
+end
 user2 = up.alloc_user
+
+puts "free users"
+
 up.free_user(user1)
 up.free_user(user2)
 

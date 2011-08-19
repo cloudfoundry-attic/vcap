@@ -11,9 +11,9 @@ module UserOps
     end
 
     def run(cmd)
-      @logger.debug "running >>> #{cmd}}"
+      #@logger.debug "running >>> #{cmd}}"
       result = VCAP::Subprocess.new.run(cmd)
-      @logger.debug result
+      #@logger.debug result
     end
 
     def exists_in_file(name, path)
@@ -53,8 +53,8 @@ module UserOps
     def group_kill_all_procs(group_name)
       begin
       run("pkill -9 -G #{group_name}")
-      rescue => e
-        puts e
+      rescue VCAP::SubprocessStatusError => e
+        puts e.exit_status
       end
     end
 
@@ -70,9 +70,9 @@ module UserOps
     #XXX better error handling
     def user_kill_all_procs(user_name)
       begin
-      run("pkill -9 -u #{user_name}")
-      rescue => e
-        puts e
+      run("pkill -9 -u #{user_name} 2>&1")
+      rescue VCAP::SubprocessStatusError => e
+        puts e.exit_status
       end
     end
 

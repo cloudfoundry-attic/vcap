@@ -89,13 +89,17 @@ class UserPool
       fresh_user = @free_users.pop
       if fresh_user != nil
         @busy_users.push(fresh_user)
+      else
+        raise "out of users!!"
       end
     end
     @logger.debug "alloc()'d user #{fresh_user}"
     fresh_user
   end
 
-  def free_user(user_name)
+
+  def free_user(user)
+    user_name = user[:user_name]
     @users_mutex.synchronize do
       if not user_in_list?(@busy_users, user_name)
         raise "tried to free user: #{user_name} not currently in use!"
@@ -104,10 +108,19 @@ class UserPool
         raise "tried to free invalid user: #{user_name}"
       end
       UserOps.user_kill_all_procs(user_name)
-      @busy_users.delete_if { |k,v| k == user_name}
-      @free_users.push(user_name)
+      @busy_users.delete_if { |name, uid| name == user_name}
+      @free_users.push(user)
     end
     @logger.debug "free()'d user #{user_name}"
+  end
+
+  def user_in_use?(user)
+    user_name = user[:user_name]
+    result = false
+    @users_mutex.synchronize do
+      result = user_in_list?(@busy_users, user_name)
+    end
+    result
   end
 
   private
@@ -118,7 +131,7 @@ class UserPool
   end
 
   def user_in_list?(list, user_name)
-    list.each { |k,v| return true if k == user_name }
+    list.each { |user| return true if user[:user_name] == user_name }
     false
   end
 
