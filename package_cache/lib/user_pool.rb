@@ -47,6 +47,8 @@ class UserPool
       UserOps.install_group(@group_name)
     end
 
+    @gid = UserOps.group_to_gid(@group_name)
+
     @logger.debug("killing all procs in group #{@group_name}")
     UserOps.group_kill_all_procs(@group_name)
 
@@ -62,7 +64,7 @@ class UserPool
       end
       # XXX should rename to kill_all_user_procs/kill_all_group_procs
       UserOps.user_kill_all_procs(user_name)
-      @free_users << {:user_name => user_name, :uid => uid}
+      @free_users << {:user_name => user_name, :uid => uid, :gid => @gid}
     end
   end
 

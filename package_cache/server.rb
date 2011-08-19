@@ -67,6 +67,8 @@ module PackageCache
       @downloader.purge!
 
       @cache = PackageCache::Cache.new(@cache_dir, @logger)
+      #XXX make this purge configurable.
+      @cache.purge!
     end
 
     put '/load/:type/:name' do |type, gem_name|
@@ -74,13 +76,13 @@ module PackageCache
         @downloader.download(gem_name)
         gem_path = @downloader.get_gem_path(gem_name)
         user = @user_pool.alloc_user
-        builder = PackageCache::GemBuilder.new(user[:uid], @build_dir, @logger)
+        builder = PackageCache::GemBuilder.new(user, @build_dir, @logger)
         builder.import_gem(gem_path, :rename)
         builder.build
         package_path = builder.get_package
-        @cache.add_by_rename(package_path)
+        @cache.add_by_rename!(package_path)
         builder.clean_up!
-        @user_pool.free_user(user[:user_name])
+        @user_pool.free_user(user)
 
       elsif type == 'local'
         puts type,name

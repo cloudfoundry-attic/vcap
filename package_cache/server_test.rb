@@ -7,7 +7,7 @@ port = '9292'
 #RestClient.get 'localhost:9292/hello'
 
 #test remote gem load
-RestClient.put "localhost:#{port}/load/remote/webmock-1.5.0.gem"
+RestClient.put "localhost:#{port}/load/remote/webmock-1.5.0.gem", ''
 
 #test local gem load
 #compute hash on test gem

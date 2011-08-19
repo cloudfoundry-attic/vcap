@@ -13,7 +13,9 @@ module PackageCache
       set_cache_permissions(@cache_dir)
     end
 
+    #XXX this could be prettified with parameter hash so reads add(path, move_method => :rename)
     def add_by_rename!(package_src)
+      @logger.debug("starting add #{package_src} to cache.}")
       package_name = File.basename(package_src)
       package_dst = package_name_to_path(package_name)
       if contains?(package_name)
@@ -22,6 +24,7 @@ module PackageCache
       end
       File.rename(package_src, package_dst)
       set_package_permissions(package_dst)
+      @logger.debug("package #{package_src} added to cache.}")
       true
     end
 
@@ -40,6 +43,7 @@ module PackageCache
     end
 
     def purge!
+      @logger.debug("purging cache #{@cache_dir}")
       FileUtils.rm_f Dir.glob("#{@cache_dir}/*")
     end
 

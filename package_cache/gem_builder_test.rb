@@ -4,11 +4,12 @@ require 'gem_util'
 require 'fileutils'
 TEST_GEM = 'yajl-ruby-0.8.2.gem'
 TEST_DIR =  File.join Dir.pwd, 'test_build_dir'
+user = {:user_name => 'talg', :uid => 1000, :gid => 1000}
 begin
   Dir.mkdir(TEST_DIR) if not Dir.exists? TEST_DIR
   Dir.chdir(TEST_DIR)
   GemUtil.fetch_remote_gem(TEST_GEM)
-  gb = PackageCache::GemBuilder.new(1000, TEST_DIR)
+  gb = PackageCache::GemBuilder.new(user, TEST_DIR)
   puts "importing gem"
   gb.import_gem(File.join(TEST_DIR, TEST_GEM), :rename)
   puts "building gem"

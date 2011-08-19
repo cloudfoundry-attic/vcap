@@ -3,17 +3,21 @@ require 'tmpdir'
 require 'lib/user_ops'
 require 'lib/run_as'
 require 'gem_util'
+require 'lib/vdebug'
 
 module PackageCache
   class GemBuilder
-    def initialize(uid, build_root, logger = nil)
+    def initialize(user, build_root, logger = nil)
       raise "invalid build_root" if not Dir.exists?(build_root)
       @logger = logger || Logger.new(STDOUT)
       @build_dir = Dir.mktmpdir(nil, build_root)
-      @uid = uid
+      @user = user
+      @uid = user[:uid]
+      @gid = user[:gid]
       @gem_name = nil
       @gem_path = nil
       @package_path = nil
+      @logger.debug("new gem_builder with uid: #{@uid} build_root #{build_root}")
     end
 
     #XXX using a parameter hash could prettify this.
@@ -27,6 +31,7 @@ module PackageCache
         FileUtils.cp(gem_src, @gem_path)
       end
       File.chown(@uid, nil, @gem_path)
+      @logger.debug("successfully imported #{@gem_name}")
     end
 
     def get_package
@@ -34,15 +39,24 @@ module PackageCache
       @package_path
     end
 
+    require 'pp'
     def build
-      UserOps.init
+      @logger.debug("building gem #{@gem_name}")
+      UserOps.init(@logger)
       install_dir = Dir.mktmpdir(nil, @build_dir)
-      UserOps.run_as(@build_dir, @uid, "gem install #{@gem_path} --local --no-rdoc --no-ri -E -w -f --ignore-dependencies --install-dir #{install_dir}")
+      pdebug "type info"
+      pp @uid
+      pp @gid
+      File.chown(@uid, @gid, @build_dir)
+      File.chmod(0700, @build_dir)
+      UserOps.run_as(@build_dir, @uid, "gem install #{@gem_name} --local --no-rdoc --no-ri -E -w -f --ignore-dependencies --install-dir #{install_dir}")
+      @logger.debug("gem install of #{@gem_path} complete.")
 
       package_file = GemUtil.gem_to_package(@gem_name)
       UserOps.run_as(@build_dir, @uid, "tar czf #{package_file} #{install_dir}")
       @package_path = File.join @build_dir, package_file
       raise "Build failed!" if not File.exist? @package_path
+      @logger.debug("created package #{@package_path}.")
     end
 
     def clean_up!

@@ -34,7 +34,7 @@ module UserOps
 
     ##groups
     def group_to_gid(group_name)
-      name_to_id(group_name, '/etc/group')
+      name_to_id(group_name, '/etc/group').to_i
     end
 
     def group_exists?(group_name)
