@@ -28,7 +28,7 @@ describe 'DEA Agent' do
 
   after :all do
     # Cleanup after ourselves
-    FileUtils.rm_rf(@test_dir)
+    #FileUtils.rm_rf(@test_dir)
   end
 
   before :each do
