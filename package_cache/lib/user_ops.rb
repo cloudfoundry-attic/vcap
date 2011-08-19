@@ -53,8 +53,9 @@ module UserOps
     def group_kill_all_procs(group_name)
       begin
       run("pkill -9 -G #{group_name}")
-      rescue VCAP::SubprocessStatusError => e
-        puts e.exit_status
+      #rescue VCAP::SubprocessStatusError => e
+      rescue => e
+        @logger.debug "ignoring"
       end
     end
 
@@ -71,8 +72,10 @@ module UserOps
     def user_kill_all_procs(user_name)
       begin
       run("pkill -9 -u #{user_name} 2>&1")
-      rescue VCAP::SubprocessStatusError => e
-        puts e.exit_status
+      #rescue VCAP::SubprocessStatusError => e
+      #  @logger.debug e.exit_status
+      rescue => e
+        @logger.debug "ignoring"
       end
     end
 
