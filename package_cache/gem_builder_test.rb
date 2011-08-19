@@ -8,9 +8,12 @@ begin
   Dir.mkdir(TEST_DIR) if not Dir.exists? TEST_DIR
   Dir.chdir(TEST_DIR)
   GemUtil.fetch_remote_gem(TEST_GEM)
-  gb = GemBuilder.new(1000, TEST_DIR)
-  gb.import_gem(File.join TEST_DIR, TEST_GEM)
+  gb = PackageCache::GemBuilder.new(1000, TEST_DIR)
+  puts "importing gem"
+  gb.import_gem(File.join(TEST_DIR, TEST_GEM), :rename)
+  puts "building gem"
   gb.build
+  puts "getting package"
   package = gb.get_package
   if File.exists? package
     puts "#{package} built successfully"
