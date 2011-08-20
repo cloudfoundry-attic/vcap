@@ -66,7 +66,7 @@ output_path = 'apache/start.sh'
 template = <<-ERB
 #!/bin/bash
 source <%= base_dir %>/apache/envvars
-/usr/sbin/apache2 -d <%= base_dir %>/apache -d <%= base_dir %>/apache -D FOREGROUND
+/usr/sbin/apache2 -d <%= base_dir %>/apache -f <%= base_dir %>/apache/apache2.conf -D FOREGROUND
 ERB
 
 template = ERB.new(template)
