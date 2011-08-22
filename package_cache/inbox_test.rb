@@ -19,13 +19,18 @@ begin
   create_test_file(TEST_MODULE_PATH)
 
   puts "adding test module"
-  if ib.add_entry(TEST_MODULE_PATH) and ib.contains?(TEST_MODULE)
+  entry_name =  ib.add_entry(TEST_MODULE_PATH)
+  if ib.contains? entry_name
     puts "success!"
   else
     puts "failure!"
   end
 
-  puts "get #{TEST_MODULE} got: #{ib.get_entry(TEST_MODULE)}"
+  puts "get #{entry_name} got: #{ib.get_entry(entry_name)}"
+
+  puts "trying to import entry"
+  ib.secure_import_entry(entry_name)
+
 
   puts "purging!"
   ib.purge!
