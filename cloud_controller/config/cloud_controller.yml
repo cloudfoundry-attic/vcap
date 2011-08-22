@@ -18,6 +18,10 @@ app_uris:
 #  reserved_list: [www, test, dash, register, foo, bar]
 #  reserved_length: 3
 
+# This will make the internal communication go through SSL
+#ssl:
+#  ssl_port: 9022
+
 external_port: 9022 #public CC port
 
 #nginx proxy provide multiple functions including

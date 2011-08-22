@@ -163,6 +163,11 @@ module ClientConnection
     else
       host, port = @droplet[:host], @droplet[:port]
       @bound_app_conn = EM.connect(host, port, AppConnection, self, @headers, @droplet)
+
+      if (Router.ssl_opts)
+          @bound_app_conn.start_tls Router.ssl_opts
+      end
+       
     end
 
   end

@@ -64,7 +64,11 @@ module CloudController
     end
 
     def instance_port
-      AppConfig[:nginx][:insecure_instance_port]
+      if AppConfig[:ssl]
+         AppConfig[:ssl][:ssl_port]
+      else
+         AppConfig[:nginx][:insecure_instance_port]
+      end
     end
 
     def instance_socket
