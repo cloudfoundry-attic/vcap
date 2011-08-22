@@ -1,5 +1,5 @@
 ---
-external_uri: api.<%= node[:cloud_controller][:domain] %>
+external_uri: api.<%= node[:deployment][:domain] %>
 description: "VMware's Cloud Application Platform"
 support_address: http://support.cloudfoundry.com
 local_route: <%= node[:cloud_controller][:local_route] %>
