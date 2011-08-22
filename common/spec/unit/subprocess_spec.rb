@@ -24,10 +24,15 @@ describe VCAP::Subprocess do
         @subprocess.run('exit 10')
       rescue VCAP::SubprocessStatusError => se
         ex_thrown = true
-        se.exit_status.exitstatus.should == 10
+        se.status.exitstatus == 10
       ensure
         ex_thrown.should be_true
       end
+    end
+
+    it 'should properly validate nonzero exit statuses' do
+      stdout, stderr, status = @subprocess.run('exit 10', 10)
+      status.exitstatus.should == 10
     end
 
     it 'should kill processes that run too long' do

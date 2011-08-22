@@ -20,7 +20,7 @@ module VCAP
           stdout, stderr, status = VCAP::Subprocess.run("ps #{flags} -p #{pid}")
         rescue VCAP::SubprocessStatusError => se
           # Process not running
-          if se.exit_status.exitstatus == 1
+          if se.status.exitstatus == 1
             return nil
           else
             raise se
