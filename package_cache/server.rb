@@ -73,17 +73,19 @@ module PackageCache
 
     put '/load/:type/:name' do |type, gem_name|
       if type == 'remote'
-        @downloader.download(gem_name)
-        gem_path = @downloader.get_gem_path(gem_name)
-        user = @user_pool.alloc_user
-        builder = PackageCache::GemBuilder.new(user, @build_dir, @logger)
-        builder.import_gem(gem_path, :rename)
-        builder.build
-        package_path = builder.get_package
-        @cache.add_by_rename!(package_path)
-        builder.clean_up!
-        @user_pool.free_user(user)
-
+        begin
+          user = @user_pool.alloc_user
+          @downloader.download(gem_name)
+          gem_path = @downloader.get_gem_path(gem_name)
+          builder = PackageCache::GemBuilder.new(user, @build_dir, @logger)
+          builder.import_gem(gem_path, :rename)
+          builder.build
+          package_path = builder.get_package
+          @cache.add_by_rename!(package_path)
+        ensure
+          builder.clean_up!
+          @user_pool.free_user(user) if user != nil
+        end
       elsif type == 'local'
         puts type,name
         #@loader.load_local_gem(name)
