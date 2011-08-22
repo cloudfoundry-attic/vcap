@@ -1,3 +1,13 @@
+PATH
+  remote: .
+  specs:
+    vcap_staging (0.1.1)
+      nokogiri (>= 1.4.4)
+      rake
+      rspec
+      vcap_common
+      yajl-ruby (>= 0.7.9)
+
 GEM
   remote: http://rubygems.org/
   specs:
@@ -35,14 +45,10 @@ GEM
       posix-spawn
       thin
       yajl-ruby
-    yajl-ruby (0.8.2)
+    yajl-ruby (0.8.3)
 
 PLATFORMS
   ruby
 
 DEPENDENCIES
-  nokogiri (>= 1.4.4)
-  rake
-  rspec
-  vcap_common
-  yajl-ruby (>= 0.7.9)
+  vcap_staging!
