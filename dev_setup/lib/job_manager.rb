@@ -16,7 +16,7 @@ class JobManager
   HM = "health_manager"
   DEA = "dea"
 
-  SERVICES = ["redis", "mysql", "mongodb", "postgresql"]
+  SERVICES = ["redis", "mysql", "mongodb"]
   SERVICES_GATEWAY = SERVICES.map do |service|
     "#{service}_gateway"
   end
