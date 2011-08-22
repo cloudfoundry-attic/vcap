@@ -4,18 +4,18 @@ module VCAP
   class SubprocessError < StandardError; end
 
   # Command exited with unexpected status code
-  class SubprocessStatusError < StandardError
-    attr_reader :command, :exit_status, :stdout, :stderr
+  class SubprocessStatusError < SubprocessError
+    attr_reader :command, :status, :stdout, :stderr
 
-    def initialize(command, stdout, stderr, exit_status)
+    def initialize(command, stdout, stderr, status)
       @command     = command
-      @exit_status = exit_status
+      @status      = status
       @stdout      = stdout
       @stderr      = stderr
     end
 
     def to_s
-      "ERROR: Command '#{@command}' exited with status '#{exit_status.to_i}'"
+      "ERROR: Command '#{@command}' exited with status '#{status.exitstatus}'"
     end
   end
 
@@ -62,8 +62,25 @@ module VCAP
       VCAP::Subprocess.new.run(*args)
     end
 
-    # See https://github.com/rtomayko/posix-spawn for a description of
-    # keys allowed in _options_ and _env_.
+    # Runs the supplied command in a subshell.
+    #
+    # @param  command               String   The command to be run
+    # @param  expected_exit_status  Integer  The expected exit status of the command in [0, 255]
+    # @param  timeout               Integer  How long the command should be allowed to run for
+    #                                        nil indicates no timeout
+    # @param  options               Hash     Options to be passed to Posix::Spawn
+    #                                        See https://github.com/rtomayko/posix-spawn
+    # @param  env                   Hash     Environment to be passed to Posix::Spawn
+    #                                        See https://github.com/rtomayko/posix-spawn
+    #
+    # @raise  VCAP::SubprocessStatusError    Thrown if the exit status does not match the expected
+    #                                        exit status.
+    # @raise  VCAP::SubprocessTimeoutError   Thrown if a timeout occurs.
+    # @raise  VCAP::SubprocessReadError      Thrown if there is an error reading from any of the pipes
+    #                                        to the child.
+    #
+    # @return Array                          An array of [stdout, stderr, status]. Note that status
+    #                                        is an instance of Process::Status.
     #
     def run(command, expected_exit_status=0, timeout=nil, options={}, env={})
       # We use a pipe to ourself to time out long running commands (if desired) as follows:
@@ -87,7 +104,7 @@ module VCAP
         sigchld_w => { :name => 'sigchld_w', :buf => '' },
       }
 
-      exit_status = nil
+      status = nil
       time_left   = timeout
       read_cands  = [stdout, stderr, sigchld_r]
       error_cands = read_cands.dup
@@ -123,7 +140,7 @@ module VCAP
             # Our signal handler notified us that >= 1 children have exited;
             # check if our child has exited.
             if (io == sigchld_r) && Process.waitpid(child_pid, Process::WNOHANG)
-              exit_status = $?
+              status = $?
               read_cands.delete(sigchld_r)
               error_cands.delete(sigchld_r)
             end
@@ -142,28 +159,28 @@ module VCAP
       rescue
         # A timeout or an error occurred while reading from one or more pipes.
         # Kill the process if we haven't reaped its exit status already.
-        kill_pid(child_pid) unless exit_status
+        kill_pid(child_pid) unless status
         raise
 
       ensure
         # Make sure we reap the child's exit status, close our fds, and restore
         # the previous SIGCHLD handler
-        unless exit_status
+        unless status
           Process.waitpid(child_pid)
-          exit_status = $?
+          status = $?
         end
         io_map.each_key {|io| io.close unless io.closed? }
         trap('CLD') { prev_sigchld_handler.call } if prev_sigchld_handler
       end
 
-      unless exit_status == expected_exit_status
+      unless status.exitstatus == expected_exit_status
         raise SubprocessStatusError.new(command,
                                         io_map[stdout][:buf],
                                         io_map[stderr][:buf],
-                                        exit_status)
+                                        status)
       end
 
-      [io_map[stdout][:buf], io_map[stderr][:buf], exit_status]
+      [io_map[stdout][:buf], io_map[stderr][:buf], status]
     end
 
     private
