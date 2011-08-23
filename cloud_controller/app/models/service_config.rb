@@ -42,7 +42,7 @@ class ServiceConfig < ActiveRecord::Base
       if EM.reactor_running?
         # yields
         endpoint = "#{service.url}/gateway/v1/configurations"
-        http = VCAP::Services::Api::AsyncHttpRequest.fibered(endpoint, service.token, :post, req)
+        http = VCAP::Services::Api::AsyncHttpRequest.fibered(endpoint, service.token, :post, service.timeout, req)
         if !http.error.empty?
           raise "Error sending provision request for #{req.extract.to_json} to gateway #{service.url}: #{http.error}"
         elsif http.response_header.status != 200
@@ -94,7 +94,7 @@ class ServiceConfig < ActiveRecord::Base
     begin
       if EM.reactor_running?
         endpoint = "#{svc.url}/gateway/v1/configurations/#{cfg_name}"
-        http = VCAP::Services::Api::AsyncHttpRequest.new(endpoint, service.token, :delete)
+        http = VCAP::Services::Api::AsyncHttpRequest.new(endpoint, service.token, :delete, service.timeout)
         http.callback do
           if http.response_header.status != 200
             CloudController.logger.error("Error unprovisioning #{cfg_name}, non 200 response from gateway #{svc.url}: #{http.response_header.status} #{http.response}")

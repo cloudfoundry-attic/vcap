@@ -28,6 +28,7 @@ module VCAP
         optional :binding_options
         optional :acls,        {'users' => [String], 'wildcards' => [String]}
         optional :active
+        optional :timeout,     Integer
       end
 
       class HandleUpdateRequest < JsonMessage
