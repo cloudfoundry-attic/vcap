@@ -1,3 +1,14 @@
+-fix path stuff with tar'd up package, right now is based in talg/home ....
+
+
+-think about fs_cleaner_daemon for inbox, among other things, or just add
+ some inbox cleaner to prevent resource leaks.
+
+-check to see if something is already in the cache and don't add it.
+
+-add some error handling, i.e. error type, error code, error message stuff.
+
+-command line tool to exercise client library and make testing easy.
 -start pushing to remote branch.
 
 -add config file reader.
