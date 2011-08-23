@@ -10,7 +10,11 @@ module PackageCache
     def initialize(inbox_dir, type, logger = nil)
       @logger = logger || Logger.new(STDOUT)
       @inbox_dir = inbox_dir
-      set_inbox_permissions if not type == :client
+      if type == :server
+        set_inbox_permissions
+      elsif type != :client
+        raise "Invalid inbox type #{type.to_s}"
+      end
     end
 
     def get_entry(name)
@@ -29,14 +33,17 @@ module PackageCache
       File.exists? get_entry_path(name)
     end
 
-    def add_entry(src_path)
-      content_hash = Digest::SHA1.file(src_path).hexdigest
-      extension = File.extname(src_path)
+    def file_to_entry_name(path)
+      content_hash = Digest::SHA1.file(path).hexdigest
+      extension = File.extname(path)
       entry_name = "#{content_hash}#{extension}"
+    end
+
+    def add_entry(src_path)
+      entry_name = file_to_entry_name(src_path)
       @logger.debug("adding #{src_path} to inbox as #{entry_name}")
       FileUtils.cp src_path, File.join(@inbox_dir, entry_name)
       entry_name
-
     end
 
     def purge!
@@ -60,7 +67,7 @@ module PackageCache
     def set_inbox_permissions
       File.chown(Process.uid, Process.gid, @inbox_dir)
       #clients can write to inbox, but not overwrite others files.
-      File.chmod(01722, @inbox_dir)
+      File.chmod(01733, @inbox_dir)
     end
 
     def verify_entry_hash(name)
