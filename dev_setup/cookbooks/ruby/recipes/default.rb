@@ -5,7 +5,7 @@ rubygems_version = node[:rubygems][:version]
 bundler_version = node[:rubygems][:bundler][:version]
 rake_version = node[:rubygems][:rake][:version]
 
-%w[ build-essential libssl-dev zlib1g-dev libreadline5-dev libxml2-dev ].each do |pkg|
+%w[ build-essential libssl-dev zlib1g-dev libreadline5-dev libxml2-dev libpq-dev].each do |pkg|
   package pkg
 end
 
