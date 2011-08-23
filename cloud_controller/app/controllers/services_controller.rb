@@ -37,6 +37,10 @@ class ServicesController < ApplicationController
       # :acls, but to avoid breaking anything as a side efffect, we do
       # this only for :acls.
       attrs[:acls] = nil unless attrs.has_key?(:acls)
+
+      # Similar to acls, do the same for timeout
+      attrs[:timeout] = nil unless attrs.has_key?(:timeout)
+
       svc.update_attributes!(attrs)
     else
       # Service doesn't exist yet. This can only happen for builtin services since service providers must
