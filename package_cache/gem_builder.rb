@@ -39,18 +39,24 @@ module PackageCache
       @package_path
     end
 
-    require 'pp'
+    def grant_permission(path)
+      File.chown(@uid, @gid, path)
+      File.chmod(0700, path)
+    end
+
     def build
-      @logger.debug("building gem #{@gem_name}")
+      @logger.debug("building gem #{@gem_path}")
       UserOps.init(@logger)
+
       install_dir = Dir.mktmpdir(nil, @build_dir)
-      pdebug "type info"
-      pp @uid
-      pp @gid
-      File.chown(@uid, @gid, @build_dir)
-      File.chmod(0700, @build_dir)
-      UserOps.run_as(@build_dir, @uid, "gem install #{@gem_name} --local --no-rdoc --no-ri -E -w -f --ignore-dependencies --install-dir #{install_dir}")
-      @logger.debug("gem install of #{@gem_path} complete.")
+
+      @logger.debug("granting #{@uid} access to build resources")
+      grant_permission(@build_dir)
+      grant_permission(@gem_path)
+      grant_permission(install_dir)
+
+      UserOps.run_as(@build_dir, @uid, "gem install #{@gem_path} --local --no-rdoc --no-ri -E -w -f --ignore-dependencies --install-dir #{install_dir}")
+      @logger.debug("gem install of #{@gem_path} to #{install_dir} complete.")
 
       package_file = GemUtil.gem_to_package(@gem_name)
       UserOps.run_as(@build_dir, @uid, "tar czf #{package_file} #{install_dir}")
