@@ -3,6 +3,7 @@ $:.unshift(File.join(File.dirname(__FILE__)))
 require 'logger'
 require 'user_ops'
 require 'thread'
+require 'vdebug'
 
 # XXX come up with better way to store pool specs.
 
@@ -37,6 +38,12 @@ class UserPool
     @group_name = pool_spec[:group_name]
     @user_prefix = pool_spec[:user_prefix]
   end
+
+  def verify_user(user_name, uid, gid)
+    (UserOps.user_to_uid(user_name) == uid.to_s) and
+    (UserOps.user_to_gid(user_name) == gid)
+  end
+
   #install new user pool.
   # -install any users not currently existing.
   # -blow away any associated running processes in with a group
@@ -47,9 +54,10 @@ class UserPool
       UserOps.install_group(@group_name)
     end
 
-    @gid = UserOps.group_to_gid(@group_name)
+    gid = UserOps.group_to_gid(@group_name)
 
     @logger.debug("killing all procs in group #{@group_name}")
+    # XXX should rename to kill_all_user_procs/kill_all_group_procs
     UserOps.group_kill_all_procs(@group_name)
 
     # XXX should add a generator to return list of user_name,uid pairs to
@@ -58,22 +66,25 @@ class UserPool
       user_name = user_from_num(offset)
       uid = @uid_base + offset
       if UserOps.user_exists?(user_name)
-        raise "User pool corruption!!!" if UserOps.user_to_uid(user_name) != uid.to_s
+        raise "User pool corruption!!!" if not verify_user(user_name, uid, gid)
       else
         UserOps.install_user(user_name, @group_name, uid)
       end
-      # XXX should rename to kill_all_user_procs/kill_all_group_procs
-      UserOps.user_kill_all_procs(user_name)
-      @free_users << {:user_name => user_name, :uid => uid, :gid => @gid}
+      @free_users << {:user_name => user_name, :uid => uid, :gid => gid}
     end
   end
 
   def remove_pool(pool_spec = nil)
     init_locals(pool_spec) if pool_spec != nil
+
+    @logger.debug("killing all procs in group #{@group_name}")
+    UserOps.group_kill_all_procs(@group_name)
+
+    #XXX should call verify user in inner loop to ensure group kill
+    #XXX was sufficient.
     1.upto(@pool_size) do |offset|
       user_name = user_from_num(offset)
       @logger.debug "remove user #{user_name}"
-      UserOps.user_kill_all_procs(user_name)
       UserOps.remove_user(user_name)
     end
     if not UserOps.group_exists?(@group_name)

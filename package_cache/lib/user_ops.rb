@@ -31,10 +31,18 @@ module UserOps
       raise "invalid name"
     end
 
+    def name_to_entry(name, path)
+      File.open(path).each { |line|
+          name_field,_ = line.split(':')
+          return line if name == name_field
+      }
+      raise "invalid name"
+    end
 
     ##groups
     def group_to_gid(group_name)
-      name_to_id(group_name, '/etc/group').to_i
+      _,_,id = name_to_entry(group_name, '/etc/group').split(':')
+      id
     end
 
     def group_exists?(group_name)
@@ -61,7 +69,13 @@ module UserOps
 
    ##users
     def user_to_uid(user_name)
-      name_to_id(user_name, '/etc/passwd')
+      _,_,id = name_to_entry(user_name, '/etc/passwd').split(':')
+      id
+    end
+
+    def user_to_gid(user_name)
+      _,_,_,id = name_to_entry(user_name, '/etc/passwd').split(':')
+      id
     end
 
     def user_exists?(user_name)

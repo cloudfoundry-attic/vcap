@@ -84,6 +84,7 @@ end
 # end
 #
 
+# need test for user_to_gid
 # need test for user_kill_all_procs
 # need test for group_kill_all_procs
 
