@@ -3,7 +3,7 @@ require 'uri'
 # Handles app downloads and droplet uploads from the stagers.
 #
 class StagingController < ApplicationController
-  skip_before_filter :require_user
+  skip_before_filter :fetch_user_from_token
   before_filter :authenticate_stager
 
   class DropletUploadHandle
@@ -104,12 +104,21 @@ class StagingController < ApplicationController
 
     path = app.unstaged_package_path
     unless path && File.exists?(path)
-      CloudController.logger.error("Couldn't find package path for app_id=#{app.id}", :tags => [:staging])
+      CloudController.logger.error("Couldn't find package path for app_id=#{app.id} (stager=#{request.remote_ip})", :tags => [:staging])
       raise CloudError.new(CloudError::APP_NOT_FOUND)
     end
     CloudController.logger.debug("Stager (#{request.remote_ip}) requested app_id=#{app.id} @ path=#{path}", :tags => [:staging])
-    # XXX - NGINX Handling
-    send_file path
+
+    if path && File.exists?(path)
+      if CloudController.use_nginx
+        response.headers['X-Accel-Redirect'] = '/droplets/' + File.basename(path)
+        render :nothing => true, :status => 200
+      else
+        send_file path
+      end
+    else
+      raise CloudError.new(CloudError::APP_NOT_FOUND)
+    end
   end
 
   private

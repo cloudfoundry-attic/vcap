@@ -20,9 +20,9 @@ class DummyHandler < Sinatra::Base
     end
   end
 
-  put '/droplets/:name' do
+  post '/droplets/:name' do
     dest_path = File.join(settings.upload_path, params[:name] + '.tgz')
-    File.open(dest_path, 'w+') {|f| f.write(request.body.read) }
+    File.open(dest_path, 'w+') {|f| f.write(params[:upload][:droplet]) }
     [200, "Success!"]
   end
 

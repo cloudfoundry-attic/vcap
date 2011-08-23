@@ -125,7 +125,7 @@ class VCAP::Stager::Task
                                              task_logger.public_log)
       save_result
       begin
-           publish_result
+        publish_result
       rescue => e
         # Let the original exception stay as the cause of failure
         @vcap_logger.error("Failed publishing error to NATS: #{e}")
@@ -183,9 +183,9 @@ class VCAP::Stager::Task
     @vcap_logger.debug("Running staging command: '#{cmd}'")
     begin
       res = VCAP::Subprocess.run("#{cmd}", 0, @max_staging_duration)
-      @vcap_logger.debug("Staging command exited with status: #{res[0]}")
-      @vcap_logger.debug("STDOUT: #{res[1]}")
-      @vcap_logger.debug("STDERR: #{res[2]}")
+      @vcap_logger.debug("Staging command exited with status: #{res[2]}")
+      @vcap_logger.debug("STDOUT: #{res[0]}")
+      @vcap_logger.debug("STDERR: #{res[1]}")
 
     rescue VCAP::SubprocessError, VCAP::SubprocessStatusError => e
       @vcap_logger.error("Staging command failed: #{e}")

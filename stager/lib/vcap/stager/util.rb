@@ -1,5 +1,5 @@
 require 'fileutils'
-require 'net/http'
+require 'rest_client'
 require 'uri'
 
 
@@ -20,30 +20,30 @@ module VCAP::Stager::Util
     #
     # @return  Net::HTTPResponse
     def fetch_zipped_app(app_uri, dest_path)
-      uri  = URI.parse(app_uri)
-      req  = make_request(Net::HTTP::Get, uri)
-      resp = nil
-
-      Net::HTTP.start(uri.host, uri.port) do |http|
-        http.request(req) do |resp|
-          unless resp.kind_of?(Net::HTTPSuccess)
-            raise VCAP::Stager::AppDownloadError, "Non 200 status code (#{resp.code})"
-          end
-
-          begin
-            File.open(dest_path, 'w+') do |f|
-              resp.read_body do |chunk|
-                f.write(chunk)
-              end
-            end
-          rescue => e
-            FileUtils.rm_f(dest_path)
-            raise e
-          end
-
+      save_app = proc do |resp|
+        unless resp.kind_of?(Net::HTTPSuccess)
+          raise VCAP::Stager::AppDownloadError,
+                "Non 200 status code (#{resp.code})"
         end
+
+        begin
+          File.open(dest_path, 'w+') do |f|
+            resp.read_body do |chunk|
+              f.write(chunk)
+            end
+          end
+        rescue => e
+          FileUtils.rm_f(dest_path)
+          raise e
+        end
+
+        resp
       end
-      resp
+
+      req = RestClient::Request.new(:url => app_uri,
+                                    :method => :get,
+                                    :block_response => save_app)
+      req.execute
     end
 
     # Uploads the file living at _droplet_path_ to the uri using a PUT request.
@@ -55,35 +55,10 @@ module VCAP::Stager::Util
     #
     # @return Net::HTTPResponse
     def upload_droplet(droplet_uri, droplet_path)
-      uri  = URI.parse(droplet_uri)
-      req  = make_request(Net::HTTP::Put, uri)
-      resp = nil
-
-      File.open(droplet_path, 'r') do |f|
-        req.body_stream    = f
-        req.content_type   = 'application/octet-stream'
-        req.content_length = f.size
-
-        Net::HTTP.start(uri.host, uri.port) do |http|
-          resp = http.request(req)
-          unless resp.kind_of?(Net::HTTPSuccess)
-            raise VCAP::Stager::DropletUploadError, "Non 200 status code (#{resp.code})"
-          end
-        end
-      end
-
-      resp
+      RestClient.post(droplet_uri,
+                      :upload => {
+                        :droplet => File.new(droplet_path, 'rb')
+                      })
     end
-
-    private
-
-    def make_request(klass, uri)
-      req = klass.new(uri.path)
-      if uri.user && uri.password
-        req.basic_auth(uri.user, uri.password)
-      end
-      req
-    end
-
   end
 end

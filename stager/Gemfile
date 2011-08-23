@@ -4,6 +4,7 @@ gem 'nats'
 gem 'rake'
 gem 'redis'
 gem 'resque'
+gem 'rest-client', '= 1.6.6'
 gem 'yajl-ruby', '>= 0.7.9'
 
 gem 'vcap_common', :path => '../common'
