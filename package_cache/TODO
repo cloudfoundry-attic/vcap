@@ -1,0 +1,63 @@
+-add get interface to client, add tests that exercise this.
+
+-fix path stuff with tar'd up package, right now is based in talg/home ....
+
+-think about fs_cleaner_daemon for inbox, among other things, or just add
+ some inbox cleaner to prevent resource leaks.
+
+-check to see if something is already in the cache and don't add it for
+local and remote stuff.
+
+-add some error handling, i.e. error type, error code, error message stuff.
+
+-command line tool to exercise client library and make testing easy.
+-start pushing to remote branch.
+
+-add config file reader.
+
+-refactor everything containing a purge! method, should have a file_store class
+ that they inherit from, gem_builder could also potentially inherit from this?
+
+-rework logger.
+
+-use native kill instead of run("pkill") as we can probably handle
+errors more gracefully and be less black box.
+
+--testing
+
+-check unit tests are complete.
+-have unit tests check file permissions
+-rewrite all unit tests to use rspec.
+
+-put in protection from massive gems being downloaded!
+ e.g. run_as + quota's.
+
+
+-purging downloads and inbox at startup to prevent resource leaks,
+ have startup check in place to ensure everything lives under a
+ sane root.
+
+-need to improve user_pool spec handling, rescope UserPool to be under VCAP.
+
+-rename get_gem_path => get_path
+
+-add vcap-package-cache-user/group.
+
+-create gem_builder that managers user pool itself.
+
+-fix everything with an XXX
+
+-check if gem already in cache, if so, return immediately without building.
+
+-add gitignore for test directories.
+
+-rework/eliminate gem_util.rb
+
+-improve startup process.
+
+-change debug formatter to say method() instead of `in method`
+
+---features
+-add support for npm's, pip's or java stuff and modularize to support this.
+
+
