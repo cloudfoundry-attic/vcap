@@ -22,9 +22,10 @@ when "ubuntu"
   end
 
   %w[ curl sun-java6-bin sun-java6-jre sun-java6-jdk].each do |p|
-    package p
-    not_if do
-      ::File.exists?("/usr/bin/java")
+    package p do
+      not_if do
+        ::File.exists?("/usr/bin/java")
+      end
     end
   end
 
