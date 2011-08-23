@@ -257,7 +257,7 @@ if [[ $DEA == true || $ALL == true ]]; then
 
     # For PHP
     if [[ $PLATFORM == 'Linux' ]]; then
-    apt-get install -qqy libpcre3 libpcre3-dev apache2 php5 php5-mysql php5-dev php-pear php5-gd libapr1 libaprutil1 php5-common php5-curl php5-mcrypt php5-imagick php5-xmlrpc zend-framework php5-imap
+    apt-get install -qqy libpcre3 libpcre3-dev apache2 php5 php5-mysql php5-mysqli php5-pgsql php5-dev php-pear php5-gd libapr1 libaprutil1 php5-common php5-curl php5-mcrypt php5-imagick php5-xmlrpc zend-framework php5-imap
 
     /etc/init.d/apache2 stop
     update-rc.d -f apache2 remove
@@ -280,6 +280,8 @@ if [[ $DEA == true || $ALL == true ]]; then
     echo "extension=apc.so" > /etc/php5/apache2/conf.d/cf.ini
     echo "extension=memcache.so" >> /etc/php5/apache2/conf.d/cf.ini
     echo "extension=mongo.so" >> /etc/php5/apache2/conf.d/cf.ini
+    echo "extension=mysql.so" >> /etc/php5/apache2/conf.d/cf.ini
+    echo "extensions=pgsql.so" >> /etc/php5/apache2/conf.d/cf.ini
 
     elif [[ $PLATFORM == 'MacOSX' ]]; then
     echo -e "\033[31mFIXME: Implement for MacOSX \033[0m"
