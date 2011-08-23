@@ -1,10 +1,12 @@
--fix path stuff with tar'd up package, right now is based in talg/home ....
+-add get interface to client, add tests that exercise this.
 
+-fix path stuff with tar'd up package, right now is based in talg/home ....
 
 -think about fs_cleaner_daemon for inbox, among other things, or just add
  some inbox cleaner to prevent resource leaks.
 
--check to see if something is already in the cache and don't add it.
+-check to see if something is already in the cache and don't add it for
+local and remote stuff.
 
 -add some error handling, i.e. error type, error code, error message stuff.
 
@@ -19,9 +21,7 @@
 -rework logger.
 
 -use native kill instead of run("pkill") as we can probably handle
-errors more gracefully and be less black box. look to see if we
-are over-using kill. group_kill may be fine, individual user kill
-excessive in pool creation.
+errors more gracefully and be less black box.
 
 --testing
 
@@ -32,7 +32,6 @@ excessive in pool creation.
 -put in protection from massive gems being downloaded!
  e.g. run_as + quota's.
 
--move to using thin.
 
 -purging downloads and inbox at startup to prevent resource leaks,
  have startup check in place to ensure everything lives under a
@@ -48,17 +47,17 @@ excessive in pool creation.
 
 -fix everything with an XXX
 
--make user_pool.free_user take a user instead of a user_name so it matches
- alloc_user.
-
 -check if gem already in cache, if so, return immediately without building.
 
 -add gitignore for test directories.
 
 -rework/eliminate gem_util.rb
 
+-improve startup process.
+
+-change debug formatter to say method() instead of `in method`
+
 ---features
--add local gem load
 -add support for npm's, pip's or java stuff and modularize to support this.
 
 
