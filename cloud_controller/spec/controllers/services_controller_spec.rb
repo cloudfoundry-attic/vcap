@@ -94,12 +94,43 @@ describe ServicesController do
             :url   => 'http://www.google.com',
             :acls  => acls,
             :plans => ['foo'],
+            :timeout => 20,
             :description => 'foobar')
         end
         response.status.should == 200
         svc = Service.find_by_label('foo-bar')
         svc.should_not be_nil
         svc.description.should == 'foobar'
+        svc.timeout.should == 20
+      end
+
+
+      it 'should support reverting existing offerings to nil' do
+        acls = {
+          'users' => ['foo@bar.com'],
+          'wildcards' => ['*@foo.com'],
+        }
+        svc = Service.create(
+          :label => 'foo-bar',
+          :url   => 'http://www.google.com',
+          :token => 'foobar',
+          :acls  => acls,
+          :timeout => 20,
+          :plans => ['foo'])
+        svc.should be_valid
+
+        post_msg :create do
+          VCAP::Services::Api::ServiceOfferingRequest.new(
+            :label => 'foo-bar',
+            :url   => 'http://www.google.com',
+            :plans => ['foo'],
+            :description => 'foobar')
+        end
+        response.status.should == 200
+        svc = Service.find_by_label('foo-bar')
+        svc.should_not be_nil
+        svc.timeout.should be_nil
+        svc.acls.should be_nil
       end
 
       it 'should return not authorized on token mismatch for non builtin services' do
