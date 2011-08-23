@@ -2,13 +2,15 @@ $:.unshift(File.join(File.dirname(__FILE__)))
 require 'rest-client'
 require 'inbox'
 
-$test_cache = {:url => 'localhost:9292',
+$test_cache = {:url => 'localhost:3000',
                :inbox_dir => '/home/talg/repo/vcap/package_cache/test/inbox'}
+               #:cache_dir => '/home/talg/repo/vcap/package_cache/test/cache'}
 
 module PackageCache
   class Client
     def initialize(cache_addr)
       @cache_url = cache_addr[:url]
+      #@cache_dir = cache_dir[:cache_dir]
       @inbox = Inbox.new(cache_addr[:inbox_dir], :client)
     end
 
