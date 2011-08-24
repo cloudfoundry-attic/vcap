@@ -6,5 +6,5 @@
 #
 
 cloudfoundry_service "mysql" do
-  components ["mysql_node", "mysql_backup"]
+  components ["mysql_node"]
 end

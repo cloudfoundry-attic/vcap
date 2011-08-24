@@ -6,5 +6,5 @@
 #
 
 cloudfoundry_service "mongodb" do
-  components ["mongodb_node", "mongodb_backup"]
+  components ["mongodb_node"]
 end

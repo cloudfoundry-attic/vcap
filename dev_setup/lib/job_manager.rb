@@ -39,7 +39,7 @@ class JobManager
   # stopped
   SERVICE_RUN_COMPONENTS = Hash.new
   SERVICES.each do |service|
-    SERVICE_RUN_COMPONENTS[service] = ["#{service}_node", "#{service}_backup"]
+    SERVICE_RUN_COMPONENTS[service] = ["#{service}_node"]
   end
 
   SERVICE_GATEWAY_RUN_COMPONENTS = Hash.new
