@@ -84,5 +84,5 @@ default_account_capacity:
 builtin_services:
   <% @builtin_services.each do |service_name| %>
   <%= service_name %>:
-    token: <%= node[:service][service_name.to_sym][:token] %>
+    token: <%= node[service_name.to_sym][:token] %>
   <% end %>

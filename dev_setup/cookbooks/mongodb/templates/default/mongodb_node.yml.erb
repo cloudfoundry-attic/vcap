@@ -5,8 +5,8 @@ index: <%= node[:mongodb][:index] %>
 base_dir: /var/vcap/services/mongodb/instances
 log_level: DEBUG
 pid: /var/vcap/sys/run/mongodb_node.pid
-available_memory: <%= node[:service][:mongodb][:available_memory] %>
-max_memory: <%= node[:service][:mongodb][:max_memory] %>
+available_memory: <%= node[:mongodb][:available_memory] %>
+max_memory: <%= node[:mongodb][:max_memory] %>
 node_id: <%= "mongodb_node_#{node[:mongodb][:index]}" %>
 mongod_path: <%= File.join(node[:mongodb][:path], "bin", "mongod") %>
 mongorestore_path: mongorestore
