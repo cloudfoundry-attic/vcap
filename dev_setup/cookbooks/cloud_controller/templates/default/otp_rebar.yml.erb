@@ -4,7 +4,7 @@ runtimes:
   - erlangR14B02:
       version: 'R14B02'
       description: 'Erlang R14B02'
-      executable: <%= node[:erlang][:path] %>/bin/erl
+      executable: <%= File.join(node[:erlang][:path], "bin", "erl") %>
       default: true
 app_servers:
 detection:

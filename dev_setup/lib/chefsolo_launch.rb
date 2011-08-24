@@ -1,10 +1,10 @@
 #!/usr/bin/env ruby
 require 'rubygems'
-require 'erb'
 require 'json'
 require 'tempfile'
 require 'uri'
 require 'fileutils'
+require 'optparse'
 require 'yaml'
 require 'pp'
 
@@ -14,65 +14,48 @@ require File.expand_path('vcap_defs', File.dirname(__FILE__))
 require File.expand_path('job_manager', File.dirname(__FILE__))
 
 script_dir = File.expand_path(File.dirname(__FILE__))
-vcap_path = File.expand_path(File.join(script_dir, "..", ".."))
+cloudfoundry_home = Deployment.get_cloudfoundry_home
 deployment_spec = File.expand_path(File.join(script_dir, "..", DEPLOYMENT_DEFAULT_SPEC))
-deployment_name = DEPLOYMENT_DEFAULT_NAME
-deployment_home = Deployment.get_home(deployment_name)
-deployment_user = ENV["USER"]
-deployment_group = `id -g`.strip
 
-deployment_spec = ARGV[0] if ARGV[0]
+args = ARGV.dup
+opts_parser = OptionParser.new do |opts|
+  opts.on('--config CONFIG_FILE', '-c CONFIG_FILE') { |file| deployment_spec = File.expand_path(file.to_s) }
+  opts.on('--dir CLOUDFOUNDRY_HOME', '-d CLOUDFOUNDRY_HOME') { |dir| cloudfoundry_home = File.expand_path(dir.to_s) }
+end
+args = opts_parser.parse!(args)
 
 unless File.exists?(deployment_spec)
-  puts "Cannot find deployment spec #{deployment_spec}"
-  puts "Usage: #{$0} [deployment_spec]"
+  puts "Cannot find config file #{deployment_spec}"
+  puts "Usage: #{$0} -c config_file -d cloud_foundry_home"
   exit 1
 end
 
-spec_erb = ERB.new(File.read(deployment_spec))
-
-YAML.load(spec_erb.result).each do |package, properties|
-  # Find out the versions of the various packages
-  case properties
-  when Hash
-    properties.each do |prop, value|
-      if prop == "version"
-        package_version = "@" + package + "_version"
-        instance_variable_set(package_version.to_sym, value)
-      end
-    end
-  end
-
-  # Update config defaults
-  case package
-  when "deployment"
-    deployment_name = properties["name"] || deployment_name
-    deployment_home = properties["home"] || Deployment.get_home(deployment_name)
-    deployment_user = properties["user"] || deployment_user
-    deployment_group = properties["group"] || deployment_group
-  end
-end
-deployment_config_path = Deployment.get_config_path(deployment_home)
-
-FileUtils.mkdir_p(File.join(deployment_home, "deploy"))
-FileUtils.mkdir_p(File.join(deployment_home, "sys", "log"))
-FileUtils.chown(deployment_user, deployment_group, [deployment_home, File.join(deployment_home, "deploy"), File.join(deployment_home, "sys", "log")])
-puts "Installing deployment #{deployment_name}, deployment home dir is #{deployment_home}, vcap dir is #{vcap_path}"
+spec = YAML.load_file(deployment_spec)
 
 # Fill in default config attributes
-spec = YAML.load(spec_erb.result)
 spec["deployment"] ||= {}
-spec["deployment"]["name"] = deployment_name
-spec["deployment"]["home"] = deployment_home
-spec["deployment"]["user"] = deployment_user
-spec["deployment"]["group"] = deployment_group
-spec["deployment"]["config_path"] = deployment_config_path
-
+spec["deployment"]["name"] ||= DEPLOYMENT_DEFAULT_NAME
+spec["deployment"]["user"] ||= ENV["USER"]
+spec["deployment"]["group"] ||= `id -g`.strip
 spec["cloudfoundry"] ||= {}
-spec["cloudfoundry"]["path"] ||= vcap_path
+spec["cloudfoundry"]["home"] ||= cloudfoundry_home
+spec["cloudfoundry"]["home"] = File.expand_path(spec["cloudfoundry"]["home"])
+
+if cloudfoundry_home != Deployment.get_cloudfoundry_home && cloudfoundry_home != spec["cloudfoundry"]["home"]
+  puts "Conflicting values for cloudfoundry home directory, command line argument says #{cloudfoundry_home} but config file says #{spec["cloudfoundry"]["home"]}"
+  exit 1
+end
+
+# convenience variables
+cloudfoundry_home = spec["cloudfoundry"]["home"]
+deployment_name = spec["deployment"]["name"]
+deployment_config_path = Deployment.get_config_path(deployment_name, cloudfoundry_home)
+
+puts "Installing deployment #{deployment_name}, cloudfoundry home dir is #{cloudfoundry_home}"
 
 # Resolve all job dependencies
-job_specs, job_roles, job_services = JobManager.go(spec)
+vcap_run_list = {}
+job_specs, job_roles, vcap_run_list["components"] = JobManager.go(spec)
 if job_roles.nil?
   puts "You haven't specified any install jobs"
   exit 0
@@ -84,9 +67,6 @@ job_roles.each do |role|
   run_list << "role[#{role}]"
 end
 spec["run_list"] = run_list
-
-# Add services if specified
-spec["services"] = job_services unless job_services.nil?
 
 # Merge the job specs
 spec.merge!(job_specs)
@@ -117,6 +97,9 @@ Dir.mktmpdir do |tmpdir|
   json_attribs = File.join(tmpdir, "solo.json")
   File.open(json_attribs, "w") { |f| f.puts(spec.to_json) }
 
+  # Save the chef-solo attributes to a file in /tmp, useful for debugging
+  File.open(File.join("", "tmp", "solo.json"), "w") { |f| f.puts(spec.to_json) }
+
   id = fork do
     proxy_env = []
     # Setup proxy
@@ -137,23 +120,22 @@ Dir.mktmpdir do |tmpdir|
   end
 
   # save the config of this deployment
-  FileUtils.mkdir_p(deployment_config_path)
-  FileUtils.chown(deployment_user, deployment_group, deployment_config_path)
-
   File.open(Deployment.get_config_file(deployment_config_path), "w") { |f| f.puts(spec.to_json) }
+
+  # save the list of components that should be started for this deployment
+  File.open(Deployment.get_vcap_config_file(deployment_config_path), "w") { |f| f.puts(vcap_run_list.to_json) }
 
   puts "---------------"
   puts "Deployment info"
   puts "---------------"
   puts "Status: successful"
-  ruby_path = File.join(spec["ruby"]["path"], "bin")
-  puts "Note: Ruby for cloud foundry components was installed in #{ruby_path}"
 
-  if deployment_name != DEPLOYMENT_DEFAULT_NAME
-    puts "Config files: #{deployment_config_path}"
-    puts "Deployment name: #{deployment_name}"
-    puts "Command to run cloudfoundry: vcap_dev -d #{deployment_name} start"
-  else
-    puts "Command to run Cloudfoundry: vcap_dev start"
-  end
+  vcap_dev_path = File.expand_path(File.join(script_dir, "..", "bin", "vcap_dev"))
+  puts "Config files: #{deployment_config_path}"
+  puts "Deployment name: #{deployment_name}"
+  args = ""
+  args << (deployment_name != DEPLOYMENT_DEFAULT_NAME ? " -n #{deployment_name}" : "")
+  args << (cloudfoundry_home != Deployment.get_cloudfoundry_home ? " -d #{cloudfoundry_home}" : "")
+  args << " start"
+  puts "Command to run cloudfoundry: #{vcap_dev_path} #{args.strip}"
 end

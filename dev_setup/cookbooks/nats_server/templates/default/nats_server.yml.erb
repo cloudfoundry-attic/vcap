@@ -1,0 +1,11 @@
+---
+net: <%= node[:nats_server][:host] %>
+port: <%= node[:nats_server][:port] %>
+
+pid_file: /var/run/nats_server.pid
+log_file: /var/log/nats_server.log
+
+authorization:
+  user: <%= node[:nats_server][:user] %>
+  password: <%= node[:nats_server][:password] %>
+  timeout: 1

@@ -4,13 +4,12 @@ base_dir: /var/vcap/services/mysql/
 mysqldump_bin: mysqldump
 gzip_bin: gzip
 mysql_bin: mysql
-ip_route: 127.0.0.1
-mbus: nats://<%= node[:nats][:user] %>:<%= node[:nats][:password] %>@<%= node[:nats][:host] %>:<%= node[:nats][:port] %>/
-index: <%= node[:service][:mysql][:index] %>
+mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
+index: <%= node[:mysql][:index] %>
 log_level: DEBUG
 pid: /var/vcap/sys/run/mysql_node.pid
 available_storage: <%= node[:service][:mysql][:available_storage] %>
-node_id: <%= "mysql_node_#{node[:service][:mysql][:index]}" %>
+node_id: <%= "mysql_node_#{node[:mysql][:index]}" %>
 max_db_size: <%= node[:service][:mysql][:max_db_size] %>
 max_long_query: 3
 max_long_tx: 30

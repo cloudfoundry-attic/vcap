@@ -19,8 +19,8 @@ class App < ActiveRecord::Base
 
   AppStates = %w[STOPPED STARTED]
   PackageStates = %w[PENDING STAGED FAILED]
-  Runtimes = %w[ruby18 ruby19 java node erlangR14B02]
-  Frameworks = %w[sinatra rails3 java_web spring grails node otp_rebar lift unknown]
+  Runtimes = %w[ruby18 ruby19 java node php erlangR14B02 python26]
+  Frameworks = %w[sinatra rails3 java_web spring grails node php otp_rebar lift wsgi django unknown]
 
   validates_presence_of :name, :framework, :runtime
 

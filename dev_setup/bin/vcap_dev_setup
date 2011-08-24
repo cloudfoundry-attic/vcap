@@ -2,9 +2,6 @@
 # Copyright (c) 2011 VMware, Inc.
 # Install vcap components on Ubuntu systems.
 
-SCRIPT_DIR=`cd "$(dirname $0)"; pwd`
-CHEF_WRAPPER_DIR=`cd $SCRIPT_DIR/../lib; pwd`
-
 usage() {
 cat <<EOF
 usage: $0 options
@@ -14,6 +11,8 @@ OPTIONS:
   -a           Answer yes to all questions
   -p           http proxy i.e. -p http://username:password@host:port/
   -c           deployment config
+  -d           cloudfoundry home
+  -r           cloud foundry repo
 EOF
 }
 
@@ -27,7 +26,7 @@ fi
 
 APT_CONFIG="-o Acquire::http::No-Cache=True -o Acquire::BrokenProxy=true -o Acquire::Retries=3"
 
-while getopts "hap:c:" OPTION
+while getopts "had:p:c:r:" OPTION
 do
   case $OPTION in
     h)
@@ -40,12 +39,26 @@ do
     c)
       CONFIG_FILE=$OPTARG
       ;;
+    d)
+      CLOUDFOUNDRY_HOME=$OPTARG
+      ;;
+    r)
+      VCAP_REPO=$OPTARG
+      ;;
     p)
       PROXY=$OPTARG
       export http_proxy=$PROXY
       export https_proxy=$PROXY
   esac
 done
+
+if [ -z "$CLOUDFOUNDRY_HOME" ]; then
+  CLOUDFOUNDRY_HOME=~/cloudfoundry
+fi
+
+if [ -z "$VCAP_REPO" ]; then
+  VCAP_REPO=https://github.com/cloudfoundry/vcap.git
+fi
 
 function run_cmd () {
   if [ -z "$PROXY" ]; then
@@ -85,6 +98,17 @@ else
   run_cmd apt-get $APT_CONFIG update
 fi
 
+run_cmd apt-get $APT_CONFIG install -qym git-core
+[ -d $CLOUDFOUNDRY_HOME ] || mkdir $CLOUDFOUNDRY_HOME
+if [ ! -d $CLOUDFOUNDRY_HOME/vcap ]; then
+   (cd $CLOUDFOUNDRY_HOME && git clone $VCAP_REPO && cd vcap && git submodule update --init)
+    if [ $? != 0 ]; then
+      echo "Unable to clone cloudfoundry repo."
+      exit 1
+    fi
+fi
+
+
 # Our deployment code needs this gem. Using bundler seems like an overkill for
 # the deployment code. So for now just manually install the required gem.
 gem list rake -i > /dev/null
@@ -92,13 +116,14 @@ if [ $? != 0 ]; then
   gem install rake -q --no-ri --no-rdoc > /dev/null 2>&1
 fi
 
-cur_user=`id -u`
-sudo mkdir -p /var/vcap/db
-sudo mkdir -p /var/vcap/sys/log
-sudo mkdir -p /var/vcap/data/cloud_controller/tmp
-sudo mkdir -p /var/vcap/data/db
-sudo mkdir -p /var/vcap.local/staging
-sudo chown -R $cur_user /var/vcap /var/vcap.local
-
 # Launch chef
-$CHEF_WRAPPER_DIR/chefsolo_launch.rb $CONFIG_FILE
+ARGS=""
+if [ -n "$CLOUDFOUNDRY_HOME" ]; then
+  ARGS="-d $CLOUDFOUNDRY_HOME"
+fi
+
+if [ -n "$CONFIG_FILE" ]; then
+  ARGS="$ARGS -c $CONFIG_FILE"
+fi
+
+$CLOUDFOUNDRY_HOME/vcap/dev_setup/lib/chefsolo_launch.rb $ARGS

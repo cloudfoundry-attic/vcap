@@ -1,8 +1,8 @@
 ---
-external_uri: api.vcap.me
+external_uri: api.<%= node[:deployment][:domain] %>
 description: "VMware's Cloud Application Platform"
 support_address: http://support.cloudfoundry.com
-local_route: 127.0.0.1
+local_route: <%= node[:cloud_controller][:local_route] %>
 local_register_only: false
 
 # Legacy (FIXME REMOVE)
@@ -42,40 +42,27 @@ directories:
   droplets: /var/vcap/shared/droplets
   resources: /var/vcap/shared/resources
   # default values, relative to Rails.root. Leading slash for full path.
-  staging_manifests: <%= node[:deployment][:config_path] %>/staging
-
-  # set to true to prevent filesystem resource leaks
-  # nukes tmpdir on startup -- be careful!
-  nuke_tmp_on_startup: false
-
+  staging_manifests: <%= File.join(node[:deployment][:config_path], "staging") %>
+  staging_cache: /var/vcap/data/cloud_controller/staging
   tmpdir: /var/vcap/data/cloud_controller/tmp
 
-mbus: nats://<%= node[:nats][:user] %>:<%= node[:nats][:password] %>@<%= node[:nats][:host] %>:<%= node[:nats][:port] %>/
+mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
 keys:
   password: 'password key goes here'
   token: 'token key goes here'
 pid: /var/vcap/sys/run/cloudcontroller.pid
-rails_environment: development
+rails_environment: production
 database_environment: # replaces database.yml
   production:
-    database: cloudcontroller
-    host: localhost
-    port: 5432
+    database: <%= node[:ccdb][:database] %>
+    host: <%= node[:ccdb][:host] %>
+    port: <%= node[:ccdb][:port] %>
     encoding: utf8
-    username: postgres
-    password: postgres
+    username: <%= node[:ccdb][:user] %>
+    password: <%= node[:ccdb][:password] %>
     adapter: postgresql
     timeout: 2000
     template: template0 # Required for utf8 encoding
-  development:
-    adapter: sqlite3
-    database: db/cloudcontroller.sqlite3
-    encoding: utf8
-  test:
-    adapter: sqlite3
-    database: db/test.sqlite3
-    encoding: utf8
-
 staging:
   max_concurrent_stagers: 10
   max_staging_runtime:    120 # secs

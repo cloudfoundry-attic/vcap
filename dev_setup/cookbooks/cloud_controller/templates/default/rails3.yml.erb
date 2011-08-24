@@ -4,7 +4,7 @@ runtimes:
   - "ruby18":
       version: "1.8.7" # FIXME change to 1.8.7-p334
       description: "Ruby 1.8.7"
-      executable: "<%= node[:ruby18][:path] %>/bin/ruby"
+      executable: "<%= File.join(node[:ruby18][:path], "bin", "ruby") %>"
       default: true
       environment:
        rails_env: "production"
@@ -13,7 +13,7 @@ runtimes:
   - "ruby19":
       version: "1.9.2p180"
       description: "Ruby 1.9.2"
-      executable: "<%= node[:ruby][:path] %>/bin/ruby"
+      executable: "<%= File.join(node[:ruby][:path], "bin", "ruby") %>"
       environment:
        rails_env: "production"
        bundle_gemfile:

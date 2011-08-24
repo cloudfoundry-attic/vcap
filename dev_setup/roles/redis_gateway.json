@@ -1,0 +1,12 @@
+{
+  "name": "redis_gateway",
+  "default_attributes": {
+    "services" : [ "redis" ],
+    "service_components" : ["redis_gateway"]
+  },
+  "override_attributes": {},
+  "json_class": "Chef::Role",
+  "description": "Redis services gateway",
+  "chef_type": "role",
+  "run_list" : ["role[services]"]
+}

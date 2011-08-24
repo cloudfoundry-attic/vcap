@@ -1,0 +1,77 @@
+Deployment config files have the following main sections
+1. Deployment
+2. Jobs.
+
+Deployment
+----------
+Some basic information about your deployment
+
+e.g.
+---
+deployment:
+  # Name of this deployment
+  name: "sample_deployment"
+  # User as which cloudfoundry will run, defaults to the user running the setup
+  # script
+  # user: "<user>"
+
+  # Group for cloudfoundry, defaults to the group of the user running the setup
+  # script
+  # group: "<group>"
+
+Jobs
+----
+Jobs represents the various installable components of cloud foundry
+They are divided into 2 groups
+- install (Jobs that should be installed on this server/host)
+- installed (Jobs that have been installed on other server/hosts whose properties are required by the
+             jobs that are scheduled to be installed on this server/host)
+
+Lets say you wish to install "nats" on server_A. The deployment config file would have the following jobs. Here we also specify properties for the nats job that we wish to install
+
+e.g.
+---
+deployment:
+  name: "nats_server"
+jobs:
+  install:
+    nats:
+      host: <server_A>
+      port: <nats_port>
+      user: <nats_user>
+      password: <nats_password>
+
+Now if you want to install the "dea" on server_B. The deployment config file for server_B would look like the following. In this case the "installed" job nats along with its properties is required by the router.
+
+e.g.
+----
+deployment:
+  name: "dea_server"
+jobs:
+  install:
+   - router
+  installed:
+    - nats:
+        host: <server_A>
+        port: <nats_port>
+        user: <nats_user>
+        password: <nats_password>
+
+Here is a sampling of the currently supported jobs
+ - all (deploys all cloudfoundry components)
+ - nats
+ - router
+ - cloud_controller
+ - health_manager
+ - dea
+ - mysql
+ - mysql_gateway
+ - redis
+ - redis_gateway
+ - mongodb
+ - mongodb_gateway
+ - postgresql
+ - postgresql_gateway
+
+The easiest way to get started on your multihost setup is to start customizing
+the various example config files that exist in this directory.

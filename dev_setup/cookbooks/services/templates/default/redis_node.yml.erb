@@ -1,16 +1,15 @@
 ---
 local_db: sqlite3:/var/vcap/services/redis/redis_node.db
-mbus: nats://<%= node[:nats][:user] %>:<%= node[:nats][:password] %>@<%= node[:nats][:host] %>:<%= node[:nats][:port] %>/
-index: <%= node[:service][:redis][:index] %>
+mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
+index: <%= node[:redis][:index] %>
 base_dir: /var/vcap/services/redis/instances
-ip_route: 127.0.0.1
 log_level: DEBUG
 pid: /var/vcap/sys/run/redis_node.pid
 available_memory: <%= node[:service][:redis][:available_memory] %>
 max_memory: <%= node[:service][:redis][:max_memory] %>
 max_swap: 32
-node_id: <%= "redis_node_#{node[:service][:redis][:index]}" %>
-redis_server_path: <%= node[:redis][:path] %>/bin/redis-server
+node_id: <%= "redis_node_#{node[:redis][:index]}" %>
+redis_server_path: <%= File.join(node[:redis][:path], "bin", "redis-server") %>
 port_range:
   first: 5000
   last: 25000

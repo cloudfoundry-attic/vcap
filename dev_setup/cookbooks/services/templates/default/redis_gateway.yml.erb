@@ -1,5 +1,5 @@
 ---
-# cloud_controller_uri: api.vcap.me
+cloud_controller_uri: <%= node[:cloud_controller][:service_api_uri] %>
 service:
   name: redis
   version: "2.2"
@@ -10,6 +10,6 @@ host: localhost
 index: 0
 token: <%= node[:service][:redis][:token] %>
 log_level: DEBUG
-mbus: nats://<%= node[:nats][:user] %>:<%= node[:nats][:password] %>@<%= node[:nats][:host] %>:<%= node[:nats][:port] %>/
+mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
 pid: /var/vcap/sys/run/redis_service.pid
 # allow_over_provisioning: false

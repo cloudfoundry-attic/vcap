@@ -1,4 +1,8 @@
+include_recipe "deployment"
 default[:cloud_controller][:config_file] = "cloud_controller.yml"
+default[:cloud_controller][:service_api_uri] = "http://api.#{node[:deployment][:domain]}"
+default[:cloud_controller][:local_route] = nil
+
 # Staging
 default[:cloud_controller][:staging][:grails] = "grails.yml"
 default[:cloud_controller][:staging][:lift] = "lift.yml"

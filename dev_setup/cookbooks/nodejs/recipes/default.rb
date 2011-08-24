@@ -9,11 +9,12 @@
   package pkg
 end
 
-remote_file "/tmp/node-v#{node[:nodejs][:version]}.tar.gz" do
+remote_file File.join("", "tmp", "node-v#{node[:nodejs][:version]}.tar.gz") do
   owner node[:deployment][:user]
   source node[:nodejs][:source]
-  not_if { ::File.exists?("/tmp/node-v#{node[:nodejs][:version]}.tar.gz") }
+  not_if { ::File.exists?(File.join("", "tmp", "node-v#{node[:nodejs][:version]}.tar.gz")) }
 end
+
 
 directory node[:nodejs][:path] do
   owner node[:deployment][:user]
@@ -24,7 +25,7 @@ directory node[:nodejs][:path] do
 end
 
 bash "Install Nodejs" do
-  cwd "/tmp"
+  cwd File.join("", "tmp")
   user node[:deployment][:user]
   code <<-EOH
   tar xzf node-v#{node[:nodejs][:version]}.tar.gz
@@ -34,6 +35,6 @@ bash "Install Nodejs" do
   make install
   EOH
   not_if do
-    ::File.exists?("#{node[:nodejs][:path]}/bin/node")
+    ::File.exists?(File.join(node[:nodejs][:path], "bin", "node"))
   end
 end
