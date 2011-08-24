@@ -1,9 +1,5 @@
 {
   "name": "mysql",
-  "default_attributes": {
-    "services" : [ "mysql" ],
-    "service_components" : ["mysql_node", "mysql_backup"]
-  },
   "override_attributes": {},
   "json_class": "Chef::Role",
   "description": "MySQL database for apps",
@@ -11,7 +7,6 @@
   "run_list" : ["recipe[deployment]",
                 "recipe[essentials]",
                 "recipe[ruby]",
-                "recipe[mysql::server]",
                 "recipe[mysql]",
-                "role[services]"]
+                "recipe[mysql::node]"]
 }

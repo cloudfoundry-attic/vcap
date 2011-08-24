@@ -1,9 +1,5 @@
 {
   "name": "mongodb",
-  "default_attributes": {
-    "services" : [ "mongodb" ],
-    "service_components" : ["mongodb_node", "mongodb_backup"]
-  },
   "override_attributes": {},
   "json_class": "Chef::Role",
   "description": "MongoDB",
@@ -12,5 +8,5 @@
                 "recipe[essentials]",
                 "recipe[ruby]",
                 "recipe[mongodb]",
-                "role[services]"]
+                "recipe[mongodb::node]"]
 }
