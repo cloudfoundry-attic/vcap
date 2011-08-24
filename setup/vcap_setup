@@ -289,7 +289,7 @@ if [[ $DEA == true || $ALL == true ]]; then
 
     ERLANG_VERSION=R14B02
 
-    if [ ! -d "/var/vcap/runtimes/erlang$ERLANG_VERSION" ]; then
+    if [ ! -d "/var/vcap/runtimes/erlang-$ERLANG_VERSION" ]; then
         if [[ $PLATFORM == 'Linux' ]]; then
             apt-get -qqy install build-essential libncurses5-dev openssl libssl-dev
         elif [[ $PLATFORM == 'MacOSX' ]]; then

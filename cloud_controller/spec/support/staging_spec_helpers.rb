@@ -1,6 +1,8 @@
 require 'tmpdir'
 
 module StagingSpecHelpers
+  AUTOSTAGING_JAR = 'auto-reconfiguration-0.6.0-BUILD-SNAPSHOT.jar'
+
   # Importantly, this returns a Pathname instance not a String.
   # This allows you to write: app_fixture_base_directory.join('subdir', 'subsubdir')
   def app_fixture_base_directory
@@ -44,7 +46,7 @@ module StagingSpecHelpers
     source_tempdir = nil
     # TODO - There really needs to be a single helper to track tempdirs.
     source_dir = case framework
-                 when /spring|grails/
+                 when /spring|grails|lift|java_web/
                    source_tempdir = Dir.mktmpdir(@app_fixture)
                    app_source(source_tempdir)
                  else
@@ -54,7 +56,7 @@ module StagingSpecHelpers
     stager.stage_application
     return working_dir unless block_given?
     Dir.chdir(working_dir) do
-      yield Pathname.new(working_dir)
+      yield Pathname.new(working_dir), Pathname.new(app_source)
     end
     nil
   ensure

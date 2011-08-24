@@ -1,0 +1,11 @@
+{
+  "name": "ccdb",
+  "default_attributes": {},
+  "override_attributes": {},
+  "json_class": "Chef::Role",
+  "description": "Cloudfoundry cloud controller database",
+  "chef_type": "role",
+  "run_list" : [ "recipe[essentials]",
+                 "recipe[mysql::server]",
+                 "recipe[mysql]" ]
+}

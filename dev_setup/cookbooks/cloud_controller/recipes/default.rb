@@ -11,6 +11,22 @@ template node[:cloud_controller][:config_file] do
   source "cloud_controller.yml.erb"
   owner node[:deployment][:user]
   mode 0644
+
+  builtin_services = []
+  case node[:cloud_controller][:builtin_services]
+  when Array
+    builtin_services = node[:cloud_controller][:builtin_services]
+  when Hash
+    builtin_services = node[:cloud_controller][:builtin_services].keys
+  when String
+    builtin_services = node[:cloud_controller][:builtin_services].split(" ")
+  else
+    Chef::Log.info("Input error: Please specify cloud_controller builtin_services as a list, it has an unsupported type #{node[:cloud_controller][:builtin_services].class}")
+    exit 1
+  end
+  variables({
+    :builtin_services => builtin_services
+  })
 end
 cf_bundle_install(File.expand_path(File.join(node["cloudfoundry"]["path"], "cloud_controller")))
 

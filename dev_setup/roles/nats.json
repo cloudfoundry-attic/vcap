@@ -1,0 +1,11 @@
+{
+  "name": "nats",
+  "default_attributes": {},
+  "override_attributes": {},
+  "json_class": "Chef::Role",
+  "description": "NATS message bus",
+  "chef_type": "role",
+  "run_list" : [ "recipe[essentials]",
+                 "recipe[ruby]",
+                 "recipe[nats-server]" ]
+}

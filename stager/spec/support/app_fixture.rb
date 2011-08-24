@@ -27,10 +27,9 @@ class VCAP::Stager::Spec::AppFixture
   # If called with a block, yields the staged directory as a Pathname, and
   # automatically deletes it when the block returns.
   def stage(framework, env = {})
-    environment_json = Yajl::Encoder.encode(env)
     plugin_klass = StagingPlugin.load_plugin_for(framework)
     working_dir = Dir.mktmpdir("#{@name}-staged")
-    stager = plugin_klass.new(source_dir, working_dir, environment_json)
+    stager = plugin_klass.new(source_dir, working_dir, env)
     stager.stage_application
     if block_given?
       begin

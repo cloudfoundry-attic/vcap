@@ -20,7 +20,7 @@ class App < ActiveRecord::Base
   AppStates = %w[STOPPED STARTED]
   PackageStates = %w[PENDING STAGED FAILED]
   Runtimes = %w[ruby18 ruby19 java node php erlangR14B02]
-  Frameworks = %w[sinatra rails3 spring grails node php otp_rebar lift unknown]
+  Frameworks = %w[sinatra rails3 java_web spring grails node php otp_rebar lift unknown]
 
   validates_presence_of :name, :framework, :runtime
 
@@ -521,6 +521,9 @@ class App < ActiveRecord::Base
     when "rails/1.0"
       self.framework = 'rails3'
       self.runtime   = 'ruby18'
+    when "java_web/1.0"
+      self.framework = 'java_web'
+      self.runtime   = 'java'
     when "spring_web/1.0"
       self.framework = 'spring'
       self.runtime   = 'java'

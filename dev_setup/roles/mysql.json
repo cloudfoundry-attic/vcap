@@ -1,0 +1,13 @@
+{
+  "name": "mysql",
+  "default_attributes": {},
+  "override_attributes": {},
+  "json_class": "Chef::Role",
+  "description": "mysql db for apps",
+  "chef_type": "role",
+  "run_list" : ["recipe[essentials]",
+                "recipe[ruby]",
+                "recipe[mysql::server]",
+                "recipe[mysql]",
+                "role[services]"]
+}
