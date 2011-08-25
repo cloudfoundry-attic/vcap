@@ -86,7 +86,13 @@ module DEA
 
       @downloads_pending = {}
 
-      @port_range = process_range config['port_range'] if config['port_range']
+      if config['port_range']
+	@port_range = process_range config['port_range']
+	if (!@port_range)
+	  @logger.fatal("Invalid configuration for property 'port_range'. Ruby range expected, but was given: #{config['port_range']}")
+	  exit 1
+	end
+      end
 
       @shutting_down = false
 
@@ -586,7 +592,11 @@ module DEA
       start_operation = proc do
         # fallback variant in case we cannot get a port in the configured range: use an ephemeral port
         if @port_range
-          port = VCAP.grab_port_in_range @port_range || VCAP.grab_ephemeral_port
+          port = VCAP.grab_port_in_range @port_range
+	  if (!port) 
+	    @logger.fatal("Could not get a free port from the specified range: #{@port_range}")
+	    exit 1
+	  end
         else
           port =  VCAP.grab_ephemeral_port
         end
