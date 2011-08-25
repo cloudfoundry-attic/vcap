@@ -5,10 +5,15 @@ class PhpPlugin < StagingPlugin
     'php'
   end
 
+  def resource_dir
+    File.join(File.dirname(__FILE__), 'resources')
+  end
+
   def stage_application
     Dir.chdir(destination_directory) do
       create_app_directories
       Apache.prepare(destination_directory)
+      system "cp -a #{File.join(resource_dir, "conf.d", "*")} apache/php"
       copy_source_files
       create_startup_script
     end
