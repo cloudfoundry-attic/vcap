@@ -1,9 +1,5 @@
 {
   "name": "Redis",
-  "default_attributes": {
-    "services" : [ "redis" ],
-    "service_components" : ["redis_node", "redis_backup"]
-  },
   "override_attributes": {},
   "json_class": "Chef::Role",
   "description": "Redis key value store for apps",
@@ -12,5 +8,5 @@
                 "recipe[essentials]",
                 "recipe[ruby]",
                 "recipe[redis]",
-                "role[services]"]
+                "recipe[redis::node]"]
 }

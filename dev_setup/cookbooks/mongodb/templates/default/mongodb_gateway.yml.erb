@@ -1,15 +1,15 @@
 ---
 cloud_controller_uri: <%= node[:cloud_controller][:service_api_uri] %>
 service:
-  name: mysql
-  version: "5.1"
-  description: 'MySQL database service'
+  name: mongodb
+  version: "1.8"
+  description: 'MongoDB NoSQL store'
   plans: ['free']
-  tags: ['mysql', 'mysql-5.1', 'relational']
+  tags: ['mongodb', 'mongodb-1.6', 'nosql']
 host: localhost
 index: 0
-token: <%= node[:service][:mysql][:token] %>
-log_level: DEBUG
+token: <%= node[:mongodb][:token] %>
 mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
-pid: /var/vcap/sys/run/mysql_service.pid
-node_timeout: 2
+log_level: DEBUG
+pid: /var/vcap/sys/run/mongodb_service.pid
+# allow_over_provisioning: false

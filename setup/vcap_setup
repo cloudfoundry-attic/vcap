@@ -98,7 +98,7 @@ if [ "$(gem -v)" != $RUBYGEMS_VERSION ]; then
     cd rubygems-$RUBYGEMS_VERSION
     ruby setup.rb
     if [ -f /usr/local/bin/gem ]; then
-	rm /usr/local/bin/gem
+        rm /usr/local/bin/gem
     fi
     cd ..
     rm rubygems-$RUBYGEMS_VERSION.tgz
@@ -138,9 +138,9 @@ if [[ $ROUTER == true || $ALL == true ]]; then
 
     echo "Installing Nginx."
     if [[ $PLATFORM == 'Linux' ]]; then
-	apt-get install -qqy nginx
+        apt-get install -qqy nginx
     elif [[ $PLATFORM == 'MacOSX' ]]; then
-	echo -e "\033[31mFIXME: Implement for MacOSX \033[0m"
+        echo -e "\033[31mFIXME: Implement for MacOSX \033[0m"
     fi
     echo ""
 fi
@@ -162,27 +162,27 @@ if [[ $CC == true || $ALL == true ]]; then
             fi
         fi
 
-	if [[ $RELATIONAL_DBS == true || $ALL == true ]]; then
-	    echo "Installing PostgreSQL server and support"
-	    apt-get install -qqy postgresql libpq-dev
-	    if [[ -n "$POSTGRESQL_PASS" ]]; then
-		su - postgres -c "/usr/bin/psql -c \"alter role postgres password '$POSTGRESQL_PASS'\""
-	    fi
-	    echo "Installing pg gems"
-	    gem install pg --no-rdoc --no-ri
-	    echo ""
-	    echo "Installing MySQL server and support"
+        if [[ $RELATIONAL_DBS == true || $ALL == true ]]; then
+            echo "Installing PostgreSQL server and support"
+            apt-get install -qqy postgresql libpq-dev
+            if [[ -n "$POSTGRESQL_PASS" ]]; then
+                su - postgres -c "/usr/bin/psql -c \"alter role postgres password '$POSTGRESQL_PASS'\""
+            fi
+            echo "Installing pg gems"
+            gem install pg --no-rdoc --no-ri
+            echo ""
+            echo "Installing MySQL server and support"
         if [[ -n "$MYSQL_PASS" ]]; then
           echo mysql-server-5.1 mysql-server/root_password select $MYSQL_PASS | sudo debconf-set-selections
           echo mysql-server-5.1 mysql-server/root_password_again select $MYSQL_PASS | sudo debconf-set-selections
         fi
-	    apt-get install -qqy mysql-server ruby-dev libmysql-ruby libmysqlclient-dev
-	    echo "Installing mysql gems"
-	    gem install mysql --no-rdoc --no-ri
-	    echo ""
-	fi
+            apt-get install -qqy mysql-server ruby-dev libmysql-ruby libmysqlclient-dev
+            echo "Installing mysql gems"
+            gem install mysql --no-rdoc --no-ri
+            echo ""
+        fi
     elif [[ $PLATFORM == 'MacOSX' ]]; then
-	echo -e "\033[31mFIXME: Implement for MacOSX \033[0m"
+        echo -e "\033[31mFIXME: Implement for MacOSX \033[0m"
     fi
 
 
@@ -203,38 +203,38 @@ if [[ $DEA == true || $ALL == true ]]; then
 
     # lsof support for secure dea monitoring, psmisc is for JeOS, which has killall5, not killall
     if [[ $PLATFORM == 'Linux' ]]; then
-	apt-get install -qqy lsof psmisc
+        apt-get install -qqy lsof psmisc
     elif [[ $PLATFORM == 'MacOSX' ]]; then
-	echo -e "\033[31mFIXME: Implement for MacOSX \033[0m"
+        echo -e "\033[31mFIXME: Implement for MacOSX \033[0m"
     fi
 
     # For Ruby
     if [[ $PLATFORM == 'Linux' ]]; then
-	apt-get install -qqy librmagick-ruby
+        apt-get install -qqy librmagick-ruby
     elif [[ $PLATFORM == 'MacOSX' ]]; then
-	echo -e "\033[31mFIXME: Implement for MacOSX \033[0m"
+        echo -e "\033[31mFIXME: Implement for MacOSX \033[0m"
     fi
 
     # Java
     if [[ $PLATFORM == 'Linux' ]]; then
-	JAVA=`dpkg --get-selections | grep sun-java6`
-	echo $JAVA
+        JAVA=`dpkg --get-selections | grep sun-java6`
+        echo $JAVA
     elif [[ $PLATFORM == 'MacOSX' ]]; then
-	JAVA=`java -version | grep 'build 1.6.0_22'`
+        JAVA=`java -version | grep 'build 1.6.0_22'`
     fi
 
     if [[ $JAVA == '' ]]; then
         echo "Installing Sun Java 1.6"
-	if [[ $PLATFORM == 'Linux' ]]; then
+        if [[ $PLATFORM == 'Linux' ]]; then
             apt-get install -qqy python-software-properties
             add-apt-repository "deb http://archive.canonical.com/ lucid partner"
             apt-get -qqy update
             echo sun-java6-jdk shared/accepted-sun-dlj-v1-1 boolean true | sudo /usr/bin/debconf-set-selections
             echo sun-java6-jre shared/accepted-sun-dlj-v1-1 boolean true | sudo /usr/bin/debconf-set-selections
             sudo apt-get install -qqy curl sun-java6-bin sun-java6-jre sun-java6-jdk
-	elif [[ $PLATFORM == 'MacOSX' ]]; then
-	    echo -e "\033[31mFIXME: Implement for MacOSX \033[0m"
-	fi
+        elif [[ $PLATFORM == 'MacOSX' ]]; then
+            echo -e "\033[31mFIXME: Implement for MacOSX \033[0m"
+        fi
     fi
 
     # Python support
@@ -250,45 +250,45 @@ if [[ $DEA == true || $ALL == true ]]; then
     NODE_VERSION=0.4.7
 
     if [[ ! `node -v` == 'v'$NODE_VERSION ]]; then
-	wget http://nodejs.org/dist/node-v$NODE_VERSION.tar.gz
-	tar -zxf node-v$NODE_VERSION.tar.gz
-	cd node-v$NODE_VERSION
-	./configure
-	make
-	make install
-	cd ..
-	rm node-v$NODE_VERSION.tar.gz
-	rm -fr node-v$NODE_VERSION
+        wget http://nodejs.org/dist/node-v$NODE_VERSION.tar.gz
+        tar -zxf node-v$NODE_VERSION.tar.gz
+        cd node-v$NODE_VERSION
+        ./configure
+        make
+        make install
+        cd ..
+        rm node-v$NODE_VERSION.tar.gz
+        rm -fr node-v$NODE_VERSION
     fi
 
     # For PHP
     if [[ $PLATFORM == 'Linux' ]]; then
-    apt-get install -qqy libpcre3 libpcre3-dev apache2 php5 php5-mysql php5-dev php-pear php5-gd libapr1 libaprutil1 php5-common php5-curl php5-mcrypt php5-imagick php5-xmlrpc zend-framework php5-imap
+        apt-get install -qqy libpcre3 libpcre3-dev apache2 php5 php5-mysql php5-dev php-pear php5-gd libapr1 libaprutil1 php5-common php5-curl php5-mcrypt php5-imagick php5-xmlrpc zend-framework php5-imap
 
-    /etc/init.d/apache2 stop
-    update-rc.d -f apache2 remove
+        /etc/init.d/apache2 stop
+        update-rc.d -f apache2 remove
 
-    pear channel-discover pear.phpunit.de
-    pear channel-discover pear.symfony-project.com
-    pear channel-discover components.ez.no
-    pear install phpunit/PHPUnit
-    yes | pecl install apc
-    yes | pecl install memcache
-    yes | pecl install mongo
-    git clone git://github.com/owlient/phpredis.git
-    cd phpredis
-    phpize
-    ./configure
-    make && make install
-    cd ..
-    rm -rf phpredis
+        pear channel-discover pear.phpunit.de
+        pear channel-discover pear.symfony-project.com
+        pear channel-discover components.ez.no
+        pear install phpunit/PHPUnit
+        yes | pecl install apc
+        yes | pecl install memcache
+        yes | pecl install mongo
+        git clone git://github.com/owlient/phpredis.git
+        cd phpredis
+        phpize
+        ./configure
+        make && make install
+        cd ..
+        rm -rf phpredis
 
-    echo "extension=apc.so" > /etc/php5/apache2/conf.d/cf.ini
-    echo "extension=memcache.so" >> /etc/php5/apache2/conf.d/cf.ini
-    echo "extension=mongo.so" >> /etc/php5/apache2/conf.d/cf.ini
+        echo "extension=apc.so" > /etc/php5/apache2/conf.d/cf.ini
+        echo "extension=memcache.so" >> /etc/php5/apache2/conf.d/cf.ini
+        echo "extension=mongo.so" >> /etc/php5/apache2/conf.d/cf.ini
 
     elif [[ $PLATFORM == 'MacOSX' ]]; then
-    echo -e "\033[31mFIXME: Implement for MacOSX \033[0m"
+        echo -e "\033[31mFIXME: Implement for MacOSX \033[0m"
     fi
 
     ERLANG_VERSION=R14B02
@@ -339,9 +339,9 @@ if [[ $DEA == true || $ALL == true ]]; then
 
     echo "Setting up Ruby System Gems and Support"
     if [[ $PLATFORM == 'Linux' ]]; then
-	apt-get install -qqy ruby-dev libmysql-ruby libmysqlclient-dev libpq-dev postgresql-client
+        apt-get install -qqy ruby-dev libmysql-ruby libmysqlclient-dev libpq-dev postgresql-client
     elif [[ $PLATFORM == 'MacOSX' ]]; then
-	echo -e "\033[31mFIXME: Implement for MacOSX \033[0m"
+        echo -e "\033[31mFIXME: Implement for MacOSX \033[0m"
     fi
 
     echo "Installing some default system gems"
@@ -354,9 +354,9 @@ if [[ $DEA == true || $ALL == true ]]; then
     gem install thin sinatra eventmachine
 
     if [ ! -d '/var/vcap.local' ]; then
-	echo "Creating directory /var/vcap.local"
-	mkdir "/var/vcap.local"
-	chmod  777 "/var/vcap.local"
+        echo "Creating directory /var/vcap.local"
+        mkdir "/var/vcap.local"
+        chmod  777 "/var/vcap.local"
     fi
 
 if [[ $ALL != true ]]; then
@@ -399,32 +399,32 @@ if [ $? != 0 ]; then
           echo mysql-server-5.1 mysql-server/root_password select $MYSQL_PASS | sudo debconf-set-selections
           echo mysql-server-5.1 mysql-server/root_password_again select $MYSQL_PASS | sudo debconf-set-selections
         fi
-	    apt-get install -qqy mysql-server ruby-dev libmysql-ruby libmysqlclient-dev
-	    echo "Installing mysql gems"
-	    gem install mysql --no-rdoc --no-ri
-	    echo ""
+            apt-get install -qqy mysql-server ruby-dev libmysql-ruby libmysqlclient-dev
+            echo "Installing mysql gems"
+            gem install mysql --no-rdoc --no-ri
+            echo ""
     fi
 fi
 
 X=`which psql`
 if [ $? != 0 ]; then
     if [[ $ALL_SERVICES != true ]]; then
-	read -p "Should I add PostgreSQL Server? [y/N] "
-	if [[ $REPLY =~ ^[yY]$ ]]; then
-	    POSTGRESQL=true
-	fi
+        read -p "Should I add PostgreSQL Server? [y/N] "
+        if [[ $REPLY =~ ^[yY]$ ]]; then
+            POSTGRESQL=true
+        fi
     fi
 
     if [[ $POSTGRESQL == true || $ALL_SERVICES == true ]]; then
-	echo "Installing PostgreSQL server and support"
+        echo "Installing PostgreSQL server and support"
 
-	apt-get install -qqy postgresql libpq-dev
-	if [[ -n "$POSTGRESQL_PASS" ]]; then
-	    su - postgres -c "/usr/bin/psql -c \"alter role postgres password '$POSTGRESQL_PASS'\""
-	fi
-	echo "Installing pg gems"
-	gem install pg --no-rdoc --no-ri
-	echo ""
+        apt-get install -qqy postgresql libpq-dev
+        if [[ -n "$POSTGRESQL_PASS" ]]; then
+            su - postgres -c "/usr/bin/psql -c \"alter role postgres password '$POSTGRESQL_PASS'\""
+        fi
+        echo "Installing pg gems"
+        gem install pg --no-rdoc --no-ri
+        echo ""
     fi
 fi
 
@@ -440,19 +440,19 @@ if [[ $ALL_SERVICES != true ]]; then
 fi
 
 if [[ $REDIS == true || $ALL_SERVICES == true ]]; then
-	echo "Installing Redis (version $REDIS_VERSION)"
-	pushd .
-	cd /tmp
-	wget --no-check-certificate -O redis_master.tgz http://redis.googlecode.com/files/redis-$REDIS_VERSION.tar.gz
-	tar -zxf redis_master.tgz
-	cd redis-$REDIS_VERSION/src
-	make
-	cp redis-server /usr/bin
-	cp redis-cli /usr/bin
-	cd ../..
-	rm redis_master.tgz
-	rm -fr redis-$REDIS_VERSION
-	popd
+        echo "Installing Redis (version $REDIS_VERSION)"
+        pushd .
+        cd /tmp
+        wget --no-check-certificate -O redis_master.tgz http://redis.googlecode.com/files/redis-$REDIS_VERSION.tar.gz
+        tar -zxf redis_master.tgz
+        cd redis-$REDIS_VERSION/src
+        make
+        cp redis-server /usr/bin
+        cp redis-cli /usr/bin
+        cd ../..
+        rm redis_master.tgz
+        rm -fr redis-$REDIS_VERSION
+        popd
     fi
 else
     echo "Redis Server (version 2.2.2) is current"
@@ -492,23 +492,23 @@ if [[ -z "$mongodb_current" ]]; then
     fi
 
     if [[ $MONGODB == true || $ALL_SERVICES == true ]]; then
-	echo "Installing MongoDB Server (version $MONGODB_VERSION)"
-	if [[ `uname -a` =~ "x86_64" ]] ; then
-	    mongodb="mongodb-linux-x86_64-$MONGODB_VERSION"
-	    echo "Installing 64-bit version"
-	else
-	    mongodb="mongodb-linux-i686-$MONGODB_VERSION"
-	    echo "Installing 32-bit version"
-	fi
+        echo "Installing MongoDB Server (version $MONGODB_VERSION)"
+        if [[ `uname -a` =~ "x86_64" ]] ; then
+            mongodb="mongodb-linux-x86_64-$MONGODB_VERSION"
+            echo "Installing 64-bit version"
+        else
+            mongodb="mongodb-linux-i686-$MONGODB_VERSION"
+            echo "Installing 32-bit version"
+        fi
 
-	pushd .
-	cd /tmp
-	wget http://fastdl.mongodb.org/linux/$mongodb.tgz
-	tar -zxvf $mongodb.tgz
-	cp $mongodb/bin/* /usr/bin
-	rm $mongodb.tgz
-	rm -fr $mongodb
-	popd
+        pushd .
+        cd /tmp
+        wget http://fastdl.mongodb.org/linux/$mongodb.tgz
+        tar -zxvf $mongodb.tgz
+        cp $mongodb/bin/* /usr/bin
+        rm $mongodb.tgz
+        rm -fr $mongodb
+        popd
     fi
 else
     echo "MongoDB Server (version $MONGODB_VERSION) is current"
