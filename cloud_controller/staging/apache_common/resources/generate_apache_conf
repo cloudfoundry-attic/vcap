@@ -74,7 +74,9 @@ File.open(File.expand_path(output_path), 'wb') do |file|
   file.puts(template.result(binding))
 end
 
-output_path = 'apache/php/php.ini'
+`cp -r /etc/php5/conf.d/* apache/php`
+
+output_path = 'apache/php/memory.ini'
 
 template = <<-ERB
 memory_limit = <%= php_ram %>
