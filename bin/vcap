@@ -136,7 +136,7 @@ class Component
         # Make sure db is setup, this is slow and we should make it faster, but
         # should help for now.
         if is_cloud_controller?
-          Dir.chdir("#{File.dirname(__FILE__)}/../cloud_controller") { `rake db:migrate` }
+          Dir.chdir("#{File.dirname(__FILE__)}/../cloud_controller") { `rake db:migrate CLOUD_CONTROLLER_CONFIG=#{@configuration_path}` }
         end
         exec("#{component_start_path}")
       end
@@ -422,7 +422,14 @@ module Run
     args = (Run.core + Run.services) if args.empty?
     args = Run.expand_args(args)
     components = args.map do |arg|
-      component = Component.new(arg)
+      if $configdir
+        config_file = File.join($configdir, "#{arg}.yml")
+        puts config_file
+        if ! File.exists?(config_file)
+          config_file = nil
+        end
+      end
+      component = Component.new(arg, config_file)
       component if component.exists?
     end.compact
     STDERR.puts "Don't know how to process '#{args.inspect}' \?\?" if components.empty?
