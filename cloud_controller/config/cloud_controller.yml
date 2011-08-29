@@ -81,6 +81,8 @@ staging:
   max_staging_runtime:    120 # secs
   secure: false
 
+allow_debug: false
+
 # admin support
 admins: [derek@gmail.com, foobar@vmware.com]
 https_required: false
@@ -105,3 +107,19 @@ builtin_services:
     token: "0xdeadbeef"
   rabbitmq:
     token: "0xdeadbeef"
+
+# used for /info/runtimes endpoint (served unfiltered as JSON)
+runtimes:
+  ruby18:
+    version: 1.8.7
+  ruby19:
+    version: 1.9.2
+  node:
+    version: 0.4.[2-9]
+  java:
+    version: 1.6.0
+    debug_modes:
+      - run
+      - wait
+  erlangR14B02:
+    version: ".* 5.8.3"
