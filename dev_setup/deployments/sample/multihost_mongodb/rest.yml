@@ -1,6 +1,6 @@
 ---
 deployment:
-  name: "kitchen_sink"
+  name: "rest"
 jobs:
   install:
     - nats_server
