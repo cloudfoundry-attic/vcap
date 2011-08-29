@@ -13,7 +13,9 @@ describe StagingTaskManager do
 
       nats_conn.expects(:subscribe).with(any_parameters())
       nats_conn.expects(:unsubscribe).with(any_parameters())
-      Resque.expects(:enqueue).with(any_parameters())
+
+      task = stub_everything(:task)
+      VCAP::Stager::Task.expects(:new).with(any_parameters()).returns(task)
 
       app = create_stub_app(12345)
       stm = StagingTaskManager.new(
@@ -32,7 +34,6 @@ describe StagingTaskManager do
 
       res.should be_instance_of(VCAP::Stager::TaskResult)
       res.was_success?.should be_false
-      res.details.should == "Timed out waiting for reply from stager"
     end
   end
 

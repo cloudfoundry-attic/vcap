@@ -172,21 +172,21 @@ class AppsController < ApplicationController
 
   # GET /apps/:name/instances/:instance_id/files/:path'
   def files
-    # will Fiber.yield
-    url, auth = AppManager.new(@app).get_file_url(params[:instance_id], params[:path])
-    raise CloudError.new(CloudError::APP_FILE_ERROR, params[:path] || '/') unless url
-
     # XXX - Yuck. This will have to do until we update VMC with a real
     #       way to fetch staging logs.
     if user.uses_new_stager? && (params[:path] == 'logs/staging.log')
-      result = VCAP::Stager::TaskResult.fetch_fibered(@app.id)
-      if result
-        render :text => result.details
+      log = StagingTaskLog.fetch_fibered(@app.id)
+      if log
+        render :text => log.task_log
       else
         render :nothing => true, :status => 404
       end
       return
     end
+
+    # will Fiber.yield
+    url, auth = AppManager.new(@app).get_file_url(params[:instance_id], params[:path])
+    raise CloudError.new(CloudError::APP_FILE_ERROR, params[:path] || '/') unless url
 
     if CloudController.use_nginx
       CloudController.logger.debug "X-Accel-Redirect for #{url}"
@@ -218,28 +218,34 @@ class AppsController < ApplicationController
     ul_hdl = StagingController.create_upload(app)
 
     result = task_mgr.run_staging_task(app, dl_uri, ul_hdl.upload_uri)
-    success_str = result.was_success? ? 'succeeded' : 'failed'
-    CloudController.logger.debug("Staging task for app_id=#{app.id} #{success_str}", :tags => [:staging])
-    CloudController.logger.debug1("Details: #{result.details}", :tags => [:staging])
 
     # Update run count to be consistent with previous staging code
     if result.was_success?
+      CloudController.logger.debug("Staging task for app_id=#{app.id} succeded.", :tags => [:staging])
+      CloudController.logger.debug1("Details: #{result.task_log}", :tags => [:staging])
       app.update_staged_package(ul_hdl.upload_path)
       app.package_state = 'STAGED'
-      app.run_count = 0
+      app.update_run_count()
     else
-      # It may be the case that upload from the stager will happen sometime in the future.
-      # Mark the upload as completed so that any upload that occurs in the future will fail.
-      StagingController.complete_upload(ul_hdl)
-      FileUtils.rm_f(ul_hdl.upload_path)
-      app.package_state = 'FAILED'
-      app.run_count += 1
+      CloudController.logger.warn("Staging task for app_id=#{app.id} failed: #{result.error}",
+                                  :tags => [:staging])
+      CloudController.logger.debug1("Details: #{result.task_log}", :tags => [:staging])
+      raise CloudError.new(CloudError::APP_STAGING_ERROR, result.error.to_s)
     end
 
-    app.save!
-    unless result.was_success?
-      raise CloudError.new(CloudError::APP_STAGING_ERROR, result.details)
+  rescue => e
+    # It may be the case that upload from the stager will happen sometime in the future.
+    # Mark the upload as completed so that any upload that occurs in the future will fail.
+    if ul_hdl
+      StagingController.complete_upload(ul_hdl)
+      FileUtils.rm_f(ul_hdl.upload_path)
     end
+    app.package_state = 'FAILED'
+    app.update_run_count()
+    raise e
+
+  ensure
+    app.save!
   end
 
   def find_app_by_name

@@ -520,7 +520,15 @@ class App < ActiveRecord::Base
 
   def update_staged_package(upload_path)
     self.staged_package_hash = Digest::SHA1.file(upload_path).hexdigest
-    File.rename(upload_path, self.staged_package_path)
+    FileUtils.mv(upload_path, self.staged_package_path)
+  end
+
+  def update_run_count
+    if self..staged_package_hash_changed?
+      self.run_count = 0 # reset
+    else
+      self.run_count += 1
+    end
   end
 
   private

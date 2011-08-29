@@ -7,8 +7,6 @@ if AppConfig[:redis]
                                            AppConfig[:redis][:port],
                                            AppConfig[:redis][:password])
     redis_client.connect
-    Resque.redis = redis_client
-    Resque.redis.namespace = AppConfig[:redis][:namespace] if AppConfig[:redis][:namespace]
-    VCAP::Stager::TaskResult.redis = redis_client
+    StagingTaskLog.redis = redis_client
   end
 end

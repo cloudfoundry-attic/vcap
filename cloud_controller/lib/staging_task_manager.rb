@@ -14,7 +14,6 @@ class StagingTaskManager
   end
 
   # Enqueues a staging task in redis, blocks until task completes or a timeout occurs.
-  # Updates the app based on the result of the staging operation.
   #
   # @param  app     App     The app to be staged
   # @param  dl_uri  String  URI that the stager can download the app from
@@ -43,22 +42,16 @@ class StagingTaskManager
       f.resume(nil)
     end
 
-    Resque.enqueue(VCAP::Stager::Task, app.id, app.staging_task_properties, dl_uri, ul_uri, inbox)
-    @logger.debug("Enqeued staging task to redis for app_id=#{app.id}, ", :tags => [:staging])
+    task = VCAP::Stager::Task.new(app.id, app.staging_task_properties, dl_uri, ul_uri, inbox)
+    task.enqueue('staging')
+    @logger.debug("Enqeued staging task for app_id=#{app.id}.", :tags => [:staging])
 
-    begin
-      result = Fiber.yield
-      if !result
-        result = VCAP::Stager::TaskResult.new(app.id,
-                                              VCAP::Stager::TaskResult::ST_FAILED,
-                                              "Timed out waiting for reply from stager")
-      else
-        result = VCAP::Stager::TaskResult.decode(result)
-      end
-    rescue => e
-      @logger.error("Error updated staging information for app_id=#{app.id}", :tags => [:staging])
-      @logger.error(e, :tags => [:staging])
-      raise e
+    reply = Fiber.yield
+    if reply
+      result = VCAP::Stager::TaskResult.decode(reply)
+      StagingTaskLog.new(app.id, result.task_log).save
+    else
+      result = VCAP::Stager::TaskResult.new(nil, nil, "Timed out waiting for stager's reply.")
     end
 
     result

@@ -38,9 +38,9 @@ describe StagingController do
       app, droplet, upload = stub_test_upload(tmpfile)
       File.expects(:rename).with(droplet.path, upload.upload_path)
       params = {
-        :id => app.id,
+        :id        => app.id,
         :upload_id => upload.upload_id,
-        :droplet => droplet
+        :upload    => {:droplet => droplet}
       }
       post :upload_droplet, params
       response.status.should == 200
@@ -52,9 +52,9 @@ describe StagingController do
       File.expects(:rename).with(droplet.path, upload.upload_path)
       FileUtils.expects(:rm_f).with(droplet.path)
       params = {
-        :id => app.id,
+        :id        => app.id,
         :upload_id => upload.upload_id,
-        :droplet => droplet
+        :upload    => {:droplet => droplet}
       }
       post :upload_droplet, params
       response.status.should == 200

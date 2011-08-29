@@ -1,6 +1,26 @@
 # Copyright (c) 2009-2011 VMware, Inc.
 require 'spec_helper'
 
+describe VCAP::JsonSchema::BoolSchema do
+  describe '#validate' do
+    before :all do
+      @schema = VCAP::JsonSchema::BoolSchema.new
+    end
+
+    it 'should not raise an error when supplied instances of TrueClass' do
+      expect { @schema.validate(true) }.to_not raise_error
+    end
+
+    it 'should not raise an error when supplied instances of FalseClass' do
+      expect { @schema.validate(false) }.to_not raise_error
+    end
+
+    it 'should raise an error when supplied instances not of TrueClass or FalseClass' do
+      expect { @schema.validate('zazzle') }.to raise_error(VCAP::JsonSchema::TypeError)
+    end
+  end
+end
+
 describe VCAP::JsonSchema::TypeSchema do
   describe '#initialize' do
     it 'should raise an exception if supplied with non class instance' do

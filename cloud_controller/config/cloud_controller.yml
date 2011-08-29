@@ -81,7 +81,7 @@ database_environment: # replaces database.yml
 
 staging:
   max_concurrent_stagers: 10
-  max_staging_runtime:    120 # secs
+  max_staging_runtime:    30 # secs
   secure: false
   new_stager_percent: 0
   auth:

@@ -15,10 +15,7 @@ gem 'vcap_staging'
 # For queuing staging tasks
 gem 'em-hiredis'
 gem 'resque'
-gem 'vcap_stager', '>= 0.1.1'
-
-# XXX - Vendor once working
-gem 'vcap_staging'
+gem 'vcap_stager', '= 0.1.3'
 
 # Databases
 gem 'sqlite3'
@@ -51,6 +48,7 @@ gem 'bcrypt-ruby', '>= 2.1.4'
 gem 'ruby-hmac', :require => 'hmac-sha1'
 gem 'SystemTimer', :platforms => :mri_18
 gem 'uuidtools'
+gem 'rest-client', '= 1.6.7'
 
 # rspec-rails is outside the 'test' group in order to consistently provide Rake tasks.
 gem 'rspec-rails', '>= 2.4.1'

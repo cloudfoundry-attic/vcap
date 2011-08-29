@@ -15,10 +15,9 @@ class VCAP::Stager::Spec::ForkedStager < VCAP::Spec::ForkedComponent::Base
   CONF_TEMPLATE = File.expand_path('../../fixtures/stager_config.yml.erb', __FILE__)
   STAGER_PATH   = File.expand_path('../../../bin/stager', __FILE__)
 
-  attr_reader :log_dir, :redis_port, :nats_port, :manifest_dir, :pid_filename
+  attr_reader :log_dir, :nats_port, :manifest_dir, :pid_filename
 
-  def initialize(redis_port, nats_port, manifest_dir, log_dir='/tmp', keep_logs=false)
-    @redis_port   = redis_port
+  def initialize(nats_port, manifest_dir, log_dir='/tmp', keep_logs=false)
     @nats_port    = nats_port
     @manifest_dir = manifest_dir
     @log_dir      = log_dir
@@ -27,10 +26,6 @@ class VCAP::Stager::Spec::ForkedStager < VCAP::Spec::ForkedComponent::Base
     write_conf(@conf_path)
 
     super("#{STAGER_PATH} -c #{@conf_path} -s 1", 'stager', @log_dir)
-  end
-
-  def ready?
-    VCAP.process_running?(@pid)
   end
 
   def stop
@@ -48,7 +43,6 @@ class VCAP::Stager::Spec::ForkedStager < VCAP::Spec::ForkedComponent::Base
     template = ERB.new(File.read(CONF_TEMPLATE))
     # Wish I could pass these to ERB instead of it reaching into the current scope
     # Investigate using something like liquid templates...
-    redis_port   = @redis_port
     nats_port    = @nats_port
     manifest_dir = @manifest_dir
     pid_filename = @pid_filename

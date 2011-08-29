@@ -60,5 +60,63 @@ module VCAP::Stager::Util
                         :droplet => File.new(droplet_path, 'rb')
                       })
     end
+
+
+    # Runs a command in a subprocess with an optional timeout. Captures stdout, stderr.
+    # Not the prettiest implementation, but neither EM.popen nor EM.system exposes
+    # a way to capture stderr..
+    #
+    # NB: Must be called with the EM reactor running.
+    #
+    # @param command              String  Command to execute
+    # @param expected_exitstatus  Integer
+    # @param timeout              Integer How long the command can execute for
+    # @param blk                  Block   Callback to execute when the command completes. It will
+    #                                     be called with a hash of:
+    #                                     :success    Bool      True if the command exited with expected status
+    #                                     :stdout     String
+    #                                     :stderr     String
+    #                                     :status     Integer
+    #                                     :timed_out  Bool
+    def run_command(command, expected_exitstatus=0, timeout=nil, &blk)
+      expire_timer   = nil
+      timed_out      = false
+      stderr_tmpfile = Tempfile.new('stager_stderr')
+      stderr_path    = stderr_tmpfile.path
+      stderr_tmpfile.close
+
+      pid = EM.system('sh', '-c', "#{command} 2> #{stderr_path}") do |stdout, status|
+        EM.cancel_timer(expire_timer) if expire_timer
+
+        begin
+          stderr = File.read(stderr_path)
+          stderr_tmpfile.unlink
+        rescue => e
+          logger = VCAP::Logging.logger('vcap.stager.task.run_command')
+          logger.error("Failed reading stderr from '#{stderr_path}' for command '#{command}': #{e}")
+          logger.error(e)
+        end
+
+        res = {
+          :success   => status.exitstatus == expected_exitstatus,
+          :stdout    => stdout,
+          :stderr    => stderr,
+          :status    => status,
+          :timed_out => timed_out,
+        }
+
+        blk.call(res)
+      end
+
+      if timeout
+        expire_timer = EM.add_timer(timeout) do
+          logger = VCAP::Logging.logger('vcap.stager.task.expire_command')
+          logger.warn("Killing command '#{command}', pid=#{pid}, timeout=#{timeout}")
+          timed_out = true
+          EM.system('sh', '-c', "ps --ppid #{pid} -o pid= | xargs kill -9")
+        end
+      end
+    end
+
   end
 end

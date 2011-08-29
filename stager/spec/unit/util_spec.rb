@@ -1,7 +1,6 @@
+require File.join(File.dirname(__FILE__), 'spec_helper')
+
 require 'tmpdir'
-
-require 'spec_helper'
-
 
 describe VCAP::Stager::Util do
   describe '.fetch_zipped_app' do
@@ -72,7 +71,60 @@ describe VCAP::Stager::Util do
         VCAP::Stager::Util.upload_droplet(@post_uri, @droplet_file)
       end.to raise_error
     end
+  end
 
+  describe '.run_command' do
+    it 'should correctly capture exit status' do
+      status = nil
+      EM.run do
+        VCAP::Stager::Util.run_command('exit 10') do |res|
+          status = res[:status]
+          EM.stop
+        end
+      end
+      status.exitstatus.should == 10
+    end
+
+    it 'should correctly capture stdout' do
+      stdout = nil
+      EM.run do
+        VCAP::Stager::Util.run_command('echo hello world') do |res|
+          stdout = res[:stdout]
+          EM.stop
+        end
+      end
+      stdout.should == "hello world\n"
+    end
+
+    it 'should correctly capture stderr' do
+      stderr = nil
+      EM.run do
+        VCAP::Stager::Util.run_command('ruby -e \'$stderr.puts "hello world"\'') do |res|
+          stderr = res[:stderr]
+          EM.stop
+        end
+      end
+      stderr.should == "hello world\n"
+    end
+
+    it 'should correctly time out commands' do
+      timed_out = nil
+      EM.run do
+        VCAP::Stager::Util.run_command('echo hello world', 0, 5) do |res|
+          timed_out = res[:timed_out]
+          EM.stop
+        end
+      end
+      timed_out.should == false
+
+      EM.run do
+        VCAP::Stager::Util.run_command('sleep 5', 0, 1) do |res|
+          timed_out = res[:timed_out]
+          EM.stop
+        end
+      end
+      timed_out.should == true
+    end
   end
 
 end
