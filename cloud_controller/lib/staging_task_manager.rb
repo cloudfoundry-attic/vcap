@@ -1,5 +1,4 @@
 require 'nats/client'
-require 'resque'
 
 require 'vcap/stager/task'
 require 'vcap/stager/task_result'
