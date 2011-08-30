@@ -1,15 +1,35 @@
 ---
+# base directory where all applications are staged and hosted
 base_dir: /var/vcap.local/dea
+
+# local_route is the IP address of a well known server on your network, it
+# is used to choose the right ip address (think of hosts that have multiple nics
+# and IP addresses assigned to them) of the host running the DEA. Default
+# value of nil, should work in most cases.
 local_route: 127.0.0.1
+
+# port for accessing the files of running applications
 filer_port: 12345
+
+# NATS message bus credentials
 mbus: nats://localhost:4222/
 intervals:
+  # Time interval between heartbeats sent to the Health Manager
   heartbeat: 10
 logging:
   level: debug
+
+# Allow more than one application to run per DEA
 multi_tenant: true
+
+# Maximum memory allocated to this DEA. In a multi tenant setup, this
+# memory is divided amongst all applications managed by this DEA.
 max_memory: 4096
+
+# Secure environment for running applications in a multi tenant setup.
 secure: false
+
+# Provide ulimit based resource isolation in a multi tenant setup.
 enforce_ulimit: false
 pid: /var/vcap/sys/run/dea.pid
 
