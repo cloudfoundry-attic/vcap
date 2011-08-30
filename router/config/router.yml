@@ -1,6 +1,9 @@
+# IP address and port on which the router is listening
 port: 2222
 inet: 0.0.0.0
+# Unix domain socket for connection between nginx and router
 sock: /tmp/router.sock
+# NATS message bus URI
 mbus: nats://localhost:4222
 logging:
   level: info
