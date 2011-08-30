@@ -1,10 +1,18 @@
 ---
+# Local_route is the IP address of a well known server on your network, it
+# is used to choose the right ip address (think of hosts that have multiple nics
+# and IP addresses assigned to them) of the host running the Health Manager. Default
+# value of nil, should work in most cases.
 local_route: <%= node[:health_manager][:local_route] %>
+
+# NATS message bus URI
 mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
 logging:
   level: debug
 pid: /var/vcap/sys/run/healthmanager.pid
 rails_environment: production
+
+# This database is shared with the cloud controller.
 database_environment: # replaces database.yml
   production:
     database: <%= node[:ccdb][:database] %>
@@ -16,11 +24,24 @@ database_environment: # replaces database.yml
     adapter: postgresql
     timeout: 2000
     template: template0 # Required for utf8 encoding
+
 intervals:
+  # Interval for collecting statistics about this cloudfoundry instance.
+  # Amongst other things, data collected includes number of users, number of
+  # applications and memory usage.
   database_scan:        60
+  # Time to wait before starting analysis for stopped applications.
   droplet_lost:         30
+  # Interval between scans for analysis of applications.
   droplets_analysis:    10
+  # An application is deemed to be flapping if it is found to be in a crashed
+  # state (after a restart following every crash) for more than "flapping_death"
+  # number of times in an interval that is "flapping_timeout" long.
   flapping_death:        3
   flapping_timeout:    180
+  # Time to wait before trying to restart an application after a crash is
+  # detected
   restart_timeout:      20
+  # Time to wait before analyzing the state of an application that has been
+  # started/restarted
   stable_state:         60
