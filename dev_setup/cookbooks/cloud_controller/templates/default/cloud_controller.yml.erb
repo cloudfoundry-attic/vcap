@@ -1,18 +1,28 @@
 ---
+# cloud controller uri
 external_uri: api.<%= node[:deployment][:domain] %>
 description: "VMware's Cloud Application Platform"
 support_address: http://support.cloudfoundry.com
+
+# local_route is the IP address of a well known server on your network, it
+# is used to choose the right ip address (think of hosts that have multiple nics
+# and IP addresses assigned to them) of the host running the cloud controller. Default
+# value of nil, should work in most cases.
 local_route: <%= node[:cloud_controller][:local_route] %>
+
+# Specifies if new users can register only from the host that is running the cloud controller
 local_register_only: false
 
+# Allow applications to register URIs that are outside your domain.
 # Legacy (FIXME REMOVE)
 allow_external_app_uris: false
 
 # This dicatates what the uri namespace rules
-# are for apps. Admins can overide any of the
+# are for applications. Admins can overide any of the
 # below accept taking a used uri.
 
 app_uris:
+  # Allow applications to register URIs that are outside your domain.
   allow_external: false
 #  reserved_file:
 #  reserved_list: [www, test, dash, register, foo, bar]
@@ -46,6 +56,7 @@ directories:
   staging_cache: /var/vcap/data/cloud_controller/staging
   tmpdir: /var/vcap/data/cloud_controller/tmp
 
+# NATS message bus credentials
 mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
 keys:
   password: 'password key goes here'
@@ -63,9 +74,12 @@ database_environment: # replaces database.yml
     adapter: postgresql
     timeout: 2000
     template: template0 # Required for utf8 encoding
+# App staging parameters
 staging:
   max_concurrent_stagers: 10
+  # Max duration for staging process
   max_staging_runtime:    120 # secs
+  # Create a secure environment for staging
   secure: false
 
 # admin support
@@ -73,6 +87,7 @@ admins: [derek@gmail.com, foobar@vmware.com]
 https_required: false
 https_required_for_admins: false
 
+# Controls the amount of resources assigned to a user
 # Normal user accounts
 default_account_capacity:
   memory:   2048
