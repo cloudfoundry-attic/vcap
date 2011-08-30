@@ -16,7 +16,7 @@ GEM
     eventmachine (0.12.10)
     json_pure (1.5.3)
     little-plugger (1.1.2)
-    logging (1.5.2)
+    logging (1.6.0)
       little-plugger (>= 1.1.2)
     nats (0.4.10)
       daemons (>= 1.1.0)
