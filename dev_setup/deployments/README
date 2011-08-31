@@ -75,3 +75,11 @@ Here is a sampling of the currently supported jobs
 
 The easiest way to get started on your multihost setup is to start customizing
 the various example config files that exist in this directory.
+
+NOTE: Supported multi host setups
+These scripts currently support the following multihost setup. DEA, Services and
+Router can be configured to run on different hosts. The following components however
+should all run on the same host
+o Cloud Controller
+o Health Manager
+o Service Gateways

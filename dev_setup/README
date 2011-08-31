@@ -1,0 +1,67 @@
+NOTE: This is an alpha release of these scripts.
+
+Description:
+This subdirectory contains the chef cookbooks to deploy and setup cloudfoundry
+in a single or multiple host environment. The cookbooks assume that they are
+running on a freshly installed Ubuntu 10.04 server.
+
+Quick Start:
+-----------
+   To Deploy:
+      vcap/dev_setup/bin/vcap_dev_setup
+
+         It will download cloudfoundry code into
+            $HOME/cloudfoundry/vcap
+
+         It will create a default deployment named 'devbox' under
+            $HOME/cloudfoundry/.deployments/devbox
+
+   To Start:
+      vcap/dev_setup/bin/vcap_dev start
+
+   To Stop:
+      vcap/dev_setup/bin/vcap_dev stop
+
+
+More Options:
+------------
+
+o To use cloudfoundry code that you have already downloaded.
+   To Deploy:
+     e.g. If cloudfoundry is downloaded into $HOME/projects/vcap.
+
+      $HOME/projects/vcap/dev_setup/bin/vcap_dev_setup -d $HOME/projects
+
+        It will not download cloudfoundry code. It will just setup the config files to
+        use the cloudfoundry code from $HOME/projects/vcap.
+
+        It will create a default deployment named 'devbox' under
+          $HOME/projects/.deployment/devbox
+
+   To Start:
+      $HOME/projects/vcap/dev_setup/bin/vcap_dev -d $HOME/projects/cloudfoundry start
+
+   To Stop::
+      $HOME/projects/vcap/dev_setup/bin/vcap_dev -d $HOME/projects/cloudfoundry stop
+
+o To use a custom deployment config
+  e.g. If you want to use the multihost sample config file
+  $HOME/projects/vcap/dev_setup/deployments/sample/multihost_mysql/dea.yml
+
+   To Deploy:
+      $HOME/projects/vcap/dev_setup/bin/vcap_dev_setup -d $HOME/projects -c $HOME/projects/vcap/dev_setup/deployments/sample/multihost_mysql/dea.yml
+
+        It will not download cloudfoundry code. It will just setup the config files to
+        use the cloudfoundry code from $HOME/projects/vcap.
+
+        It will create a deployment named 'dea' under
+          $HOME/projects/.deployment/dea
+
+   To Start:
+      $HOME/projects/vcap/dev_setup/bin/vcap_dev -d $HOME/projects/cloudfoundry -n dea start
+
+   To Stop:
+      $HOME/projects/vcap/dev_setup/bin/vcap_dev -d $HOME/projects/cloudfoundry -n dea stop
+
+NOTE: To learn more about custom deployment config files and multi host setups
+see the README file vcap/dev_setup/deployments/README.
