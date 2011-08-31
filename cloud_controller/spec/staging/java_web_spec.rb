@@ -11,7 +11,7 @@ describe "A Java web application being staged without a web config" do
   end
 end
 
-describe "A Java web being staged " do
+describe "A Java web application being staged " do
   before(:all) do
     app_fixture :java_web
   end
