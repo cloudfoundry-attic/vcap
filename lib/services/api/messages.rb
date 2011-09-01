@@ -31,6 +31,13 @@ module VCAP
         optional :timeout,     Integer
       end
 
+      class BrokeredServiceOfferingRequest < JsonMessage
+        required :label,        SERVICE_LABEL_REGEX
+        required :options,      [{"name" => String, "acls" => {"users" => [String], "wildcards" => [String] } , "credentials" => Hash}]
+        #required :options,      [::JsonSchema::WILDCARD]
+        optional :description,  String
+      end
+
       class HandleUpdateRequest < JsonMessage
         required :service_id, String
         required :configuration
@@ -39,6 +46,10 @@ module VCAP
 
       class ListHandlesResponse < JsonMessage
         required :handles, [JsonSchema::WILDCARD]
+      end
+
+      class ListBrokeredServicesResponse < JsonMessage
+        required :brokered_services, [{"label" => String, "description" => String, "acls" => {"users" => [String], "wildcards" => [String]}}]
       end
 
       #
