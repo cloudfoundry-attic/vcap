@@ -151,6 +151,28 @@ if AppConfig[:builtin_services]
   end
 end
 
+# Service broker config
+if AppConfig[:service_broker]
+  unless AppConfig[:service_broker].kind_of? Hash
+    klass = AppConfig[:service_broker].class
+    $stderr.puts "FATAL: Service broker config is invalid. Expected Hash, got #{klass}."
+    exit 1
+  end
+
+  unless AppConfig[:service_broker].has_key? :token
+    $stderr.puts "FATAL: Service broker require token key"
+    exit 1
+  end
+
+  token = AppConfig[:service_broker][:token]
+  unless (token.kind_of? String) || (token.kind_of? Integer)
+    $stderr.puts "FATAL: Token must be string or integer, #{token.class} given."
+    exit 1
+  end
+
+  AppConfig[:service_broker][:token] = token.to_s
+end
+
 c = OpenSSL::Cipher::Cipher.new('blowfish')
 pw_len = AppConfig[:keys][:password].length
 if pw_len < c.key_len

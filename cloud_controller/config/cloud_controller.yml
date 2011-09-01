@@ -122,6 +122,10 @@ builtin_services:
   neo4j:
     token: "0xdeadbeef"
 
+# Service broker
+service_broker:
+    token: "0xdeadbeef"
+
 # used for /info/runtimes endpoint (served unfiltered as JSON)
 runtimes:
   ruby18:
@@ -141,3 +145,4 @@ runtimes:
     version: ".* 5.8.3"
   python26:
     version: 2.6.5
+
