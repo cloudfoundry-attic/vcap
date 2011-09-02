@@ -1,0 +1,55 @@
+#Worklist
+---------
+
+-clean out TODO list.
+
+-add storage quota support
+
+-add container support
+
+-look at removing the copy into the public inbox.
+
+-write comment explaing how inbox works.
+
+-deal with XXX's
+
+-load testing for local gems.
+
+#BUGS
+----
+
+-kind of nasty bug in inbox -- since file name is defined by content, user
+could deny ability of another user to add a local gem by creating place holder
+files that fill in the inbox. one way to solve this -- which is a gross hack
+but will work, is by appending a secure nonce to the front of the file,
+then renaming into an imports directory on the secure import and dropping
+the nonce.
+
+-another inbox consideration is ensuring that files do not linger in the inbox.
+a per-user storage quota should at least provide an upper bound on space consumed,
+a periodic cleaning of the inbox (say of files who have been there over some short
+fixed interval (say 2 minutes) might also be a good measure.
+
+#MUST HAVE
+---------
+
+-add functional test for error handling.
+-audit inbox permission stuff.
+
+#CLEANUP
+-------
+
+-incorporate matt's logger.
+
+
+#SHOULD HAVE
+#-----------
+
+-put in protection from massive gems being downloaded, have
+ limit set in config file, enforced in async fetch.
+-ulimits from dea for run_restricted.
+-watch dog timer for run_restricted.
+
+-add back pressure when we hit a limit on number of outstanding requests, stager
+can back off and retry.
+
