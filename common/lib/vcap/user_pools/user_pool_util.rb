@@ -85,7 +85,6 @@ module VCAP
         end
         Etc.passwd { |u|
           if u.name.split('-')[2] == name
-            @logger.debug "found user #{u.name}"
             pool_users[u.name] = {:user_name => u.name, :uid => u.uid, :gid => u.gid}
           end
         }
