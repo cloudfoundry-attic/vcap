@@ -1,0 +1,7 @@
+---
+listen_port: 3000
+#listen_socket: /tmp/package_cache.sock
+logging:
+  level: debug
+pid_file: /var/vcap/sys/run/package_cache.pid
+base_dir: /var/vcap.local/package_cache

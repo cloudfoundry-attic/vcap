@@ -1,0 +1,93 @@
+#Worklist
+---------
+
+
+-deal with XXX's
+
+
+#BUGS
+----
+
+-better build failure detection.
+
+-fix unit tests to play nice with EM/fibers.
+
+-handle gem not found error.
+
+-potential errors from pkill?
+
+#MUST HAVE
+---------
+
+-add some error handling, i.e. error type, error code, error message stuff.
+ -couldn't find/download gem error.
+ -couldn't build gem error.
+ -gem in cache, not error, just return immediately.
+ -error handling in server and client!
+
+
+-add unix domain socket support to client.
+
+#CLEANUP
+-------
+-stop using fixed offsets for user_pools, just install/remove users.
+
+-on detecting a user is present, verify, if that fails, remove
+ the user and re-install, don't just fail.
+
+
+-add gitignore for test directories.
+
+-change debug formatter to say method() instead of `in method`
+
+-refactor everything containing a purge! method, should have a file_store class
+ that they inherit from, gem_builder could also potentially inherit from this?
+ (decide if there is enough commonality to justify this?)
+
+-incorporate matt's logger.
+
+-rename get_gem_path => get_path
+
+-rework/eliminate gem_util.rb
+
+-User pools/UserOps.
+  -UserOps spec is ghetto, rewrite using nested example groups. (see chap 12 rspec
+  book).
+
+  -check to make sure unit tests complete.
+  -do unit tests for process kill stuff.
+
+#SHOULD HAVE
+#-----------
+
+-limit download gem sizes
+-ulimits from dea for run_restricted.
+-watch dog timer for run_restricted.
+
+#OTHER FEATURES
+--------------
+
+-allow inbox copy to be replaced with a rename e.g. import_method = :rename
+
+-think about fs_cleaner_daemon for inbox, among other things, or just add
+ some inbox cleaner to prevent resource leaks - prolly cleaner thread
+ type thing.
+
+-command line tool to exercise client library and make testing easy.
+
+-put in protection from massive gems being downloaded!
+ e.g. run_as + quota's.
+
+-better sandboxing.
+
+-create gem_builder that managers user pool itself.
+
+-add support for npm's, pip's or java stuff and modularize to support this.
+
+
+#TESTING
+--------
+-write stress tester.
+-check unit tests are complete.
+-have unit tests check file permissions
+
