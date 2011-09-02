@@ -424,7 +424,6 @@ module Run
     components = args.map do |arg|
       if $configdir
         config_file = File.join($configdir, "#{arg}.yml")
-        puts config_file
         if ! File.exists?(config_file)
           config_file = nil
         end
