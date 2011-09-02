@@ -121,5 +121,9 @@ runtimes:
     debug_modes:
       - run
       - wait
+  php:
+    version: 5.3.[2-6]
   erlangR14B02:
     version: ".* 5.8.3"
+  python26:
+    version: 2.6.5
