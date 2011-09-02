@@ -1,0 +1,7 @@
+---
+listen_port: 3000
+logging:
+  level: debug
+pid_file: /var/vcap/sys/run/package_cache.pid
+base_dir: /var/vcap.local/package_cache
+purge_cache_on_startup: 'true'
