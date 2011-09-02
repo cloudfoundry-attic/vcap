@@ -1,0 +1,75 @@
+#!/usr/bin/env ruby
+$LOAD_PATH.unshift(File.expand_path(File.join(File.dirname(__FILE__), '../../lib/vcap/package_cache')))
+$:.unshift(File.join(File.dirname(__FILE__), '..'))
+require 'rubygems'
+require 'optparse'
+require 'logger'
+
+require 'client'
+
+class RemoteLoadTester
+  attr_accessor :gem_list
+  def initialize
+    @logger = Logger.new(STDOUT)
+    @client = VCAP::PackageCache::Client.new
+  end
+
+  def load_gem_list(path)
+    @gem_list = []
+    gems_file = File.open(path)
+    gems_file.each { |line|
+      name, rest = line.split(' ')
+      version = rest[/[0-9.]+/]
+      gem_name = "#{name}-#{version}.gem"
+      @gem_list << gem_name
+    }
+  end
+
+  def print_result(t)
+    puts "thread for gem #{t['gem_name']} finished
+          in #{t['finish_time'] - t['start_time']} at time #{t['finish_time']}"
+  end
+
+  def run_remote_test
+    start_time = Time.now
+    threads = []
+    @gem_list.each { |gem_name|
+       threads << Thread.new {
+        Thread.current['gem_name'] = gem_name
+        Thread.current['start_time'] = Time.now
+        puts "adding #{gem_name}"
+        begin
+        @client.add_package(:remote, :gem, gem_name)
+        rescue => e
+          puts e.to_s
+        end
+
+        Thread.current['finish_time'] = Time.now
+       }
+    }
+    threads.each { |t| t.join; print_result(t)}
+    puts "Loaded #{@gem_list.size} packages in #{Time.now - start_time} seconds."
+  end
+end
+
+if ARGV.length != 1
+usage = <<-eos
+==performs load testing on package cache using supplied gem list=="
+how it works: reads list of gems, fires up thread for each gem, and
+fires off a request.
+
+gem list format is output from the "gem list" command.
+
+e.g.  gem list -r | tail -50 > gem_list.txt
+
+USAGE: load_test gem_list.txt
+eos
+puts usage
+exit 1
+else
+  gem_list = ARGV[0]
+end
+
+rt = RemoteLoadTester.new
+rt.load_gem_list(gem_list)
+rt.run_remote_test
