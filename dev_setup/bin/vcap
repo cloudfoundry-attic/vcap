@@ -265,9 +265,9 @@ module Run
     components(args).each(&:start)
   end
 
-  def self.stop_cleanup
+  def self.stop_cleanup(args)
     # Only process this if no one else running..
-    running_components = components([]).select {|c| c.running?}.map{|c| c.name }
+    running_components = components(args).select {|c| c.running?}.map{|c| c.name }
     return unless running_components.empty?
     nats_server = NatsServer.new
     return unless nats_server.is_running?
@@ -276,7 +276,7 @@ module Run
 
   def self.stop(args)
     components(args).each(&:stop)
-    self.stop_cleanup
+    self.stop_cleanup(args)
   end
 
   def self.restart(args)

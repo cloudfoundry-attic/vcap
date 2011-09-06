@@ -50,6 +50,11 @@ if vcap_components["components"].include?("cloud_controller")
   puts "Setting up cloud controller environment"
   ENV["CLOUD_CONTROLLER_CONFIG"]=File.join(deployment_config_path, "cloud_controller.yml")
   ENV["RAILS_ENV"]="production"
+
+  # Start the cloud controller component first as other components like the
+  # health manager depend on it. Specifically, the health manager uses the same
+  # database as the one used by the cloud controller.
+  vcap_components["components"].unshift(vcap_components["components"].delete("cloud_controller"))
 end
 
 # Set both http_proxy and HTTP_PROXY
