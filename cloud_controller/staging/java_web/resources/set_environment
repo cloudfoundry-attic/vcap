@@ -12,4 +12,15 @@ env = []
     env << "-D#{protocol}.proxyHost=#{uri.host} -D#{protocol}.proxyPort=#{uri.port}"
   end
 end
+
+#debug settins for java debugging
+jpda = ENV['JPDA']
+if jpda
+   {'JPDA_TRANSPORT' => 'dt_socket', 'JPDA_ADDRESS' => '8000', 'JPDA_SUSPEND' => 'n'}.each do |env_var, env_val|
+       ipda_opts = ENV[env_var]
+       ipda_opts = env_val unless ipda_opts
+       env << "-D#{env_var}=#{ipda_opts}"
+   end
+end
+
 puts env.join(' ')

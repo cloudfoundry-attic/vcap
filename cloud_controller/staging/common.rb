@@ -293,6 +293,10 @@ class StagingPlugin
     app_server['executable']
   end
 
+  def debug_options
+    #interface for debugging options
+  end
+
   def local_runtime
     '%VCAP_LOCAL_RUNTIME%'
   end
@@ -383,6 +387,7 @@ class StagingPlugin
     after_env_before_script = block_given? ? yield : "\n"
     template = <<-SCRIPT
 #!/bin/bash
+<%= debug_options %>
 <%= environment_statements_for(env_vars) %>
 <%= after_env_before_script %>
 <%= change_directory_for_start %>

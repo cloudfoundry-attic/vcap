@@ -44,13 +44,30 @@ class JavaWebPlugin < StagingPlugin
   # We redefine this here because Tomcat doesn't want to be passed the cmdline
   # args that were given to the 'start' script.
   def start_command
-    "./bin/catalina.sh run"
+    "./bin/catalina.sh $my_jpda run"
   end
 
   def configure_catalina_opts
     # We want to set this to what the user requests, *not* set a minum bar
-    "-Xms#{application_memory}m -Xmx#{application_memory}m"
+    "-Xms#{application_memory}m -Xmx#{application_memory}m  $my_verbose"
   end
+
+  # redefine debugging options, only works for java app
+  def debug_options
+    <<-SCRIPT
+my_jpda=""
+my_verbose=""
+if [ -n "${JPDA+x}" ]; then
+   my_jpda="jpda"
+   my_verbose="-verbose"
+fi
+EXPORT my_jpda
+EXPORT my_verbose
+echo "debug flag : $my_jpda, $my_verbose and JPDA=$JPDA" >debug.log       
+    SCRIPT
+  end
+
+
 
   private
   def startup_script
