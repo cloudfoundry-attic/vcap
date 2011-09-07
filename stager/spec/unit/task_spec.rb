@@ -65,19 +65,19 @@ describe VCAP::Stager::Task do
 
     it 'should raise an instance of VCAP::Stager::StagingTimeoutError on plugin timeout' do
       @task.stub(:run_logged).and_return({:success => false, :timed_out => true})
-      expect { @task.send(:run_staging_plugin, @tmp_dir, @tmp_dir, @tmp_dir) }.to raise_error(VCAP::Stager::StagingTimeoutError)
+      expect { @task.send(:run_staging_plugin, @tmp_dir, @tmp_dir, @tmp_dir, nil) }.to raise_error(VCAP::Stager::StagingTimeoutError)
     end
 
     it 'should raise an instance of VCAP::Stager::StagingPlugin on plugin failure' do
       @task.stub(:run_logged).and_return({:success => false})
-      expect { @task.send(:run_staging_plugin, @tmp_dir, @tmp_dir, @tmp_dir) }.to raise_error(VCAP::Stager::StagingPluginError)
+      expect { @task.send(:run_staging_plugin, @tmp_dir, @tmp_dir, @tmp_dir, nil) }.to raise_error(VCAP::Stager::StagingPluginError)
     end
 
     it 'should leave the temporary working dir as it found it' do
       glob_exp = File.join(@tmp_dir, '*')
       pre_files = Dir.glob(glob_exp)
       @task.stub(:run_logged).and_return({:success => true})
-      @task.send(:run_staging_plugin, @tmp_dir, @tmp_dir, @tmp_dir)
+      @task.send(:run_staging_plugin, @tmp_dir, @tmp_dir, @tmp_dir, nil)
       Dir.glob(glob_exp).should == pre_files
     end
   end

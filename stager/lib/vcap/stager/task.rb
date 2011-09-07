@@ -22,7 +22,7 @@ class VCAP::Stager::Task
   DEFAULTS = {
     :nats              => NATS,
     :manifest_dir      => StagingPlugin::DEFAULT_MANIFEST_ROOT,
-    :run_plugin_path   => File.join(VCAP::Stager::BIN_DIR, 'run_plugin'),
+
     :download_app_path => File.join(VCAP::Stager::BIN_DIR, 'download_app'),
     :upload_app_path   => File.join(VCAP::Stager::BIN_DIR, 'upload_droplet'),
     :max_staging_duration => 120, # 2 min
@@ -103,7 +103,7 @@ class VCAP::Stager::Task
         download_app(dirs[:unstaged], dirs[:base])
 
         task_logger.info("Staging application")
-        run_staging_plugin(dirs[:unstaged], dirs[:staged], dirs[:base])
+        run_staging_plugin(dirs[:unstaged], dirs[:staged], dirs[:base], task_logger)
 
         task_logger.info("Uploading droplet")
         upload_droplet(dirs[:staged], dirs[:base])
@@ -217,10 +217,11 @@ class VCAP::Stager::Task
 
   # Stages our app into dst_dir, looking for the app source in src_dir
   #
-  # @param  src_dir  String  Location of the unstaged app
-  # @param  dst_dir  String  Where to place the staged app
-  # @param  work_dir String  Directory to use to place scratch files
-  def run_staging_plugin(src_dir, dst_dir, work_dir)
+  # @param  src_dir      String  Location of the unstaged app
+  # @param  dst_dir      String  Where to place the staged app
+  # @param  work_dir     String  Directory to use to place scratch files
+  # @param  task_logger  VCAP::Stager::TaskLogger
+  def run_staging_plugin(src_dir, dst_dir, work_dir, task_logger)
     plugin_config = {
       'source_dir'    => src_dir,
       'dest_dir'      => dst_dir,
@@ -234,6 +235,20 @@ class VCAP::Stager::Task
 
     @vcap_logger.debug("Running staging command: '#{cmd}'")
     res = run_logged(cmd, 0, @max_staging_duration)
+
+    # Slurp in the plugin log
+    plugin_log = File.join(dst_dir, 'logs', 'staging.log')
+    if File.exist?(plugin_log)
+      File.open(plugin_log, 'r') do |plf|
+        begin
+          while line = plf.readline
+            line.chomp!
+            task_logger.info(line)
+          end
+        rescue EOFError
+        end
+      end
+    end
 
     if res[:timed_out]
       @vcap_logger.error("Staging timed out")
