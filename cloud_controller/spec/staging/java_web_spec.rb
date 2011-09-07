@@ -11,7 +11,7 @@ describe "A Java web application being staged without a web config" do
   end
 end
 
-describe "A Java web being staged " do
+describe "A Java web application being staged " do
   before(:all) do
     app_fixture :java_web
   end
@@ -33,4 +33,101 @@ describe "A Java web being staged " do
     end
   end
 
+end
+
+describe "A Java web application being staged with a MySql service bound to it" do
+  before(:all) do
+    app_fixture :java_web
+    @environment = {
+      :services => [
+                    {:label=>"mysql-5.1", :tags=>["mysql", "mysql-5.1", "relational"], :name=>"mysql-9db41", :credentials=>{:name=>"d1b5ec5b179dc439d9c657dcc0ab9131c", :hostname=>"127.0.0.1", :host=>"127.0.0.1", :port=>3306, :user=>"upRQ0PsA7oEJD", :username=>"upRQ0PsA7oEJD", :password=>"pibhMxdwYZqy5"}, :options=>{}, :plan=>"free", :plan_option=>nil}
+                   ]
+    }
+  end
+
+  it "should have the MySql driver in the Tomcat library" do
+    stage(:java_web, @environment) do |staged_dir, source_dir|
+      jar_present?(staged_dir, "tomcat/lib/#{MYSQL_DRIVER_JAR}").should == true
+    end
+  end
+
+  it "should not have the PostgreSql driver in the Tomcat library" do
+    stage(:java_web, @environment) do |staged_dir, source_dir|
+      jar_present?(staged_dir, "tomcat/lib/#{POSTGRESQL_DRIVER_JAR}").should_not == true
+    end
+  end
+
+end
+
+describe "A Java web application being staged with a PostgreSql service bound to it" do
+  before(:all) do
+    app_fixture :java_web
+    @environment = {
+      :services => [
+                    {:label=>"postgresql-9.0", :tags=>["postgresql", "postgresql-9.0", "relational"], :name=>"postgresql-9db41", :credentials=>{:name=>"d5cb067dbd29a4f37b4a17d8e9890b3db", :hostname=>"172.30.48.125", :host=>"172.30.48.125", :port=>5432, :user=>"upRQ0PsA7oEJD", :username=>"upRQ0PsA7oEJD", :password=>"pibhMxdwYZqy5"}, :options=>{}, :plan=>"free", :plan_option=>nil}
+                   ]
+    }
+  end
+
+  it "should have the PostgreSql driver in the Tomcat library" do
+    stage(:java_web, @environment) do |staged_dir, source_dir|
+      jar_present?(staged_dir, "tomcat/lib/#{POSTGRESQL_DRIVER_JAR}").should == true
+    end
+  end
+
+  it "should not have the MySql driver in the Tomcat library" do
+    stage(:java_web, @environment) do |staged_dir, source_dir|
+      jar_present?(staged_dir, "tomcat/lib/#{MYSQL_DRIVER_JAR}").should_not == true
+    end
+  end
+
+end
+
+describe "A Java web application being staged with a MySql and a PostgreSql service bound to it" do
+  before(:all) do
+    app_fixture :java_web
+    @environment = {
+      :services => [
+                    {:label=>"mysql-5.1", :tags=>["mysql", "mysql-5.1", "relational"], :name=>"mysql-9db41", :credentials=>{:name=>"d1b5ec5b179dc439d9c657dcc0ab9131c", :hostname=>"127.0.0.1", :host=>"127.0.0.1", :port=>3306, :user=>"upRQ0PsA7oEJD", :username=>"upRQ0PsA7oEJD", :password=>"pibhMxdwYZqy5"}, :options=>{}, :plan=>"free", :plan_option=>nil},
+                    {:label=>"postgresql-9.0", :tags=>["postgresql", "postgresql-9.0", "relational"], :name=>"postgresql-9db41", :credentials=>{:name=>"d5cb067dbd29a4f37b4a17d8e9890b3db", :hostname=>"172.30.48.125", :host=>"172.30.48.125", :port=>5432, :user=>"upRQ0PsA7oEJD", :username=>"upRQ0PsA7oEJD", :password=>"pibhMxdwYZqy5"}, :options=>{}, :plan=>"free", :plan_option=>nil}
+                   ]
+    }
+  end
+
+  it "should have the MySql driver in the Tomcat library" do
+    stage(:java_web, @environment) do |staged_dir, source_dir|
+      jar_present?(staged_dir, "tomcat/lib/#{MYSQL_DRIVER_JAR}").should == true
+    end
+  end
+
+  it "should have the PostgreSql driver in the Tomcat library" do
+    stage(:java_web, @environment) do |staged_dir, source_dir|
+      jar_present?(staged_dir, "tomcat/lib/#{POSTGRESQL_DRIVER_JAR}").should == true
+    end
+  end
+
+end
+
+describe "A Java web application being staged without a MySql or a PostgreSql service bound to it" do
+  before(:all) do
+    app_fixture :java_web
+    @environment = {}
+  end
+
+  it "should not have the MySql driver in the Tomcat library" do
+    stage(:java_web, @environment) do |staged_dir, source_dir|
+      jar_present?(staged_dir, "tomcat/lib/#{MYSQL_DRIVER_JAR}").should_not == true
+    end
+  end
+
+  it "should not have the PostgreSql driver in the Tomcat library" do
+    stage(:java_web, @environment) do |staged_dir, source_dir|
+      jar_present?(staged_dir, "tomcat/lib/#{POSTGRESQL_DRIVER_JAR}").should_not == true
+    end
+  end
+
+end
+
+def jar_present? staged_dir, path
+  File.exist?(File.join(staged_dir, path))
 end
