@@ -1,0 +1,31 @@
+---
+# This sample file shows a custom DEA runtime that does not include Erlang
+deployment:
+  name: "custom_runtime2"
+jobs:
+  install:
+    - nats_server
+    - cloud_controller:
+        builtin_services:
+          - redis
+          - mongodb
+          - mysql
+    - router
+    - health_manager
+    - ccdb
+    - redis:
+        index: "0"
+    - redis_gateway
+    - mysql:
+        index: "0"
+    - mysql_gateway
+    - mongodb:
+        index: "0"
+    - mongodb_gateway
+    # Shows that DEA runtimes could also be specified under the jobs/install or jobs/installed properties
+    - dea:
+        runtimes:
+          - ruby18
+          - ruby19
+          - node
+          - java

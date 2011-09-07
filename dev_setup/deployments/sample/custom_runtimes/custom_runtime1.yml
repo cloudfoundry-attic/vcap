@@ -1,0 +1,13 @@
+---
+# This sample file shows a custom DEA runtime that does not include Erlang.
+deployment:
+  name: "custom_runtime1"
+dea:
+  runtimes:
+    - ruby18
+    - ruby19
+    - java
+    - node
+jobs:
+  install:
+    - all
