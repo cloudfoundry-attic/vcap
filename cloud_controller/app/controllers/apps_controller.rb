@@ -240,6 +240,11 @@ class AppsController < ApplicationController
       StagingController.complete_upload(ul_hdl)
       FileUtils.rm_f(ul_hdl.upload_path)
     end
+    # This is in keeping with the old CC behavior. Instead of starting a single
+    # instance of a broken app (which is effectively stopped after HM flapping logic
+    # is triggered) we stop it explicitly.
+    app.state = 'STOPPED'
+    AppManager.new(app).stopped
     app.package_state = 'FAILED'
     app.update_run_count()
     raise e
