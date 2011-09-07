@@ -7,7 +7,8 @@ class DefaultController < ApplicationController
       :build => 2222,
       :support =>  AppConfig[:support_address],
       :version =>  CloudController.version,
-      :description =>  AppConfig[:description]
+      :description =>  AppConfig[:description],
+      :allow_debug =>  AppConfig[:allow_debug]
     }
     # If there is a logged in user, give out additional information
     if user
@@ -17,6 +18,10 @@ class DefaultController < ApplicationController
       info[:frameworks] = StagingPlugin.manifests_info
     end
     render :json => info
+  end
+
+  def runtime_info
+    render :json => AppConfig[:runtimes]
   end
 
   def service_info

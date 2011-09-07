@@ -5,7 +5,7 @@ require 'bundler/setup'
 
 $LOAD_PATH.unshift(File.expand_path('../../lib', __FILE__))
 
-require 'vcap/stager/plugin'
+require 'vcap/staging/plugin/common'
 
 unless ARGV.length == 2
   puts "Usage: run_staging_plugin [plugin name] [plugin config file]"

@@ -80,23 +80,8 @@ describe 'DEA Agent' do
   describe '#crashes_reaper' do
     it 'should remove instance dirs for crashed apps' do
       agent = make_test_agent
-      apps_dir = create_apps_dir(UNIT_TESTS_DIR)
-      File.directory?(apps_dir).should be_true
-
-      inst_dir = File.join(apps_dir, 'test_instance_dir')
-      FileUtils.mkdir(inst_dir)
-      File.directory?(inst_dir).should be_true
-
-      droplets = {
-        0 => {
-          0 => {
-            :dir   => inst_dir,
-            :state => :CRASHED,
-            :state_timestamp => Time.now.to_i - DEA::Agent::CRASHES_REAPER_TIMEOUT - 60,
-          },
-        }
-      }
-      agent.instance_variable_set(:@droplets, droplets)
+      inst_dir = create_crashed_app(UNIT_TESTS_DIR)
+      set_crashed_app_state(agent, inst_dir)
 
       EM.run do
         agent.crashes_reaper
@@ -131,6 +116,46 @@ describe 'DEA Agent' do
       # @bad_tgz isn't a valid tar file, so extraction should fail
       agent.stage_app_dir(nil, nil, nil, @bad_tgz, inst_dir, nil).should be_false
     end
+  end
+
+  describe '#cleanup_droplet' do
+    it 'should rechown instance dirs for crashed apps' do
+      agent = make_test_agent
+      inst_dir = create_crashed_app(UNIT_TESTS_DIR)
+      set_crashed_app_state(agent, inst_dir)
+
+      # Use Rspec "EM.system.should_recieve ... "cmd here"
+      #EM.should_receive(:system).once.with("chown -R #{Process.euid}:#{Process.egid} #{inst_dir}")
+      EM.should_receive(:system).once
+      agent.cleanup_droplet(agent.instance_variable_get(:@droplets)[0][0])
+
+      # Is this test blocking? Does it matter?
+      File.owned?(inst_dir).should be_true
+    end
+  end
+
+  def create_crashed_app(base_dir)
+    apps_dir = create_apps_dir(base_dir)
+    File.directory?(apps_dir).should be_true
+
+    inst_dir = File.join(apps_dir, 'test_instance_dir')
+    FileUtils.mkdir(inst_dir)
+    File.directory?(inst_dir).should be_true
+
+    inst_dir
+  end
+
+  def set_crashed_app_state(agent, inst_dir)
+    droplets = {
+      0 => {
+        0 => {
+          :dir   => inst_dir,
+          :state => :CRASHED,
+          :state_timestamp => Time.now.to_i - DEA::Agent::CRASHES_REAPER_TIMEOUT - 60,
+        },
+      }
+    }
+    agent.instance_variable_set(:@droplets, droplets)
   end
 
   def create_apps_dir(base_dir)

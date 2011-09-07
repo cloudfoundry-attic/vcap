@@ -5,9 +5,9 @@ require 'tmpdir'
 require 'uri'
 
 require 'vcap/logging'
+require 'vcap/staging/plugin/common'
 require 'vcap/subprocess'
 
-require 'vcap/stager/plugin'
 require 'vcap/stager/task_result'
 
 module VCAP
