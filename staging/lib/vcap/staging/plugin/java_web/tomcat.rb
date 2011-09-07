@@ -5,6 +5,10 @@ class Tomcat
   AUTOSTAGING_JAR = 'auto-reconfiguration-0.6.0-BUILD-SNAPSHOT.jar'
   DEFAULT_APP_CONTEXT = "/WEB-INF/applicationContext.xml"
   DEFAULT_SERVLET_CONTEXT_SUFFIX = "-servlet.xml"
+  SERVICE_DRIVER_HASH = {
+      "mysql-5.1" => 'mysql-connector-java-5.1.12-bin.jar',
+      "postgresql-9.0" => 'postgresql-9.0-801.jdbc4.jar'
+  }
 
   def self.resource_dir
     File.join(File.dirname(__FILE__), 'resources')
@@ -186,4 +190,13 @@ class Tomcat
     Nokogiri::XML(open(autostaging_template))
   end
 
+  def self.copy_service_drivers(services, webapp_root)
+    drivers = services.select { |svc|
+      SERVICE_DRIVER_HASH.has_key?(svc[:label])
+    }
+    drivers.each { |driver|
+      driver_dest = File.join(webapp_root, '../../lib')
+      copy_jar SERVICE_DRIVER_HASH[driver[:label]], driver_dest
+    } if drivers
+  end
 end
