@@ -43,30 +43,40 @@ force_http_sharing: true
 # version flags are assumed to be '-v' unless noted below.
 
 runtimes:
+<% if node[:dea][:runtimes].include?("ruby18") %>
   ruby18:
     executable: <%= File.join(node[:ruby18][:path], "bin", "ruby") %>
     version: 1.8.7
     version_flag: "-e 'puts RUBY_VERSION'"
     additional_checks: "-e 'puts RUBY_PATCHLEVEL >= 174'"
     environment:
+<% end %>
+<% if node[:dea][:runtimes].include?("ruby19") %>
   ruby19:
     executable: <%= File.join(node[:ruby][:path], "bin", "ruby") %>
     version: 1.9.2
     version_flag: "-e 'puts RUBY_VERSION'"
     additional_checks: "-e 'puts RUBY_PATCHLEVEL >= 180'"
     environment:
+<% end %>
+<% if node[:dea][:runtimes].include?("nodejs") %>
   node:
     executable: <%= File.join(node[:nodejs][:path], "bin", "node") %>
     version: 0.4.[2-9]
     version_flag: '-v'
     environment:
+<% end %>
+<% if node[:dea][:runtimes].include?("java") %>
   java:
     executable: java
     version: 1.6.0
     version_flag: '-version'
     environment:
+<% end %>
+<% if node[:dea][:runtimes].include?("erlang") %>
   erlangR14B02:
     executable: <%= File.join(node[:erlang][:path], "bin", "erl") %>
     version: ".* 5.8.3"
     version_flag: '-version'
     environment:
+<% end %>
