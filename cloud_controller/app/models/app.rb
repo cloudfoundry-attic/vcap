@@ -524,7 +524,7 @@ class App < ActiveRecord::Base
   end
 
   def update_run_count
-    if self..staged_package_hash_changed?
+    if self.staged_package_hash_changed?
       self.run_count = 0 # reset
     else
       self.run_count += 1
