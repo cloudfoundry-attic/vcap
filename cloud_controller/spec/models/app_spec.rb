@@ -36,6 +36,26 @@ describe App do
     end
   end
 
+  describe '#update_run_count' do
+    before :each do
+      @app = App.new
+    end
+
+    it 'resets the run count if the staged package hash changed' do
+      @app.expects(:staged_package_hash_changed?).returns(true)
+      @app.run_count = 5
+      @app.update_run_count()
+      @app.run_count.should == 0
+    end
+
+    it 'increments the run count if the staged package hash did not change' do
+      @app.expects(:staged_package_hash_changed?).returns(false)
+      @app.run_count = 5
+      @app.update_run_count()
+      @app.run_count.should == 6
+    end
+  end
+
   def create_user(email, pw)
     u = User.new(:email => email)
     u.set_and_encrypt_password(pw)
