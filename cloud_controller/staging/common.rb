@@ -293,6 +293,10 @@ class StagingPlugin
     app_server['executable']
   end
 
+  #interface to kill_additional_processes
+  def kill_additional_processes
+  end
+
   def local_runtime
     '%VCAP_LOCAL_RUNTIME%'
   end
@@ -392,6 +396,7 @@ echo "$STARTED" >> ../run.pid
 echo "#!/bin/bash" >> ../stop
 echo "kill -9 $STARTED" >> ../stop
 echo "kill -9 $PPID" >> ../stop
+<%= kill_additional_processes %>
 chmod 755 ../stop
 wait $STARTED
     SCRIPT

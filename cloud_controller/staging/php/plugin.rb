@@ -28,6 +28,19 @@ class PhpPlugin < StagingPlugin
     "bash ./start.sh"
   end
 
+  def kill_additional_processes
+<<-ADDITION
+export instance_id=`cat ../env.log |grep HOME|awk -F"/" '{print $6}'`
+echo $instance_id > ../inst.log
+sleep 50
+for id in `ps aux | grep $instance_id | awk '{print $2}'`; do
+    echo $id >> ../inst.log
+    echo "kill -9 $id" >> ../stop
+done
+ADDITION
+  end
+
+
   private
 
   def startup_script
