@@ -24,6 +24,7 @@ class JavaWebPlugin < StagingPlugin
         raise "Web application staging failed: web.xml not found"
       end
       do_pre_tomcat_config_setup(webapp_root)
+      copy_service_drivers(webapp_root)
       Tomcat.configure_tomcat_application(destination_directory, webapp_root, self.autostaging_template, environment)  unless self.skip_staging(webapp_root)
       create_startup_script
     end
@@ -34,6 +35,11 @@ class JavaWebPlugin < StagingPlugin
 
   def create_app_directories
     FileUtils.mkdir_p File.join(destination_directory, 'logs')
+  end
+
+  def copy_service_drivers webapp_root
+    services = environment[:services] if environment
+    Tomcat.copy_service_drivers(services, webapp_root) if services
   end
 
   # The Tomcat start script runs from the root of the staged application.
