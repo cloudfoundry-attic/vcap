@@ -9,15 +9,16 @@ module VCAP
 end
 
 class VCAP::Stager::TaskManager
-  attr_accessor :max_active_tasks, :user_mgr
+  attr_accessor :max_active_tasks, :user_mgr, :varz
 
-  def initialize(max_active_tasks, user_mgr=nil)
+  def initialize(max_active_tasks, user_mgr=nil, varz={})
     @max_active_tasks = max_active_tasks
     @event_callbacks  = {}
     @queued_tasks     = []
     @active_tasks     = {}
     @user_mgr         = user_mgr
     @logger           = VCAP::Logging.logger('vcap.stager.task_manager')
+    @varz             = varz
   end
 
   def num_tasks
@@ -49,6 +50,8 @@ class VCAP::Stager::TaskManager
       @logger.info("Starting task, task_id=#{task.task_id}")
       task.perform {|result| task_completed(task, result) }
     end
+    @varz[:num_pending_tasks] = @queued_tasks.length
+    @varz[:num_active_tasks] = @active_tasks.size
   end
 
   def task_completed(task, result)
@@ -61,6 +64,9 @@ class VCAP::Stager::TaskManager
     if task.user
       cmd = "sudo -u '##{task.user[:uid]}' pkill -9 -U #{task.user[:uid]}"
       VCAP::Stager::Util.run_command(cmd) do |res|
+        # 0 : >=1 process matched
+        # 1 : no process matched
+        # 2 : error
         if res[:status].exitstatus < 2
           @user_mgr.return_user(task.user)
         else

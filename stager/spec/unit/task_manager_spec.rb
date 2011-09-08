@@ -18,6 +18,27 @@ describe VCAP::Stager::TaskManager do
       tm.send(:start_tasks)
     end
 
+    it 'should update varz' do
+      tm = VCAP::Stager::TaskManager.new(2)
+      tasks = []
+      for ii in 0..1
+        t = make_mock_task(ii)
+        t.should_receive(:perform).with(any_args())
+        tasks << t
+      end
+      for ii in 2..3
+        tasks << make_mock_task(ii)
+      end
+      # XXX :(
+      tm.instance_variable_set(:@queued_tasks, tasks)
+
+      varz = {}
+      tm.varz = varz
+      tm.send(:start_tasks)
+      varz[:num_pending_tasks].should == 2
+      varz[:num_active_tasks].should == 2
+    end
+
     it 'should checkout a secure user per task' do
       um = mock(:secure_user_manager)
       um.should_receive(:checkout_user).twice()
