@@ -100,7 +100,7 @@ describe User do
       u.uses_new_stager?({:staging => {}}).should be_false
     end
 
-    it 'should correctly identify which users should have the new stager enabled' do
+    it 'should correctly identify which users should have the new stager enabled by percent' do
       u = User.new(:email => 'foo@bar.com')
       cfg  = {:staging => {:new_stager_percent => 2}}
 
@@ -115,6 +115,15 @@ describe User do
 
       u.id = 101
       u.uses_new_stager?(cfg).should be_true
+    end
+
+    it 'should correctly identify which users should have the new stager enabled by email' do
+      u1 = User.new(:email => 'mpage@vmware.com')
+      u2 = User.new(:email => 'bar@foo.com')
+      cfg  = {:staging => {:new_stager_email_regexp => Regexp.new('.*@vmware\.com')}}
+
+      u1.uses_new_stager?(cfg).should be_true
+      u2.uses_new_stager?(cfg).should be_false
     end
   end
 
