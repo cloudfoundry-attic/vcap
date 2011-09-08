@@ -53,6 +53,7 @@ class VCAP::Stager::Server
                                  :config => @config,
                                  :nats   => @nats_conn)
         setup_channels()
+        @task_mgr.varz = VCAP::Component.varz
         @logger.info("Server running")
       end
     end
