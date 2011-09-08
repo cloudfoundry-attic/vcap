@@ -109,8 +109,9 @@ class User < ActiveRecord::Base
 
 
   def uses_new_stager?(cfg=AppConfig)
-    if cfg[:staging][:new_stager_percent] \
-       && ((self.id % 100) < cfg[:staging][:new_stager_percent])
+    stg = cfg[:staging]
+    if (stg[:new_stager_percent] && ((self.id % 100) < stg[:new_stager_percent])) \
+       || (stg[:new_stager_emails] && stg[:new_stager_emails].include?(self.email))
       true
     else
       false

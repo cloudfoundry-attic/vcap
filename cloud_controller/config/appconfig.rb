@@ -3,6 +3,8 @@
 # mode by checking that flag. This code runs too early to know for sure if
 # we are starting in production mode.
 
+require 'set'
+
 require 'vcap/common'
 require 'vcap/staging/plugin/common'
 
@@ -158,7 +160,16 @@ if pw_len < c.key_len
   exit 1
 end
 
-if AppConfig[:staging][:new_stager_percent] && !AppConfig[:redis]
+if AppConfig[:staging][:new_stager_emails]
+  unless AppConfig[:staging][:new_stager_emails].kind_of?(Array)
+    $stderr.puts "Error: new stager emails must be an array"
+    exit 1
+  end
+
+  AppConfig[:staging][:new_stager_emails] = Set.new(AppConfig[:staging][:new_stager_emails])
+end
+
+if (AppConfig[:staging][:new_stager_percent] || AppConfig[:staging][:new_stager_emails]) && !AppConfig[:redis]
   $stderr.puts "You must supply a redis config to use the new stager"
   exit 1
 end
