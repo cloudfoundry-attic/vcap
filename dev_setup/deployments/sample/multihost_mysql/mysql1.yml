@@ -3,7 +3,7 @@ deployment:
   name: "mysql1"
 jobs:
   install:
-    - mysql:
+    - mysql_node:
         index: "1"
   installed:
     - nats_server:
