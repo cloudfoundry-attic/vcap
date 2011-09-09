@@ -3,7 +3,6 @@ local_db: sqlite3:/var/vcap/services/mongodb/mongodb_node.db
 mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
 index: <%= node[:mongodb][:index] %>
 base_dir: /var/vcap/services/mongodb/instances
-log_level: DEBUG
 pid: /var/vcap/sys/run/mongodb_node.pid
 available_memory: <%= node[:mongodb][:available_memory] %>
 max_memory: <%= node[:mongodb][:max_memory] %>
@@ -14,3 +13,5 @@ port_range:
   first: 25001
   last: 45000
 migration_nfs: /mnt/migration
+logging:
+  level: debug

@@ -10,6 +10,7 @@ host: localhost
 index: 0
 token: <%= node[:mongodb][:token] %>
 mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
-log_level: DEBUG
 pid: /var/vcap/sys/run/mongodb_service.pid
+logging:
+  level: debug
 # allow_over_provisioning: false
