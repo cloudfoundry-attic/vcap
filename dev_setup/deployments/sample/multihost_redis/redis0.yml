@@ -3,7 +3,7 @@ deployment:
   name: "redis0"
 jobs:
   install:
-    - redis:
+    - redis_node:
         index: "0"
   installed:
     - nats_server:

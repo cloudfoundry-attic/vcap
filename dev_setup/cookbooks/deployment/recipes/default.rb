@@ -22,7 +22,7 @@ node[:postgresql][:host] ||= cf_local_ip
 end
 
 var_vcap = File.join("", "var", "vcap")
-[var_vcap, File.join(var_vcap, "sys"), File.join(var_vcap, "db"),
+[var_vcap, File.join(var_vcap, "sys"), File.join(var_vcap, "db"), File.join(var_vcap, "services"),
  File.join(var_vcap, "data"), File.join(var_vcap, "data", "cloud_controller"),
  File.join(var_vcap, "sys", "log"), File.join(var_vcap, "data", "cloud_controller", "tmp"),
  File.join(var_vcap, "data", "cloud_controller", "staging"),
