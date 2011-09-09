@@ -11,11 +11,11 @@ jobs:
           - mysql
     - router
     - health_manager
-    - redis:
+    - redis_node:
         index: "0"
     - redis_gateway
     - ccdb
-    - mysql:
+    - mysql_node:
         index: "0"
     - mysql_gateway
     - mongodb_gateway

@@ -1,0 +1,16 @@
+---
+cloud_controller_uri: <%= node[:cloud_controller][:service_api_uri] %>
+service:
+  name: neo4j
+  version: "1.4"
+  description: 'Neo4j NOSQL store'
+  plans: ['free']
+  tags: ['neo4j', 'neo4j-1.4', 'nosql']
+host: localhost
+index: 0
+token: <%= node[:neo4j_node][:token] %>
+logging:
+  level: debug
+mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
+pid: /var/vcap/sys/run/neo4j_service.pid
+node_timeout: 10

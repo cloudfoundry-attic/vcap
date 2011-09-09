@@ -1,0 +1,12 @@
+{
+  "name": "neo4j_node",
+  "override_attributes": {},
+  "json_class": "Chef::Role",
+  "description": "Neo4j graph databaes for apps",
+  "chef_type": "role",
+  "run_list" : ["recipe[deployment]",
+                "recipe[essentials]",
+                "recipe[ruby]",
+                "recipe[neo4j]",
+                "recipe[neo4j::node]"]
+}

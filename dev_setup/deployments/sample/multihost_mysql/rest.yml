@@ -12,10 +12,10 @@ jobs:
     - router
     - health_manager
     - ccdb
-    - redis:
+    - redis_node:
         index: "0"
     - redis_gateway
     - mysql_gateway
-    - mongodb:
+    - mongodb_node:
         index: "0"
     - mongodb_gateway
