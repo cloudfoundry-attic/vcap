@@ -9,7 +9,8 @@ service:
 host: localhost
 index: 0
 token: <%= node[:mysql][:token] %>
-log_level: DEBUG
 mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
 pid: /var/vcap/sys/run/mysql_service.pid
 node_timeout: 2
+logging:
+  level: debug

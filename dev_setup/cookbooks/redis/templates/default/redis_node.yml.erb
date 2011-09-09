@@ -3,7 +3,6 @@ local_db: sqlite3:/var/vcap/services/redis/redis_node.db
 mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
 index: <%= node[:redis][:index] %>
 base_dir: /var/vcap/services/redis/instances
-log_level: DEBUG
 pid: /var/vcap/sys/run/redis_node.pid
 available_memory: <%= node[:redis][:available_memory] %>
 max_memory: <%= node[:redis][:max_memory] %>
@@ -14,3 +13,5 @@ port_range:
   first: 5000
   last: 25000
 migration_nfs: /mnt/vcap
+logging:
+  level: debug
