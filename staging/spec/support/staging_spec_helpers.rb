@@ -1,7 +1,7 @@
 require 'tmpdir'
 
 module StagingSpecHelpers
-  AUTOSTAGING_JAR = 'auto-reconfiguration-0.6.0-BUILD-SNAPSHOT.jar'
+  AUTOSTAGING_JAR = 'auto-reconfiguration-0.6.0.jar'
   MYSQL_DRIVER_JAR = 'mysql-connector-java-5.1.12-bin.jar'
   POSTGRESQL_DRIVER_JAR = 'postgresql-9.0-801.jdbc4.jar'
 
