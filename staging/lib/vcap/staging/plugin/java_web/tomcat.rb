@@ -2,7 +2,7 @@ require 'nokogiri'
 require 'fileutils'
 
 class Tomcat
-  AUTOSTAGING_JAR = 'auto-reconfiguration-0.6.0-BUILD-SNAPSHOT.jar'
+  AUTOSTAGING_JAR = 'auto-reconfiguration-0.6.0.jar'
   DEFAULT_APP_CONTEXT = "/WEB-INF/applicationContext.xml"
   DEFAULT_SERVLET_CONTEXT_SUFFIX = "-servlet.xml"
 
@@ -40,6 +40,7 @@ class Tomcat
   def self.modify_autostaging_context(autostaging_context, web_config_file, webapp_path)
     web_config = Nokogiri::XML(open(web_config_file))
     web_config = configure_autostaging_context_param autostaging_context, web_config, webapp_path
+    web_config = configure_springenv_context_param autostaging_context, web_config, webapp_path
     web_config = configure_autostaging_servlet autostaging_context, web_config, webapp_path
     File.open(web_config_file, 'w') {|f| f.write(web_config.to_xml) }
   end
@@ -52,9 +53,10 @@ class Tomcat
   # default app context is present, introduce a "contextConfigLocation" element and set its value to include
   # both the default app context as well as the context reference for autostaging.
   def self.configure_autostaging_context_param(autostaging_context, webapp_config, webapp_path)
-    autostaging_context_param_name_node = autostaging_context.xpath("//context-param/param-name").first
+    autostaging_context_param_node = autostaging_context.xpath("//context-param[param-name='contextConfigLocation']").first
+    autostaging_context_param_name_node = autostaging_context_param_node.xpath("param-name").first
     autostaging_context_param_name = autostaging_context_param_name_node.content.strip
-    autostaging_context_param_value_node = autostaging_context.xpath("//context-param/param-value").first
+    autostaging_context_param_value_node = autostaging_context_param_node.xpath("param-value").first
     autostaging_context_param_value = autostaging_context_param_value_node.content
 
     prefix = webapp_config.root.namespace ? "xmlns:" : ''
@@ -77,6 +79,29 @@ class Tomcat
         webapp_config.root.add_child context_param_node
         webapp_config = configure_default_context webapp_path, webapp_config, autostaging_context_param_name_node, autostaging_context_param_value, context_param_node, DEFAULT_APP_CONTEXT
       end
+    end
+    webapp_config
+  end
+
+  def self.configure_springenv_context_param(autostaging_context, webapp_config, webapp_path)
+    autostaging_context_param_node = autostaging_context.xpath("//context-param[param-name='contextInitializerClasses']").first
+    return webapp_config unless autostaging_context_param_node != nil
+    autostaging_context_param_name_node = autostaging_context_param_node.xpath("param-name").first
+    autostaging_context_param_name = autostaging_context_param_name_node.content.strip
+    autostaging_context_param_value_node = autostaging_context_param_node.xpath("param-value").first
+    autostaging_context_param_value = autostaging_context_param_value_node.content
+
+    prefix = webapp_config.root.namespace ? "xmlns:" : ''
+    context_param_node =  webapp_config.xpath("//#{prefix}context-param[#{prefix}param-name='contextInitializerClasses']").first
+    if (context_param_node == nil)
+      context_param_node = Nokogiri::XML::Node.new 'context-param', webapp_config
+      context_param_node.add_child autostaging_context_param_name_node.dup
+      context_param_node.add_child autostaging_context_param_value_node.dup
+      webapp_config.root.add_child context_param_node
+    else
+      context_param_value_node = context_param_node.xpath("#{prefix}param-value").first
+      context_param_value = "#{context_param_value_node.content.strip}, #{autostaging_context_param_value}"
+      context_param_value_node.content = context_param_value
     end
     webapp_config
   end

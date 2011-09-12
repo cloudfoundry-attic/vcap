@@ -1,5 +1,7 @@
 require 'spec_helper'
 
+CLOUD_APPLICATION_CONTEXT_INITIALIZER = 'org.cloudfoundry.reconfiguration.spring.CloudApplicationContextInitializer'
+
 describe "A Spring application being staged" do
   before do
     app_fixture :spring_guestbook
@@ -98,14 +100,18 @@ describe "A Spring web application being staged without a context-param in its w
     app_fixture :spring_no_context_config
   end
 
-  it "should not have a context-param in its web config after staging" do
+  it "should have a 'contextInitializerClasses' context-param with only the CloudApplicationContextInitializer" do
     stage :spring do |staged_dir|
       web_config_file = File.join(staged_dir, 'tomcat/webapps/ROOT/WEB-INF/web.xml')
-      File.exist?(web_config_file).should == true
-
       web_config = Nokogiri::XML(open(web_config_file))
-      context_param_node =  web_config.xpath("//context-param")
-      context_param_node.length.should == 0
+      context_param_name_node = web_config.xpath("//context-param[contains(normalize-space(param-name), normalize-space('contextInitializerClasses'))]")
+      context_param_name_node.length.should_not == 0
+
+      context_param_value_node = context_param_name_node.first.xpath("param-value")
+      context_param_value_node.length.should_not == 0
+
+      context_param_value = context_param_value_node.first.content
+      context_param_value.should == CLOUD_APPLICATION_CONTEXT_INITIALIZER
     end
   end
 
@@ -155,6 +161,21 @@ describe "A Spring web application being staged without a context-param in its w
     end
   end
 
+  it "should have a 'contextInitializerClasses' context-param with only the CloudApplicationContextInitializer" do
+    stage :spring do |staged_dir|
+      web_config_file = File.join(staged_dir, 'tomcat/webapps/ROOT/WEB-INF/web.xml')
+      web_config = Nokogiri::XML(open(web_config_file))
+      context_param_name_node = web_config.xpath("//context-param[contains(normalize-space(param-name), normalize-space('contextInitializerClasses'))]")
+      context_param_name_node.length.should_not == 0
+
+      context_param_value_node = context_param_name_node.first.xpath("param-value")
+      context_param_value_node.length.should_not == 0
+
+      context_param_value = context_param_value_node.first.content
+      context_param_value.should == CLOUD_APPLICATION_CONTEXT_INITIALIZER
+    end
+  end
+
   it "should have the auto reconfiguration jar in the webapp lib path" do
     stage :spring do |staged_dir|
       auto_reconfig_jar_relative_path = "tomcat/webapps/ROOT/WEB-INF/lib/#{AUTOSTAGING_JAR}"
@@ -191,6 +212,21 @@ describe "A Spring web application being staged with a context-param but without
     end
   end
 
+  it "should have a 'contextInitializerClasses' context-param with only the CloudApplicationContextInitializer" do
+    stage :spring do |staged_dir|
+      web_config_file = File.join(staged_dir, 'tomcat/webapps/ROOT/WEB-INF/web.xml')
+      web_config = Nokogiri::XML(open(web_config_file))
+      context_param_name_node = web_config.xpath("//context-param[contains(normalize-space(param-name), normalize-space('contextInitializerClasses'))]")
+      context_param_name_node.length.should_not == 0
+
+      context_param_value_node = context_param_name_node.first.xpath("param-value")
+      context_param_value_node.length.should_not == 0
+
+      context_param_value = context_param_value_node.first.content
+      context_param_value.should == CLOUD_APPLICATION_CONTEXT_INITIALIZER
+    end
+  end
+
   it "should have the auto reconfiguration jar in the webapp lib path" do
     stage :spring do |staged_dir|
       auto_reconfig_jar_relative_path = "tomcat/webapps/ROOT/WEB-INF/lib/#{AUTOSTAGING_JAR}"
@@ -223,6 +259,43 @@ describe "A Spring web application being staged with a context-param containing 
     end
   end
 
+  it "should have a 'contextInitializerClasses' context-param with only the CloudApplicationContextInitializer" do
+    stage :spring do |staged_dir|
+      web_config_file = File.join(staged_dir, 'tomcat/webapps/ROOT/WEB-INF/web.xml')
+      web_config = Nokogiri::XML(open(web_config_file))
+      context_param_name_node = web_config.xpath("//context-param[contains(normalize-space(param-name), normalize-space('contextInitializerClasses'))]")
+      context_param_name_node.length.should_not == 0
+
+      context_param_value_node = context_param_name_node.first.xpath("param-value")
+      context_param_value_node.length.should_not == 0
+
+      context_param_value = context_param_value_node.first.content
+      context_param_value.should == CLOUD_APPLICATION_CONTEXT_INITIALIZER
+    end
+  end
+
+end
+
+describe "A Spring web application being staged with a context-param containing a 'contextInitializerClasses' of 'foo' in its web config" do
+  before(:all) do
+    app_fixture :spring_context_initializer_foo
+  end
+
+  it "should have the 'foo' initializer precede the auto-reconfiguration initializer 'contextInitializerClasses' param-value" do
+    stage :spring do |staged_dir|
+      web_config_file = File.join(staged_dir, 'tomcat/webapps/ROOT/WEB-INF/web.xml')
+      web_config = Nokogiri::XML(open(web_config_file))
+      context_param_name_node = web_config.xpath("//context-param[contains(normalize-space(param-name), normalize-space('contextInitializerClasses'))]")
+      context_param_name_node.length.should_not == 0
+
+      context_param_value_node = context_param_name_node.first.xpath("param-value")
+      context_param_value_node.length.should_not == 0
+
+      context_param_value = context_param_value_node.first.content
+      context_param_value.should == "foo, #{CLOUD_APPLICATION_CONTEXT_INITIALIZER}"
+    end
+  end
+
   it "should have the auto reconfiguration jar in the webapp lib path" do
     stage :spring do |staged_dir|
       auto_reconfig_jar_relative_path = "tomcat/webapps/ROOT/WEB-INF/lib/#{AUTOSTAGING_JAR}"
@@ -240,6 +313,21 @@ describe "A Spring web application being staged without a Spring DispatcherServl
 
   it "should be staged" do
     lambda { stage :spring }.should_not raise_error
+  end
+
+  it "should have a 'contextInitializerClasses' context-param with only the CloudApplicationContextInitializer" do
+    stage :spring do |staged_dir|
+      web_config_file = File.join(staged_dir, 'tomcat/webapps/ROOT/WEB-INF/web.xml')
+      web_config = Nokogiri::XML(open(web_config_file))
+      context_param_name_node = web_config.xpath("//context-param[contains(normalize-space(param-name), normalize-space('contextInitializerClasses'))]")
+      context_param_name_node.length.should_not == 0
+
+      context_param_value_node = context_param_name_node.first.xpath("param-value")
+      context_param_value_node.length.should_not == 0
+
+      context_param_value = context_param_value_node.first.content
+      context_param_value.should == CLOUD_APPLICATION_CONTEXT_INITIALIZER
+    end
   end
 
   it "should have the auto reconfiguration jar in the webapp lib path" do
@@ -280,6 +368,21 @@ describe "A Spring web application being staged with a Spring DispatcherServlet 
       init_param_value = init_param_value_node.first.content
       auto_reconfiguration_context_index = init_param_value.index('classpath:META-INF/cloud/cloudfoundry-auto-reconfiguration-context.xml')
       auto_reconfiguration_context_index.should_not == nil
+    end
+  end
+
+  it "should have a 'contextInitializerClasses' context-param with only the CloudApplicationContextInitializer" do
+    stage :spring do |staged_dir|
+      web_config_file = File.join(staged_dir, 'tomcat/webapps/ROOT/WEB-INF/web.xml')
+      web_config = Nokogiri::XML(open(web_config_file))
+      context_param_name_node = web_config.xpath("//context-param[contains(normalize-space(param-name), normalize-space('contextInitializerClasses'))]")
+      context_param_name_node.length.should_not == 0
+
+      context_param_value_node = context_param_name_node.first.xpath("param-value")
+      context_param_value_node.length.should_not == 0
+
+      context_param_value = context_param_value_node.first.content
+      context_param_value.should == CLOUD_APPLICATION_CONTEXT_INITIALIZER
     end
   end
 
@@ -330,6 +433,21 @@ describe "A Spring web application being staged with a Spring DispatcherServlet 
     end
   end
 
+  it "should have a 'contextInitializerClasses' context-param with only the CloudApplicationContextInitializer" do
+    stage :spring do |staged_dir|
+      web_config_file = File.join(staged_dir, 'tomcat/webapps/ROOT/WEB-INF/web.xml')
+      web_config = Nokogiri::XML(open(web_config_file))
+      context_param_name_node = web_config.xpath("//context-param[contains(normalize-space(param-name), normalize-space('contextInitializerClasses'))]")
+      context_param_name_node.length.should_not == 0
+
+      context_param_value_node = context_param_name_node.first.xpath("param-value")
+      context_param_value_node.length.should_not == 0
+
+      context_param_value = context_param_value_node.first.content
+      context_param_value.should == CLOUD_APPLICATION_CONTEXT_INITIALIZER
+    end
+  end
+
   it "should have the auto reconfiguration jar in the webapp lib path" do
     stage :spring do |staged_dir|
       auto_reconfig_jar_relative_path = "tomcat/webapps/ROOT/WEB-INF/lib/#{AUTOSTAGING_JAR}"
@@ -363,6 +481,21 @@ describe "A Spring web application being staged with a Spring DispatcherServlet 
 
       auto_reconfiguration_context_index.should > dispatcher_servlet_index + "/WEB-INF/dispatcher-servlet.xml".length
 
+    end
+  end
+
+  it "should have a 'contextInitializerClasses' context-param with only the CloudApplicationContextInitializer" do
+    stage :spring do |staged_dir|
+      web_config_file = File.join(staged_dir, 'tomcat/webapps/ROOT/WEB-INF/web.xml')
+      web_config = Nokogiri::XML(open(web_config_file))
+      context_param_name_node = web_config.xpath("//context-param[contains(normalize-space(param-name), normalize-space('contextInitializerClasses'))]")
+      context_param_name_node.length.should_not == 0
+
+      context_param_value_node = context_param_name_node.first.xpath("param-value")
+      context_param_value_node.length.should_not == 0
+
+      context_param_value = context_param_value_node.first.content
+      context_param_value.should == CLOUD_APPLICATION_CONTEXT_INITIALIZER
     end
   end
 
@@ -400,6 +533,21 @@ describe "A Spring web application being staged with a Spring DispatcherServlet 
 
       auto_reconfiguration_context_index.should > foo_index + "foo".length
 
+    end
+  end
+
+  it "should have a 'contextInitializerClasses' context-param with only the CloudApplicationContextInitializer" do
+    stage :spring do |staged_dir|
+      web_config_file = File.join(staged_dir, 'tomcat/webapps/ROOT/WEB-INF/web.xml')
+      web_config = Nokogiri::XML(open(web_config_file))
+      context_param_name_node = web_config.xpath("//context-param[contains(normalize-space(param-name), normalize-space('contextInitializerClasses'))]")
+      context_param_name_node.length.should_not == 0
+
+      context_param_value_node = context_param_name_node.first.xpath("param-value")
+      context_param_value_node.length.should_not == 0
+
+      context_param_value = context_param_value_node.first.content
+      context_param_value.should == CLOUD_APPLICATION_CONTEXT_INITIALIZER
     end
   end
 
@@ -446,6 +594,21 @@ describe "A Spring web application being staged with 2 Spring DispatcherServlet 
     end
   end
 
+  it "should have a 'contextInitializerClasses' context-param with only the CloudApplicationContextInitializer" do
+    stage :spring do |staged_dir|
+      web_config_file = File.join(staged_dir, 'tomcat/webapps/ROOT/WEB-INF/web.xml')
+      web_config = Nokogiri::XML(open(web_config_file))
+      context_param_name_node = web_config.xpath("//context-param[contains(normalize-space(param-name), normalize-space('contextInitializerClasses'))]")
+      context_param_name_node.length.should_not == 0
+
+      context_param_value_node = context_param_name_node.first.xpath("param-value")
+      context_param_value_node.length.should_not == 0
+
+      context_param_value = context_param_value_node.first.content
+      context_param_value.should == CLOUD_APPLICATION_CONTEXT_INITIALIZER
+    end
+  end
+
   it "should have the auto reconfiguration jar in the webapp lib path" do
     stage :spring do |staged_dir|
       auto_reconfig_jar_relative_path = "tomcat/webapps/ROOT/WEB-INF/lib/#{AUTOSTAGING_JAR}"
@@ -482,6 +645,21 @@ describe "A Spring web application being staged with 2 Spring DispatcherServlets
         auto_reconfiguration_context_index.should > foo_index + "foo".length
       end
 
+    end
+  end
+
+  it "should have a 'contextInitializerClasses' context-param with only the CloudApplicationContextInitializer" do
+    stage :spring do |staged_dir|
+      web_config_file = File.join(staged_dir, 'tomcat/webapps/ROOT/WEB-INF/web.xml')
+      web_config = Nokogiri::XML(open(web_config_file))
+      context_param_name_node = web_config.xpath("//context-param[contains(normalize-space(param-name), normalize-space('contextInitializerClasses'))]")
+      context_param_name_node.length.should_not == 0
+
+      context_param_value_node = context_param_name_node.first.xpath("param-value")
+      context_param_value_node.length.should_not == 0
+
+      context_param_value = context_param_value_node.first.content
+      context_param_value.should == CLOUD_APPLICATION_CONTEXT_INITIALIZER
     end
   end
 
