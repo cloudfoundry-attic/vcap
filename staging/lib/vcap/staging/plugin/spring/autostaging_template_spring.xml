@@ -4,6 +4,11 @@
       <param-value>classpath:META-INF/cloud/cloudfoundry-auto-reconfiguration-context.xml</param-value>
   </context-param>
 
+  <context-param>
+    <param-name>contextInitializerClasses</param-name>
+    <param-value>org.cloudfoundry.reconfiguration.spring.CloudApplicationContextInitializer</param-value>
+  </context-param>
+
   <servlet>
       <servlet-name>Srping MVC Dispatcher Servlet</servlet-name>
       <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
