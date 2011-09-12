@@ -6,11 +6,11 @@ mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] 
 intervals:
   heartbeat: 10
 logging:
-  level: debug
-multi_tenant: true
+  level: <%= node[:dea][:logging] %>
 max_memory: 4096
-secure: false
-enforce_ulimit: false
+secure: <%= node[:dea][:secure] %>
+multi_tenant: <%= node[:dea][:secure] %>
+enforce_ulimit: <%= node[:dea][:enforce_ulimit] %>
 pid: /var/vcap/sys/run/dea.pid
 
 #Force droplets to be downloaded over http even when
@@ -47,4 +47,9 @@ runtimes:
     executable: <%= File.join(node[:erlang][:path], "bin", "erl") %>
     version: ".* 5.8.3"
     version_flag: '-version'
+    environment:
+  php:
+    executable: <%= File.join(node[:php][:path], "bin", "php") %>
+    version: 5.3.[2-6]
+    version_flag: '-vn'
     environment:
