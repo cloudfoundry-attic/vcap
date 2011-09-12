@@ -9,7 +9,9 @@ service:
 host: localhost
 index: 0
 token: <%= node[:redis][:token] %>
-log_level: DEBUG
 mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
 pid: /var/vcap/sys/run/redis_service.pid
+logging:
+  level: debug
+
 # allow_over_provisioning: false

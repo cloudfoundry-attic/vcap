@@ -1,16 +1,38 @@
 ---
+# Base directory where all applications are staged and hosted
 base_dir: /var/vcap.local/dea
+
+# Local_route is the IP address of a well known server on your network, it
+# is used to choose the right ip address (think of hosts that have multiple nics
+# and IP addresses assigned to them) of the host running the DEA. Default
+# value of nil, should work in most cases.
 local_route: <%= node[:dea][:local_route] %>
+
+# Port for accessing the files of running applications
 filer_port: 12345
+
+# NATS message bus URI
 mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
+
 intervals:
+  # Time interval between heartbeats sent to the Health Manager
   heartbeat: 10
 logging:
   level: debug
+
+# Allow more than one application to run per DEA
 multi_tenant: true
+
+# Maximum memory allocated to this DEA. In a multi tenant setup, this
+# memory is divided amongst all applications managed by this DEA.
 max_memory: 4096
+
+# Secure environment for running applications in a multi tenant setup.
 secure: false
+
+# Provide ulimit based resource isolation in a multi tenant setup.
 enforce_ulimit: false
+
 pid: /var/vcap/sys/run/dea.pid
 
 #Force droplets to be downloaded over http even when
@@ -21,30 +43,40 @@ force_http_sharing: true
 # version flags are assumed to be '-v' unless noted below.
 
 runtimes:
+<% if node[:dea][:runtimes].include?("ruby18") %>
   ruby18:
     executable: <%= File.join(node[:ruby18][:path], "bin", "ruby") %>
     version: 1.8.7
     version_flag: "-e 'puts RUBY_VERSION'"
     additional_checks: "-e 'puts RUBY_PATCHLEVEL >= 174'"
     environment:
+<% end %>
+<% if node[:dea][:runtimes].include?("ruby19") %>
   ruby19:
     executable: <%= File.join(node[:ruby][:path], "bin", "ruby") %>
     version: 1.9.2
     version_flag: "-e 'puts RUBY_VERSION'"
     additional_checks: "-e 'puts RUBY_PATCHLEVEL >= 180'"
     environment:
+<% end %>
+<% if node[:dea][:runtimes].include?("nodejs") %>
   node:
     executable: <%= File.join(node[:nodejs][:path], "bin", "node") %>
     version: 0.4.[2-9]
     version_flag: '-v'
     environment:
+<% end %>
+<% if node[:dea][:runtimes].include?("java") %>
   java:
     executable: java
     version: 1.6.0
     version_flag: '-version'
     environment:
+<% end %>
+<% if node[:dea][:runtimes].include?("erlang") %>
   erlangR14B02:
     executable: <%= File.join(node[:erlang][:path], "bin", "erl") %>
     version: ".* 5.8.3"
     version_flag: '-version'
     environment:
+<% end %>

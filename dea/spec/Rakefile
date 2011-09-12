@@ -1,10 +1,10 @@
-require 'rake'
 require 'tempfile'
 
 require 'rubygems'
 require 'bundler/setup'
 Bundler.require(:default, :test)
 
+require 'rake'
 require 'rspec'
 require 'rspec/core/rake_task'
 require 'ci/reporter/rake/rspec'

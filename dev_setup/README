@@ -1,0 +1,67 @@
+NOTE: This is an alpha release of these scripts.
+
+Description:
+This subdirectory contains the chef cookbooks to deploy and setup Cloud Foundry
+in a single or multiple host environment. The cookbooks assume that they are
+running on a freshly installed Ubuntu 10.04 server.
+
+Quick Start:
+-----------
+   To Deploy:
+      vcap/dev_setup/bin/vcap_dev_setup
+
+         It will download Cloud Foundry source code into
+            $HOME/cloudfoundry/vcap
+
+         It will create a default deployment named 'devbox' under
+            $HOME/cloudfoundry/.deployments/devbox
+
+   To Start:
+      vcap/dev_setup/bin/vcap_dev start
+
+   To Stop:
+      vcap/dev_setup/bin/vcap_dev stop
+
+
+More Options:
+------------
+
+o To use Cloud Foundry source code that you have already downloaded.
+   To Deploy:
+     e.g. If Cloud Foundry source is downloaded into $HOME/projects/vcap.
+
+      $HOME/projects/vcap/dev_setup/bin/vcap_dev_setup -d $HOME/projects
+
+        It will not download Cloud Foundry source code. It will just setup the config files to
+        use the Cloud Foundry source code from $HOME/projects/vcap.
+
+        It will create a default deployment named 'devbox' under
+          $HOME/projects/.deployment/devbox
+
+   To Start:
+      $HOME/projects/vcap/dev_setup/bin/vcap_dev -d $HOME/projects start
+
+   To Stop::
+      $HOME/projects/vcap/dev_setup/bin/vcap_dev -d $HOME/projects stop
+
+o To use a custom deployment config
+  e.g. If you want to use the multihost sample config file
+  $HOME/projects/vcap/dev_setup/deployments/sample/multihost_mysql/dea.yml
+
+   To Deploy:
+      $HOME/projects/vcap/dev_setup/bin/vcap_dev_setup -d $HOME/projects -c $HOME/projects/vcap/dev_setup/deployments/sample/multihost_mysql/dea.yml
+
+        It will not download Cloud Foundry source code. It will just setup the config files to
+        use the Cloud Foundry source code from $HOME/projects/vcap.
+
+        It will create a deployment named 'dea' under
+          $HOME/projects/.deployment/dea
+
+   To Start:
+      $HOME/projects/vcap/dev_setup/bin/vcap_dev -d $HOME/projects -n dea start
+
+   To Stop:
+      $HOME/projects/vcap/dev_setup/bin/vcap_dev -d $HOME/projects -n dea stop
+
+NOTE: To learn more about custom deployment config files and multi host setups
+see the README file vcap/dev_setup/deployments/README.

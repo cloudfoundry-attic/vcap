@@ -13,9 +13,10 @@ gemspec = Gem::Specification.new do |s|
   s.version      = GEM_VERSION
   s.platform     = Gem::Platform::RUBY
   s.summary      = 'Plugins responsible for creating executable droplets'
-  s.description  = s.summary
-  s.authors      = []
-  s.email        = ''
+  s.description  = 'Plugins responsible for taking application source and producing' \
+                   + ' a bundle capable of being run on the DEAs.'
+  s.authors      = 'VMware'
+  s.email        = 'support@vmware.com'
   s.homepage     = 'http://www.cloudfoundry.com'
   s.executables  = []
   s.bindir       = 'bin'
