@@ -37,6 +37,15 @@ describe "A Grails application being staged without a context-param in its web c
     end
   end
 
+  it "should not have a 'contextInitializerClasses' context-param" do
+    stage :grails do |staged_dir|
+      web_config_file = File.join(staged_dir, 'tomcat/webapps/ROOT/WEB-INF/web.xml')
+      web_config = Nokogiri::XML(open(web_config_file))
+      context_param_name_node = web_config.xpath("//context-param[contains(normalize-space(param-name), normalize-space('contextInitializerClasses'))]")
+      context_param_name_node.length.should == 0
+    end
+  end
+
   it "should have the auto reconfiguration jar in the webapp lib path" do
     stage :grails do |staged_dir|
       auto_reconfig_jar_relative_path = "tomcat/webapps/ROOT/WEB-INF/lib/#{AUTOSTAGING_JAR}"

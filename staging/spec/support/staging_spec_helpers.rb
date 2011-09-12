@@ -1,7 +1,7 @@
 require 'tmpdir'
 
 module StagingSpecHelpers
-  AUTOSTAGING_JAR = 'auto-reconfiguration-0.6.0-BUILD-SNAPSHOT.jar'
+  AUTOSTAGING_JAR = 'auto-reconfiguration-0.6.0.jar'
 
   # Importantly, this returns a Pathname instance not a String.
   # This allows you to write: app_fixture_base_directory.join('subdir', 'subsubdir')
