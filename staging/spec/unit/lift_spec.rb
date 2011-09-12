@@ -68,6 +68,16 @@ describe "A Lift application with only a LiftFilter being staged will contain a 
     end
   end
 
+  it "should not have a 'contextInitializerClasses' context-param" do
+    pending "Lift not depending on Spring config"
+    stage :lift do |staged_dir|
+      web_config_file = File.join(staged_dir, 'tomcat/webapps/ROOT/WEB-INF/web.xml')
+      web_config = Nokogiri::XML(open(web_config_file))
+      context_param_name_node = web_config.xpath("//context-param[contains(normalize-space(param-name), normalize-space('contextInitializerClasses'))]")
+      context_param_name_node.length.should == 0
+    end
+  end
+
   it "should have the auto reconfiguration jar in the webapp lib path" do
     stage :lift do |staged_dir|
       auto_reconfig_jar_relative_path = "tomcat/webapps/ROOT/WEB-INF/lib/#{AUTOSTAGING_JAR}"
@@ -113,6 +123,16 @@ describe "A Lift application with a servlet and a LiftFilter being staged will c
       lift_context_listener_class.length.should_not == 0
       lift_context_listener_class.first.content.should == "#{CF_LIFT_PROPERTIES_GENERATOR_CLASS}"
 
+    end
+  end
+
+  it "should not have a 'contextInitializerClasses' context-param" do
+    pending "Lift not depending on Spring config"
+    stage :lift do |staged_dir|
+      web_config_file = File.join(staged_dir, 'tomcat/webapps/ROOT/WEB-INF/web.xml')
+      web_config = Nokogiri::XML(open(web_config_file))
+      context_param_name_node = web_config.xpath("//context-param[contains(normalize-space(param-name), normalize-space('contextInitializerClasses'))]")
+      context_param_name_node.length.should == 0
     end
   end
 
