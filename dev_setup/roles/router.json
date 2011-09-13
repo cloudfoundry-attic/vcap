@@ -9,5 +9,6 @@
                  "recipe[essentials]",
                  "recipe[ruby]",
                  "recipe[nginx]",
+                 "recipe[nginx::router_nginx]",
                  "recipe[router]"]
 }
