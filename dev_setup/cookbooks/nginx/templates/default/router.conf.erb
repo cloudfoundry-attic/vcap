@@ -1,18 +1,18 @@
-user www-data;
+user root;
 worker_processes  1;
 
-error_log  /var/log/nginx/error.log;
-pid        /var/run/nginx.pid;
+error_log  /var/vcap/sys/log/nginx/router_nginx.error.log;
+pid        /var/vcap/sys/run/nginx/router_nginx.pid;
 
 events {
-    worker_connections  <%= node[:nginx][:worker_connections] %>;
+    worker_connections  2048;
     use epoll;
     # multi_accept on;
 }
 
 http {
     include     /etc/nginx/mime.types;
-    access_log  /var/log/nginx/access.log;
+    access_log  /var/vcap/sys/log/nginx/router_nginx.access.log;
 
     log_format main  '$host - [$time_local] '
                      '"$request" $status $bytes_sent '
@@ -46,7 +46,7 @@ http {
         listen       *:80;
         server_name  "<%= node[:deployment][:domain] %>";
 
-        access_log   <%= node[:nginx][:vcap_log] %> main;
+        access_log   /var/vcap/sys/log/nginx/router_nginx.access.log main;
         server_name_in_redirect off;
 
         location / {
