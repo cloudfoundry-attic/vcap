@@ -32,9 +32,9 @@ external_port: 9022 #public CC port
 
 # nginx proxy provide multiple functions including offloading of file uploads/downloads.
 nginx:
-  use_nginx: false   #nginx proxy in front of CC?
-  # instance_socket: /tmp/cloud_controller.sock
-  insecure_instance_port: 9025 #debug only!!!! -- not for production use.
+  use_nginx: true #nginx proxy in front of CC?
+  instance_socket: /tmp/cloud_controller.sock
+  # insecure_instance_port: 9025 #debug only!!!! -- not for production use.
 
 # if log_file is set, it must be a fully-qualified path,
 # because the bin/vcap script reads it directly from the file.
