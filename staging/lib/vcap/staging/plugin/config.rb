@@ -26,4 +26,14 @@ class StagingPlugin::Config < VCAP::Config
       },
     }
   end
+
+  def self.from_file(*args)
+    config = super(*args)
+
+    # Support code expects symbolized keys for service information
+    config[:environment][:services] = config[:environment][:services].map {|svc| VCAP.symbolize_keys(svc) } if config[:environment]
+
+
+    config
+  end
 end

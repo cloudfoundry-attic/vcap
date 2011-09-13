@@ -1,4 +1,6 @@
 require 'vcap/config'
+require 'vcap/json_schema'
+require 'vcap/staging/plugin/common'
 
 module VCAP
   module Stager
@@ -16,15 +18,9 @@ class VCAP::Stager::Config < VCAP::Config
         optional(:syslog)   => String,      # Name to associate with syslog messages (should start with 'vcap.')
       },
 
-      :redis => {
-        :host                => String,
-        optional(:port)      => Integer,
-        optional(:password)  => String,
-        optional(:namespace) => String,
-      },
-
       :nats_uri              => String,     # NATS uri of the form nats://<user>:<pass>@<host>:<port>
       :max_staging_duration  => Integer,    # Maximum number of seconds a staging can run
+      :max_active_tasks      => Integer,    # Maximum number of tasks executing concurrently
       :queues                => [String],   # List of queues to pull tasks from
       :pid_filename          => String,     # Pid filename to use
       optional(:dirs) => {
@@ -32,11 +28,7 @@ class VCAP::Stager::Config < VCAP::Config
         optional(:tmp)       => String,     # Default is /tmp
       },
 
-
-      optional(:secure_user) => {           # Drop privs during staging to this user
-        :uid                 => Integer,
-        optional(:gid)       => Integer,
-      },
+      :secure                => VCAP::JsonSchema::BoolSchema.new,
 
       optional(:index)       => Integer,    # Component index (stager-0, stager-1, etc)
       optional(:ruby_path)   => String,     # Full path to the ruby executable that should execute the run plugin script
@@ -49,7 +41,7 @@ class VCAP::Stager::Config < VCAP::Config
     config = super(*args)
 
     config[:dirs] ||= {}
-    config[:dirs][:manifests] ||= File.expand_path('../plugin/manifests', __FILE__)
+    config[:dirs][:manifests] ||= StagingPlugin::DEFAULT_MANIFEST_ROOT
     config[:run_plugin_path]  ||= File.expand_path('../../../../bin/run_plugin', __FILE__)
     config[:ruby_path]        ||= `which ruby`.chomp
 
