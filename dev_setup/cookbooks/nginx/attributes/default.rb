@@ -1,4 +1,3 @@
-include_attribute "deployment"
-default[:nginx][:worker_connections] = 2048
-default[:nginx][:dir] = File.join("", "etc", "nginx")
-default[:nginx][:vcap_log] = File.join(node[:deployment][:home], "sys", "log", "vcap.access.log")
+# Build info
+default[:nginx][:version] = "0.8.54"
+default[:nginx][:prefix] = "/var/vcap/packages/nginx"
