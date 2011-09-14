@@ -8,7 +8,7 @@ local_route: <%= node[:health_manager][:local_route] %>
 # NATS message bus URI
 mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
 logging:
-  level: debug
+  level: info
 pid: /var/vcap/sys/run/healthmanager.pid
 rails_environment: production
 
@@ -21,7 +21,7 @@ database_environment: # replaces database.yml
     encoding: utf8
     username: <%= node[:ccdb][:user] %>
     password: <%= node[:ccdb][:password] %>
-    adapter: postgresql
+    adapter: <%= node[:ccdb][:adapter] %>
     timeout: 2000
     template: template0 # Required for utf8 encoding
 
