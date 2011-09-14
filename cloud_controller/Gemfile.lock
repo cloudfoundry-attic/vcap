@@ -132,6 +132,7 @@ GEM
     tzinfo (0.3.26)
     uuidtools (2.1.2)
     vcap_logging (0.1.0)
+    vcap_staging (0.1.4)
     yajl-ruby (0.8.2)
 
 PLATFORMS
@@ -162,4 +163,5 @@ DEPENDENCIES
   uuidtools
   vcap_common!
   vcap_logging
+  vcap_staging
   yajl-ruby (>= 0.7.9)

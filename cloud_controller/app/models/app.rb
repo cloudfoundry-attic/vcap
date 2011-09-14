@@ -12,6 +12,10 @@ class App < ActiveRecord::Base
 
   before_validation :normalize_legacy_staging_strings!
 
+  serialize :metadata, Hash
+
+  after_initialize :set_defaults
+
   after_create :add_owner_as_collaborator
 
   scope :started, lambda { where("apps.state = ?", 'STARTED') }
@@ -19,8 +23,8 @@ class App < ActiveRecord::Base
 
   AppStates = %w[STOPPED STARTED]
   PackageStates = %w[PENDING STAGED FAILED]
-  Runtimes = %w[ruby18 ruby19 java node erlangR14B02]
-  Frameworks = %w[sinatra rails3 java_web spring grails node otp_rebar lift unknown]
+  Runtimes = %w[ruby18 ruby19 java node php erlangR14B02 python26]
+  Frameworks = %w[sinatra rails3 java_web spring grails node php otp_rebar lift wsgi django unknown]
 
   validates_presence_of :name, :framework, :runtime
 
@@ -78,6 +82,10 @@ class App < ActiveRecord::Base
     result
   end
 
+  def set_defaults
+    self.metadata ||= {}
+  end
+
   def total_memory
     instances * memory
   end
@@ -93,7 +101,11 @@ class App < ActiveRecord::Base
       :services => bound_services,
       :version => generate_version,
       :env => environment,
-      :meta => {:version => lock_version, :created => Time.now.to_i} }
+      :meta => metadata.merge({
+        :version => lock_version,
+        :created => Time.now.to_i
+      })
+    }
   end
 
   # Called by AppManager when staging this app.
@@ -338,16 +350,6 @@ class App < ActiveRecord::Base
       self.package_hash = sha1
       save!
     end
-  end
-
-  def metadata
-    json = read_attribute(:metadata_json)
-    return {} if json.blank?
-    Yajl::Parser.parse(json, :symbolize_keys => true)
-  end
-
-  def metadata=(hash)
-    write_attribute(:metadata_json, Yajl::Encoder.encode(hash))
   end
 
   def environment

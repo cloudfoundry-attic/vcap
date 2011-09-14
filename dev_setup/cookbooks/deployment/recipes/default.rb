@@ -9,7 +9,7 @@ node[:nats_server][:host] ||= cf_local_ip
 node[:ccdb][:host] ||= cf_local_ip
 node[:postgresql][:host] ||= cf_local_ip
 
-[node[:deployment][:home], File.join(node[:deployment][:home], "deploy"),
+[node[:deployment][:home], File.join(node[:deployment][:home], "deploy"), node[:deployment][:log_path],
  File.join(node[:deployment][:home], "sys", "log"), node[:deployment][:config_path],
  File.join(node[:deployment][:config_path], "staging")].each do |dir|
   directory dir do
@@ -45,6 +45,7 @@ template node[:deployment][:info_file] do
   variables({
     :name => node[:deployment][:name],
     :ruby_bin_dir => File.join(node[:ruby][:path], "bin"),
-    :cloudfoundry_path => node[:cloudfoundry][:path]
+    :cloudfoundry_path => node[:cloudfoundry][:path],
+    :deployment_log_path => node[:deployment][:log_path]
   })
 end

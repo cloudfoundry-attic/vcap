@@ -1,10 +1,19 @@
 ---
+# Cloud Controller URI
 external_uri: api.vcap.me
 description: "VMware's Cloud Application Platform"
 support_address: http://support.cloudfoundry.com
+
+# local_route is the IP address of a well known server on your network, it
+# is used to choose the right ip address (think of hosts that have multiple nics
+# and IP addresses assigned to them) of the host running the cloud controller. Default
+# value of nil, should work in most cases.
 local_route: 127.0.0.1
+
+# Specifies if new users can register only from the host that is running the cloud controller
 local_register_only: false
 
+# Allow applications to register URIs that are outside your domain.
 # Legacy (FIXME REMOVE)
 allow_external_app_uris: false
 
@@ -13,6 +22,7 @@ allow_external_app_uris: false
 # below accept taking a used uri.
 
 app_uris:
+  # Allow applications to register URIs that are outside your domain.
   allow_external: false
 #  reserved_file:
 #  reserved_list: [www, test, dash, register, foo, bar]
@@ -20,12 +30,11 @@ app_uris:
 
 external_port: 9022 #public CC port
 
-#nginx proxy provide multiple functions including
-#offloading of file uploads/downloads.
+# nginx proxy provide multiple functions including offloading of file uploads/downloads.
 nginx:
-  use_nginx: false   #nginx proxy in front of CC?
-  #instance_socket: /tmp/cloud_controller.sock
-  insecure_instance_port: 9025 #debug only!!!! -- not for production use.
+  use_nginx: false   # nginx proxy in front of CC?
+  # instance_socket: /tmp/cloud_controller.sock
+  insecure_instance_port: 9025 # debug only!!!! -- not for production use.
 
 # if log_file is set, it must be a fully-qualified path,
 # because the bin/vcap script reads it directly from the file.
@@ -41,8 +50,6 @@ rails_logging:
 directories:
   droplets: /var/vcap/shared/droplets
   resources: /var/vcap/shared/resources
-  # default values, relative to Rails.root. Leading slash for full path.
-  staging_manifests: staging/manifests
 
   # set to true to prevent filesystem resource leaks
   # nukes tmpdir on startup -- be careful!
@@ -50,6 +57,7 @@ directories:
 
   tmpdir: /var/vcap/data/cloud_controller/tmp
 
+# NATS message bus URI
 mbus: nats://localhost:4222/
 keys:
   password: 'password key goes here'
@@ -76,16 +84,22 @@ database_environment: # replaces database.yml
     database: db/test.sqlite3
     encoding: utf8
 
+# App staging parameters
 staging:
   max_concurrent_stagers: 10
+  # Max duration for staging process
   max_staging_runtime:    120 # secs
+  # Create a secure environment for staging
   secure: false
+
+allow_debug: false
 
 # admin support
 admins: [derek@gmail.com, foobar@vmware.com]
 https_required: false
 https_required_for_admins: false
 
+# Controls the amount of resources assigned to a user
 # Normal user accounts
 default_account_capacity:
   memory:   2048
@@ -105,3 +119,25 @@ builtin_services:
     token: "0xdeadbeef"
   rabbitmq:
     token: "0xdeadbeef"
+  neo4j:
+    token: "0xdeadbeef"
+
+# used for /info/runtimes endpoint (served unfiltered as JSON)
+runtimes:
+  ruby18:
+    version: 1.8.7
+  ruby19:
+    version: 1.9.2
+  node:
+    version: 0.4.[2-9]
+  java:
+    version: 1.6.0
+    debug_modes:
+      - run
+      - wait
+  php:
+    version: 5.3.[2-6]
+  erlangR14B02:
+    version: ".* 5.8.3"
+  python26:
+    version: 2.6.5

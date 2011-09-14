@@ -38,7 +38,7 @@ module VCAP
       end
 
       class ListHandlesResponse < JsonMessage
-        required :handles, [JsonSchema::WILDCARD]
+        required :handles, [::JsonSchema::WILDCARD]
       end
 
       #

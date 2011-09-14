@@ -32,7 +32,7 @@ ActiveRecord::Schema.define(:version => 20110818080550) do
     t.string   "package_state",       :default => "PENDING"
     t.string   "package_hash"
     t.text     "environment_json"
-    t.text     "metadata_json"
+    t.text     "metadata"
     t.boolean  "external_secret",     :default => false
     t.datetime "created_at"
     t.datetime "updated_at"

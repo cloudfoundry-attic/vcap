@@ -399,7 +399,8 @@ module DEA
               :state_timestamp => instance[:state_timestamp],
               :file_uri => "http://#{@local_ip}:#{@file_viewer_port}/droplets/",
               :credentials => @file_auth,
-              :staged => instance[:staged]
+              :staged => instance[:staged],
+              :debug_port => instance[:debug_port]
             }
             if include_stats && instance[:state] == :RUNNING
               response[:stats] = {
@@ -494,6 +495,7 @@ module DEA
       users = message_json['users']
       runtime = message_json['runtime']
       framework = message_json['framework']
+      debug = message_json['debug']
 
       # Limits processing
       mem     = DEFAULT_APP_MEM
@@ -560,15 +562,25 @@ module DEA
       end
 
       start_operation = proc do
-        port = VCAP.grab_ephemeral_port
-
         @logger.debug('Completed download')
-        @logger.info("Starting up instance #{instance[:log_id]} on port:#{port}")
+
+        port = VCAP.grab_ephemeral_port
+        instance[:port] = port
+
+        starting = "Starting up instance #{instance[:log_id]} on port:#{port}"
+
+        if debug
+          debug_port = VCAP.grab_ephemeral_port
+          instance[:debug_port] = debug_port
+          instance[:debug_mode] = debug
+
+          @logger.info("#{starting} with debugger:#{debug_port}")
+        else
+          @logger.info(starting)
+        end
 
         @logger.debug("Clients: #{@num_clients}")
         @logger.debug("Reserved Memory Usage: #{@reserved_mem} MB of #{@max_memory} MB TOTAL")
-
-        instance[:port] = port
 
         manifest_file = File.join(instance[:dir], 'droplet.yaml')
         manifest = {}
@@ -856,7 +868,7 @@ module DEA
         if state && state['state'] == 'RUNNING'
           block.call(true)
           timer.cancel
-        else
+        elsif instance[:debug_mode] != "wait"
           attempts += 1
           if attempts > 600 || instance[:state] != :STARTING # 5 minutes or instance was stopped
             block.call(false)
@@ -1048,6 +1060,12 @@ module DEA
       env_hash.to_json
     end
 
+    def debug_env(instance)
+      return unless instance[:debug_port]
+      return unless envs = @runtimes[instance[:runtime]]['debug_env']
+      envs[instance[:debug_mode]]
+    end
+
     def setup_instance_env(instance, app_env, services)
       env = []
 
@@ -1056,6 +1074,12 @@ module DEA
       env << "VCAP_SERVICES='#{create_services_for_env(services)}'"
       env << "VCAP_APP_HOST='#{@local_ip}'"
       env << "VCAP_APP_PORT='#{instance[:port]}'"
+      env << "VCAP_DEBUG_PORT='#{instance[:debug_port]}'"
+
+      if vars = debug_env(instance)
+        @logger.info("Debugger environment variables: #{vars.inspect}")
+        env += vars
+      end
 
       # LEGACY STUFF
       env << "VMC_WARNING_WARNING='All VMC_* environment variables are deprecated, please use VCAP_* versions.'"
@@ -1152,10 +1176,14 @@ module DEA
         instance[:state_timestamp] = Time.now.to_i
         stop_cmd = File.join(instance[:dir], 'stop')
         stop_cmd = "su -c #{stop_cmd} #{username}" if @secure
-        stop_cmd = "#{stop_cmd} 2> dev/null"
+        stop_cmd = "#{stop_cmd} 2> /dev/null"
 
-        @logger.debug("Executing stop script: '#{stop_cmd}'")
-        Bundler.with_clean_env { EM.system(stop_cmd) } unless (RUBY_PLATFORM =~ /darwin/ and @secure)
+        unless (RUBY_PLATFORM =~ /darwin/ and @secure)
+          @logger.debug("Executing stop script: '#{stop_cmd}'")
+          # We can't make 'stop_cmd' into EM.system because of a race with
+          # 'cleanup_droplet'
+          Bundler.with_clean_env { system(stop_cmd) }
+        end
       end
 
       # SECURE_MODE ONLY Put the user back in the pool..
@@ -1178,7 +1206,7 @@ module DEA
       remove_instance_resources(instance)
       @usage.delete(instance[:pid]) if instance[:pid]
       # clean up the in memory instance and directory only if the instance didn't crash
-      unless instance[:state] == :CRASHED
+      if instance[:state] != :CRASHED
         if droplet = @droplets[instance[:droplet_id]]
           droplet.delete(instance[:instance_id])
           @droplets.delete(instance[:droplet_id]) if droplet.empty?
@@ -1188,6 +1216,10 @@ module DEA
           @logger.debug("#{instance[:name]}: Cleaning up dir #{instance[:dir]}")
           EM.system("rm -rf #{instance[:dir]}")
         end
+      # Rechown crashed application directory using uid and gid of DEA
+      else
+        @logger.debug("#{instance[:name]}: Chowning crashed dir #{instance[:dir]}")
+        EM.system("chown -R #{Process.euid}:#{Process.egid} #{instance[:dir]}")
       end
     end
 

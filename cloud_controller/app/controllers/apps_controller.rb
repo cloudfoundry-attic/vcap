@@ -225,6 +225,13 @@ class AppsController < ApplicationController
     changed = app.changed
     CloudController.logger.debug "app: #{app.id} Updating #{changed.inspect}"
 
+    # reject attempts to start in debug mode if debugging is disabled
+    if body_params[:debug] and app.state == 'STARTED' and !AppConfig[:allow_debug]
+      raise CloudError.new(CloudError::APP_DEBUG_DISALLOWED)
+    end
+
+    app.metadata[:debug] = body_params[:debug] if body_params
+
     # 'app.save' can actually raise an exception, if whatever is
     # invalid happens all the way down at the DB layer.
     begin
