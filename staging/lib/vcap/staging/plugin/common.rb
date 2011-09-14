@@ -343,6 +343,22 @@ class StagingPlugin
     app_server['executable']
   end
 
+  def stop_command
+    ppid = `ps -o ppid -p #{application_pid}`
+    cmds = []
+    cmds << "kill -9 #{application_pid}"
+    cmds << "kill -9 #{ppid}"
+    cmds.join("\n")
+  end
+
+  def pid_file
+    File.join(destination_directory,"run.pid")
+  end
+
+  def application_pid
+    `cat #{pid_file}`
+  end
+  
   def local_runtime
     '%VCAP_LOCAL_RUNTIME%'
   end
@@ -429,6 +445,11 @@ class StagingPlugin
     "cd app"
   end
 
+  def change_directory_for_stop
+    "cd app"
+  end
+
+
   def generate_startup_script(env_vars = {})
     after_env_before_script = block_given? ? yield : "\n"
     template = <<-SCRIPT
@@ -439,15 +460,21 @@ class StagingPlugin
 <%= start_command %> > ../logs/stdout.log 2> ../logs/stderr.log &
 STARTED=$!
 echo "$STARTED" >> ../run.pid
-echo "#!/bin/bash" >> ../stop
-echo "kill -9 $STARTED" >> ../stop
-echo "kill -9 $PPID" >> ../stop
-chmod 755 ../stop
 wait $STARTED
     SCRIPT
     # TODO - ERB is pretty irritating when it comes to blank lines, such as when 'after_env_before_script' is nil.
     # There is probably a better way that doesn't involve making the above Heredoc horrible.
     ERB.new(template).result(binding).lines.reject {|l| l =~ /^\s*$/}.join
+  end
+
+  def generate_stop_script(env_vars = {})
+    template = <<-SCRIPT
+#!/bin/bash
+<%= environment_statements_for(env_vars) %>
+<%= change_directory_for_stop %>
+<%= stop_command %>
+    SCRIPT
+    ERB.new(template).result(binding)
   end
 
   # Generates newline-separated exports for the specified environment variables.
@@ -467,6 +494,14 @@ wait $STARTED
   def create_app_directories
     FileUtils.mkdir_p File.join(destination_directory, 'app')
     FileUtils.mkdir_p File.join(destination_directory, 'logs')
+  end
+
+  def create_stop_script()
+    path = File.join(destination_directory, 'stop')
+    File.open(path, 'wb') do |f|
+      f.puts stop_script
+    end
+    FileUtils.chmod(0500, path)
   end
 
   def create_startup_script

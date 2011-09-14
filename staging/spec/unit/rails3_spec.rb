@@ -32,10 +32,6 @@ cd app
 #{executable} ./rubygems/ruby/1.8/bin/bundle exec #{executable} ./rubygems/ruby/1.8/bin/rails server $@ > ../logs/stdout.log 2> ../logs/stderr.log &
 STARTED=$!
 echo "$STARTED" >> ../run.pid
-echo "#!/bin/bash" >> ../stop
-echo "kill -9 $STARTED" >> ../stop
-echo "kill -9 $PPID" >> ../stop
-chmod 755 ../stop
 wait $STARTED
       EXPECTED
     end
@@ -69,10 +65,6 @@ cd app
 #{executable} ./rubygems/ruby/1.8/bin/bundle exec #{executable} ./rubygems/ruby/1.8/bin/rails server thin $@ > ../logs/stdout.log 2> ../logs/stderr.log &
 STARTED=$!
 echo "$STARTED" >> ../run.pid
-echo "#!/bin/bash" >> ../stop
-echo "kill -9 $STARTED" >> ../stop
-echo "kill -9 $PPID" >> ../stop
-chmod 755 ../stop
 wait $STARTED
         EXPECTED
       end
