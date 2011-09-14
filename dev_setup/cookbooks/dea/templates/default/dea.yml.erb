@@ -18,20 +18,20 @@ intervals:
   # Time interval between heartbeats sent to the Health Manager
   heartbeat: 10
 logging:
-  level: debug
-
-# Allow more than one application to run per DEA
-multi_tenant: true
+  level: <%= node[:dea][:logging] %>
 
 # Maximum memory allocated to this DEA. In a multi tenant setup, this
 # memory is divided amongst all applications managed by this DEA.
 max_memory: 4096
 
 # Secure environment for running applications in a multi tenant setup.
-secure: false
+secure: <%= node[:dea][:secure] %>
+
+# Allow more than one application to run per DEA
+multi_tenant: <%= node[:dea][:secure] %>
 
 # Provide ulimit based resource isolation in a multi tenant setup.
-enforce_ulimit: false
+enforce_ulimit: <%= node[:dea][:enforce_ulimit] %>
 
 pid: /var/vcap/sys/run/dea.pid
 
@@ -78,5 +78,12 @@ runtimes:
     executable: <%= File.join(node[:erlang][:path], "bin", "erl") %>
     version: ".* 5.8.3"
     version_flag: '-version'
+    environment:
+<% end %>
+<% if node[:dea][:runtimes].include?("php") %>
+  php:
+    executable: <%= File.join(node[:php][:path], "bin", "php") %>
+    version: 5.3.[2-6]
+    version_flag: '-vn'
     environment:
 <% end %>
