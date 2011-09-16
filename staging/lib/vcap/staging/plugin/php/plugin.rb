@@ -32,7 +32,7 @@ class PhpPlugin < StagingPlugin
   def stop_command
     cmds = []
     cmds << "CHILDPIDS=$(pgrep -P ${1} -d ' ')"
-    cmds << "kill -9 -P ${1}"
+    cmds << "kill -9 ${1}"
     cmds << "for CPID in ${CHILDPIDS};do"
     cmds << "  kill -9 ${CPID}"
     cmds << "done"
