@@ -14,6 +14,12 @@ describe "Requesting a new user token" do
     response.status.should == 400
   end
 
+  it "always returns a 200 response when admin requests" do
+    post @user_token_path, nil, headers_for(@admin.email, nil, '{}')
+    response.status.should == 200
+  end
+
+
   # This code tests https enforcement in a variety of scenarios defined in cloud_spec_helpers.rb
   CloudSpecHelpers::HTTPS_ENFORCEMENT_SCENARIOS.each do |scenario_vars|
     describe "#{scenario_vars[:appconfig_enabled].empty? ? '' : 'with ' + (scenario_vars[:appconfig_enabled].map{|x| x.to_s}.join(', ')) + ' enabled'} using #{scenario_vars[:protocol]}" do
