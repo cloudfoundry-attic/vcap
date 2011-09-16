@@ -44,9 +44,12 @@ GEM
     arel (2.0.9)
     bcrypt-ruby (2.1.4)
     builder (2.1.2)
+    chronic (0.6.4)
     ci_reporter (1.6.4)
       builder (>= 2.1.2)
     daemons (1.1.2)
+    delorean (1.1.0)
+      chronic
     diff-lcs (1.1.2)
     em-http-request (1.0.0.beta.3)
       addressable (>= 2.2.3)
@@ -142,6 +145,7 @@ DEPENDENCIES
   SystemTimer
   bcrypt-ruby (>= 2.1.4)
   ci_reporter
+  delorean
   em-http-request (~> 1.0.0.beta.3)
   em-redis
   eventmachine (~> 0.12.10)
