@@ -27,6 +27,10 @@ CloudController::Application.routes.draw do
   get    'apps/:name/update'         => 'apps#check_update'
   put    'apps/:name/update'         => 'apps#start_update'
 
+  # Stagers interact with the CC via these urls
+  post   'staging/droplet/:id/:upload_id' => 'staging#upload_droplet', :as => :upload_droplet
+  get    'staging/app/:id'                => 'staging#download_app',   :as => :download_unstaged_app
+
   post   'services/v1/offerings'                     => 'services#create',         :as => :service_create
   delete 'services/v1/offerings/:label'              => 'services#delete',         :as => :service_delete,         :label => /[^\/]+/
   get    'services/v1/offerings/:label/handles'      => 'services#list_handles',   :as => :service_list_handles,   :label => /[^\/]+/

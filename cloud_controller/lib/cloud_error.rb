@@ -40,6 +40,7 @@ class CloudError < StandardError
   APP_INVALID_RUNTIME = [307, HTTP_BAD_REQUEST, "Invalid runtime specification [%s] for framework: '%s'"]
   APP_INVALID_FRAMEWORK = [308, HTTP_BAD_REQUEST, "Invalid framework description: '%s'"]
   APP_DEBUG_DISALLOWED = [309, HTTP_BAD_REQUEST, "Cloud controller has disallowed debugging."]
+  APP_STAGING_ERROR = [310, HTTP_INTERNAL_SERVER_ERROR, "Staging failed: '%s'"]
 
   # Bits
   RESOURCES_UNKNOWN_PACKAGE_TYPE = [400, HTTP_BAD_REQUEST, "Unknown package type requested: \"%\""]
@@ -61,5 +62,9 @@ class CloudError < StandardError
   URI_INVALID = [700, HTTP_BAD_REQUEST, "Invalid URI: \"%s\""]
   URI_ALREADY_TAKEN = [701, HTTP_BAD_REQUEST, "The URI: \"%s\" has already been taken or reserved"]
   URI_NOT_ALLOWED = [702, HTTP_FORBIDDEN, "External URIs are not enabled for this account"]
+
+  # Staging
+  STAGING_TIMED_OUT = [800, HTTP_INTERNAL_SERVER_ERROR, "Timed out waiting for staging to complete"]
+  STAGING_FAILED    = [801, HTTP_INTERNAL_SERVER_ERROR, "Staging failed"]
 
 end

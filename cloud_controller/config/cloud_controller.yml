@@ -39,13 +39,18 @@ nginx:
 # if log_file is set, it must be a fully-qualified path,
 # because the bin/vcap script reads it directly from the file.
 logging:
-  level: debug
+  level: debug2
 # file:
 
 # Settings for the rails logger
 rails_logging:
   level: debug
 # file:
+
+redis:
+  host: 127.0.0.1
+  port: 5454
+# password:
 
 directories:
   droplets: /var/vcap/shared/droplets
@@ -91,6 +96,10 @@ staging:
   max_staging_runtime:    120 # secs
   # Create a secure environment for staging
   secure: false
+  new_stager_percent: 0
+  auth:
+    user: zxsfhgjg
+    password: ZNVfdase9
 
 allow_debug: false
 

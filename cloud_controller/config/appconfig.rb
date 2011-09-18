@@ -2,7 +2,6 @@
 # Once we know which Rails environment we are in, we can fail fast in production
 # mode by checking that flag. This code runs too early to know for sure if
 # we are starting in production mode.
-
 require 'vcap/common'
 require 'vcap/staging/plugin/common'
 
@@ -177,5 +176,14 @@ c = OpenSSL::Cipher::Cipher.new('blowfish')
 pw_len = AppConfig[:keys][:password].length
 if pw_len < c.key_len
   $stderr.puts "The supplied password is too short (#{pw_len} bytes), must be at least #{c.key_len} bytes. (Though only the first #{c.key_len} will be used.)"
+  exit 1
+end
+
+if AppConfig[:staging][:new_stager_email_regexp]
+  AppConfig[:staging][:new_stager_email_regexp] = Regexp.new(AppConfig[:staging][:new_stager_email_regexp])
+end
+
+if (AppConfig[:staging][:new_stager_percent] || AppConfig[:staging][:new_stager_email_regexp]) && !AppConfig[:redis]
+  $stderr.puts "You must supply a redis config to use the new stager"
   exit 1
 end

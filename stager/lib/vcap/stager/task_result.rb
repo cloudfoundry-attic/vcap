@@ -1,59 +1,48 @@
 require 'yajl'
 
+require 'vcap/json_schema'
+
 module VCAP
   module Stager
   end
 end
 
 class VCAP::Stager::TaskResult
-  ST_SUCCESS = 0
-  ST_FAILED  = 1
-
-  attr_reader :task_id, :status, :details
+  SCHEMA = VCAP::JsonSchema.build do
+    { :task_id         => String,
+      :task_log        => String,
+      optional(:error) => String,
+    }
+  end
 
   class << self
-    attr_accessor :redis
-
-    def fetch(task_id, redis=nil)
-      redis ||= @redis
-      key = key_for_id(task_id)
-      result = redis.get(key)
-      result ? decode(result) : nil
-    end
-
     def decode(enc_res)
       dec_res = Yajl::Parser.parse(enc_res)
-      VCAP::Stager::TaskResult.new(dec_res['task_id'], dec_res['status'], dec_res['details'])
-    end
-
-    def key_for_id(task_id)
-      "staging_task_result:#{task_id}"
+      SCHEMA.validate(dec_res)
+      dec_res['error'] = VCAP::Stager::TaskError.decode(dec_res['error']) if dec_res['error']
+      VCAP::Stager::TaskResult.new(dec_res['task_id'], dec_res['task_log'], dec_res['error'])
     end
   end
 
-  def initialize(task_id, status, details)
-    @task_id = task_id
-    @status  = status
-    @details = details
-  end
+  attr_reader :task_id, :task_log, :error
 
-  def was_success?
-    @status == ST_SUCCESS
+  def initialize(task_id, task_log, error=nil)
+    @task_id  = task_id
+    @task_log = task_log
+    @error    = error
   end
 
   def encode
     h = {
-      :task_id => @task_id,
-      :status  => @status,
-      :details => @details,
+      :task_id  => @task_id,
+      :task_log => @task_log,
     }
+    h[:error] = @error.encode if @error
+
     Yajl::Encoder.encode(h)
   end
 
-  def save(redis=nil)
-    redis ||= self.class.redis
-    key = self.class.key_for_id(@task_id)
-    val = encode()
-    redis.set(key, val)
+  def was_success?
+    @error == nil
   end
 end

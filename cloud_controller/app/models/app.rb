@@ -123,6 +123,15 @@ class App < ActiveRecord::Base
       :resources => resource_requirements }
   end
 
+  def staging_task_properties
+    services = service_bindings(true).map {|sb| sb.for_staging}
+    { :services    => services,
+      :framework   => framework,
+      :runtime     => runtime,
+      :resources   => resource_requirements,
+      :environment => environment}
+  end
+
   # Returns an array of the URLs that point to this application
   def mapped_urls
     routes.active.map {|r| r.url}.sort
@@ -509,6 +518,19 @@ class App < ActiveRecord::Base
   def remove_collaborator(user)
     collab = AppCollaboration.find_by_app_id_and_user_id(self.id, user.id)
     collab.destroy if collab
+  end
+
+  def update_staged_package(upload_path)
+    self.staged_package_hash = Digest::SHA1.file(upload_path).hexdigest
+    FileUtils.mv(upload_path, self.staged_package_path)
+  end
+
+  def update_run_count
+    if self.staged_package_hash_changed?
+      self.run_count = 0 # reset
+    else
+      self.run_count += 1
+    end
   end
 
   private
