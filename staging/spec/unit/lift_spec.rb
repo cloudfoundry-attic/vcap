@@ -69,7 +69,6 @@ describe "A Lift application with only a LiftFilter being staged will contain a 
   end
 
   it "should not have a 'contextInitializerClasses' context-param" do
-    pending "Lift not depending on Spring config"
     stage :lift do |staged_dir|
       web_config_file = File.join(staged_dir, 'tomcat/webapps/ROOT/WEB-INF/web.xml')
       web_config = Nokogiri::XML(open(web_config_file))
@@ -127,7 +126,6 @@ describe "A Lift application with a servlet and a LiftFilter being staged will c
   end
 
   it "should not have a 'contextInitializerClasses' context-param" do
-    pending "Lift not depending on Spring config"
     stage :lift do |staged_dir|
       web_config_file = File.join(staged_dir, 'tomcat/webapps/ROOT/WEB-INF/web.xml')
       web_config = Nokogiri::XML(open(web_config_file))

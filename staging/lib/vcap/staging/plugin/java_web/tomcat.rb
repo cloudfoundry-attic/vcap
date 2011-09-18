@@ -27,27 +27,13 @@ class Tomcat
     webapp_path
   end
 
-  def self.configure_tomcat_application(staging_dir, webapp_root, autostaging_template, environment)
-    if autostaging_template
-      configure_autostaging(webapp_root, autostaging_template)
-    end
-  end
-
-  def self.configure_autostaging(webapp_path, autostaging_template)
-    web_config_file = File.join(webapp_path, 'WEB-INF/web.xml')
-    autostaging_context = get_autostaging_context autostaging_template
-    modify_autostaging_context(autostaging_context, web_config_file, webapp_path)
-    jar_dest = File.join(webapp_path, 'WEB-INF/lib')
-    copy_jar AUTOSTAGING_JAR, jar_dest
-  end
-
-  def self.modify_autostaging_context(autostaging_context, web_config_file, webapp_path)
-    web_config = Nokogiri::XML(open(web_config_file))
-    web_config = configure_autostaging_context_param autostaging_context, web_config, webapp_path
-    web_config = configure_springenv_context_param autostaging_context, web_config, webapp_path
-    web_config = configure_autostaging_servlet autostaging_context, web_config, webapp_path
-    File.open(web_config_file, 'w') {|f| f.write(web_config.to_xml) }
-  end
+  # The staging modifications that are common to one or more framework plugins e.g. ['spring' & 'grails'
+  # requiring autostaging context_param & autostaging servlet updates and 'spring', 'grails' & 'lift'
+  # requiring the copying of the autostaging jar etc] are handled below to avoid duplication.
+  # Modifications that are specific to a framework are handled in the associated plugin (for e.g. configuring
+  # the springenv context_param that is specific to 'spring' and configuring a servlet_context_listener
+  # that is specific to 'lift'). The driver from which all of the staging modifications for each framework is
+  # made is the "configure_webapp" method of each framework plugin.
 
   # Look for the presence of the "context-param" element in the top level (global context) of WEB-INF/web.xml
   # and for a "contextConfigLocation" node within that.
@@ -83,29 +69,6 @@ class Tomcat
         webapp_config.root.add_child context_param_node
         webapp_config = configure_default_context webapp_path, webapp_config, autostaging_context_param_name_node, autostaging_context_param_value, context_param_node, DEFAULT_APP_CONTEXT
       end
-    end
-    webapp_config
-  end
-
-  def self.configure_springenv_context_param(autostaging_context, webapp_config, webapp_path)
-    autostaging_context_param_node = autostaging_context.xpath("//context-param[param-name='contextInitializerClasses']").first
-    return webapp_config unless autostaging_context_param_node != nil
-    autostaging_context_param_name_node = autostaging_context_param_node.xpath("param-name").first
-    autostaging_context_param_name = autostaging_context_param_name_node.content.strip
-    autostaging_context_param_value_node = autostaging_context_param_node.xpath("param-value").first
-    autostaging_context_param_value = autostaging_context_param_value_node.content
-
-    prefix = webapp_config.root.namespace ? "xmlns:" : ''
-    context_param_node =  webapp_config.xpath("//#{prefix}context-param[#{prefix}param-name='contextInitializerClasses']").first
-    if (context_param_node == nil)
-      context_param_node = Nokogiri::XML::Node.new 'context-param', webapp_config
-      context_param_node.add_child autostaging_context_param_name_node.dup
-      context_param_node.add_child autostaging_context_param_value_node.dup
-      webapp_config.root.add_child context_param_node
-    else
-      context_param_value_node = context_param_node.xpath("#{prefix}param-value").first
-      context_param_value = "#{context_param_value_node.content.strip}, #{autostaging_context_param_value}"
-      context_param_value_node.content = context_param_value
     end
     webapp_config
   end
@@ -224,4 +187,20 @@ class Tomcat
       copy_jar SERVICE_DRIVER_HASH[driver[:label]], driver_dest
     } if drivers
   end
+
+  def self.get_web_config (webapp_path)
+    web_config_file = File.join(webapp_path, 'WEB-INF/web.xml')
+    Nokogiri::XML(open(web_config_file))
+  end
+
+  def self.save_web_config (web_config, webapp_path)
+    web_config_file = File.join(webapp_path, 'WEB-INF/web.xml')
+    File.open(web_config_file, 'w') {|f| f.write(web_config.to_xml) }
+  end
+
+  def self.copy_autostaging_jar(webapp_path)
+    jar_dest = File.join(webapp_path, 'WEB-INF/lib')
+    copy_jar AUTOSTAGING_JAR, jar_dest
+  end
+
 end

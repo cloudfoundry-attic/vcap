@@ -23,14 +23,19 @@ class JavaWebPlugin < StagingPlugin
       unless File.exist? web_config_file
         raise "Web application staging failed: web.xml not found"
       end
-      do_pre_tomcat_config_setup(webapp_root)
       copy_service_drivers(webapp_root)
-      Tomcat.configure_tomcat_application(destination_directory, webapp_root, self.autostaging_template, environment)  unless self.skip_staging(webapp_root)
+      configure_webapp( webapp_root, self.autostaging_template, environment) unless self.skip_staging(webapp_root)
       create_startup_script
     end
   end
 
-  def do_pre_tomcat_config_setup webapp_path
+  # The driver from which all of the staging modifications are made for Java based plugins [java_web, spring,
+  # grails & lift]. Each framework plugin overrides this method to provide the implementation it needs.
+  # Modifications needed by the implementations that are common to one or more plugins are provided
+  # by the Tomcat class used by all of the Java based plugins. E.g are the updates for autostaging context_param,
+  # autostaging servlet [both needed by 'spring' & 'grails'] & copying the autostaging jar ['spring', 'grails' &
+  # 'lift'].
+  def configure_webapp webapp_root, autostaging_template, environment
   end
 
   def create_app_directories

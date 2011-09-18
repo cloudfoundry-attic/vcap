@@ -10,7 +10,7 @@
   </context-param>
 
   <servlet>
-      <servlet-name>Srping MVC Dispatcher Servlet</servlet-name>
+      <servlet-name>Spring MVC Dispatcher Servlet</servlet-name>
       <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
       <init-param>
           <param-name>contextConfigLocation</param-name>
