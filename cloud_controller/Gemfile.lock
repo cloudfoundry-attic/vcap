@@ -136,7 +136,7 @@ GEM
       polyglot (>= 0.3.1)
     tzinfo (0.3.26)
     uuidtools (2.1.2)
-    vcap_logging (0.1.0)
+    vcap_logging (0.1.3)
     vcap_stager (0.1.3)
     vcap_staging (0.1.7)
       nokogiri (>= 1.4.4)
@@ -175,7 +175,7 @@ DEPENDENCIES
   thin (> 1.2)
   uuidtools
   vcap_common!
-  vcap_logging
+  vcap_logging (>= 0.1.3)
   vcap_stager (= 0.1.3)
   vcap_staging (= 0.1.7)
   yajl-ruby (>= 0.7.9)
