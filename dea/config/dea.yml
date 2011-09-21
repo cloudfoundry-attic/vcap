@@ -83,3 +83,8 @@ runtimes:
     version: 2.6.5
     version_flag: '--version'
     environment:
+
+status:
+  port: 34501
+  user: thin
+  password: thin
