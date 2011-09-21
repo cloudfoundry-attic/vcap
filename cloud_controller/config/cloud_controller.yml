@@ -141,3 +141,8 @@ runtimes:
     version: ".* 5.8.3"
   python26:
     version: 2.6.5
+
+status:
+  port: 34500
+  user: thin
+  password: thin
