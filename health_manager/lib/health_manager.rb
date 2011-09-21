@@ -680,10 +680,14 @@ class HealthManager
   end
 
   def register_as_component
+    status_config = @config['status']
     VCAP::Component.register(:type => 'HealthManager',
                              :host => VCAP.local_ip(@config['local_route']),
                              :index => @config['index'],
-                             :config => @config)
+                             :config => @config,
+                             :port => status_config['port'],
+                             :user => status_config['user'],
+                             :password => status_config['password'])
 
     # Initialize VCAP component varzs..
     VCAP::Component.varz[:total_apps] = 0
