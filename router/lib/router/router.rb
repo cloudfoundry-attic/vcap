@@ -87,9 +87,10 @@ class Router
         end
       end
 
-      top_10 = apps.sort { |a,b| b[:rps]<=>a[:rps] } [0,9]
-      VCAP::Component.varz[:top_app_requests] = top_10
-      #log.debug "Calculated all request rates in  #{Time.now - now} secs."
+      top = apps.sort { |a,b| b[:rps]<=>a[:rps] }
+      VCAP::Component.varz[:top_app_requests]  = top
+      VCAP::Component.varz[:top10_app_requests]  = top[0,9]
+      log.debug "Calculated all request rates in  #{Time.now - now} secs."
     end
 
     def check_registered_urls
