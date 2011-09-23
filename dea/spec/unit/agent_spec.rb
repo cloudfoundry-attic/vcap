@@ -103,18 +103,36 @@ describe 'DEA Agent' do
       FileUtils.rm_rf(@tmp_dir)
     end
 
+    # Should actually return error codes or throw coded exceptions...
+    #
     it 'should return false if creating the instance dir fails' do
       agent = make_test_agent
       # Foo doesn't exist, so creating foo/bar should fail
       inst_dir = File.join(@tmp_dir, 'foo', 'bar')
-      agent.stage_app_dir(nil, nil, nil, @bad_tgz, inst_dir, nil).should be_false
+      sha1 = Digest::SHA1.file(@bad_tgz).hexdigest
+      agent.stage_app_dir(nil, nil, sha1, @bad_tgz, inst_dir, nil).should be_false
     end
 
-    it 'should return false if creating the instance dir fails' do
+    it 'should return false if the droplet tgz file does not exist' do
+      agent = make_test_agent
+      inst_dir = File.join(@tmp_dir, 'foo')
+      non_existant = File.join(@tmp_dir, 'zazzle')
+      agent.should_receive(:download_app_bits).with(any_args()).and_return(nil)
+      agent.stage_app_dir(non_existant, nil, nil, non_existant, inst_dir, nil).should be_false
+    end
+
+    it 'should return false if the sha1 is not correct' do
+      agent = make_test_agent
+      inst_dir = File.join(@tmp_dir, 'foo')
+      agent.stage_app_dir(nil, nil, 'zazzle', @bad_tgz, inst_dir, nil).should be_false
+    end
+
+    it 'should return false if extracting the tgz fails' do
       agent = make_test_agent
       inst_dir = File.join(@tmp_dir, 'foo')
       # @bad_tgz isn't a valid tar file, so extraction should fail
-      agent.stage_app_dir(nil, nil, nil, @bad_tgz, inst_dir, nil).should be_false
+      sha1 = Digest::SHA1.file(@bad_tgz).hexdigest
+      agent.stage_app_dir(nil, nil, sha1, @bad_tgz, inst_dir, nil).should be_false
     end
   end
 

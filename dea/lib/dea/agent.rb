@@ -8,6 +8,7 @@ rescue LoadError
   exit 1
 end
 
+require 'digest'
 require 'fcntl'
 require 'logger'
 require 'logging'
@@ -983,6 +984,21 @@ module DEA
           download_end = Time.now
           @logger.debug("Took #{download_end - start} to download and write file")
         end
+      end
+
+      # Verify the SHA1 of the droplet we're about to unzip. This blocks the
+      # event loop but the computation occurs in C, so we should be OK. If not,
+      # we can shell out to the OpenSSL tools to compute this for us using
+      # EM.system().
+      if File.exist?(tgz_file)
+        computed_sha1 = Digest::SHA1.file(tgz_file).hexdigest
+        unless computed_sha1 == sha1
+          @logger.warn("SHA1 mismatch (computed=#{computed_sha1}, expected=#{sha1})")
+          return false
+        end
+      else
+        @logger.warn("Droplet file '#{tgz_file}' does not exist!")
+        return false
       end
 
       start = Time.now

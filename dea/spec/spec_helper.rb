@@ -9,3 +9,7 @@ ENV['BUNDLE_GEMFILE'] = "#{home}/Gemfile"
 require 'rubygems'
 require 'rspec'
 require 'bundler/setup'
+
+require 'vcap/logging'
+
+VCAP::Logging.setup_from_config({:level => :debug2}) if ENV['VCAP_TEST_LOG'] == 'true'
