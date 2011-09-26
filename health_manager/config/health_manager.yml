@@ -51,3 +51,8 @@ intervals:
   # Time to wait before analyzing the state of an application that has been
   # started/restarted
   stable_state:         60
+
+status:
+  port: 34502
+  user: thin
+  password: thin
