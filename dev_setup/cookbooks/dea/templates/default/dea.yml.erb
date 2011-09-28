@@ -72,6 +72,11 @@ runtimes:
     version: 1.6.0
     version_flag: '-version'
     environment:
+    debug_env:
+      run:
+        - JAVA_OPTS="$JAVA_OPTS -Xdebug -Xrunjdwp:transport=dt_socket,address=$VCAP_DEBUG_PORT,server=y,suspend=n"
+      wait:
+        - JAVA_OPTS="$JAVA_OPTS -Xdebug -Xrunjdwp:transport=dt_socket,address=$VCAP_DEBUG_PORT,server=y,suspend=y"
 <% end %>
 <% if node[:dea][:runtimes].include?("erlang") %>
   erlangR14B02:
