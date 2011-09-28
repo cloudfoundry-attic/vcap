@@ -142,7 +142,10 @@ runtimes:
   python26:
     version: 2.6.5
 
-status:
-  port: 34500
-  user: thin
-  password: thin
+# Used for /healthz and /vars endpoints. If not provided random
+# values will be generated on component start. Uncomment to use 
+# static values.
+#status:
+#  port: 34500
+#  user: thin
+#  password: thin

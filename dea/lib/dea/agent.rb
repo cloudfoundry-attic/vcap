@@ -222,7 +222,7 @@ module DEA
       NATS.start(:uri => @nats_uri) do
 
         # Register ourselves with the system
-        status_config = @config['status']
+        status_config = @config['status'] || {}
         VCAP::Component.register(:type => 'DEA',
                            :host => @local_ip,
                            :index => @config['index'],

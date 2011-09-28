@@ -680,7 +680,7 @@ class HealthManager
   end
 
   def register_as_component
-    status_config = @config['status']
+    status_config = @config['status'] || {}
     VCAP::Component.register(:type => 'HealthManager',
                              :host => VCAP.local_ip(@config['local_route']),
                              :index => @config['index'],

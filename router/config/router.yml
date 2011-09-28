@@ -9,7 +9,10 @@ logging:
   level: info
 pid: /var/vcap/sys/run/router.pid
 
-status:
-  port: 34503
-  user: thin
-  password: thin
+# Used for /healthz and /vars endpoints. If not provided random
+# values will be generated on component start. Uncomment to use 
+# static values.
+#status:
+#  port: 34503
+#  user: thin
+#  password: thin
