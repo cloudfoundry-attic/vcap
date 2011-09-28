@@ -66,6 +66,28 @@ describe ServicesController do
         response.status.should == 200
       end
 
+      it 'should create service offerings for brokered service' do
+        request.env['HTTP_X_VCAP_SERVICE_TOKEN'] = 'broker'
+        AppConfig[:service_broker] = {:token => 'broker'}
+        post_msg :create do
+          VCAP::Services::Api::ServiceOfferingRequest.new(
+            :label => 'foo-bar',
+            :url   => 'http://localhost:56789')
+        end
+        response.status.should == 200
+      end
+
+      it 'should not create brokered service offerings if token mismatch' do
+        request.env['HTTP_X_VCAP_SERVICE_TOKEN'] = 'foobar'
+        AppConfig[:service_broker] = {:token => 'broker'}
+        post_msg :create do
+          VCAP::Services::Api::ServiceOfferingRequest.new(
+            :label => 'foo-bar',
+            :url   => 'http://localhost:56789')
+        end
+        response.status.should == 403
+      end
+
       it 'should not create service offerings if not builtin' do
         post_msg :create do
           VCAP::Services::Api::ServiceOfferingRequest.new(
@@ -94,12 +116,43 @@ describe ServicesController do
             :url   => 'http://www.google.com',
             :acls  => acls,
             :plans => ['foo'],
+            :timeout => 20,
             :description => 'foobar')
         end
         response.status.should == 200
         svc = Service.find_by_label('foo-bar')
         svc.should_not be_nil
         svc.description.should == 'foobar'
+        svc.timeout.should == 20
+      end
+
+
+      it 'should support reverting existing offerings to nil' do
+        acls = {
+          'users' => ['foo@bar.com'],
+          'wildcards' => ['*@foo.com'],
+        }
+        svc = Service.create(
+          :label => 'foo-bar',
+          :url   => 'http://www.google.com',
+          :token => 'foobar',
+          :acls  => acls,
+          :timeout => 20,
+          :plans => ['foo'])
+        svc.should be_valid
+
+        post_msg :create do
+          VCAP::Services::Api::ServiceOfferingRequest.new(
+            :label => 'foo-bar',
+            :url   => 'http://www.google.com',
+            :plans => ['foo'],
+            :description => 'foobar')
+        end
+        response.status.should == 200
+        svc = Service.find_by_label('foo-bar')
+        svc.should_not be_nil
+        svc.timeout.should be_nil
+        svc.acls.should be_nil
       end
 
       it 'should return not authorized on token mismatch for non builtin services' do
@@ -198,6 +251,52 @@ describe ServicesController do
 
         get :list_handles, :label => 'foo-bar'
         response.status.should == 200
+      end
+    end
+
+    describe '#list_brokered_services' do
+      before :each do
+        request.env['HTTP_X_VCAP_SERVICE_TOKEN'] = 'broker'
+        AppConfig[:service_broker] = {:token => 'broker'}
+      end
+
+      it "should return not authorized on token mismatch" do
+        request.env['HTTP_X_VCAP_SERVICE_TOKEN'] = 'foobar'
+        get :list_brokered_services
+        response.status.should == 403
+      end
+
+      it "should not list builtin services" do
+        AppConfig[:builtin_services] = {
+          :foo => {:token=>"foobar"}
+        }
+        svc = Service.new
+        svc.label = "foo-1.0"
+        svc.url   = "http://localhost:56789"
+        svc.token = 'foobar'
+        svc.save
+        svc.should be_valid
+
+        get :list_brokered_services
+        response.status.should == 200
+        Yajl::Parser.parse(response.body)['brokered_services'].should be_empty
+      end
+
+      it "should list brokered services" do
+        AppConfig[:builtin_services] = {
+          :foo => {:token=>"foobar"}
+        }
+
+        svc = Service.new
+        svc.label = "brokered-1.0"
+        svc.url   = "http://localhost:56789"
+        svc.token = 'brokered'
+        svc.save
+        svc.should be_valid
+
+        get :list_brokered_services
+        response.status.should == 200
+        Yajl::Parser.parse(response.body)['brokered_services'].size.should == 1
       end
     end
 
@@ -303,7 +402,7 @@ describe ServicesController do
 
       it 'should return not found for unknown services' do
         post_msg :provision do
-          VCAP::Services::Api::ProvisionRequest.new(
+          VCAP::Services::Api::CloudControllerProvisionRequest.new(
             :label => 'bar-foo',
             :name  => 'foo',
             :plan  => 'free')
@@ -316,7 +415,7 @@ describe ServicesController do
         shim.stubs(:provision_service).returns({:data => {}, :service_id => 'foo', :credentials => {}})
         gw_pid = start_gateway(@svc, shim)
         post_msg :provision do
-          VCAP::Services::Api::ProvisionRequest.new(
+          VCAP::Services::Api::CloudControllerProvisionRequest.new(
             :label => 'foo-bar',
             :name  => 'foo',
             :plan  => 'free')
@@ -331,7 +430,7 @@ describe ServicesController do
         gw_pid = start_gateway(@svc, shim)
 
         post_msg :provision do
-          VCAP::Services::Api::ProvisionRequest.new(
+          VCAP::Services::Api::CloudControllerProvisionRequest.new(
             :label => 'foo-bar',
             :name  => 'foo',
             :plan  => 'free')
@@ -339,7 +438,7 @@ describe ServicesController do
         response.status.should == 200
 
         post_msg :provision do
-          VCAP::Services::Api::ProvisionRequest.new(
+          VCAP::Services::Api::CloudControllerProvisionRequest.new(
             :label => 'foo-bar',
             :name  => 'foo',
             :plan  => 'free')
