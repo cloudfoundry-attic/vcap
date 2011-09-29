@@ -12,6 +12,7 @@ class DjangoPlugin < StagingPlugin
       create_app_directories
       copy_source_files
       create_startup_script
+      create_stop_script
       create_gunicorn_config
     end
   end
@@ -33,6 +34,11 @@ class DjangoPlugin < StagingPlugin
     generate_startup_script(vars) do
       setup_python_env(REQUIREMENTS)
     end
+  end
+
+  def stop_script
+    vars = environment_hash
+    generate_stop_script(vars)
   end
 
   def create_gunicorn_config

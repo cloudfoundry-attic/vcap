@@ -10,6 +10,7 @@ class SinatraPlugin < StagingPlugin
       copy_source_files
       compile_gems
       create_startup_script
+      create_stop_script
     end
   end
 
@@ -38,6 +39,11 @@ class SinatraPlugin < StagingPlugin
     generate_startup_script(vars) do
       plugin_specific_startup
     end
+  end
+
+  def stop_script
+    vars = environment_hash
+    generate_stop_script(vars)
   end
 
   def plugin_specific_startup
