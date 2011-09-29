@@ -60,5 +60,18 @@ describe UserToken do
       hmac.should be_kind_of(String)
     end
   end
+
+  context "When expiration days is specified" do
+    before do
+      UserToken.token_expire = 1.day
+    end
+    it "token should be expired if it goes over the expired date." do
+      token = nil
+      Delorean.time_travel_to("25 hours ago") do
+        token = UserToken.create('expire@example.com')
+      end
+      token.should be_expired
+    end
+  end
 end
 
