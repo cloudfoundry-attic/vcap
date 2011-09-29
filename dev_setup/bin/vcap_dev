@@ -22,14 +22,13 @@ opts = OptionParser.new do |opts|
 end
 opts.order!(ARGV)
 
-if options.empty?
-  options["name"], options["home"] = Deployment.get_deployment_target
-  if options["name"]
-    puts "Targeting deployment \"#{options["name"]}\" with cloudfoundry home \"#{options["home"]}\""
-  else
-    options["name"] ||= DEPLOYMENT_DEFAULT_NAME
-    puts "Targeting default deployment \"#{options["name"]}\""
-  end
+options["name"], options["home"] = Deployment.get_deployment_target if options.empty?
+
+if options["name"]
+  puts "Targeting deployment \"#{options["name"]}\" with cloudfoundry home \"#{options["home"]}\""
+else
+  options["name"] = DEPLOYMENT_DEFAULT_NAME
+  puts "Targeting default deployment \"#{options["name"]}\""
 end
 
 if ARGV[0].nil? || !%w[start stop restart tail status].include?(ARGV[0].downcase)
