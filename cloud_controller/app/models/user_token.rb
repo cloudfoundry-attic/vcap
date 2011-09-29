@@ -3,10 +3,10 @@ require 'hmac-sha1'
 class UserToken
   class DecodeError < ArgumentError;end
   class << self
-    attr_accessor :token_key
+    attr_accessor :token_key, :token_expire
 
     def create(user_name)
-      valid_until = (Time.now.utc + 1.week).to_i
+      valid_until = (Time.now.utc + token_expire).to_i
       new(user_name, valid_until)
     end
 
@@ -23,6 +23,10 @@ class UserToken
     def hmac(*strings)
       key = UserToken.token_key
       HMAC::SHA1.new(key).update(strings.join).digest
+    end
+
+    def token_expire
+      @token_expire ||= 1.week
     end
   end
   attr_reader :user_name, :valid_until, :hmac
