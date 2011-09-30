@@ -2,7 +2,7 @@ require 'nokogiri'
 require 'fileutils'
 
 class Tomcat
-  AUTOSTAGING_JAR = 'auto-reconfiguration-0.6.0.jar'
+  AUTOSTAGING_JAR = 'auto-reconfiguration-0.6.1.jar'
   DEFAULT_APP_CONTEXT = "/WEB-INF/applicationContext.xml"
   DEFAULT_SERVLET_CONTEXT_SUFFIX = "-servlet.xml"
   SERVICE_DRIVER_HASH = {
