@@ -4,6 +4,7 @@ module StagingSpecHelpers
   AUTOSTAGING_JAR = 'auto-reconfiguration-0.6.1.jar'
   MYSQL_DRIVER_JAR = 'mysql-connector-java-5.1.12-bin.jar'
   POSTGRESQL_DRIVER_JAR = 'postgresql-9.0-801.jdbc4.jar'
+  INSIGHT_AGENT = 'cf-tomcat-agent-javaagent-1.7.0.CI-SNAPSHOT'
 
   # Importantly, this returns a Pathname instance not a String.
   # This allows you to write: app_fixture_base_directory.join('subdir', 'subsubdir')
@@ -62,7 +63,7 @@ module StagingSpecHelpers
     nil
   ensure
     if block_given?
-      FileUtils.rm_r(working_dir)
+      FileUtils.rm_r(working_dir) if working_dir
     end
     FileUtils.rm_r(source_tempdir) if source_tempdir
   end

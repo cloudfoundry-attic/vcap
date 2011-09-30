@@ -128,6 +128,39 @@ describe "A Java web application being staged without a MySql or a PostgreSql se
 
 end
 
+describe "A Java web application being staged with Insight bound to it" do
+  before(:all) do
+    app_fixture :java_web
+    @environment = {
+      :services => [
+                    {:label=>"rabbitmq-2.4", :tags=>["rabbitmq"], :name=>"Insight-9db41", :options=>{:url => "amqp://ehpbqzli:78Qts7GBH1AYH349@172.31.248.71:29522/gfzqolvo"}, :plan=>"free", :plan_option=>nil}
+                   ]
+    }
+  end
+
+  it "should have the Insight agent in the Tomcat library" do
+    pending "Availability of Insight"
+    stage(:java_web, @environment) do |staged_dir, source_dir|
+      jar_present?(staged_dir, "#{INSIGHT_AGENT}").should == true
+    end
+  end
+
+end
+
+describe "A Java web application being staged without Insight bound to it" do
+  before(:all) do
+    app_fixture :java_web
+    @environment = {}
+  end
+
+  it "should not have the Insight agent in the Tomcat library" do
+    stage(:java_web, @environment) do |staged_dir, source_dir|
+      jar_present?(staged_dir, "#{INSIGHT_AGENT}").should_not == true
+    end
+  end
+
+end
+
 def jar_present? staged_dir, path
   File.exist?(File.join(staged_dir, path))
 end

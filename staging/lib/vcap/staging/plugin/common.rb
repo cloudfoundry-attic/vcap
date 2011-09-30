@@ -565,4 +565,8 @@ chmod 755 ../stop
       end
     end
   end
+
+  def insight_agent
+    StagingPlugin.platform_config['insight_agent']
+  end
 end
