@@ -24,10 +24,6 @@ class UserToken
       key = UserToken.token_key
       HMAC::SHA1.new(key).update(strings.join).digest
     end
-
-    def token_expire
-      @token_expire ||= 1.week
-    end
   end
   attr_reader :user_name, :valid_until, :hmac
   attr_writer :decoded_hmac
