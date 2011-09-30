@@ -17,6 +17,7 @@ class Deployment
 
     def get_config_path(name, cloudfoundry_home=nil)
       cloudfoundry_home ||= get_cloudfoundry_home
+      name ||= DEPLOYMENT_DEFAULT_NAME
       File.expand_path(File.join(cloudfoundry_home, ".deployments", name, DEPLOYMENT_CONFIG_DIR_NAME))
     end
 
