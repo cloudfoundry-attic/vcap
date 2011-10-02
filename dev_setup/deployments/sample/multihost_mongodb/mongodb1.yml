@@ -3,7 +3,7 @@ deployment:
   name: "mongodb1"
 jobs:
   install:
-    - mongodb:
+    - mongodb_node:
         index: "1"
   installed:
     - nats_server:

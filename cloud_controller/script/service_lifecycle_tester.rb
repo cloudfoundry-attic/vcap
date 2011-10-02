@@ -50,7 +50,7 @@ acct = UserToken.create('foo@bar.com').encode()
 #################### Provision ####################
 puts "Provisioning..."
 
-req = VCAP::Services::Api::ProvisionRequest.new(
+req = VCAP::Services::Api::CloudControllerProvisionRequest.new(
   :label => "#{svc}-#{svcs[svc]}",
   :name  => 'foobar',
   :plan  => 'free'

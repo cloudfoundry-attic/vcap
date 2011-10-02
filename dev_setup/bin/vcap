@@ -154,7 +154,7 @@ class Component
       Process.detach(pid)
 
       start = Time.now
-      while ((Time.now - start) < 10)
+      while ((Time.now - start) < 20)
         break if running?
         sleep (0.25)
       end
@@ -310,6 +310,8 @@ module Run
     kill_service_instances('redis', /redis-server/)
     puts
     kill_service_instances('mongodb', /mongod/)
+    puts
+    kill_service_instances('neo4j', /neo4j/ )
     puts
 
     puts "Cleaning shared directories:"

@@ -82,7 +82,7 @@ staging:
   secure: false
 
 # admin support
-admins: [derek@gmail.com, foobar@vmware.com]
+admins: [ <%= node[:cloud_controller][:admins].join(",") %> ]
 https_required: false
 https_required_for_admins: false
 
@@ -98,5 +98,5 @@ default_account_capacity:
 builtin_services:
   <% @builtin_services.each do |service_name| %>
   <%= service_name %>:
-    token: <%= node[service_name.to_sym][:token] %>
+    token: <%= node[(service_name + "_node").to_sym][:token] %>
   <% end %>

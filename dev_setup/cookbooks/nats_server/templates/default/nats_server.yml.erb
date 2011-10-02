@@ -8,4 +8,4 @@ log_file: /var/log/nats_server.log
 authorization:
   user: <%= node[:nats_server][:user] %>
   password: <%= node[:nats_server][:password] %>
-  timeout: 1
+  timeout: 20

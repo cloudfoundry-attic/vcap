@@ -64,12 +64,14 @@ Here is a sampling of the currently supported jobs
  - cloud_controller
  - health_manager
  - dea
- - mysql
+ - mysql_node
  - mysql_gateway
- - redis
+ - redis_node
  - redis_gateway
- - mongodb
+ - mongodb_node
  - mongodb_gateway
+ - neo4j_node
+ - neo4j_gateway
 
 The easiest way to get started on your multihost setup is to start customizing
 the various example config files that exist in this directory.
@@ -80,4 +82,4 @@ Router can be configured to run on different hosts. The following components how
 should all run on the same host
 - cloud_controller
 - health_manager
-- service gateways i.e. mysql_gateway, mongodb_gateway and redis_gateway
+- service gateways i.e. mysql_gateway, mongodb_gateway, redis_gateway and neo4j_gateway

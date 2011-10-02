@@ -23,5 +23,5 @@ gemspec = Gem::Specification.new do |s|
   s.bindir       = 'bin'
   s.require_path = 'lib'
 
-  s.files        = %w(Rakefile) + Dir.glob("{lib,spec,vendor}/**/*")
+  s.files        = %w(Rakefile) + Dir.glob("{lib,vendor}/**/*")
 end

@@ -190,6 +190,7 @@ class App < ActiveRecord::Base
 
   def bind_to_config(cfg, binding_options={})
     svc = cfg.service
+    user = cfg.user
 
     # The ordering here is odd, but important; it allows us to repair our internal
     # state to match that of the gateway. The description following each operation
@@ -220,13 +221,14 @@ class App < ActiveRecord::Base
       req = VCAP::Services::Api::GatewayBindRequest.new(
         :service_id => cfg.name,
         :label      => svc.label,
+        :email      => user.email,
         :binding_options => binding_options
       )
 
       if EM.reactor_running?
         # yields
         endpoint = "#{svc.url}/gateway/v1/configurations/#{req.service_id}/handles"
-        http = VCAP::Services::Api::AsyncHttpRequest.fibered(endpoint, svc.token, :post, req)
+        http = VCAP::Services::Api::AsyncHttpRequest.fibered(endpoint, svc.token, :post, svc.timeout, req)
         if !http.error.empty?
           raise "Error sending bind request #{req.extract.inspect} to gateway #{svc.url}: #{http.error}"
         elsif http.response_header.status != 200
@@ -300,7 +302,7 @@ class App < ActiveRecord::Base
     begin
       if EM.reactor_running?
         endpoint = "#{svc.url}/gateway/v1/configurations/#{req.service_id}/handles/#{req.handle_id}"
-        http = VCAP::Services::Api::AsyncHttpRequest.new(endpoint, svc.token, :delete, req)
+        http = VCAP::Services::Api::AsyncHttpRequest.new(endpoint, svc.token, :delete, svc.timeout, req)
         http.callback do
           if http.response_header.status != 200
             CloudController.logger.error("Error sending unbind request #{req.extract.to_json} non 200 response from gateway #{svc.url}: #{http.response_header.status} #{http.response}")
