@@ -25,7 +25,8 @@ require 'router/app_connection'
 require 'router/client_connection'
 require 'router/utils'
 
-config_file = File.join(File.dirname(__FILE__), '../config/router.yml')
+config_path = ENV["CLOUD_FOUNDRY_CONFIG_PATH"] || File.join(File.dirname(__FILE__), '../config')
+config_file = File.join(config_path, 'router.yml')
 port, inet = nil, nil
 
 options = OptionParser.new do |opts|

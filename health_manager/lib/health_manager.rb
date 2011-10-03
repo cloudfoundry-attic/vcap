@@ -755,7 +755,8 @@ end
 
 if $0 == __FILE__ || File.expand_path($0) == File.expand_path(File.join(File.dirname(__FILE__), '../bin/health_manager'))
 
-  config_file = File.join(File.dirname(__FILE__), '../config/health_manager.yml')
+  config_path = ENV["CLOUD_FOUNDRY_CONFIG_PATH"] || File.join(File.dirname(__FILE__), '../config')
+  config_file = File.join(config_path, "health_manager.yml")
   options = OptionParser.new do |opts|
     opts.banner = 'Usage: healthmanager [OPTIONS]'
     opts.on("-c", "--config [ARG]", "Configuration File") do |opt|
