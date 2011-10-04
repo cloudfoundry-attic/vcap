@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# NB: Everything here is executing _inside_ the container
+
+# Sets globbing behavior such that globs matching nothing evaluate
+# to null rather than themselves.
+shopt -s nullglob
+
+# Execute all the features' start scripts
+for f in "${PWD}/vcap/script/feature_start/*"
+do
+  ${f} $@
+done
+
+# VCAP stop script expects the presence of this file
+echo $PPID > parent.pid
+
+./framework_start $@ > ./logs/stdout.log 2> ./logs/stderr.log &
+wait $!
