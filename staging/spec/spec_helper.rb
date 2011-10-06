@@ -24,7 +24,6 @@ RSpec.configure do |config|
       cache_dir = File.join('/tmp', '.vcap_gems')
       platform_hash['cache'] = cache_dir
       platform_hash['insight_agent'] = "/var/vcap/packages/insight_agent/insight-agent.zip"
-#      f.print YAML.dump('cache' => cache_dir)
       f.print YAML.dump platform_hash
     end
   end

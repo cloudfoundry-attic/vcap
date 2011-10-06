@@ -4,7 +4,7 @@ module StagingSpecHelpers
   AUTOSTAGING_JAR = 'auto-reconfiguration-0.6.1.jar'
   MYSQL_DRIVER_JAR = 'mysql-connector-java-5.1.12-bin.jar'
   POSTGRESQL_DRIVER_JAR = 'postgresql-9.0-801.jdbc4.jar'
-  INSIGHT_AGENT = 'cf-tomcat-agent-javaagent-1.7.0.SR1.RELEASE'
+  INSIGHT_AGENT = 'cf-tomcat-agent-javaagent-1.7.1.RELEASE'
 
   # Importantly, this returns a Pathname instance not a String.
   # This allows you to write: app_fixture_base_directory.join('subdir', 'subsubdir')
