@@ -1,0 +1,16 @@
+require 'rubygems'
+require 'bundler/setup'
+require 'rake'
+
+
+task :spec => ['bundler:install'] do
+  desc 'Run spec tests'
+
+  sh('cd spec && rake spec')
+end
+
+namespace 'bundler' do
+  task 'install' do
+    sh('bundle install')
+  end
+end

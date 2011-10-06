@@ -1,0 +1,2 @@
+head -n 1 ./run.pid | xargs kill -9
+rm -f ./run.pid
