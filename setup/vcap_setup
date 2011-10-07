@@ -173,8 +173,8 @@ if [[ $CC == true || $ALL == true ]]; then
             echo ""
             echo "Installing MySQL server and support"
         if [[ -n "$MYSQL_PASS" ]]; then
-          echo mysql-server-5.1 mysql-server/root_password select $MYSQL_PASS | sudo debconf-set-selections
-          echo mysql-server-5.1 mysql-server/root_password_again select $MYSQL_PASS | sudo debconf-set-selections
+          echo mysql-server-5.1 mysql-server/root_password select $MYSQL_PASS | debconf-set-selections
+          echo mysql-server-5.1 mysql-server/root_password_again select $MYSQL_PASS | debconf-set-selections
         fi
             apt-get install -qqy mysql-server ruby-dev libmysql-ruby libmysqlclient-dev
             echo "Installing mysql gems"
@@ -229,9 +229,9 @@ if [[ $DEA == true || $ALL == true ]]; then
             apt-get install -qqy python-software-properties
             add-apt-repository "deb http://archive.canonical.com/ lucid partner"
             apt-get -qqy update
-            echo sun-java6-jdk shared/accepted-sun-dlj-v1-1 boolean true | sudo /usr/bin/debconf-set-selections
-            echo sun-java6-jre shared/accepted-sun-dlj-v1-1 boolean true | sudo /usr/bin/debconf-set-selections
-            sudo apt-get install -qqy curl sun-java6-bin sun-java6-jre sun-java6-jdk
+            echo sun-java6-jdk shared/accepted-sun-dlj-v1-1 boolean true | debconf-set-selections
+            echo sun-java6-jre shared/accepted-sun-dlj-v1-1 boolean true | debconf-set-selections
+            apt-get install -qqy curl sun-java6-bin sun-java6-jre sun-java6-jdk
         elif [[ $PLATFORM == 'MacOSX' ]]; then
             echo -e "\033[31mFIXME: Implement for MacOSX \033[0m"
         fi
@@ -243,7 +243,7 @@ if [[ $DEA == true || $ALL == true ]]; then
     fi
     easy_install pip
 
-    # Node and Erlang frameworks
+    # Node framework
     pushd .
     cd /tmp
 
@@ -291,6 +291,7 @@ if [[ $DEA == true || $ALL == true ]]; then
         echo -e "\033[31mFIXME: Implement for MacOSX \033[0m"
     fi
 
+    # Erlang framework
     ERLANG_VERSION=R14B02
 
     if [ ! -d "/var/vcap/runtimes/erlang-$ERLANG_VERSION" ]; then
@@ -400,13 +401,13 @@ if [ $? != 0 ]; then
         echo "Installing MySQL server and support"
 
         if [[ -n "$MYSQL_PASS" && $PLATFORM == "Linux" ]]; then
-          echo mysql-server-5.1 mysql-server/root_password select $MYSQL_PASS | sudo debconf-set-selections
-          echo mysql-server-5.1 mysql-server/root_password_again select $MYSQL_PASS | sudo debconf-set-selections
+          echo mysql-server-5.1 mysql-server/root_password select $MYSQL_PASS | debconf-set-selections
+          echo mysql-server-5.1 mysql-server/root_password_again select $MYSQL_PASS | debconf-set-selections
         fi
-            apt-get install -qqy mysql-server ruby-dev libmysql-ruby libmysqlclient-dev
-            echo "Installing mysql gems"
-            gem install mysql --no-rdoc --no-ri
-            echo ""
+        apt-get install -qqy mysql-server ruby-dev libmysql-ruby libmysqlclient-dev
+        echo "Installing mysql gems"
+        gem install mysql --no-rdoc --no-ri
+        echo ""
     fi
 fi
 
@@ -436,14 +437,15 @@ REDIS_VERSION=2.2.4
 
 redis_current=`redis-server -v | grep $REDIS_VERSION`
 
-if [[ $ALL_SERVICES != true ]]; then
-    read -p "Should I add Redis Server? [y/N] "
-    if [[ $REPLY =~ ^[yY]$ ]]; then
-        REDIS=true
+if [[ -z "$redis_current" ]]; then
+    if [[ $ALL_SERVICES != true ]]; then
+        read -p "Should I add Redis Server? [y/N] "
+        if [[ $REPLY =~ ^[yY]$ ]]; then
+            REDIS=true
+        fi
     fi
-fi
 
-if [[ $REDIS == true || $ALL_SERVICES == true ]]; then
+    if [[ $REDIS == true || $ALL_SERVICES == true ]]; then
         echo "Installing Redis (version $REDIS_VERSION)"
         pushd .
         cd /tmp
@@ -459,7 +461,7 @@ if [[ $REDIS == true || $ALL_SERVICES == true ]]; then
         popd
     fi
 else
-    echo "Redis Server (version 2.2.2) is current"
+    echo "Redis Server (version $REDIS_VERSION) is current"
 fi
 
 RABBITMQ_VERSION=2.4.0
