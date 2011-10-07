@@ -136,7 +136,23 @@ class Component
         # Make sure db is setup, this is slow and we should make it faster, but
         # should help for now.
         if is_cloud_controller?
-          Dir.chdir("#{File.dirname(__FILE__)}/../cloud_controller") { `rake db:migrate` }
+          gemlock_file = File.expand_path(
+            File.join('..', 'cloud_controller', 'Gemfile.lock'),
+            File.dirname(__FILE__))
+
+          version = nil
+          File.open(gemlock_file, "r") do |f|
+            f.each_line do |line|
+              if line =~ /\A\s*rake\s\((\d{1}\.\d{1}\.\d{1})\)/u
+                version = $1
+              end
+            end
+          end
+          
+          rake_command = 'rake'
+          rake_command += " _#{version}_" if version
+          rake_command += " db:migrate"
+          Dir.chdir("#{File.dirname(__FILE__)}/../cloud_controller") { `#{rake_command}` }
         end
         exec("#{component_start_path}")
       end
