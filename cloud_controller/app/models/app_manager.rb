@@ -319,8 +319,7 @@ class AppManager
   end
 
   # Returns an array of hashes containing 'index', 'state', 'since'(timestamp),
-  # 'debug_ip', and 'debug_port' for all instances running, or trying to run,
-  # the app.
+  # and 'debug_port' for all instances running, or trying to run, the app.
   def find_instances
     return [] unless app.started?
     instances = app.instances
@@ -367,7 +366,6 @@ class AppManager
             :index => index,
             :state => instance_json[:state],
             :since => instance_json[:state_timestamp],
-            :debug_ip => instance_json[:debug_ip],
             :debug_port => instance_json[:debug_port]
           }
         end
