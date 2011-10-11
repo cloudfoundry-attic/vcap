@@ -141,7 +141,7 @@ GEM
     uuidtools (2.1.2)
     vcap_logging (0.1.0)
     vcap_stager (0.1.3)
-    vcap_staging (0.1.23)
+    vcap_staging (0.1.24)
       nokogiri (>= 1.4.4)
       rake
       rspec
@@ -181,5 +181,5 @@ DEPENDENCIES
   vcap_common!
   vcap_logging
   vcap_stager (= 0.1.3)
-  vcap_staging (= 0.1.23)
+  vcap_staging (= 0.1.24)
   yajl-ruby (>= 0.7.9)
