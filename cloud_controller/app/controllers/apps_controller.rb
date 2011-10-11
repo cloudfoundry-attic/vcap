@@ -79,7 +79,7 @@ class AppsController < ApplicationController
       package = AppPackage.new(@app, file, resources)
       @app.latest_bits_from(package)
     ensure
-      FileUtils.rm_f(file.path)
+      FileUtils.rm_f(file.path) if file
     end
     render :nothing => true, :status => 200
   end
