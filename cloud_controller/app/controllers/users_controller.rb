@@ -44,8 +44,16 @@ class UsersController < ApplicationController
   end
 
   def info
-    # FIXME, make sure request matches logged in user!
-    render :json => { :email => user.email }
+    target_user = ::User.find_by_email(params['email'])
+    if target_user
+      if target_user.email == user.email || @current_user.admin? 
+        render :json => { :email => target_user.email }
+      else
+        raise CloudError.new(CloudError::FORBIDDEN)      
+      end
+    else
+      raise CloudError.new(CloudError::USER_NOT_FOUND)
+    end
   end
 
   def list
