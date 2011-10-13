@@ -93,6 +93,7 @@ class HealthManager
     @flapping_timeout = config['intervals']['flapping_timeout']
     @restart_timeout = config['intervals']['restart_timeout']
     @stable_state = config['intervals']['stable_state']
+    @nats_ping = config['intervals']['nats_ping'] || 10
     @database_environment = config['database_environment']
 
     @droplets = {}
@@ -673,7 +674,7 @@ class HealthManager
       EM.add_periodic_timer(@droplets_analysis) { analyze_all_apps }
     end
 
-    EM.add_periodic_timer(10) do
+    EM.add_periodic_timer(@nats_ping) do
       NATS.publish('healthmanager.nats.ping', "#{Time.now.to_f}")
     end
 
