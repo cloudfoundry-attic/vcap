@@ -57,26 +57,47 @@ module CollabSpaces
 
   end
 
+  class ProjectManagementService
+
+    def create_project(organization_name, project_name)
+
+      resource_service = ResourceService.new
+
+      meta_data_hash = {:metadata => {:name => project_name}}
+
+      resource_service.create_resource(organization_name, :project, meta_data_hash.to_json)
+
+    end
+
+  end
+
   class ResourceService
 
-    def create_resource(organization, resource_type)
-
-      if(organization.nil? || !organization.valid?)
-        CloudController.logger.debug("Org is nil or not valid")
-        raise CloudError.new(CloudError::BAD_REQUEST)
-      end
+    def create_resource(organization_name, resource_type, metadata)
 
       if(resource_type.nil? || resource_type.empty?)
         CloudController.logger.debug("Empty resource type")
         raise CloudError.new(CloudError::BAD_REQUEST)
       end
 
-      CloudController.logger.debug("Creating resource of type #{resource_type} for org #{organization.inspect}")
+      CloudController.logger.debug("Creating resource of type #{resource_type} for org #{organization_name}")
 
-      resource = Resource.new :organization => organization, :type => resource_type
+      begin
+        organization = OrganizationService.new.find_organization(organization_name)
+      rescue => e
+        CloudController.logger.debug("Failed to create the resource: Error " + e.to_s);
+
+      end
+
+      resource = Resource.new :organization => organization
+      resource.type = resource_type
       CloudController.logger.debug("Resource created is #{resource.inspect}");
 
       begin
+
+        if(!metadata.nil?)
+          resource.metadata = metadata
+        end
         resource.save!
       rescue => e
         CloudController.logger.debug("Failed to create the resource: Error " + e.to_s);

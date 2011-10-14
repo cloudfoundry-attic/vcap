@@ -7,7 +7,7 @@ class CollabSpacesController < ApplicationController
 
     new_organization_name = params[:org]
 
-    org_manager = CollabSpaces::OrganizationManager.new
+    org_manager = ::CollabSpaces::OrganizationService.new
 
     immutable_id = org_manager.create_organization(new_organization_name)
 
@@ -20,7 +20,7 @@ class CollabSpacesController < ApplicationController
 
     new_organization_name = params[:org]
 
-    org_manager = CollabSpaces::OrganizationManager.new
+    org_manager = ::CollabSpaces::OrganizationService.new
 
     if(org_manager.delete_organization(new_organization_name))
       render :json => {:result => 'success'}

@@ -25,7 +25,7 @@ class AppsController < ApplicationController
 
     project = params[:project]
 
-    CollabSpaces::Authorizer::can user, :create, ::App, org, project
+    ::CollabSpaces::Authorizer::can user, :create, ::App, org, project
 
     name = body_params[:name]
 
@@ -33,11 +33,8 @@ class AppsController < ApplicationController
     app = ::App.new(:owner => authenticated_user, :name => name)
 
     begin
-      org_service = CollabSpaces::OrganizationService.new
-      app_organization = org_service.find_organization(org)
-
-      resource_service = CollabSpaces::ResourceService.new
-      resource = resource_service.create_resource(app_organization, :app)
+      resource_service = ::CollabSpaces::ResourceService.new
+      resource = resource_service.create_resource(org, :app, nil)
 
       app.collab_spaces_id = resource.immutable_id
 
@@ -114,7 +111,7 @@ class AppsController < ApplicationController
 
     project = params[:project]
 
-    CollabSpaces::Authorizer::can user, :delete, ::App, org, project
+    ::CollabSpaces::Authorizer::can user, :delete, ::App, org, project
 
     @app.purge_all_resources!
     @app.destroy

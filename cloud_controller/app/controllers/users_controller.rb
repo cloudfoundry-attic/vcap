@@ -11,7 +11,7 @@ class UsersController < ApplicationController
     user.set_and_encrypt_password(body_params[:password])
 
     #Save a personal org for this user
-    org_service = CollabSpaces::OrganizationService.new
+    org_service = ::CollabSpaces::OrganizationService.new
     org = org_service.create_organization(user.email)
 
     if(!org.nil? && org.valid?)
@@ -44,7 +44,7 @@ class UsersController < ApplicationController
       target_user.destroy
 
       #Delete the user's' personal org
-      org_service = CollabSpaces::OrganizationService.new
+        org_service = ::CollabSpaces::OrganizationService.new
       org_service.delete_organization(params['email'])
 
       render :status => 204, :nothing => true

@@ -38,6 +38,25 @@
           }
       }
     }
+  },
+  "admin@example.com": {
+    "all": {
+      "roles": {
+          "all": {
+              "users": ["admin@example.com"],
+              "permissions": {"apps/*": "crud"}
+          }
+      }
+    }
+  },
+  "user@example.com": {
+    "all": {
+      "roles": {
+          "all": {
+              "users": ["user@example.com"],
+              "permissions": {"apps/*": "crud"}
+          }
+      }
+    }
   }
-
 }
