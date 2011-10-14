@@ -868,7 +868,7 @@ module DEA
         if state && state['state'] == 'RUNNING'
           block.call(true)
           timer.cancel
-        elsif instance[:debug_mode] != "wait"
+        elsif instance[:debug_mode] != "suspend"
           attempts += 1
           if attempts > 600 || instance[:state] != :STARTING # 5 minutes or instance was stopped
             block.call(false)

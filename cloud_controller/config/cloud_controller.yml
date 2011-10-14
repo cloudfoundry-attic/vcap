@@ -152,7 +152,7 @@ runtimes:
     version: 1.6.0
     debug_modes:
       - run
-      - wait
+      - suspend
   php:
     version: 5.3.[2-6]
   erlangR14B02:
