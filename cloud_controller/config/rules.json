@@ -1,0 +1,62 @@
+{
+  "VMware": {
+    "development": {
+      "description": "VMware project for developers",
+      "roles": {
+        "developer": {
+          "users": ["jdsa@vmware.com"],
+          "permissions": {"apps/*": "crud"
+          }
+        },
+        "manager": {
+          "users": ["olds@vmware.com"],
+          "permissions": {"apps/*": "r"}
+        }
+      }
+    },
+
+    "all": {
+      "description": "Default project for the VMware org"
+    }
+  },
+  "jdsa@vmware.com": {
+    "all": {
+      "roles": {
+          "all": {
+              "users": ["jdsa@vmware.com"],
+              "permissions": {"apps/*": "crud"}
+          }
+      }
+    }
+  },
+  "olds@vmware.com": {
+    "all": {
+      "roles": {
+          "all": {
+              "users": ["olds@vmware.com"],
+              "permissions": {"apps/*": "crud"}
+          }
+      }
+    }
+  },
+  "admin@example.com": {
+    "all": {
+      "roles": {
+          "all": {
+              "users": ["admin@example.com"],
+              "permissions": {"apps/*": "crud"}
+          }
+      }
+    }
+  },
+  "user@example.com": {
+    "all": {
+      "roles": {
+          "all": {
+              "users": ["user@example.com"],
+              "permissions": {"apps/*": "crud"}
+          }
+      }
+    }
+  }
+}
