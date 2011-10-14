@@ -1,3 +1,5 @@
+require 'collab_spaces'
+
 class UsersController < ApplicationController
   before_filter :enforce_registration_policy, :only => :create
   before_filter :grab_event_user
@@ -8,7 +10,17 @@ class UsersController < ApplicationController
     user = ::User.new :email => body_params[:email]
     user.set_and_encrypt_password(body_params[:password])
 
-    if user.save
+    #Save a personal org for this user
+    org_service = CollabSpaces::OrganizationService.new
+    org = org_service.create_organization(user.email)
+
+    if(!org.nil? && org.valid?)
+      CloudController.logger.debug("Org created #{org.inspect}")
+    else
+      raise CloudError.new(CloudError::BAD_REQUEST)
+    end
+
+    if (user.save)
       render :status => 204, :nothing => true
     else
       raise CloudError.new(CloudError::BAD_REQUEST)
@@ -30,6 +42,11 @@ class UsersController < ApplicationController
       end
 
       target_user.destroy
+
+      #Delete the user's' personal org
+      org_service = CollabSpaces::OrganizationService.new
+      org_service.delete_organization(params['email'])
+
       render :status => 204, :nothing => true
     else
       raise CloudError.new(CloudError::USER_NOT_FOUND)
