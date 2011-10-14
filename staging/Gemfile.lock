@@ -1,12 +1,23 @@
+PATH
+  remote: .
+  specs:
+    vcap_staging (0.1.24)
+      nokogiri (>= 1.4.4)
+      rake
+      rspec
+      vcap_common
+      yajl-ruby (>= 0.7.9)
+
 GEM
   remote: http://rubygems.org/
   specs:
     daemons (1.1.4)
     diff-lcs (1.1.2)
     eventmachine (0.12.10)
-    json_pure (1.5.3)
+    json_pure (1.5.4)
+      spruz (~> 0.2.8)
     little-plugger (1.1.2)
-    logging (1.5.2)
+    logging (1.6.1)
       little-plugger (>= 1.1.2)
     nats (0.4.10)
       daemons (>= 1.1.0)
@@ -24,6 +35,7 @@ GEM
     rspec-expectations (2.6.0)
       diff-lcs (~> 1.1.2)
     rspec-mocks (2.6.0)
+    spruz (0.2.13)
     thin (1.2.11)
       daemons (>= 1.0.9)
       eventmachine (>= 0.12.6)
@@ -35,14 +47,10 @@ GEM
       posix-spawn
       thin
       yajl-ruby
-    yajl-ruby (0.8.2)
+    yajl-ruby (0.8.3)
 
 PLATFORMS
   ruby
 
 DEPENDENCIES
-  nokogiri (>= 1.4.4)
-  rake
-  rspec
-  vcap_common
-  yajl-ruby (>= 0.7.9)
+  vcap_staging!

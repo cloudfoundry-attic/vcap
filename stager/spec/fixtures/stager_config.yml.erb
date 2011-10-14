@@ -1,12 +1,11 @@
 ---
 logging:
   level: debug2
-redis:
-  host: 127.0.0.1
-  port: <%= redis_port %>
 nats_uri: nats://127.0.0.1:<%= nats_port %>
 dirs:
   manifests: <%= manifest_dir %>
 max_staging_duration: 120
+max_active_tasks: 10
+secure: false
 queues: ['staging']
 pid_filename: <%= pid_filename %>

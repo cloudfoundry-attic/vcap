@@ -8,7 +8,7 @@ service:
   tags: ['redis', 'redis-2.2', 'key-value', 'nosql']
 host: localhost
 index: 0
-token: <%= node[:redis][:token] %>
+token: <%= node[:redis_node][:token] %>
 mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
 pid: /var/vcap/sys/run/redis_service.pid
 logging:

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20110707170643) do
+ActiveRecord::Schema.define(:version => 20110818080550) do
 
   create_table "app_collaborations", :force => true do |t|
     t.integer  "app_id"
@@ -126,6 +126,7 @@ ActiveRecord::Schema.define(:version => 20110707170643) do
     t.boolean  "active",          :default => true
     t.datetime "created_at"
     t.datetime "updated_at"
+    t.integer  "timeout"
   end
 
   add_index "services", ["name", "version"], :name => "index_services_on_name_and_version", :unique => true

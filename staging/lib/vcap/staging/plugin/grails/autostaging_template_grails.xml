@@ -5,7 +5,7 @@
   </context-param>
 
   <servlet>
-      <servlet-name>Srping MVC Dispatcher Servlet</servlet-name>
+      <servlet-name>Spring MVC Dispatcher Servlet</servlet-name>
       <servlet-class>org.codehaus.groovy.grails.web.servlet.GrailsDispatcherServlet</servlet-class>
       <init-param>
           <param-name>contextConfigLocation</param-name>

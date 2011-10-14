@@ -34,9 +34,9 @@ class VCAP::Services::Api::ServiceGatewayClient
   end
 
   def provision(args)
-    msg = VCAP::Services::Api::ProvisionRequest.new(args)
+    msg = VCAP::Services::Api::GatewayProvisionRequest.new(args)
     resp = perform_request(Net::HTTP::Post, '/gateway/v1/configurations', msg)
-    VCAP::Services::Api::ProvisionResponse.decode(resp.body)
+    VCAP::Services::Api::GatewayProvisionResponse.decode(resp.body)
   end
 
   def unprovision(args)

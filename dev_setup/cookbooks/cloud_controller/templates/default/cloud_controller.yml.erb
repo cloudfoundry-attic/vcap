@@ -82,7 +82,7 @@ staging:
   secure: false
 
 # admin support
-admins: [derek@gmail.com, foobar@vmware.com]
+admins: [ <%= node[:cloud_controller][:admins].join(",") %> ]
 https_required: false
 https_required_for_admins: false
 
@@ -98,5 +98,29 @@ default_account_capacity:
 builtin_services:
   <% @builtin_services.each do |service_name| %>
   <%= service_name %>:
-    token: <%= node[service_name.to_sym][:token] %>
+    token: <%= node[(service_name + "_node").to_sym][:token] %>
   <% end %>
+
+# Enable/disable starting apps in debug modes.
+allow_debug: true
+
+# Supported runtime versions and debug modes.
+# Used for /info/runtimes endpoint (served unfiltered as JSON)
+runtimes:
+  ruby18:
+    version: 1.8.7
+  ruby19:
+    version: 1.9.2
+  node:
+    version: 0.4.[2-9]
+  java:
+    version: 1.6.0
+    debug_modes:
+      - run
+      - wait
+  php:
+    version: 5.3.[2-6]
+  erlangR14B02:
+    version: ".* 5.8.3"
+  python26:
+    version: 2.6.5

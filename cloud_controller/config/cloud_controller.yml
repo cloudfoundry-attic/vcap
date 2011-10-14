@@ -39,13 +39,18 @@ nginx:
 # if log_file is set, it must be a fully-qualified path,
 # because the bin/vcap script reads it directly from the file.
 logging:
-  level: debug
+  level: debug2
 # file:
 
 # Settings for the rails logger
 rails_logging:
   level: debug
 # file:
+
+redis:
+  host: 127.0.0.1
+  port: 5454
+# password:
 
 directories:
   droplets: /var/vcap/shared/droplets
@@ -59,9 +64,12 @@ directories:
 
 # NATS message bus URI
 mbus: nats://localhost:4222/
+
 keys:
   password: 'password key goes here'
   token: 'token key goes here'
+  token_expiration: 604800 # 7 * 24 * 60 * 60 (= 1 week)
+
 pid: /var/vcap/sys/run/cloudcontroller.pid
 rails_environment: development
 database_environment: # replaces database.yml
@@ -91,8 +99,10 @@ staging:
   max_staging_runtime:    120 # secs
   # Create a secure environment for staging
   secure: false
-
-allow_debug: false
+  new_stager_percent: 0
+  auth:
+    user: zxsfhgjg
+    password: ZNVfdase9
 
 # admin support
 admins: [derek@gmail.com, foobar@vmware.com]
@@ -122,7 +132,15 @@ builtin_services:
   neo4j:
     token: "0xdeadbeef"
 
-# used for /info/runtimes endpoint (served unfiltered as JSON)
+# Service broker
+service_broker:
+    token: "0xdeadbeef"
+
+# Enable/disable starting apps in debug modes.
+allow_debug: true
+
+# Supported runtime versions and debug modes.
+# Used for /info/runtimes endpoint (served unfiltered as JSON)
 runtimes:
   ruby18:
     version: 1.8.7
@@ -141,3 +159,4 @@ runtimes:
     version: ".* 5.8.3"
   python26:
     version: 2.6.5
+

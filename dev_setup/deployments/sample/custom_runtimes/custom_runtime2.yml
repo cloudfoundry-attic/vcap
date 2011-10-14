@@ -13,13 +13,13 @@ jobs:
     - router
     - health_manager
     - ccdb
-    - redis:
+    - redis_node:
         index: "0"
     - redis_gateway
-    - mysql:
+    - mysql_node:
         index: "0"
     - mysql_gateway
-    - mongodb:
+    - mongodb_node:
         index: "0"
     - mongodb_gateway
     # Shows that DEA runtimes could also be specified under the jobs/install or jobs/installed properties

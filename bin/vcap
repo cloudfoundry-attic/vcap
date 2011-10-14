@@ -79,7 +79,7 @@ class Component
   end
 
   def pid_file
-    configuration["pid"] || raise("#{@configuration_path} does not specify location of pid file")
+    configuration["pid"] || configuration['pid_filename'] || raise("#{@configuration_path} does not specify location of pid file")
   end
 
   def log_file?
@@ -136,7 +136,7 @@ class Component
         # Make sure db is setup, this is slow and we should make it faster, but
         # should help for now.
         if is_cloud_controller?
-          Dir.chdir("#{File.dirname(__FILE__)}/../cloud_controller") { `rake db:migrate` }
+          Dir.chdir("#{File.dirname(__FILE__)}/../cloud_controller") { `bundle exec rake db:migrate CLOUD_CONTROLLER_CONFIG=#{@configuration_path}` }
         end
         exec("#{component_start_path}")
       end
@@ -244,10 +244,64 @@ class NatsServer
   end
 end
 
+class RedisServer
+  DEFAULT_CONFIG_PATH = File.expand_path('../config/redis-server.conf', __FILE__)
+
+  def initialize(pid_filename, config_path=DEFAULT_CONFIG_PATH)
+    @config_path  = config_path
+    @pid_filename = pid_filename
+    @redis_path   = `which redis-server`.chomp
+    unless $? == 0
+      STDERR.puts "Could not find redis-server, exiting.".red
+      exit 1
+    end
+    @pid = read_pidfile
+  end
+
+  def start
+    return if running?
+    @pid = fork do
+      log_file = File.join(TMP, 'redis-server.log')
+      stdout = File.open(log_file, 'a')
+      STDOUT.reopen(stdout)
+      stderr = File.open(log_file, 'a')
+      STDERR.reopen(stderr)
+      exec("#{@redis_path} #{@config_path}")
+    end
+    Process.detach(@pid)
+    File.open(@pid_filename, 'w+') {|f| f.write(@pid) }
+  end
+
+  def stop
+    return unless running?
+    Process.kill('TERM', @pid)
+    @pid = nil
+  end
+
+  private
+
+  def read_pidfile
+    if File.exist?(@pid_filename)
+      File.read(@pid_filename).chomp.to_i
+    else
+      nil
+    end
+  end
+
+  def running?
+    return false unless @pid
+    File.exist?(File.join('/proc', @pid.to_s))
+  end
+end
+
+
 module Run
+  DEFAULT_REDIS_PIDFILE = File.join(TMP, 'redis-server.pid')
+
   def self.start_init
     nats_server = NatsServer.new
     nats_server.start_server
+    RedisServer.new(DEFAULT_REDIS_PIDFILE).start
   end
 
   def self.start(args)
@@ -259,6 +313,7 @@ module Run
     # Only process this if no one else running..
     running_components = components([]).select {|c| c.running?}.map{|c| c.name }
     return unless running_components.empty?
+    RedisServer.new(DEFAULT_REDIS_PIDFILE).stop
     nats_server = NatsServer.new
     return unless nats_server.is_running?
     nats_server.kill_server
@@ -289,7 +344,7 @@ module Run
     end
 
     cc_dir = File.expand_path(File.join(DIR, '..', 'cloud_controller'))
-    run_command("Resetting the CloudController database", "cd #{cc_dir} 2>&1 && rake db:drop 2>&1")
+    run_command("Resetting the CloudController database", "cd #{cc_dir} 2>&1 && bundle exec rake db:drop 2>&1")
     puts
 
     cc_log_dir = File.join(cc_dir, 'log')
@@ -380,7 +435,7 @@ module Run
   private
 
   def self.core
-    %w(router cloud_controller dea health_manager)
+    %w(router cloud_controller dea health_manager stager)
   end
 
   def self.services
@@ -424,7 +479,13 @@ module Run
     args = (Run.core + Run.services) if args.empty?
     args = Run.expand_args(args)
     components = args.map do |arg|
-      component = Component.new(arg)
+      if $configdir
+        config_file = File.join($configdir, "#{arg}.yml")
+        if ! File.exists?(config_file)
+          config_file = nil
+        end
+      end
+      component = Component.new(arg, config_file)
       component if component.exists?
     end.compact
     STDERR.puts "Don't know how to process '#{args.inspect}' \?\?" if components.empty?

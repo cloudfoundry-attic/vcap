@@ -8,7 +8,7 @@ service:
   tags: ['mongodb', 'mongodb-1.6', 'nosql']
 host: localhost
 index: 0
-token: <%= node[:mongodb][:token] %>
+token: <%= node[:mongodb_node][:token] %>
 mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
 pid: /var/vcap/sys/run/mongodb_service.pid
 logging:
