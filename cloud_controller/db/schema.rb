@@ -10,7 +10,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20110818080550) do
+ActiveRecord::Schema.define(:version => 20111013222602) do
 
   create_table "app_collaborations", :force => true do |t|
     t.integer  "app_id"
@@ -41,6 +41,7 @@ ActiveRecord::Schema.define(:version => 20110818080550) do
     t.integer  "disk_quota",          :default => 2048
     t.integer  "lock_version",        :default => 0
     t.integer  "run_count",           :default => 0,         :null => false
+    t.string   "collab_spaces_id"
   end
 
   add_index "apps", ["framework"], :name => "index_apps_on_framework"
@@ -62,6 +63,30 @@ ActiveRecord::Schema.define(:version => 20110818080550) do
 
   add_index "binding_tokens", ["service_config_id"], :name => "index_binding_tokens_on_service_config_id"
   add_index "binding_tokens", ["uuid"], :name => "index_binding_tokens_on_uuid", :unique => true
+
+  create_table "organizations", :force => true do |t|
+    t.string   "name",                               :null => false
+    t.string   "immutable_id",                       :null => false
+    t.string   "description"
+    t.string   "status",       :default => "ACTIVE", :null => false
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  add_index "organizations", ["immutable_id"], :name => "index_organizations_on_immutable_id", :unique => true
+  add_index "organizations", ["name"], :name => "index_organizations_on_name", :unique => true
+
+  create_table "resources", :force => true do |t|
+    t.string   "immutable_id",    :null => false
+    t.integer  "organization_id", :null => false
+    t.string   "type"
+    t.text     "metadata_hash"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  add_index "resources", ["immutable_id"], :name => "index_resources_on_immutable_id", :unique => true
+  add_index "resources", ["organization_id", "id"], :name => "index_resources_on_organization_id_and_id", :unique => true
 
   create_table "routes", :force => true do |t|
     t.integer  "app_id"

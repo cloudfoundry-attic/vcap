@@ -20,6 +20,7 @@ describe AppsController do
       post :create
 
       get :get, :name => @app_name
+
       Yajl::Parser.parse(response.body)['env'].should == ['foo=bar']
 
     end
@@ -30,6 +31,7 @@ describe AppsController do
       post :create
 
       get :get, :name => @app_name
+
       Yajl::Parser.parse(response.body)['env'].should == []
     end
 

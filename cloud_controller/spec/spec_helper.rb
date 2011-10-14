@@ -20,4 +20,5 @@ RSpec.configure do |config|
     CloudController.events = stub_everything(:black_hole)
     CloudController.logger = stub_everything(:black_hole)
   end
+
 end

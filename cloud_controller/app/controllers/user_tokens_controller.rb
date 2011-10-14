@@ -3,6 +3,16 @@ class UserTokensController < ApplicationController
 
   def create
     email = params['email']
+    if(!email.nil?)
+      CloudController.logger.debug("Request for email " + email)
+    end
+
+    org = params[:org] #Project does not matter as the org decides the tokens
+
+    if(!org.nil?)
+      CloudController.logger.debug("Request for org " + org)
+    end
+
     password = body_params[:password]
     if ::User.valid_login?(email, password)
       # This could just check the ::User.admins variable, but using this method to support changes in admin? in the future

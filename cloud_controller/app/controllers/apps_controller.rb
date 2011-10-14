@@ -12,10 +12,34 @@ class AppsController < ApplicationController
 
   # POST /apps
   def create
+
+    authenticated_user = user
+
+    org = params[:org]
+    if(!org.nil?)
+      authenticated_user = ::User.find_by_email(org)
+    else
+      CloudController.logger.debug "User is " + authenticated_user.to_s
+      org = authenticated_user.email
+    end
+
+    project = params[:project]
+
+    ::CollabSpaces::Authorizer::can user, :create, ::App, org, project
+
     name = body_params[:name]
-    app = ::App.new(:owner => user, :name => name)
+
+
+    app = ::App.new(:owner => authenticated_user, :name => name)
+
     begin
+      resource_service = ::CollabSpaces::ResourceService.new
+      resource = resource_service.create_resource(org, :app, nil)
+
+      app.collab_spaces_id = resource.immutable_id
+
       update_app_from_params(app)
+
     rescue => e
       app.destroy
       raise e
@@ -26,11 +50,32 @@ class AppsController < ApplicationController
 
   # PUT /apps/:name
   def update
+    #Demo code only
+    org = params[:org]
+    if(!org.nil?)
+      user = ::User.find_by_email(org)
+    end
+
     update_app_from_params(@app)
     render :nothing => true
   end
 
   def get
+    #Demo code only
+    authenticated_user = user
+
+    org = params[:org]
+    CloudController.logger.debug "Org is " + org.to_s
+
+    if(!org.nil?)
+      authenticated_user = ::User.find_by_email(org)
+
+      CloudController.logger.debug "User is " + authenticated_user.to_s
+
+      @app = authenticated_user.apps_owned.find_by_name(params[:name])
+      raise CloudError.new(CloudError::APP_NOT_FOUND) unless @app
+    end
+
     render :json => @app.as_json
   end
 
@@ -39,10 +84,35 @@ class AppsController < ApplicationController
   end
 
   def list
-    render :json => user.get_apps.to_a
+
+    #Demo code only
+    org = params[:org]
+    list_apps_user = nil
+    if(!org.nil?)
+      list_apps_user = ::User.find_by_email(org)
+    else
+      list_apps_user = user
+    end
+
+    render :json => list_apps_user.get_apps.to_a
   end
 
   def delete
+    #Demo code only
+    authenticated_user = user
+
+    org = params[:org]
+    if(!org.nil?)
+      authenticated_user = ::User.find_by_email(org)
+    else
+      CloudController.logger.debug "User is " + authenticated_user.to_s
+      org = authenticated_user.email
+    end
+
+    project = params[:project]
+
+    ::CollabSpaces::Authorizer::can user, :delete, ::App, org, project
+
     @app.purge_all_resources!
     @app.destroy
     render :nothing => true, :status => 200
@@ -254,8 +324,20 @@ class AppsController < ApplicationController
   end
 
   def find_app_by_name
+
+    authenticated_user = user
+
+    org = params[:org]
+    CloudController.logger.debug "Org is " + org.to_s
+
+    if(!org.nil?)
+      authenticated_user = ::User.find_by_email(org)
+    end
+
+    CloudController.logger.debug "User is " + authenticated_user.to_s
+
     # XXX - What do we want semantics to be like for multiple apps w/ same name (possible w/ contribs)
-    @app = user.apps_owned.find_by_name(params[:name])
+    @app = authenticated_user.apps_owned.find_by_name(params[:name])
     raise CloudError.new(CloudError::APP_NOT_FOUND) unless @app
 
     # TODO - Deliberately leaving off 'user.admin? ||' here.
@@ -263,7 +345,7 @@ class AppsController < ApplicationController
     # Is it OK to be this draconian?
 
     #raise CloudError.new(CloudError::APP_NOT_FOUND) unless @app.user == user
-    raise CloudError.new(CloudError::APP_NOT_FOUND) unless @app.collaborator?(user)
+    raise CloudError.new(CloudError::APP_NOT_FOUND) unless @app.collaborator?(authenticated_user)
   end
 
   # Checks to make sure the update can proceed, then updates the given
