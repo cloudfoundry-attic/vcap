@@ -23,7 +23,7 @@ describe 'Health Manager' do
 
   after :all do
     # Cleanup after ourselves
-    #FileUtils.rm_rf(@test_dir)
+    FileUtils.rm_rf(@test_dir)
   end
 
   before :each do
@@ -31,7 +31,7 @@ describe 'Health Manager' do
     @run_dir = File.join(@test_dir, "run_#{run_id_ctr}")
     create_dir(@run_dir)
 
-    @helper = HMTestHelperDB.new( 'run_dir' => @run_dir)
+    @helper = HMExpectedStateHelperDB.new( 'run_dir' => @run_dir)
 
     # NATS
     port = VCAP.grab_ephemeral_port
@@ -86,18 +86,16 @@ describe 'Health Manager' do
       @nats_server.wait_ready.should be_true
 
       start_msg = nil
-      em_run_with_timeout do
-        NATS.start(:uri => @nats_server.uri) do
-          NATS.subscribe('healthmanager.start') do |msg|
-            start_msg = msg
-            EM.stop
-          end
-          # This is a little weird, but it ensures that our subscribe has been processed
-          NATS.publish('foo') { @hm.start }
-        end
-      end
-      start_msg.should_not be_nil
 
+      #receive_message is now refactored to take an optional block.
+      #the block is what is expected to trigger the message that
+      #we expect to receive.
+
+      start_msg = receive_message 'healthmanager.start' do
+        @hm.start
+      end
+
+      start_msg.should_not be_nil
 
     end
 
@@ -114,6 +112,7 @@ describe 'Health Manager' do
       msg.should_not be_nil
     end
 
+
     it 'should be able to new App entries' do
       app_name = 'test_app'
       @helper.add_app make_app_def app_name
@@ -122,16 +121,65 @@ describe 'Health Manager' do
       app[:name].should == app_name
     end
 
-    pending 'should start new instance of an application' do
-      @helper.add_app make_app_def 'boo'
-      msg = receive_message 'cloudcontroller.hm.requests'
-      msg.shoud_not be_nil
-      puts msg.to_yaml
+    it 'shoule be able to create User entries' do
+      @helper.add_user make_user_def
+      user = @helper.find_user :email => make_user_def[:email]
+
+      user.should_not be_nil
+      user[:email].should_not be_nil
+      user[:email].should == make_user_def[:email]
+
     end
 
+    it 'should send START message for a new instance' do
+      app = nil
+      msg = receive_message 'cloudcontrollers.hm.requests', 'app_create_prompter' do
+        #putting enough into Expected State to trigger an instance START request
+        app = @helper.make_app_with_owner_and_instance(
+                                                 make_app_def( 'to_be_started_app'),
+                                                 make_user_def)
+      end
+      app.should_not be_nil
+      msg.should_not be_nil
+      msg = parse_json msg
+      msg['op'].should == 'START'
+      msg['droplet'].should == app.id
+    end
+
+    pending 'should signal STOP message for a stopped app' do
+      app_def = make_app_def 'to_be_stopped'
+      app_def['state'] = 'STOPPED'
+
+      msg = receive_message 'cloudcontrollers.hm.requests', 'app_stop_prompter' do
+        app = @helper.make_app_with_owner_and_instance(app_def,
+                                                       make_user_def)
+
+        heartbeat = {
+          'droplets' =>
+          [{
+             'droplet' => app.id,
+             'version' => 0,
+             'instance' => 0,
+             'index' => 0,
+             'state' => 'STARTED',
+             'state_timestamp' => 0
+           }]
+        }.to_json
+        NATS.publish('dea.heartbeat',heartbeat)
+      end
+
+      msg.should_not be_nil
+      msg = parse_json msg
+      msg['op'].should == 'STOP'
+      msg['droplet'].should == app.id
+    end
   end
 
-  def make_app_def app_name
+  def make_user_def
+    { :email => 'boo@boo.com', :crypted_password => 'boo' }
+  end
+
+  def make_app_def(app_name)
     {
       :name => app_name,
       :framework => 'sinatra',
@@ -160,13 +208,21 @@ describe 'Health Manager' do
     response
   end
 
-  def receive_message subj, timeout=15
+  def parse_json(str)
+    Yajl::Parser.parse(str)
+  end
+
+
+  def receive_message(subj, prompting_msg='foo', timeout=10)
     ret = nil
     em_run_with_timeout do
       NATS.start :uri => @nats_server.uri do
         NATS.subscribe(subj) do |msg|
           ret = msg
           EM.stop
+        end
+        if block_given?
+          NATS.publish(prompting_msg) { yield }
         end
       end
     end
@@ -177,7 +233,10 @@ describe 'Health Manager' do
   #     (We expect to block here.)
   def em_run_with_timeout(timeout=10)
     EM.run do
-      EM.add_timer(timeout) { EM.stop }
+      EM.add_timer(timeout) {
+        puts 'TIMEOUT!'
+        EM.stop
+      }
       yield
     end
   end
