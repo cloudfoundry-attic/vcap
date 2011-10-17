@@ -55,7 +55,8 @@ class VCAP::Stager::TaskManager
   end
 
   def task_completed(task, result)
-    @logger.info("Task, id=#{task.task_id} completed, result='#{result}'")
+    status_str = result[:error] ? 'in error' : 'successfully'
+    @logger.info("Task (id=#{task.task_id}) completed #{status_str}")
 
     @active_tasks.delete(task.task_id)
     event(:task_completed, task, result)

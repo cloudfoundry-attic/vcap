@@ -2,6 +2,8 @@ require 'fileutils'
 require 'rest_client'
 require 'uri'
 
+require 'vcap/stager/task_error'
+
 
 module VCAP
   module Stager

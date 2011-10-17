@@ -1,4 +1,4 @@
-require 'staging_task_manager'
+require 'vcap/stager/ipc'
 
 class AppsController < ApplicationController
   before_filter :require_user, :except => [:download_staged]
@@ -212,25 +212,33 @@ class AppsController < ApplicationController
   private
 
   def stage_app(app)
-    task_mgr = StagingTaskManager.new(:logger  => CloudController.logger,
-                                      :timeout => AppConfig[:staging][:max_staging_runtime])
     dl_uri = StagingController.download_app_uri(app)
     ul_hdl = StagingController.create_upload(app)
+    stager_client = VCAP::Stager::Ipc::FiberedNatsClient.new(NATS.client)
 
-    result = task_mgr.run_staging_task(app, dl_uri, ul_hdl.upload_uri)
+    begin
+      result = stager_client.add_task(app.id,
+                                      app.staging_task_properties,
+                                      dl_uri,
+                                      ul_hdl.upload_uri,
+                                      AppConfig[:staging][:max_staging_runtime])
+      StagingTaskLog.new(app.id, result['task_log']).save
+    rescue VCAP::Stager::Ipc::RequestTimeoutError
+      raise CloudError.new(CloudError::APP_STAGING_ERROR, "Timed out waiting for reply from stager")
+    end
 
     # Update run count to be consistent with previous staging code
-    if result.was_success?
+    unless result['error']
       CloudController.logger.debug("Staging task for app_id=#{app.id} succeded.", :tags => [:staging])
-      CloudController.logger.debug1("Details: #{result.task_log}", :tags => [:staging])
+      CloudController.logger.debug1("Details: #{result['task_log']}", :tags => [:staging])
       app.update_staged_package(ul_hdl.upload_path)
       app.package_state = 'STAGED'
       app.update_run_count()
     else
-      CloudController.logger.warn("Staging task for app_id=#{app.id} failed: #{result.error}",
+      CloudController.logger.warn("Staging task for app_id=#{app.id} failed: #{result['error']}",
                                   :tags => [:staging])
-      CloudController.logger.debug1("Details: #{result.task_log}", :tags => [:staging])
-      raise CloudError.new(CloudError::APP_STAGING_ERROR, result.error.to_s)
+      CloudController.logger.debug1("Details: #{result['task_log']}", :tags => [:staging])
+      raise CloudError.new(CloudError::APP_STAGING_ERROR, result['error'])
     end
 
   rescue => e

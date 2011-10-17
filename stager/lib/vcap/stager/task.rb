@@ -11,7 +11,6 @@ require 'vcap/staging/plugin/common'
 
 require 'vcap/stager/constants'
 require 'vcap/stager/task_error'
-require 'vcap/stager/task_result'
 
 module VCAP
   module Stager
@@ -28,15 +27,6 @@ class VCAP::Stager::Task
   }
 
   class << self
-    def decode(msg)
-      dec_msg = Yajl::Parser.parse(msg)
-      VCAP::Stager::Task.new(dec_msg['app_id'],
-                             dec_msg['properties'],
-                             dec_msg['download_uri'],
-                             dec_msg['upload_uri'],
-                             dec_msg['notify_subj'])
-    end
-
     def set_defaults(defaults={})
       DEFAULTS.update(defaults)
     end
@@ -55,14 +45,13 @@ class VCAP::Stager::Task
   #                                 :resources   => Resource limits
   # @param  download_uri  String  Where the stager can fetch the zipped application from.
   # @param  upload_uri    String  Where the stager should PUT the gzipped droplet
-  # @param  notify_subj   String  NATS subject that the stager will publish the result to.
-  def initialize(app_id, props, download_uri, upload_uri, notify_subj, opts={})
+  def initialize(app_id, props, download_uri, upload_uri, response, opts={})
     @task_id      = VCAP.secure_uuid
     @app_id       = app_id
     @app_props    = props
     @download_uri = download_uri
     @upload_uri   = upload_uri
-    @notify_subj  = notify_subj
+    @response     = response
 
     @vcap_logger = VCAP::Logging.logger('vcap.stager.task')
     @nats                 = option(opts, :nats)
@@ -108,22 +97,15 @@ class VCAP::Stager::Task
         upload_droplet(dirs[:staged], dirs[:base])
 
         task_logger.info("Done!")
-        @result = VCAP::Stager::TaskResult.new(@task_id, task_logger.public_log)
-        @nats.publish(@notify_subj, @result.encode)
-        callback.call(@result)
+        complete_task(callback, task_logger.public_log)
 
       rescue VCAP::Stager::TaskError => te
         task_logger.error("Error: #{te}")
-        @result = VCAP::Stager::TaskResult.new(@task_id, task_logger.public_log, te)
-        @nats.publish(@notify_subj, @result.encode)
-        callback.call(@result)
+        complete_task(callback, task_logger.public_log, te.to_s)
 
       rescue => e
         @vcap_logger.error("Unrecoverable error: #{e}")
         @vcap_logger.error(e)
-        err = VCAP::Stager::InternalError.new
-        @result = VCAP::Stager::TaskResult.new(@task_id, task_logger.public_log, err)
-        @nats.publish(@notify_subj, @result.encode)
         raise e
 
       ensure
@@ -133,22 +115,17 @@ class VCAP::Stager::Task
     end.resume
   end
 
-  def encode
-    h = {
-      :app_id       => @app_id,
-      :properties   => @app_props,
-      :download_uri => @download_uri,
-      :upload_uri   => @upload_uri,
-      :notify_subj  => @notify_subj,
-    }
-    Yajl::Encoder.encode(h)
-  end
-
-  def enqueue(queue)
-    @nats.publish("vcap.stager.#{queue}", encode())
-  end
-
   private
+
+  def complete_task(callback, log, error=nil)
+    @result = {
+      :task_log => log,
+      :error    => error,
+    }
+    @response.result = @result
+    @nats.publish(@response.inbox, @response.encode)
+    callback.call(@result)
+  end
 
   def option(hash, key)
     if hash.has_key?(key)

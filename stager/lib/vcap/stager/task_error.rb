@@ -10,24 +10,11 @@ module VCAP
     # state. All other errors thrown during VCAP::Stager::Task#perform will be
     # logged and re-raised (probably causing the program to crash).
     class TaskError < StandardError
-      SCHEMA = VCAP::JsonSchema.build do
-        { :class => String,
-          optional(:details) => String,
-        }
-      end
-
       class << self
         attr_reader :desc
 
         def set_desc(desc)
           @desc = desc
-        end
-
-        def decode(enc_err)
-          dec_err   = Yajl::Parser.parse(enc_err)
-          SCHEMA.validate(dec_err)
-          err_class = dec_err['class'].split('::').last
-          VCAP::Stager.const_get(err_class.to_sym).new(dec_err['details'])
         end
       end
 
@@ -39,12 +26,6 @@ module VCAP
 
       def to_s
         @details ? "#{self.class.desc}:\n #{@details}" : self.class.desc
-      end
-
-      def encode
-        h = {:class => self.class.to_s}
-        h[:details] = @details if @details
-        Yajl::Encoder.encode(h)
       end
     end
 
