@@ -62,11 +62,11 @@ describe HealthManager do
     @hm = HealthManager.new({
       'mbus' => 'nats://localhost:4222/',
       'logging' => {
-        'level' => 'fatal',
+        'level' => 'warn',
       },
       'intervals' => {
         'database_scan' => 1,
-        'droplet_lost' => 3,
+        'droplet_lost' => 300,
         'droplets_analysis' => 0.5,
         'flapping_death' => 3,
         'flapping_timeout' => 5,
@@ -154,5 +154,29 @@ describe HealthManager do
     stats[:down].should == 3
     stats[:frameworks]['sinatra'][:missing_instances].should == 3
     stats[:runtimes]['ruby19'][:missing_instances].should == 3
+  end
+
+  it "should detect extra instances and send a STOP request" do
+    stats = { :frameworks => {}, :runtimes => {}, :running => 0, :down => 0 }
+    timestamp = Time.now.to_i
+    version_entry = { indices: {
+        0 => { :state => 'RUNNING', :timestamp => timestamp, :last_action => @app.last_updated, :instance => '0' },
+        1 => { :state => 'RUNNING', :timestamp => timestamp, :last_action => @app.last_updated, :instance => '1' },
+        2 => { :state => 'RUNNING', :timestamp => timestamp, :last_action => @app.last_updated, :instance => '2' },
+        3 => { :state => 'RUNNING', :timestamp => timestamp, :last_action => @app.last_updated, :instance => '3' }
+    }}
+    should_publish_to_nats "cloudcontrollers.hm.requests", {
+          'droplet' => 1,
+          'op' => 'STOP',
+          'last_updated' => @app.last_updated.to_i,
+          'instances' => [ version_entry[:indices][3][:instance] ]
+        }
+    @droplet_entry[:versions][@droplet_entry[:live_version]] = version_entry
+
+    @hm.analyze_app(@app.id, @droplet_entry, stats)
+
+    stats[:running].should == 3
+    stats[:frameworks]['sinatra'][:running_instances].should == 3
+    stats[:runtimes]['ruby19'][:running_instances].should == 3
   end
 end
