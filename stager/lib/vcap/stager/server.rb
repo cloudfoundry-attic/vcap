@@ -5,6 +5,7 @@ require 'vcap/component'
 require 'vcap/json_schema'
 require 'vcap/logging'
 
+require 'vcap/stager/ipc'
 require 'vcap/stager/task'
 require 'vcap/stager/task_manager'
 
@@ -14,28 +15,11 @@ module VCAP
 end
 
 class VCAP::Stager::Server
-  class Channel
-    def initialize(nats_conn, subject, &blk)
-      @nats_conn = nats_conn
-      @subject   = subject
-      @sid       = nil
-      @receiver  = blk
-    end
-
-    def open
-      @sid = @nats_conn.subscribe(@subject, :queue => @subject) {|msg| @receiver.call(msg) }
-    end
-
-    def close
-      @nats_conn.unsubscribe(@sid)
-    end
-  end
-
   def initialize(nats_uri, task_mgr, config={})
     @nats_uri  = nats_uri
     @nats_conn = nil
     @task_mgr  = nil
-    @channels  = []
+    @sids      = []
     @config    = config
     @task_mgr  = task_mgr
     @logger    = VCAP::Logging.logger('vcap.stager.server')
@@ -52,9 +36,9 @@ class VCAP::Stager::Server
                                  :host   => VCAP.local_ip(@config[:local_route]),
                                  :config => @config,
                                  :nats   => @nats_conn)
-        setup_channels()
+        setup_subscriptions()
         @task_mgr.varz = VCAP::Component.varz
-        @logger.info("Server running")
+        @logger.info("Stager active")
       end
     end
   end
@@ -90,23 +74,39 @@ class VCAP::Stager::Server
     trap('INT')  { shutdown() }
   end
 
-  def setup_channels
+  def setup_subscriptions
     for qn in @config[:queues]
-      channel = Channel.new(@nats_conn, "vcap.stager.#{qn}") {|msg| add_task(msg) }
-      channel.open
-      @channels << channel
+      @sids << @nats_conn.subscribe(qn, :queue => qn) {|msg| handle_request(msg) }
+      @logger.info("Subscribed to #{qn}")
     end
   end
 
-  def add_task(task_msg)
+  def teardown_subscriptions
+    for sid in @sids
+      @nats_conn.unsubscribe(sid)
+    end
+    @sids = []
+  end
+
+  def handle_request(msg)
+    @logger.debug("Handling msg #{msg}")
     begin
-      @logger.debug("Decoding task '#{task_msg}'")
-      task = VCAP::Stager::Task.decode(task_msg)
-    rescue => e
-      @logger.warn("Failed decoding '#{task_msg}': #{e}")
-      @logger.warn(e)
+      req = VCAP::Stager::Ipc::Request.decode(msg)
+    rescue VCAP::Stager::Ipc::IpcError => e
+      @logger.warn("Error decoding request '#{msg}', #{e}")
       return
     end
-    @task_mgr.add_task(task)
+
+    if req.method == :add_task
+      resp = VCAP::Stager::Ipc::Response.for_request(req)
+      task = VCAP::Stager::Task.new(req.args['app_id'],
+                                    req.args['app_properties'],
+                                    req.args['download_uri'],
+                                    req.args['upload_uri'],
+                                    resp)
+      @task_mgr.add_task(task)
+    else
+      @logger.warn("Cannot handle method #{req.method}")
+    end
   end
 end

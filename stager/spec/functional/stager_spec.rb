@@ -1,6 +1,8 @@
+require 'fiber'
 require 'sinatra/base'
 require 'spec_helper'
 
+require 'vcap/stager/ipc/fibered_nats_client'
 require 'vcap/spec/forked_component/nats_server'
 
 # Simple handler that serves zipped apps from the fixtures directory and
@@ -78,11 +80,15 @@ describe VCAP::Stager do
       zip_app(@tmp_dirs[:download], app_name)
 
       # Wait for the stager to tell us it is done
-      task_result = wait_for_task_result(@nats_server.uri,
-                                         subj,
-                                         [app_id, @app_props, dl_uri, ul_uri, subj])
-      task_result.should_not be_nil
-      task_result.was_success?.should be_true
+      result = nil
+      NATS.start(:uri => @nats_server.uri) do |nats|
+        cli = VCAP::Stager::Ipc::FiberedNatsClient.new(nats)
+        Fiber.new do
+          result = cli.add_task(app_id, @app_props, dl_uri, ul_uri, 5)
+          EM.stop
+        end.resume
+      end
+      result['error'].should be_nil
     end
   end
 
@@ -133,19 +139,6 @@ describe VCAP::Stager do
     end
     ready.should be_true
     stager
-  end
-
-  def wait_for_task_result(nats_uri, subj, task_args)
-    task_result = nil
-    NATS.start(:uri => nats_uri) do
-      EM.add_timer(5) { NATS.stop }
-      NATS.subscribe(subj) do |msg|
-        task_result = VCAP::Stager::TaskResult.decode(msg)
-        NATS.stop
-      end
-      VCAP::Stager::Task.new(*task_args).enqueue('staging')
-    end
-    task_result
   end
 
   def app_download_uri(app_name)
