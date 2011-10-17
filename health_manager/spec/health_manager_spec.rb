@@ -24,6 +24,21 @@ describe HealthManager do
       @app.save!
       @app.set_urls(['http://testapp.vcap.me'])
     end
+    @droplet_entry = {
+        :last_updated => @app.last_updated - 2, # take off 2 seconds so it looks 'quiescent'
+        :state => 'STARTED',
+        :crashes => {},
+        :versions => {},
+        :live_version => @app.package_hash,
+        :instances => @app.instances,
+        :framework => 'sinatra',
+        :runtime => 'ruby19'
+    }
+    @hm.update_droplet(@app)
+  end
+
+  def should_publish_to_nats(message, payload)
+    NATS.should_receive(:publish).with(message, payload.to_json)
   end
 
   after(:all) do
@@ -34,7 +49,9 @@ describe HealthManager do
   before(:each) do
     @hm = HealthManager.new({
       'mbus' => 'nats://localhost:4222/',
-      'log_level' => 'FATAL',
+      'logging' => {
+        'level' => 'fatal',
+      },
       'intervals' => {
         'database_scan' => 1,
         'droplet_lost' => 3,
@@ -58,8 +75,9 @@ describe HealthManager do
     hash = Hash.new {|h,k| h[k] = 0}
     VCAP::Component.stub!(:varz).and_return(hash)
     build_user_and_app
+  end
 
-    silence_warnings { NATS = mock("NATS") }
+  pending "should not do anything when everything is running" do
     NATS.should_receive(:start).with(:uri => 'nats://localhost:4222/')
 
     NATS.should_receive(:subscribe).with('dea.heartbeat').and_return { |_, block| @hb_block = block }
@@ -71,9 +89,7 @@ describe HealthManager do
 
     NATS.should_receive(:subscribe).with('vcap.component.discover')
     NATS.should_receive(:publish).with('vcap.component.announce', /\{.*\}/)
-  end
 
-  pending "should not do anything when everything is running" do
     EM.run do
       @hm.stub!(:register_error_handler)
       @hm.run
@@ -108,5 +124,22 @@ describe HealthManager do
         EM.stop_event_loop
       end
     end
+  end
+
+  it "should detect instances that are down and send a START request" do
+    stats = { :frameworks => {}, :runtimes => {}, :down => 0 }
+    should_publish_to_nats "cloudcontrollers.hm.requests", {
+          'droplet' => 1,
+          'op' => 'START',
+          'last_updated' => @app.last_updated.to_i,
+          'version' => @app.staged_package_hash+"-0",
+          'indices' => [0,1,2]
+        }
+
+    @hm.analyze_app(@app.id, @droplet_entry, stats)
+
+    stats[:down].should == 3
+    stats[:frameworks]['sinatra'][:missing_instances].should == 3
+    stats[:runtimes]['ruby19'][:missing_instances].should == 3
   end
 end
