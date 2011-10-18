@@ -239,7 +239,7 @@ if [[ $DEA == true || $ALL == true ]]; then
 
     # Python support
     if [[ $PLATFORM == 'Linux' ]]; then
-      apt-get install -qyy python-setuptools python-dev
+      apt-get install -qqy python-setuptools python-dev
     fi
     easy_install pip
 
@@ -331,6 +331,10 @@ if [[ $DEA == true || $ALL == true ]]; then
 
     echo -e "\nPHP should now be installed -->"
     php -v
+    echo ""
+
+    echo -e "\nPython should now be installed -->"
+    python -V
     echo ""
 
     echo -e "\nErlang should now be installed -->"
