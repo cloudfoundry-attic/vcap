@@ -212,42 +212,23 @@ class AppsController < ApplicationController
   private
 
   def stage_app(app)
-    dl_uri = StagingController.download_app_uri(app)
-    ul_hdl = StagingController.create_upload(app)
-    stager_client = VCAP::Stager::Ipc::FiberedNatsClient.new(NATS.client)
-
-    begin
-      result = stager_client.add_task(app.id,
-                                      app.staging_task_properties,
-                                      dl_uri,
-                                      ul_hdl.upload_uri,
-                                      AppConfig[:staging][:max_staging_runtime])
-      StagingTaskLog.new(app.id, result['task_log']).save
-    rescue VCAP::Stager::Ipc::RequestTimeoutError
-      raise CloudError.new(CloudError::APP_STAGING_ERROR, "Timed out waiting for reply from stager")
-    end
-
-    # Update run count to be consistent with previous staging code
-    unless result['error']
-      CloudController.logger.debug("Staging task for app_id=#{app.id} succeded.", :tags => [:staging])
-      CloudController.logger.debug1("Details: #{result['task_log']}", :tags => [:staging])
-      app.update_staged_package(ul_hdl.upload_path)
-      app.package_state = 'STAGED'
-      app.update_run_count()
-    else
+    task   = StagingTask.create_and_track(app)
+    result = task.run
+    StagingTaskLog.new(@app.id, result['task_log']).save
+    if result['error']
       CloudController.logger.warn("Staging task for app_id=#{app.id} failed: #{result['error']}",
                                   :tags => [:staging])
       CloudController.logger.debug1("Details: #{result['task_log']}", :tags => [:staging])
       raise CloudError.new(CloudError::APP_STAGING_ERROR, result['error'])
+    else
+      CloudController.logger.debug("Staging task for app_id=#{app.id} succeded.", :tags => [:staging])
+      CloudController.logger.debug1("Details: #{result['task_log']}", :tags => [:staging])
+      app.update_staged_package(task.upload_path)
+      app.package_state = 'STAGED'
+      # Update run count to be consistent with previous staging code
+      app.update_run_count()
     end
-
   rescue => e
-    # It may be the case that upload from the stager will happen sometime in the future.
-    # Mark the upload as completed so that any upload that occurs in the future will fail.
-    if ul_hdl
-      StagingController.complete_upload(ul_hdl)
-      FileUtils.rm_f(ul_hdl.upload_path)
-    end
     # This is in keeping with the old CC behavior. Instead of starting a single
     # instance of a broken app (which is effectively stopped after HM flapping logic
     # is triggered) we stop it explicitly.
@@ -256,8 +237,11 @@ class AppsController < ApplicationController
     app.package_state = 'FAILED'
     app.update_run_count()
     raise e
-
   ensure
+    if task
+      StagingTask.untrack(task)
+      task.cleanup
+    end
     app.save!
   end
 
