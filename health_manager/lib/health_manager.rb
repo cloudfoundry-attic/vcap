@@ -433,11 +433,13 @@ class HealthManager
 
   def process_heartbeat_message(message)
     VCAP::Component.varz[:heartbeat_msgs_received] += 1
+    result = []
     parse_json(message)['droplets'].each do |heartbeat|
       droplet_id = heartbeat['droplet']
       instance = heartbeat['instance']
       droplet_entry = @droplets[droplet_id]
       if droplet_entry
+        result << droplet_entry
         state = heartbeat['state']
         if RUNNING_STATES.include?(state)
           version_entry = droplet_entry[:versions][heartbeat['version']]
@@ -475,6 +477,8 @@ class HealthManager
         end
       end
     end
+
+    result # return the droplets that we changed. This allows the spec tests to ensure the behaviour is correct.
   end
 
   def process_health_message(message, reply)
