@@ -179,4 +179,23 @@ describe HealthManager do
     stats[:frameworks]['sinatra'][:running_instances].should == 3
     stats[:runtimes]['ruby19'][:running_instances].should == 3
   end
+
+  it "should update its internal state to reflect heartbeat messages" do
+    droplet = {
+        'droplet' => @app.id, 'index' => 0, 'instance' => 0, 'state' => 'RUNNING',
+        'version' => @droplet_entry[:live_version], 'state_timestamp' => @droplet_entry[:last_updated]
+    }
+    message = { 'droplets' => [droplet] }
+
+    droplet_entries = @hm.process_heartbeat_message(message.to_json)
+
+    droplet_entries.size.should == 1
+    droplet_entry = droplet_entries[0]
+    droplet_entry[:versions].should_not be_nil
+    version_entry = droplet_entry[:versions][@droplet_entry[:live_version]]
+    version_entry.should_not be_nil
+    index_entry = version_entry[:indices][0]
+    index_entry.should_not be_nil
+    index_entry[:state].should == 'RUNNING'
+  end
 end
