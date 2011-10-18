@@ -23,7 +23,7 @@ describe 'Health Manager' do
 
   after :all do
     # Cleanup after ourselves
-    FileUtils.rm_rf(@test_dir)
+    #FileUtils.rm_rf(@test_dir)
   end
 
   before :each do
@@ -31,33 +31,36 @@ describe 'Health Manager' do
     @run_dir = File.join(@test_dir, "run_#{run_id_ctr}")
     create_dir(@run_dir)
 
+    @helper = HMTestHelperDB.new( 'run_dir' => @run_dir)
+
     # NATS
     port = VCAP.grab_ephemeral_port
     pid_file = File.join(@run_dir, 'nats.pid')
     @nats_uri = "nats://localhost:#{port}"
     @nats_server = VCAP::Spec::ForkedComponent::NatsServer.new(pid_file, port, @run_dir)
 
-
-    #DB config
-    @db_config = {
-      'adapter' => 'sqlite3',
-      'database' =>  File.join(@run_dir, 'test.sqlite3'),
-      'encoding' => 'utf8'
-    }
-
     # HM
     @hm_cfg = {
-      'base_dir'     => @run_dir,
-      'filer_port'   => VCAP.grab_ephemeral_port,
       'mbus'         => @nats_uri,
-      'intervals'    => {'heartbeat' => 1},
-      'logging'      => {'level' => 'debug'},
+      'local_route' => '127.0.0.1',
+      'intervals'    => {
 
+        'database_scan' => 2, #60
+        'droplet_lost' => 4, #30
+        'droplet_analysis' => 4, #10
+        'flapping_death' => 4, #3
+        'flapping_timeout' => 9, #180
+        'restart_timeout' => 15, #20
+
+        'stable_state' => 5, #60
+        'nats_ping' => 1,
+      },
+      'logging'      => {'level' => 'debug'},
       'pid'          => File.join(@run_dir, 'health_manager.pid'),
 
       'rails_environment' => 'test',
       'database_environment' =>{
-        'test' => @db_config
+        'test' => @helper.config
       }
     }
 
@@ -77,10 +80,10 @@ describe 'Health Manager' do
 
   describe 'when running' do
     before :each do
+      @helper.prepare_tests
+
       @nats_server.start
       @nats_server.wait_ready.should be_true
-
-
 
       start_msg = nil
       em_run_with_timeout do
@@ -93,52 +96,49 @@ describe 'Health Manager' do
           NATS.publish('foo') { @hm.start }
         end
       end
-
-      connect_and_prep_test_db
       start_msg.should_not be_nil
+
+
     end
 
     after :each do
-
-      disconnect_from_db
-
       @hm.stop
       @hm.running?.should be_false
-
       @nats_server.stop
       @nats_server.running?.should be_false
+      @helper.release_resources
     end
 
     it 'should receive healthmanager.nats.ping message' do
-      msg = receive_message('healthmanager.nats.ping')
+      msg = receive_message 'healthmanager.nats.ping'
       msg.should_not be_nil
     end
 
-    it 'should be able to access App model' do
-      App
+    it 'should be able to new App entries' do
+      app_name = 'test_app'
+      @helper.add_app make_app_def app_name
+      app = @helper.find_app :name => app_name
+      app.should_not be_nil
+      app[:name].should == app_name
     end
 
-##  it 'should be able to new App entries' do
-##    app_name = 'test_app'
-##
-##    app = App.new(
-##                  {
-##                    'name' => app_name,
-##
-##                  }
-##
-##                  )
-##
-##    app.save
-##    app = App.find_by_name(test_app)
-##    app.should_not be_nil
-##    app.name.should_not be_nil
-##    app.name.should = test_app
-##
-##  end
+    pending 'should start new instance of an application' do
+      @helper.add_app make_app_def 'boo'
+      msg = receive_message 'cloudcontroller.hm.requests'
+      msg.shoud_not be_nil
+      puts msg.to_yaml
+    end
 
+  end
 
-
+  def make_app_def app_name
+    {
+      :name => app_name,
+      :framework => 'sinatra',
+      :runtime => 'ruby19',
+      :state => 'STARTED',
+      :package_state => 'STAGED'
+    }
   end
 
   def create_dir(dir)
@@ -181,15 +181,4 @@ describe 'Health Manager' do
       yield
     end
   end
-end
-
-def connect_and_prep_test_db
-  ActiveRecord::Base.establish_connection(@db_config)
-  #schema initialization and populating data will go here
-
-end
-
-def disconnect_from_db
-  #database clean-up goes here
-  ActiveRecord::Base.clear_all_connections!
 end
