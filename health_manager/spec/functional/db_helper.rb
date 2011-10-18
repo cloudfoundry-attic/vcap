@@ -1,4 +1,4 @@
-class HMTestHelperDB
+class HMExpectedStateHelperDB
 
   def initialize options
     @options = options
@@ -12,30 +12,41 @@ class HMTestHelperDB
     }
   end
 
-  def add_user args
+  def add_user(args)
     user = User.create(args)
     user.save!
+    user
   end
 
-  def find_user args
+  def find_user(args)
     User.where(args).first
   end
 
-  def add_app args
+  def add_app(args)
     app = App.create(args)
     app.save!
+    app
   end
 
-  def find_app args
+  def make_app_with_owner_and_instance(app_def, user_def)
+    app = App.new app_def
+    owner = add_user user_def
+
+    app.owner = owner
+    app.instances = 1
+
+    app.save!
+    app
+  end
+
+
+  def find_app(args)
     App.where(args).first
   end
-
 
   def prepare_tests
 
     ActiveRecord::Base.establish_connection config
-
-    # comment this one out to see table creation messages
     ActiveRecord::Migration.verbose = false
 
     ActiveRecord::Schema.define do
