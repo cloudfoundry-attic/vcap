@@ -2,6 +2,40 @@ require File.join(File.dirname(__FILE__), 'spec_helper')
 
 require 'tmpdir'
 
+describe VCAP::Stager::Util::IOBuffer do
+  before :each do
+    @strs  = ['abc', 'def', 'ghi']
+    @ios   = @strs.map {|s| StringIO.new(s) }
+    @iobuf = VCAP::Stager::Util::IOBuffer.new(*@ios)
+  end
+
+  describe '#size' do
+    it 'should be the sum of all the ios\' sizes' do
+      @iobuf.size.should == @strs.join().length
+    end
+  end
+
+  describe '#read' do
+    it 'should correctly read all valid (offset, length) pairs' do
+      buf = @strs.join
+      blen = buf.length
+      for ii in 0..blen
+        for jj in ii..blen
+          @iobuf.rewind()
+          @iobuf.read(ii)
+          expected = buf[ii, jj] == "" ? nil : buf[ii, jj]
+          @iobuf.read(jj).should == expected
+        end
+      end
+    end
+
+    it 'should return nil if all data has been read' do
+      @iobuf.read(@iobuf.size + 1)
+      @iobuf.read(1).should == nil
+    end
+  end
+end
+
 describe VCAP::Stager::Util do
   describe '.fetch_zipped_app' do
     before :each do
@@ -31,14 +65,14 @@ describe VCAP::Stager::Util do
       stub_request(:get, @app_uri).to_return(:body => @body, :status => 404)
       expect do
         VCAP::Stager::Util.fetch_zipped_app(@app_uri, @app_file)
-      end.to raise_error(VCAP::Stager::AppDownloadError)
+      end.to raise_error
     end
 
     it 'should delete the created file on error' do
       stub_request(:get, @app_uri).to_return(:body => @body, :status => 200)
       file_mock = mock(:file)
       file_mock.should_receive(:write).with(any_args()).and_raise("Foo")
-      File.should_receive(:open).with(@app_file, 'w+').and_yield(file_mock)
+      File.should_receive(:open).with(@app_file, 'wb+').and_yield(file_mock)
       expect do
         VCAP::Stager::Util.fetch_zipped_app(@app_uri, @app_file)
       end.to raise_error("Foo")
