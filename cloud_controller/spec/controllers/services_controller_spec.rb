@@ -392,6 +392,30 @@ describe ServicesController do
       request.env['HTTP_AUTHORIZATION'] = UserToken.create('foo@bar.com').encode
     end
 
+    describe '#require_user_or_staging_task_id' do
+      it 'should raise an instance of CloudError if no user or staging task id is supplied' do
+        @controller.stubs(:user).returns(nil)
+        @controller.stubs(:params).returns({})
+        begin
+          exception_thrown = false
+          @controller.send(:require_user_or_staging_task_id)
+        rescue CloudError => ce
+          exception_thrown = true
+          ce.status.should == CloudError::HTTP_FORBIDDEN
+        end
+        exception_thrown.should be_true
+      end
+
+      it 'should set the user for the request to the user associated with the supplied staging task' do
+        @controller.stubs(:params).returns({:staging_task_id => 1})
+        mock_task = mock()
+        mock_task.expects(:user).returns(@user)
+        StagingTask.expects(:find_task).with(1).returns(mock_task)
+        @controller.send(:require_user_or_staging_task_id)
+        @controller.send(:user).should == @user
+      end
+    end
+
     describe '#provision' do
 
       it 'should return not authorized for unknown users' do
