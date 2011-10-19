@@ -49,7 +49,7 @@ module CloudController
       args.unshift(Time.now)
       ev = args.compact.pretty_print_inspect
       logger.info(ev)
-      NATS.publish('vcap.cc.events', ev)
+      NATS.publish('vcap.cc.events', args.to_json)
     end
   end
 end
