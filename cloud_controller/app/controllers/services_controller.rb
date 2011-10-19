@@ -8,7 +8,7 @@ class ServicesController < ApplicationController
 
   before_filter :validate_content_type
   before_filter :require_service_auth_token, :only => [:create, :delete, :update_handle, :list_handles, :list_brokered_services]
-  before_filter :require_user, :only => [:provision, :bind, :bind_external, :unbind, :unprovision]
+  before_filter :require_user_or_staging_task_id, :only => [:provision, :bind, :bind_external, :unbind, :unprovision]
 
   rescue_from(JsonMessage::Error) {|e| render :status => 400, :json =>  {:errors => e.to_s}}
   rescue_from(ActiveRecord::RecordInvalid) {|e| render :status => 400, :json =>  {:errors => e.to_s}}
@@ -245,6 +245,14 @@ class ServicesController < ApplicationController
   end
 
   protected
+
+  def require_user_or_staging_task_id
+    unless user
+      staging_task  = StagingTask.find_task(params[:staging_task_id])
+      @current_user = staging_task.user if staging_task
+    end
+    raise CloudError.new(CloudError::FORBIDDEN) unless user
+  end
 
   def require_service_auth_token
     hdr = VCAP::Services::Api::GATEWAY_TOKEN_HEADER.upcase.gsub(/-/, '_')
