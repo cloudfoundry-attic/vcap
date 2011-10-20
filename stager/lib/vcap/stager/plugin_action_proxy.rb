@@ -20,8 +20,8 @@ class VCAP::Stager::PluginActionProxy
   # @param name         String  What to call the provisioned service
   # @param plan         String  Which plan should be provisioned
   # @param plan_option  String  Optional plan option to select.
-  def create_service(label, name, plan, plan_option=nil)
-    raise NotImplementedError
+  def provision_service(label, name, plan, plan_option=nil)
+    @services_client.provision_service(label, name, plan, plan_option, @staging_task_id)
   end
 
   # Binds a service to the application being staged
