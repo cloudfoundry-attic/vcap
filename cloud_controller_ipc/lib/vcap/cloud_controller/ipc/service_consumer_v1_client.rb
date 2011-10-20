@@ -26,14 +26,14 @@ class VCAP::CloudController::Ipc::ServiceConsumerV1Client
       :plan  => plan,
       :plan_option => plan_option,
     }
-    perform_request(Net::HTTP::Post, "/services/v1/configurations", body_hash)
+    perform_request(Net::HTTP::Post, '/services/v1/configurations', body_hash)
+  end
+
+  def unprovision_service(name)
+    perform_request(Net::HTTP::Delete, "/services/v1/configurations/#{name}")
   end
 
   protected
-
-  def build_uri(path, query=nil)
-
-  end
 
   def perform_request(net_http_class, path, body_hash=nil)
     req = net_http_class.new(path, initheaders=@headers)
