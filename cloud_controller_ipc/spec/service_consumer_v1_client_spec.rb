@@ -61,6 +61,15 @@ describe VCAP::CloudController::Ipc::ServiceConsumerV1Client do
     end
   end
 
+  describe '#unbind_service' do
+    it 'should issue a delete request to /services/v1/bindings/:token' do
+      binding_token = "test_token"
+      uri = build_uri("/services/v1/bindings/#{binding_token}")
+      stub_request(:delete, uri)
+      @client.unbind_service(binding_token)
+    end
+  end
+
   describe '#unprovision_service' do
     it 'should issue a delete request to /services/v1/configurations/:name' do
       service_name = "test_service"

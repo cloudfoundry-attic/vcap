@@ -38,6 +38,10 @@ class VCAP::CloudController::Ipc::ServiceConsumerV1Client
     perform_request(Net::HTTP::Post, '/services/v1/bindings', body_hash)
   end
 
+  def unbind_service(binding_token)
+    perform_request(Net::HTTP::Delete, "/services/v1/bindings/#{binding_token}")
+  end
+
   def unprovision_service(name)
     perform_request(Net::HTTP::Delete, "/services/v1/configurations/#{name}")
   end
