@@ -32,7 +32,7 @@ class StagingTask
     @app           = app
     @task_id       = VCAP.secure_uuid
     @download_uri  = staging_uri("/staging/app/#{app.id}")
-    @upload_uri    = staging_uri("/staging/droplet/#{app.id}", "staging_task_id=#{@task_id}")
+    @upload_uri    = staging_uri("/staging/droplet/#{app.id}")
     tmpdir         = opts[:tmpdir] || AppConfig[:directories][:tmpdir]
     @upload_path   = File.join(tmpdir, "staged_upload_#{app.id}_#{@task_id}.tgz")
     @nats          = opts[:nats] || NATS.client
@@ -60,13 +60,12 @@ class StagingTask
 
   private
 
-  def staging_uri(path, query=nil)
+  def staging_uri(path)
     uri = URI::HTTP.build(
       :host     => CloudController.bind_address,
       :port     => CloudController.external_port,
-      :userinfo => [AppConfig[:staging][:auth][:user], AppConfig[:staging][:auth][:password]],
       :path     => path,
-      :query    => query,
+      :query    => "staging_task_id=#{@task_id}"
     )
     uri.to_s
   end
