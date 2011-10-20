@@ -248,7 +248,8 @@ class ServicesController < ApplicationController
 
   def require_user_or_staging_task_id
     unless user
-      staging_task  = StagingTask.find_task(params[:staging_task_id])
+      staging_task_id = request.headers['X_VCAP_STAGING_TASK_ID']
+      staging_task  = StagingTask.find_task(staging_task_id)
       @current_user = staging_task.user if staging_task
     end
     raise CloudError.new(CloudError::FORBIDDEN) unless user

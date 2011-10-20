@@ -407,7 +407,7 @@ describe ServicesController do
       end
 
       it 'should set the user for the request to the user associated with the supplied staging task' do
-        @controller.stubs(:params).returns({:staging_task_id => 1})
+        request.env['X_VCAP_STAGING_TASK_ID'] = 1
         mock_task = mock()
         mock_task.expects(:user).returns(@user)
         StagingTask.expects(:find_task).with(1).returns(mock_task)
