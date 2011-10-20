@@ -48,6 +48,19 @@ describe VCAP::CloudController::Ipc::ServiceConsumerV1Client do
     end
   end
 
+  describe '#bind_service' do
+    it 'should issue a post request to /services/v1/bindings with the correct request body' do
+      uri = build_uri('/services/v1/bindings')
+      serv_req = {
+        :service_id      => 'test',
+        :app_id          => 5,
+        :binding_options => {:foo => 'bar'},
+      }
+      stub_request(:post, uri).with(:body => serv_req)
+      @client.bind_service(serv_req[:service_id], serv_req[:app_id], serv_req[:binding_options])
+    end
+  end
+
   describe '#unprovision_service' do
     it 'should issue a delete request to /services/v1/configurations/:name' do
       service_name = "test_service"
