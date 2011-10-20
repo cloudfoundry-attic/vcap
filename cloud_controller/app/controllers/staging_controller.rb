@@ -8,16 +8,9 @@ class StagingController < ApplicationController
 
   # Handles a droplet upload from a stager
   def upload_droplet
-    task = nil
     src_path = nil
     app = App.find_by_id(params[:id])
     raise CloudError.new(CloudError::APP_NOT_FOUND) unless app
-
-    task = StagingTask.find_task(params[:staging_task_id])
-    unless task
-      CloudController.logger.error("No task associated with id #{params[:staging_task_id]}")
-      raise CloudError.new(CloudError::BAD_REQUEST)
-    end
 
     if CloudController.use_nginx
       src_path = params[:droplet_path]
@@ -30,15 +23,15 @@ class StagingController < ApplicationController
     end
 
     begin
-      CloudController.logger.debug("Renaming staged droplet from '#{src_path}' to '#{task.upload_path}'")
-      File.rename(src_path, task.upload_path)
+      CloudController.logger.debug("Renaming staged droplet from '#{src_path}' to '#{@task.upload_path}'")
+      File.rename(src_path, @task.upload_path)
     rescue => e
       CloudController.logger.error("Failed uploading staged droplet: #{e}", :tags => [:staging])
       CloudController.logger.error(e)
-      FileUtils.rm_f(task.upload_path)
+      FileUtils.rm_f(@task.upload_path)
       raise e
     end
-    CloudController.logger.debug("Stager (#{request.remote_ip}) uploaded droplet to #{task.upload_path}", :tags => [:staging])
+    CloudController.logger.debug("Stager (#{request.remote_ip}) uploaded droplet to #{@task.upload_path}", :tags => [:staging])
     render :nothing => true, :status => 200
   ensure
     FileUtils.rm_f(src_path) if src_path
@@ -71,13 +64,10 @@ class StagingController < ApplicationController
   private
 
   def authenticate_stager
-    authenticate_or_request_with_http_basic do |user, pass|
-      if (user == AppConfig[:staging][:auth][:user]) && (pass == AppConfig[:staging][:auth][:password])
-        true
-      else
-        CloudController.logger.error("Stager auth failed (user=#{user}, pass=#{pass} from #{request.remote_ip}", :tags => [:auth_failure, :staging])
-        false
-      end
+    @task = StagingTask.find_task(params[:staging_task_id])
+    unless @task
+      CloudController.logger.warn("Unknown or invalid staging task id: '#{params[:staging_task_id]}'")
+      raise CloudError.new(CloudError::FORBIDDEN)
     end
   end
 

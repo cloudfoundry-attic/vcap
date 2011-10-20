@@ -97,9 +97,6 @@ staging:
   # Create a secure environment for staging
   secure: false
   new_stager_percent: 100
-  auth:
-    user: zxsfhgjg
-    password: ZNVfdase9
 
 allow_debug: false
 
