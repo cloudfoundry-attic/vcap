@@ -426,6 +426,8 @@ class HealthManager
         }
       end
     end
+
+    droplet_entry # return the droplet that we changed. This allows the spec tests to ensure the behaviour is correct.
   end
 
   def process_heartbeat_message(message)
