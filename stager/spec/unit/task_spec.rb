@@ -5,7 +5,7 @@ require 'tmpdir'
 describe VCAP::Stager::Task do
   describe '#creating_staging_dirs' do
     it 'should create the basic directory structure needed for staging' do
-      task = VCAP::Stager::Task.new(nil, nil, nil, nil, nil)
+      task = VCAP::Stager::Task.new(nil, nil, nil, nil, nil, nil)
       dirs = task.send(:create_staging_dirs)
       File.directory?(dirs[:base]).should be_true
       File.directory?(dirs[:unstaged]).should be_true
@@ -17,7 +17,7 @@ describe VCAP::Stager::Task do
   describe '#download_app' do
     before :each do
       @tmp_dir = Dir.mktmpdir
-      @task = VCAP::Stager::Task.new(1, nil, nil, nil, nil)
+      @task = VCAP::Stager::Task.new(1, nil, nil, nil, nil, nil)
     end
 
     after :each do
@@ -56,7 +56,7 @@ describe VCAP::Stager::Task do
           'fds'       => 64,
         },
       }
-      @task = VCAP::Stager::Task.new(1, @props, nil, nil, nil)
+      @task = VCAP::Stager::Task.new(1, @props, nil, nil, nil, nil)
     end
 
     after :each do
@@ -85,7 +85,7 @@ describe VCAP::Stager::Task do
   describe '#upload_app' do
     before :each do
       @tmp_dir = Dir.mktmpdir
-      @task = VCAP::Stager::Task.new(1, nil, nil, nil, nil)
+      @task = VCAP::Stager::Task.new(1, nil, nil, nil, nil, nil)
     end
 
     after :each do

@@ -11,7 +11,7 @@ describe VCAP::Stager::Ipc::FiberedNatsClient do
       EM.run do
         Fiber.new do
           expect do
-            client.add_task(1, {}, nil, nil, 0.1)
+            client.add_task(1, {}, nil, nil, {}, 0.1)
           end.to raise_error(VCAP::Stager::Ipc::RequestTimeoutError)
           EM.stop
         end.resume

@@ -60,9 +60,9 @@ describe VCAP::Stager::TaskManager do
       tm = VCAP::Stager::TaskManager.new(3)
       task = make_mock_task(1)
       task.stub(:user).and_return(nil)
-      tm.should_receive(:event).with(:task_completed, task, 'test')
+      tm.should_receive(:event).with(:task_completed, task, {})
       tm.should_receive(:event).with(:idle)
-      tm.send(:task_completed, task, 'test')
+      tm.send(:task_completed, task, {})
     end
   end
 

@@ -137,7 +137,7 @@ GEM
     tzinfo (0.3.26)
     uuidtools (2.1.2)
     vcap_logging (0.1.0)
-    vcap_stager_ipc (0.0.1)
+    vcap_stager_ipc (0.0.2)
       eventmachine
       rake
       vcap_common
@@ -181,6 +181,6 @@ DEPENDENCIES
   uuidtools
   vcap_common!
   vcap_logging
-  vcap_stager_ipc
+  vcap_stager_ipc (= 0.0.2)
   vcap_staging (= 0.1.11)
   yajl-ruby (>= 0.7.9)

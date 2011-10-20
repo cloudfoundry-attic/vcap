@@ -84,7 +84,7 @@ describe VCAP::Stager do
       NATS.start(:uri => @nats_server.uri) do |nats|
         cli = VCAP::Stager::Ipc::FiberedNatsClient.new(nats)
         Fiber.new do
-          result = cli.add_task(app_id, @app_props, dl_uri, ul_uri, 5)
+          result = cli.add_task(app_id, @app_props, dl_uri, ul_uri, {}, 5)
           EM.stop
         end.resume
       end
