@@ -14,7 +14,7 @@ gem 'vcap_staging', '= 0.1.22'
 
 # For queuing staging tasks
 gem 'em-hiredis'
-gem 'vcap_stager_ipc'
+gem 'vcap_stager_ipc', '= 0.0.2'
 
 # Databases
 gem 'sqlite3'

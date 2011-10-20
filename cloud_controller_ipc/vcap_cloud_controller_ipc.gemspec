@@ -7,7 +7,7 @@ Gem::Specification.new do |s|
   s.version     = VCAP::CloudController::Ipc::VERSION
   s.authors     = ["mpage"]
   s.email       = ["mpage@vmware.com"]
-  s.homepage    = "www.cloudfoundry.com"
+  s.homepage    = "http://www.cloudfoundry.com"
   s.summary     = %q{Library for communicating with Cloud Controllers}
   s.description = %q{Provides clients for ineracting with CCs}
 

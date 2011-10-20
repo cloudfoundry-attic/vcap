@@ -10,8 +10,8 @@ gem 'yajl-ruby', '>= 0.7.9'
 gem 'vcap_common'
 gem 'vcap_logging', '>= 0.1.1'
 gem 'vcap_staging', '>= 0.1.11'
-gem 'vcap_stager_ipc'
-gem 'vcap_cloud_controller_ipc', :path => '../cloud_controller_ipc'
+gem 'vcap_stager_ipc', '= 0.0.2'
+gem 'vcap_cloud_controller_ipc'
 
 group :test do
   gem 'rspec'

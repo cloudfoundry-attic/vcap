@@ -35,13 +35,18 @@ class VCAP::Stager::Ipc::FiberedNatsClient
   #                                 :resources   => Resource limits
   # @param download_uri  String   Where the stager should fetch the app from
   # @param upload_uri    String   Where the stager should upload the droplet to
+  # @param cc_info       Hash     Contact info for the interacting with the CC directly
+  #                                 :host    => IP of CC that issued the task
+  #                                 :port    => port
+  #                                 :task_id => auth token that uniquely identifies this task
   # @param timeout       Integer  How long to wait for a reply
-  def add_task(app_id, props, download_uri, upload_uri, timeout=120)
+  def add_task(app_id, props, download_uri, upload_uri, cc_info, timeout=120)
     args = {
       :app_id => app_id,
       :app_properties => props,
       :download_uri   => download_uri,
       :upload_uri     => upload_uri,
+      :cc_info        => cc_info
     }
     req = VCAP::Stager::Ipc::Request.new(:add_task, args)
     rep = send_request(req, @queue, timeout)

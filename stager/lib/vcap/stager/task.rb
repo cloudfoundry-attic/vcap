@@ -45,12 +45,13 @@ class VCAP::Stager::Task
   #                                 :resources   => Resource limits
   # @param  download_uri  String  Where the stager can fetch the zipped application from.
   # @param  upload_uri    String  Where the stager should PUT the gzipped droplet
-  def initialize(app_id, props, download_uri, upload_uri, response, opts={})
+  def initialize(app_id, props, download_uri, upload_uri, cc_info, response, opts={})
     @task_id      = VCAP.secure_uuid
     @app_id       = app_id
     @app_props    = props
     @download_uri = download_uri
     @upload_uri   = upload_uri
+    @cc_info      = cc_info
     @response     = response
 
     @vcap_logger = VCAP::Logging.logger('vcap.stager.task')
@@ -82,7 +83,7 @@ class VCAP::Stager::Task
         task_logger = VCAP::Stager::TaskLogger.new(@vcap_logger)
         task_logger.info("Starting staging operation")
         @vcap_logger.debug("app_id=#{@app_id}, properties=#{@app_props}")
-        @vcap_logger.debug("download_uri=#{@download_uri} upload_uri=#{@upload_uri} notify_sub=#{@notify_subj}")
+        @vcap_logger.debug("download_uri=#{@download_uri} upload_uri=#{@upload_uri} cc_info=#{@cc_info}")
 
         task_logger.info("Setting up temporary directories")
         dirs = create_staging_dirs(@tmpdir_base)

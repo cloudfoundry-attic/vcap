@@ -46,7 +46,7 @@ class VCAP::Stager::Server
   # Stops receiving new tasks, waits for existing tasks to finish, then stops.
   def shutdown
     @logger.info("Shutdown initiated, waiting for remaining #{@task_mgr.num_tasks} task(s) to finish")
-    @channels.each {|c| c.close }
+    teardown_subscriptions()
     @task_mgr.on_idle do
       @logger.info("All tasks completed. Exiting!")
       EM.stop
@@ -103,6 +103,7 @@ class VCAP::Stager::Server
                                     req.args['app_properties'],
                                     req.args['download_uri'],
                                     req.args['upload_uri'],
+                                    req.args['cc_info'],
                                     resp)
       @task_mgr.add_task(task)
     else

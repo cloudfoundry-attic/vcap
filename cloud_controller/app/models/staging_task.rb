@@ -36,6 +36,11 @@ class StagingTask
     tmpdir         = opts[:tmpdir] || AppConfig[:directories][:tmpdir]
     @upload_path   = File.join(tmpdir, "staged_upload_#{app.id}_#{@task_id}.tgz")
     @nats          = opts[:nats] || NATS.client
+    @cc_info       = {
+      :host    => CloudController.bind_address,
+      :port    => CloudController.external_port,
+      :task_id => @task_id,
+    }
   end
 
   def run(timeout=AppConfig[:staging][:max_staging_runtime])
@@ -45,6 +50,7 @@ class StagingTask
                                       @app.staging_task_properties,
                                       @download_uri,
                                       @upload_uri,
+                                      @cc_info,
                                       timeout)
     rescue VCAP::Stager::Ipc::RequestTimeoutError
       result = {'error' => 'Timed out waiting for reply from stager'}
