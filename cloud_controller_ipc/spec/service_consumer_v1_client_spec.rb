@@ -23,9 +23,10 @@ describe VCAP::CloudController::Ipc::ServiceConsumerV1Client do
       @client.provision_service(@serv_req[:label], @serv_req[:name], @serv_req[:plan])
     end
 
-    it 'should pass along the staging_task_id as a query parameter if supplied' do
-      stub_request(:post, @uri).with(:query => {'staging_task_id' => '5'})
-      @client.provision_service(@serv_req[:label], @serv_req[:name], @serv_req[:plan], nil, 5)
+    it 'should pass along the staging_task_id as a header field if supplied' do
+      client = VCAP::CloudController::Ipc::ServiceConsumerV1Client.new(@host, @port, :staging_task_id => '5')
+      stub_request(:post, @uri).with(:headers => {'X-Vcap-Staging-Task-Id' => '5'})
+      client.provision_service(@serv_req[:label], @serv_req[:name], @serv_req[:plan], nil)
     end
 
     it 'should decode the response body on success' do
