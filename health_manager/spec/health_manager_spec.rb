@@ -29,7 +29,7 @@ describe HealthManager do
         :state => 'STARTED',
         :crashes => {},
         :versions => {},
-        :live_version => @app.package_hash,
+        :live_version => "#{@app.staged_package_hash}-#{@app.run_count}",
         :instances => @app.instances,
         :framework => 'sinatra',
         :runtime => 'ruby19'
@@ -74,6 +74,17 @@ describe HealthManager do
     hash = Hash.new {|h,k| h[k] = 0}
     VCAP::Component.stub!(:varz).and_return(hash)
     build_user_and_app
+  end
+
+  def make_heartbeat_message(indices, state)
+    droplets = []
+    indices.each do |index|
+      droplets << {
+          'droplet' => @app.id, 'index' => index, 'instance' => index, 'state' => state,
+          'version' => @droplet_entry[:live_version], 'state_timestamp' => @droplet_entry[:last_updated]
+      }
+    end
+    { 'droplets' => droplets }.to_json
   end
 
   pending "should not do anything when everything is running" do
@@ -131,7 +142,7 @@ describe HealthManager do
           'droplet' => 1,
           'op' => 'START',
           'last_updated' => @app.last_updated.to_i,
-          'version' => @app.staged_package_hash+"-0",
+          'version' => "#{@app.staged_package_hash}-#{@app.run_count}",
           'indices' => [0,1,2]
         }
 
@@ -167,13 +178,7 @@ describe HealthManager do
   end
 
   it "should update its internal state to reflect heartbeat messages" do
-    droplet = {
-        'droplet' => @app.id, 'index' => 0, 'instance' => 0, 'state' => 'RUNNING',
-        'version' => @droplet_entry[:live_version], 'state_timestamp' => @droplet_entry[:last_updated]
-    }
-    message = { 'droplets' => [droplet] }
-
-    droplet_entries = @hm.process_heartbeat_message(message.to_json)
+    droplet_entries = @hm.process_heartbeat_message(make_heartbeat_message([0], "RUNNING"))
 
     droplet_entries.size.should == 1
     droplet_entry = droplet_entries[0]
@@ -183,5 +188,32 @@ describe HealthManager do
     index_entry = version_entry[:indices][0]
     index_entry.should_not be_nil
     index_entry[:state].should == 'RUNNING'
+  end
+
+  it "should restart an instance that exits unexpectedly" do
+    should_publish_to_nats "cloudcontrollers.hm.requests", {
+          'droplet' => 1,
+          'op' => 'START',
+          'last_updated' => @app.last_updated.to_i,
+          'version' => "#{@app.staged_package_hash}-#{@app.run_count}",
+          'indices' => [0]
+        }
+
+    @hm.process_heartbeat_message(make_heartbeat_message([0], "RUNNING"))
+    droplet_entry = @hm.process_exited_message({
+                                                     'droplet' => 1,
+                                                     'version' => "#{@app.staged_package_hash}-#{@app.run_count}",
+                                                     'index' => 0,
+                                                     'instance' => 0,
+                                                     'reason' => 'CRASHED',
+                                                     'crash_timestamp' => Time.now.to_i
+                                                 }.to_json)
+
+    droplet_entry[:versions].should_not be_nil
+    version_entry = droplet_entry[:versions][@droplet_entry[:live_version]]
+    version_entry.should_not be_nil
+    index_entry = version_entry[:indices][0]
+    index_entry.should_not be_nil
+    index_entry[:state].should == 'DOWN'
   end
 end
