@@ -1,3 +1,10 @@
+PATH
+  remote: ../cloud_controller_ipc
+  specs:
+    vcap_cloud_controller_ipc (0.0.1)
+      rake
+      yajl-ruby
+
 GEM
   remote: http://rubygems.org/
   specs:
@@ -73,6 +80,7 @@ DEPENDENCIES
   rest-client (= 1.6.7)
   rspec
   sinatra
+  vcap_cloud_controller_ipc!
   vcap_common
   vcap_logging (>= 0.1.1)
   vcap_stager_ipc
