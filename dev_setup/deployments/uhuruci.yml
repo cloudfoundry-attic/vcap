@@ -1,0 +1,12 @@
+---
+deployment:
+  domain: "uhurucloud.net"
+  name: "uhuruci"
+jobs:
+  install:
+    - nats_server
+    - cloud_controller:
+        builtin_services:
+    - health_manager
+    - ccdb
+    - router
