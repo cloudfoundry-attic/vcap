@@ -10,7 +10,7 @@ gem 'logging', '>= 1.5.0'
 # VCAP common components
 gem 'vcap_common', :require => ['vcap/common', 'vcap/component'], :path => '../common'
 gem 'vcap_logging', :require => ['vcap/logging']
-gem 'vcap_staging', '= 0.1.24'
+gem 'vcap_staging', '= 0.1.25'
 
 # For queuing staging tasks
 gem 'em-hiredis'
@@ -48,6 +48,7 @@ gem 'ruby-hmac', :require => 'hmac-sha1'
 gem 'SystemTimer', :platforms => :mri_18
 gem 'uuidtools'
 gem 'rest-client', '= 1.6.7'
+gem 'rubyzip'
 
 # rspec-rails is outside the 'test' group in order to consistently provide Rake tasks.
 gem 'rspec-rails', '>= 2.4.1'

@@ -564,10 +564,12 @@ module DEA
 
       start_operation = proc do
         @logger.debug('Completed download')
-
-        port = VCAP.grab_ephemeral_port
-        instance[:port] = port
-
+        if not instance[:uris].empty?
+           port = VCAP.grab_ephemeral_port
+           instance[:port] = port
+        else
+            @logger.info("No URIs found for application.  Not assigining a port.")
+        end
         starting = "Starting up instance #{instance[:log_id]} on port:#{port}"
 
         if debug
@@ -853,7 +855,13 @@ module DEA
         state_file = File.join(instance[:dir], state_file)
         detect_state_ready(instance, state_file, &block)
       else
-        detect_port_ready(instance, &block)
+        standalone = manifest['standalone']
+        if standalone
+          @logger.debug("Found a standalone app")
+          block.call(true)
+        else
+          detect_port_ready(instance, &block)
+        end
       end
     end
 

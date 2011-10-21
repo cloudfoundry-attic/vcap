@@ -1,10 +1,11 @@
 PATH
   remote: .
   specs:
-    vcap_staging (0.1.24)
+    vcap_staging (0.1.25)
       nokogiri (>= 1.4.4)
       rake
       rspec
+      rubyzip
       vcap_common
       yajl-ruby (>= 0.7.9)
 

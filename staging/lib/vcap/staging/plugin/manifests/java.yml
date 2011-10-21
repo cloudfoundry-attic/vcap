@@ -1,0 +1,14 @@
+---
+name: "java"
+runtimes:
+  - "java":
+      description: "Java 6"
+      version: "1.6"
+      executable: "java"
+      default: true
+app_servers:
+detection:
+  - "*.jar": true #TODO I don't think this is actually used, if so need to add an "or" for .class
+  - "*.war": false
+
+# vim: filetype=yaml

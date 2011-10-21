@@ -18,6 +18,7 @@ gemspec = Gem::Specification.new do |s|
   s.add_dependency('rspec')
 
   s.add_dependency('vcap_common')
+  s.add_dependency('rubyzip')
 
   s.executables  = []
   s.bindir       = 'bin'
