@@ -6,30 +6,15 @@ end
 # This class exposes actions that modify VCAP resources to staging plugins. An instance
 # of it is passed to the plugin as a parameter to the stage() method.
 class VCAP::Stager::PluginActionProxy
-  def initialize(start_script_path, stop_script_path, droplet)
+  attr_reader :services_client
+
+  def initialize(start_script_path, stop_script_path, droplet, services_client)
     @start_script_path = start_script_path
     @start_script      = nil
     @stop_script_path  = stop_script_path
     @stop_script       = nil
-    @droplet = droplet
-  end
-
-  # Creates a service on behalf of the user
-  #
-  # @param label        String  The label that uniquely identifies this service
-  # @param name         String  What to call the provisioned service
-  # @param plan         String  Which plan should be provisioned
-  # @param plan_option  String  Optional plan option to select.
-  def provision_service(label, name, plan, plan_option=nil)
-    @services_client.provision_service(label, name, plan, plan_option, @staging_task_id)
-  end
-
-  # Binds a service to the application being staged
-  #
-  # @param name             String  Name of service to bind
-  # @param binding_options  Hash    Service specific binding options
-  def bind_service(name, binding_options)
-    raise NotImplementedError
+    @droplet           = droplet
+    @services_client   = services_client
   end
 
   # Returns an open file object that the user can write contents of a

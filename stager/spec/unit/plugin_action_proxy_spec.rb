@@ -15,7 +15,7 @@ describe VCAP::Stager::PluginActionProxy do
   describe '#start_script' do
     it 'should return an open file object with mode 755' do
       start_path = File.join(@tmpdir, 'start')
-      proxy = VCAP::Stager::PluginActionProxy.new(start_path, nil, nil)
+      proxy = VCAP::Stager::PluginActionProxy.new(start_path, nil, nil, nil)
       verify_script(proxy.start_script)
     end
   end
@@ -23,7 +23,7 @@ describe VCAP::Stager::PluginActionProxy do
   describe '#stop_script' do
     it 'should return an open file object with mode 755' do
       stop_path = File.join(@tmpdir, 'stop')
-      proxy = VCAP::Stager::PluginActionProxy.new(nil, stop_path, nil)
+      proxy = VCAP::Stager::PluginActionProxy.new(nil, stop_path, nil, nil)
       verify_script(proxy.stop_script)
     end
   end

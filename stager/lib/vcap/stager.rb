@@ -1,4 +1,3 @@
-require 'vcap/stager/app_properties'
 require 'vcap/stager/constants'
 require 'vcap/stager/config'
 require 'vcap/stager/plugin_action_proxy'

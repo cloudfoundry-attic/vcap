@@ -1,7 +1,9 @@
 require 'fileutils'
+require 'rubygems'
 
+
+require 'vcap/cloud_controller/ipc'
 require 'vcap/logging'
-
 require 'vcap/stager/constants'
 require 'vcap/stager/droplet'
 require 'vcap/stager/plugin_action_proxy'
@@ -19,17 +21,24 @@ class VCAP::Stager::PluginOrchestrator
   # @param source_dir      String  Directory containing application source
   # @param dest_dir        String  Directory where the staged droplet should live
   # @param app_properties
-  def initialize(source_dir, dest_dir, app_properties)
-    @source_dir     = source_dir
-    @dest_dir       = dest_dir
-    @droplet        = VCAP::Stager::Droplet.new(dest_dir)
-    @app_properties = app_properties
-    @logger         = VCAP::Logging.logger('vcap.stager.plugin_orchestrator')
+  # @param cc_info         Hash    Information needed for contacting the CC
+  #                                  'host'
+  #                                  'port'
+  #                                  'task_id'
+  def initialize(source_dir, dest_dir, app_properties, cc_info)
+    @source_dir      = source_dir
+    @dest_dir        = dest_dir
+    @droplet         = VCAP::Stager::Droplet.new(dest_dir)
+    @app_properties  = app_properties
+    @logger          = VCAP::Logging.logger('vcap.stager.plugin_orchestrator')
+    @services_client = VCAP::CloudController::Ipc::ServiceConsumerV1Client.new(cc_info['host'],
+                                                                               cc_info['port'],
+                                                                               :staging_task_id => cc_info['task_id'])
   end
 
   def run_plugins
-    for name, props in @app_properties.plugins
-      require(name)
+    for plugin_info in @app_properties['plugins']
+      require(plugin_info['gem']['name'])
     end
 
     framework_plugin, feature_plugins = collect_plugins
@@ -42,7 +51,8 @@ class VCAP::Stager::PluginOrchestrator
 
     actions = VCAP::Stager::PluginActionProxy.new(@droplet.framework_start_path,
                                                   @droplet.framework_stop_path,
-                                                  @droplet)
+                                                  @droplet,
+                                                  @services_client)
     @logger.info("Running framework plugin: #{framework_plugin.name}")
     framework_plugin.stage(@droplet.app_source_dir, actions, @app_properties)
 
@@ -50,7 +60,8 @@ class VCAP::Stager::PluginOrchestrator
       pname = feature_plugin.name
       actions = VCAP::Stager::PluginActionProxy.new(@droplet.feature_start_path(pname),
                                                     @droplet.feature_stop_path(pname),
-                                                    @droplet)
+                                                    @droplet,
+                                                    @services_client)
       @logger.info("Running feature plugin: #{feature_plugin.name}")
       feature_plugin.stage(framework_plugin, @droplet.app_source_dir, actions, @app_properties)
     end
