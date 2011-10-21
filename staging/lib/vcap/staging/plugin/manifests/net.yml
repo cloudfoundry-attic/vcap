@@ -1,0 +1,19 @@
+---
+name: ".net"
+runtimes:
+  - "iis":
+      version: "7.0"
+      description: ".Net"
+      executable: "iisver.cmd"
+app_servers:
+  - "iis":
+      description: "IIS Server"
+      executable: false
+      default: true
+detection:
+  - "web.config": true
+staged_services:
+  - "name": "mssql"
+    "version": "*"
+
+# vim: filetype=yaml
