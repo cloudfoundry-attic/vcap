@@ -606,13 +606,10 @@ class HealthManager
   def update_droplet(droplet)
     return true unless droplet
 
-    @logger.info "Updating droplet #{droplet.name}"
-
     droplet_entry = @droplets[droplet.id]
     unless droplet_entry
       droplet_entry = create_droplet_entry
       @droplets[droplet.id] = droplet_entry
-      @logger.debug "droplet_entry added.  #{@droplets.size} droplet entries present now"
     end
     entry_updated = droplet_entry[:last_updated] != droplet.last_updated
 
