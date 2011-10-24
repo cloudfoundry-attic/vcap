@@ -1,13 +1,12 @@
 require 'fileutils'
 require 'rubygems'
 
-
 require 'vcap/cloud_controller/ipc'
 require 'vcap/logging'
 require 'vcap/stager/constants'
 require 'vcap/stager/droplet'
 require 'vcap/stager/plugin_action_proxy'
-require 'vcap/stager/plugin_orchestrator_error'
+require 'vcap/stager/plugin_runner_error'
 require 'vcap/stager/plugin_registry'
 
 module VCAP
@@ -17,7 +16,7 @@ end
 
 # Responsible for orchestrating the execution of all staging plugins selected
 # by the user.
-class VCAP::Stager::PluginOrchestrator
+class VCAP::Stager::PluginRunner
   # @param source_dir      String  Directory containing application source
   # @param dest_dir        String  Directory where the staged droplet should live
   # @param app_properties
