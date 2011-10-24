@@ -7,7 +7,6 @@ require 'vcap/stager/constants'
 require 'vcap/stager/errors'
 require 'vcap/stager/droplet'
 require 'vcap/stager/plugin_action_proxy'
-require 'vcap/stager/plugin_registry'
 
 module VCAP
   module Stager
@@ -17,6 +16,20 @@ end
 # Responsible for orchestrating the execution of all staging plugins selected
 # by the user.
 class VCAP::Stager::PluginRunner
+  class << self
+    attr_reader :registered_plugins
+
+    def register_plugins(*plugins)
+      @registered_plugins ||= []
+      plugins.each {|plugin| @registered_plugins << plugin }
+    end
+
+    # Testing only
+    def reset_registered_plugins
+      @registered_plugins = []
+    end
+  end
+
   # @param source_dir      String  Directory containing application source
   # @param dest_dir        String  Directory where the staged droplet should live
   # @param app_properties
@@ -41,9 +54,6 @@ class VCAP::Stager::PluginRunner
     end
 
     framework_plugin, feature_plugins = collect_plugins
-    unless framework_plugin
-      raise VCAP::Stager::MissingFrameworkPluginError, "No framework plugin found"
-    end
 
     @logger.info("Setting up base droplet structure")
     @droplet.create_skeleton(@source_dir)
@@ -71,7 +81,7 @@ class VCAP::Stager::PluginRunner
   def collect_plugins
     framework_plugin = nil
     feature_plugins  = []
-    for plugin in VCAP::Stager::PluginRegistry.plugins
+    for plugin in self.class.registered_plugins
       ptype = plugin.plugin_type
       case ptype
       when :framework
@@ -90,6 +100,9 @@ class VCAP::Stager::PluginRunner
         raise VCAP::Stager::UnknownPluginTypeError, "Unknown plugin type: #{ptype}"
 
       end
+    end
+    unless framework_plugin
+      raise VCAP::Stager::MissingFrameworkPluginError, "No framework plugin found"
     end
 
     [framework_plugin, feature_plugins]

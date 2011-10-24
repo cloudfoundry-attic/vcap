@@ -27,7 +27,7 @@ describe VCAP::Stager::PluginRunner do
           'fds'    => 1024,
         }
       }
-      VCAP::Stager::PluginRegistry.reset()
+      VCAP::Stager::PluginRunner.reset_registered_plugins()
     end
 
     after :each do
@@ -53,8 +53,9 @@ describe VCAP::Stager::PluginRunner do
     it 'should raise an error if > 1 framework plugins are supplied' do
       plugins = []
       2.times do |i|
-        p = create_mock_plugin("plugin_#{i}", :framework)
-        VCAP::Stager::PluginRegistry.register_plugin(p)
+        name = "plugin_#{i}"
+        p = create_mock_plugin(name, :framework)
+        VCAP::Stager::PluginRunner.register_plugins(p)
       end
       orch  = VCAP::Stager::PluginRunner.new(@src_dir, @dst_dir, @app_props, @cc_info)
       expect do
@@ -64,7 +65,7 @@ describe VCAP::Stager::PluginRunner do
 
     it 'should raise an error if a plugin of unknown type is supplied' do
       p = create_mock_plugin(:plugin0, :invalid_plugin_type)
-      VCAP::Stager::PluginRegistry.register_plugin(p)
+      VCAP::Stager::PluginRunner.register_plugins(p)
       orch = VCAP::Stager::PluginRunner.new(@src_dir, @dst_dir, @app_props, @cc_info)
       expect do
         orch.run_plugins
@@ -74,9 +75,10 @@ describe VCAP::Stager::PluginRunner do
     it 'should call stage on each of the registered plugins' do
       plugin_types = [:framework, :feature, :feature]
       plugin_types.each_with_index do |ptype, ii|
-        p = create_mock_plugin("plugin_#{ii}", ptype)
+        name = "plugin_#{ii}"
+        p = create_mock_plugin(name, ptype)
         p.should_receive(:stage).with(any_args())
-        VCAP::Stager::PluginRegistry.register_plugin(p)
+        VCAP::Stager::PluginRunner.register_plugins(p)
       end
       orch = VCAP::Stager::PluginRunner.new(@src_dir, @dst_dir, @app_props, @cc_info)
       orch.run_plugins
