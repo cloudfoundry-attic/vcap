@@ -29,6 +29,7 @@ class JavaWebPlugin < StagingPlugin
       Tomcat.prepare_insight destination_directory, environment, insight_agent if Tomcat.insight_bound? services
       configure_webapp(webapp_root, self.autostaging_template, environment) unless self.skip_staging(webapp_root)
       create_startup_script
+      create_stop_script
     end
   end
 
@@ -66,6 +67,7 @@ class JavaWebPlugin < StagingPlugin
   end
 
   private
+
   def startup_script
     vars = environment_hash
     vars['CATALINA_OPTS'] = configure_catalina_opts
@@ -88,5 +90,10 @@ fi
 ruby resources/generate_server_xml $PORT
       JAVA
     end
+  end
+
+  def stop_script
+    vars = environment_hash
+    generate_stop_script(vars)
   end
 end
