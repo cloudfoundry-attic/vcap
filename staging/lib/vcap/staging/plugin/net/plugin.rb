@@ -1,6 +1,6 @@
 class NetPlugin < StagingPlugin
   def framework
-    '.net'
+    'net'
   end
 
   def stage_application

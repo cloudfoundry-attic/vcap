@@ -1,14 +1,14 @@
 ---
-name: ".net"
+name: "net"
 runtimes:
   - "iis":
-      version: "7.0"
+      version: "0x7"
       description: ".Net"
       executable: "iisver.cmd"
 app_servers:
   - "iis":
       description: "IIS Server"
-      executable: false
+      executable: true
       default: true
 detection:
   - "web.config": true
