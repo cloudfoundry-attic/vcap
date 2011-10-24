@@ -10,7 +10,7 @@ require 'vcap/logging'
 require 'vcap/staging/plugin/common'
 
 require 'vcap/stager/constants'
-require 'vcap/stager/task_error'
+require 'vcap/stager/errors'
 
 module VCAP
   module Stager

@@ -1,15 +1,13 @@
-require 'yajl'
-
-require 'vcap/json_schema'
-
 module VCAP
   module Stager
+    # Root of exception class hierarchy
+    class Error < StandardError; end
 
     # A TaskError is a recoverable error that indicates any further task
     # processing should be aborted and the task should be completed in a failed
     # state. All other errors thrown during VCAP::Stager::Task#perform will be
     # logged and re-raised (probably causing the program to crash).
-    class TaskError < StandardError
+    class TaskError < Error
       class << self
         attr_reader :desc
 
@@ -28,7 +26,6 @@ module VCAP
         @details ? "#{self.class.desc}:\n #{@details}" : self.class.desc
       end
     end
-
     class AppDownloadError     < TaskError; set_desc "Failed downloading application from the Cloud Controller";  end
     class AppUnzipError        < TaskError; set_desc "Failed unzipping application";                              end
     class StagingPluginError   < TaskError; set_desc "Staging plugin failed staging application";                 end
@@ -36,5 +33,11 @@ module VCAP
     class DropletCreationError < TaskError; set_desc "Failed creating droplet";                                   end
     class DropletUploadError   < TaskError; set_desc "Failed uploading droplet to the Cloud Controller";          end
     class InternalError        < TaskError; set_desc "Unexpected internal error encountered (possibly a bug).";   end
+
+    # A PluginRunnerError occurs while the application is being staged inside of the container
+    class PluginRunnerError             < Error; end
+    class MissingFrameworkPluginError   < PluginRunnerError; end
+    class DuplicateFrameworkPluginError < PluginRunnerError; end
+    class UnknownPluginTypeError        < PluginRunnerError; end
   end
 end

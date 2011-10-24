@@ -2,7 +2,7 @@ require 'fileutils'
 require 'rest_client'
 require 'uri'
 
-require 'vcap/stager/task_error'
+require 'vcap/stager/errors'
 
 
 module VCAP

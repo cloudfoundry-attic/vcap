@@ -1,12 +1,12 @@
 require 'fileutils'
-require 'rubygems'
 
 require 'vcap/cloud_controller/ipc'
 require 'vcap/logging'
+
 require 'vcap/stager/constants'
+require 'vcap/stager/errors'
 require 'vcap/stager/droplet'
 require 'vcap/stager/plugin_action_proxy'
-require 'vcap/stager/plugin_runner_error'
 require 'vcap/stager/plugin_registry'
 
 module VCAP
