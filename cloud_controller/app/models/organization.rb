@@ -1,20 +1,39 @@
 
-class Organization < ActiveRecord::Base
+class Organization < Resource
+  attr_accessor :authenticated_user
+  attr_accessor :org
+  attr_accessor :project
 
-  #Found something other than a-zA-Z0-9 in the org name
-  ORG_NAME_REGEX = /^[a-zA-Z0-9]/
+  has_many :resources, :class_name => "Resource", :finder_sql => 'select dependencies.* from resources as org, ' +
+                                                                  'resources as dependencies where dependencies.owner_id = org.id ' +
+                                                                  'and (dependencies.type != \'project\' or ' +
+                                                                  'dependencies.type != \'organization\' or ' +
+                                                                  'dependencies.type != \'role\') ' +
+                                                                  'and org.id = #{id}'
+  has_many :projects, :class_name => "Project", :finder_sql => 'select dependencies.* from resources as org, ' +
+                                                                  'resources as dependencies where dependencies.owner_id = org.id ' +
+                                                                  'and dependencies.type = \'project\' and org.id = #{id}'
 
-  validates_format_of :name, :with => ORG_NAME_REGEX
-  validates_uniqueness_of :name
+  after_create :set_organization_to_self
 
-  after_initialize :set_immutable_id
+  def set_organization_to_self
 
-  def set_immutable_id
-
-    self.immutable_id = SecureRandom.uuid
-    CloudController.logger.debug("Immutable id for org #{self.name} is #{self.immutable_id}")
+    self.owner_id = self.id
+    self.save!
+    CloudController.logger.debug("Organization saved is #{self.inspect}")
 
   end
+
+  before_create :set_type_to_organization
+
+  def set_type_to_organization
+
+    self.type = :organization
+
+  end
+
+
+  #TODO: Need to implement a common delete for this stuff
 
 
 end

@@ -3,6 +3,7 @@ require 'staging_task_manager'
 class AppsController < ApplicationController
   before_filter :require_user, :except => [:download_staged]
   before_filter :find_app_by_name, :except => [:create, :list, :download_staged]
+  before_filter :process_org_and_project
 
   def process_action(method_name, *args)
     app = @app ? @app.name : (params[:name] || (body_params && body_params[:name]))
@@ -10,38 +11,89 @@ class AppsController < ApplicationController
     super(method_name, *args)
   end
 
+  def process_org_and_project
+
+    @organization_name = params[:org]
+    if(!@organization_name.nil?)
+      @authenticated_user = ::User.find_by_email(@organization_name)
+    else
+      CloudController.logger.debug "User is " + user.to_s
+      @authenticated_user = user
+      @organization_name = user.email
+    end
+
+    @project_name = params[:project]
+    if(@project_name.nil?)
+      @project_name = :all.to_s
+    end
+
+  end
+
   # POST /apps
   def create
 
-    authenticated_user = user
-
-    org = params[:org]
-    if(!org.nil?)
-      authenticated_user = ::User.find_by_email(org)
-    else
-      CloudController.logger.debug "User is " + authenticated_user.to_s
-      org = authenticated_user.email
-    end
-
-    project = params[:project]
-
-    ::CollabSpaces::Authorizer::can user, :create, ::App, org, project
-
     name = body_params[:name]
 
-
-    app = ::App.new(:owner => authenticated_user, :name => name)
+    app = nil
 
     begin
-      resource_service = ::CollabSpaces::ResourceService.new
-      resource = resource_service.create_resource(org, :app, nil)
 
+      
+
+      CloudController.logger.debug "Org requested is #{@organization_name}"
+      CloudController.logger.debug "Project requested is #{@project_name}"
+
+      #Find the org
+      organization_service = ::CollabSpaces::OrganizationService.new(:authenticated_user => @authenticated_user.email,
+                                                                  :org => @organization_name,
+                                                                  :project => @project_name)
+      
+      org_entity = organization_service.find_organization(:name => @organization_name)
+
+      project_service = ::CollabSpaces::ProjectManagementService.new(:authenticated_user => @authenticated_user.email,
+                                                                   :org => @organization_name,
+                                                                   :project => @project_name)
+      project_entity = project_service.find_project(:name => @project_name)
+      
+      resource_service = ::CollabSpaces::ResourceService.new(:authenticated_user => @authenticated_user.email,
+                                                           :org => @organization_name,
+                                                           :project => @project_name)
+      resource = resource_service.create_resource(user,
+                                                org_entity.immutable_id,
+                                                :app,
+                                                name,
+                                                { :owner => @organization_name })
+      
+      role_service = ::CollabSpaces::RoleService.new(:authenticated_user => @authenticated_user,
+                                                     :org => @organization_name,
+                                                     :project => @project_name,
+                                                     :name => @name)
+      
+      admin_role = role_service.find_role(:name => :admin)
+
+      if(!admin_role.nil? && admin_role.valid?)
+        CloudController.logger.debug("Role created #{admin_role.inspect}")
+      else
+        raise CloudError.new(CloudError::SYSTEM_ERROR)
+      end
+      
+      admin_role.add_user(@name)
+      all_permissions = [:CREATE, :READ, :UPDATE, :DELETE]
+      admin_role.update_acl(org_entity.immutable_id, all_permissions)
+      admin_role.update_acl(project_entity.immutable_id, all_permissions)
+      admin_role.update_acl(admin_role.immutable_id, all_permissions)
+      
+      app = ::App.new(:owner => @authenticated_user, :name => name)
+      
       app.collab_spaces_id = resource.immutable_id
-
+      
       update_app_from_params(app)
 
     rescue => e
-      app.destroy
+      puts "#{e.backtrace}"
+      if(!app.nil?)
+        app.destroy
+      end
       raise e
     end
     app_url = app_get_url(name)
@@ -50,31 +102,14 @@ class AppsController < ApplicationController
 
   # PUT /apps/:name
   def update
-    #Demo code only
-    org = params[:org]
-    if(!org.nil?)
-      user = ::User.find_by_email(org)
-    end
-
     update_app_from_params(@app)
     render :nothing => true
   end
 
   def get
-    #Demo code only
-    authenticated_user = user
 
-    org = params[:org]
-    CloudController.logger.debug "Org is " + org.to_s
-
-    if(!org.nil?)
-      authenticated_user = ::User.find_by_email(org)
-
-      CloudController.logger.debug "User is " + authenticated_user.to_s
-
-      @app = authenticated_user.apps_owned.find_by_name(params[:name])
-      raise CloudError.new(CloudError::APP_NOT_FOUND) unless @app
-    end
+    @app = @authenticated_user.apps_owned.find_by_name(params[:name])
+    raise CloudError.new(CloudError::APP_NOT_FOUND) unless @app
 
     render :json => @app.as_json
   end
@@ -84,37 +119,16 @@ class AppsController < ApplicationController
   end
 
   def list
-
-    #Demo code only
-    org = params[:org]
-    list_apps_user = nil
-    if(!org.nil?)
-      list_apps_user = ::User.find_by_email(org)
-    else
-      list_apps_user = user
-    end
-
-    render :json => list_apps_user.get_apps.to_a
+    render :json => @authenticated_user.get_apps.to_a
   end
 
   def delete
-    #Demo code only
-    authenticated_user = user
-
-    org = params[:org]
-    if(!org.nil?)
-      authenticated_user = ::User.find_by_email(org)
-    else
-      CloudController.logger.debug "User is " + authenticated_user.to_s
-      org = authenticated_user.email
-    end
-
-    project = params[:project]
-
-    ::CollabSpaces::Authorizer::can user, :delete, ::App, org, project
+    resource_service = ::CollabSpaces::ResourceService.new
+    resource = resource_service.delete_resource(@app.collab_spaces_id)
 
     @app.purge_all_resources!
     @app.destroy
+
     render :nothing => true, :status => 200
   end
 

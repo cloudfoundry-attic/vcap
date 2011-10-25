@@ -16,21 +16,18 @@ class DefaultController < ApplicationController
       info[:limits]     = user.account_capacity
       info[:usage]      = user.account_usage
       info[:frameworks] = StagingPlugin.manifests_info
-
       org = params[:org]
       if(!org.nil?)
         info[:org]      = org
       else
         info[:org]      = user.email
       end
-
       project = params[:project]
       if(!project.nil?)
-        info[:project]      = project
+        info[:project]  = project
       else
-        info[:project]      = "All"
+        info[:project]  = "All"
       end
-
     end
     render :json => info
   end
@@ -40,16 +37,12 @@ class DefaultController < ApplicationController
   end
 
   def login_info
-
     org = params[:org]
     if(!org.nil?)
       CloudController.logger.debug("Requesting login info for org " + org)
     end
-
     login_prompts = ::LoginPrompts.get_prompts(org)
-
     render :json => login_prompts
-
   end
 
 
