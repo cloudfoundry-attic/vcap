@@ -1,5 +1,5 @@
-default[:mssql][:server_root_password] = "mysql"
-default[:mssql][:server_root_user] = "root"
+default[:mssql][:server_root_password] = "pass"
+default[:mssql][:server_root_user] = "sa"
 default[:mssql][:index] = "0"
 default[:mssql][:max_db_size] = "20"
 default[:mssql][:host] = "localhost"
