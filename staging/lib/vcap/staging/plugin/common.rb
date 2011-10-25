@@ -429,6 +429,24 @@ class StagingPlugin
     "cd app"
   end
 
+  def generate_stop_script
+    <<-SCRIPT
+echo "$STARTED" >> ../run.pid
+echo "#!/bin/bash" >> ../stop
+echo "kill -9 $STARTED" >> ../stop
+echo "kill -9 $PPID" >> ../stop
+chmod 755 ../stop
+    SCRIPT
+  end
+
+  def get_launched_process_pid
+    "STARTED=$!"
+  end
+
+  def wait_for_launched_process
+    "wait $STARTED"
+  end
+
   def generate_startup_script(env_vars = {})
     after_env_before_script = block_given? ? yield : "\n"
     template = <<-SCRIPT
@@ -437,13 +455,9 @@ class StagingPlugin
 <%= after_env_before_script %>
 <%= change_directory_for_start %>
 <%= start_command %> > ../logs/stdout.log 2> ../logs/stderr.log &
-STARTED=$!
-echo "$STARTED" >> ../run.pid
-echo "#!/bin/bash" >> ../stop
-echo "kill -9 $STARTED" >> ../stop
-echo "kill -9 $PPID" >> ../stop
-chmod 755 ../stop
-wait $STARTED
+<%= get_launched_process_pid %>
+<%= generate_stop_script %>
+<%= wait_for_launched_process %>
     SCRIPT
     # TODO - ERB is pretty irritating when it comes to blank lines, such as when 'after_env_before_script' is nil.
     # There is probably a better way that doesn't involve making the above Heredoc horrible.
@@ -550,5 +564,9 @@ wait $STARTED
         exit 1
       end
     end
+  end
+
+  def insight_agent
+    StagingPlugin.platform_config['insight_agent']
   end
 end

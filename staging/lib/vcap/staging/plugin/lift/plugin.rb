@@ -13,17 +13,17 @@ class LiftPlugin < JavaWebPlugin
     'lift'
   end
 
-  # Note that we use the Spring auto staging template
   def autostaging_template
-    File.join(File.dirname(__FILE__), '../spring', 'autostaging_template_spring.xml')
+    nil
   end
 
   def skip_staging webapp_root
     false
   end
 
-  def do_pre_tomcat_config_setup webapp_path
+  def configure_webapp webapp_path, autostaging_template, environment
     configure_cf_lift_servlet_context_listener(webapp_path)
+    Tomcat.copy_autostaging_jar webapp_path
   end
 
   # We introspect the web configuration ('WEB-INF/web.xml' file) and
@@ -33,8 +33,7 @@ class LiftPlugin < JavaWebPlugin
   # file that is consulted by the Lift framework to determine the binding
   # information of the services used by the application.
   def configure_cf_lift_servlet_context_listener(webapp_path)
-    web_config_file = File.join(webapp_path, 'WEB-INF/web.xml')
-    web_config = Nokogiri::XML(open(web_config_file))
+    web_config = Tomcat.get_web_config(webapp_path)
     prefix = web_config.root.namespace ? "xmlns:" : ''
     lift_filter = web_config.xpath("//web-app/filter[contains(
                                         normalize-space(#{prefix}filter-class),
@@ -48,7 +47,7 @@ class LiftPlugin < JavaWebPlugin
       end
       servlet_context_listener = generate_cf_servlet_context_listener(web_config)
       target_node.add_previous_sibling(servlet_context_listener)
-      File.open(web_config_file, 'w') {|f| f.write(web_config.to_xml) }
+      Tomcat.save_web_config(web_config, webapp_path)
     else
       raise "Scala / Lift application staging failed: no LiftFilter class found in web.xml"
     end

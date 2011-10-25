@@ -1,6 +1,4 @@
-require 'rubygems'
 require 'rake'
-require 'rake/gempackagetask'
 
 $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), 'lib'))
 require 'vcap/staging/version'
@@ -8,28 +6,8 @@ require 'vcap/staging/version'
 GEM_NAME    = 'vcap_staging'
 GEM_VERSION = VCAP::Staging::VERSION
 
-gemspec = Gem::Specification.new do |s|
-  s.name         = GEM_NAME
-  s.version      = GEM_VERSION
-  s.platform     = Gem::Platform::RUBY
-  s.summary      = 'Plugins responsible for creating executable droplets'
-  s.description  = 'Plugins responsible for taking application source and producing' \
-                   + ' a bundle capable of being run on the DEAs.'
-  s.authors      = 'VMware'
-  s.email        = 'support@vmware.com'
-  s.homepage     = 'http://www.cloudfoundry.com'
-  s.executables  = []
-  s.bindir       = 'bin'
-  s.require_path = 'lib'
-  s.files        = %w(Rakefile) + Dir.glob("{lib,spec,vendor}/**/*")
-end
-
-Rake::GemPackageTask.new(gemspec) do |pkg|
-  pkg.gem_spec = gemspec
-end
-
-task :install => [:package] do
-  sh "gem install --no-ri --no-rdoc pkg/#{GEM_NAME}-#{GEM_VERSION}"
+task :build do
+  sh "gem build vcap_staging.gemspec"
 end
 
 task :spec => ['bundler:install:test'] do

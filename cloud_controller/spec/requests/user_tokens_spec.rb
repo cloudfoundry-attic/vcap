@@ -14,6 +14,48 @@ describe "Requesting a new user token" do
     response.status.should == 400
   end
 
+  context "When user_expire is specified" do
+    before { UserToken.token_expire = 1.day }
+    let :token do
+      json = Yajl::Parser.parse(response.body)
+      token = UserToken.decode(json['token'])
+    end
+
+    context "and a token was published 25 hours ago" do
+      before do
+        Delorean.time_travel_to "25 hours ago" do
+          post @user_token_path, {"password" => @user_password}.to_json, {'X-Forwarded_Proto' => 'http'}
+        end
+      end
+      it "should return a 200 response" do
+        response.should be_ok
+      end
+      it "a given token should be expired" do
+        token.should be_expired
+      end
+      it "a given token should not be valid since it's expired." do
+        token.should_not be_valid
+      end
+    end
+
+    context "and a token was published within 1 day" do
+      before do
+        Delorean.time_travel_to "23 hours ago" do
+          post @user_token_path, {"password" => @user_password}.to_json, {'X-Forwarded_Proto' => 'http'}
+        end
+      end
+      it "should return a 200 response" do
+        response.should be_ok
+      end
+      it "a given token should not be expired" do
+        token.should_not be_expired
+      end
+      it "a given token should be valid." do
+        token.should be_valid
+      end
+    end
+  end
+
   # This code tests https enforcement in a variety of scenarios defined in cloud_spec_helpers.rb
   CloudSpecHelpers::HTTPS_ENFORCEMENT_SCENARIOS.each do |scenario_vars|
     describe "#{scenario_vars[:appconfig_enabled].empty? ? '' : 'with ' + (scenario_vars[:appconfig_enabled].map{|x| x.to_s}.join(', ')) + ' enabled'} using #{scenario_vars[:protocol]}" do

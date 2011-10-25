@@ -21,7 +21,7 @@ gemspec = Gem::Specification.new do |s|
   s.executables  = []
   s.bindir       = 'bin'
   s.require_path = 'lib'
-  s.files        = %w(Rakefile) + Dir.glob("{lib,spec,vendor}/**/*")
+  s.files        = %w(Rakefile Gemfile) + Dir.glob("{lib,spec,vendor}/**/*")
 end
 
 Rake::GemPackageTask.new(gemspec) do |pkg|

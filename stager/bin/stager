@@ -6,14 +6,11 @@ require 'bundler/setup'
 
 $LOAD_PATH.unshift(File.expand_path('../../lib', __FILE__))
 
-require 'eventmachine'
-require 'resque'
-
 require 'vcap/common'
 require 'vcap/component'
 require 'vcap/stager'
 
-sleep_interval = 5
+sleep_interval = 1
 config_file = VCAP::Stager::Config::DEFAULT_CONFIG_PATH
 
 OptionParser.new do |op|
@@ -44,29 +41,14 @@ rescue => e
   exit 1
 end
 
+ENV['TMPDIR'] = config[:dirs][:tmp] if config[:dirs] && config[:dirs][:tmp]
+
 VCAP::Stager.init(config)
-
-worker = Resque::Worker.new(*config[:queues])
-Thread.new do
-  EM.error_handler do |e|
-    logger = VCAP::Logging.logger('vcap.stager.component')
-    logger.error("EventMachine error: #{e}")
-    logger.error(e)
-    raise e
-  end
-
-  NATS.on_error do |e|
-    logger = VCAP::Logging.logger('vcap.stager.component')
-    logger.error("NATS error: #{e}")
-    logger.error(e)
-    raise e
-  end
-
-  NATS.start(:uri => config[:nats_uri]) do
-    VCAP::Component.register(:type     => 'stager',
-                             :local_ip => VCAP.local_ip(config[:local_route]),
-                             :config   => config,
-                             :index    => config[:index])
-  end
-end.abort_on_exception = true
-worker.work(sleep_interval)
+user_mgr=nil
+if config[:secure]
+  VCAP::Stager::SecureUserManager.instance.setup
+  user_mgr = VCAP::Stager::SecureUserManager.instance
+end
+task_mgr = VCAP::Stager::TaskManager.new(config[:max_active_tasks], user_mgr)
+server = VCAP::Stager::Server.new(config[:nats_uri], task_mgr, config)
+server.run

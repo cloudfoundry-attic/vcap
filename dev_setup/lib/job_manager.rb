@@ -16,30 +16,32 @@ class JobManager
   HM = "health_manager"
   DEA = "dea"
 
-  SERVICES = ["redis", "mysql", "mongodb", "mssql"]
+  SERVICES = ["redis", "mysql", "mongodb", "neo4j", "mssql"]
+  SERVICES_NODE = SERVICES.map do |service|
+    "#{service}_node"
+  end
   SERVICES_GATEWAY = SERVICES.map do |service|
     "#{service}_gateway"
   end
-
-  SERVICES.each do |service|
-    # Service name constant e.g. REDIS -> "redis"
-    const_set(service.upcase, service)
+  SERVICES_NODE.each do |node|
+    # Service name constant e.g. REDIS_NODE -> "redis_node"
+    const_set(node.upcase, node)
   end
 
   # All supported jobs
-  JOBS = [ALL, NATS, ROUTER, CF, CC, HM, DEA, CCDB] + SERVICES + SERVICES_GATEWAY
+  JOBS = [ALL, NATS, ROUTER, CF, CC, HM, DEA, CCDB] + SERVICES_NODE + SERVICES_GATEWAY
   SYSTEM_JOB = [CF]
 
   # List of the required properties for jobs
   INSTALLED_JOB_PROPERTIES = {NATS => ["host"], CC => ["service_api_uri", "builtin_services"],
                               CCDB => ["host"]}
-  INSTALL_JOB_PROPERTIES = {CC => ["builtin_services"], MYSQL => ["index"], MONGODB => ["index"], REDIS => ["index"]}
+  INSTALL_JOB_PROPERTIES = {CC => ["builtin_services"], MYSQL_NODE => ["index"], MONGODB_NODE => ["index"], REDIS_NODE => ["index"], NEO4J_NODE => ["index"], MSSQL_NODE => ["index"]}
 
   # Dependency between JOBS and  components that are consumed by "vcap_dev" when cf is started or
   # stopped
-  SERVICE_RUN_COMPONENTS = Hash.new
-  SERVICES.each do |service|
-    SERVICE_RUN_COMPONENTS[service] = ["#{service}_node"]
+  SERVICE_NODE_RUN_COMPONENTS = Hash.new
+  SERVICES_NODE.each do |node|
+    SERVICE_NODE_RUN_COMPONENTS[node] = node
   end
 
   SERVICE_GATEWAY_RUN_COMPONENTS = Hash.new
@@ -47,7 +49,7 @@ class JobManager
     SERVICE_GATEWAY_RUN_COMPONENTS[gateway] = gateway
   end
 
-  RUN_COMPONENTS = {ROUTER => ROUTER, CC => CC, HM => HM, DEA => DEA}.update(SERVICE_RUN_COMPONENTS).update(SERVICE_GATEWAY_RUN_COMPONENTS)
+  RUN_COMPONENTS = {ROUTER => ROUTER, CC => CC, HM => HM, DEA => DEA}.update(SERVICE_NODE_RUN_COMPONENTS).update(SERVICE_GATEWAY_RUN_COMPONENTS)
 
   class << self
     if defined?(Rake::DSL)

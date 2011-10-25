@@ -17,7 +17,7 @@ class JobManager
     end
   end
 
-  SERVICES.each do |job|
+  SERVICES_NODE.each do |job|
     task job.to_sym => [CF.to_sym, NATS.to_sym] do
       install(job)
     end

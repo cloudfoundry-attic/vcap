@@ -7,7 +7,7 @@ class ServicesController < ApplicationController
   include ServicesHelper
 
   before_filter :validate_content_type
-  before_filter :require_service_auth_token, :only => [:create, :delete, :update_handle, :list_handles]
+  before_filter :require_service_auth_token, :only => [:create, :delete, :update_handle, :list_handles, :list_brokered_services]
   before_filter :require_user, :only => [:provision, :bind, :bind_external, :unbind, :unprovision]
 
   rescue_from(JsonMessage::Error) {|e| render :status => 400, :json =>  {:errors => e.to_s}}
@@ -37,14 +37,25 @@ class ServicesController < ApplicationController
       # :acls, but to avoid breaking anything as a side efffect, we do
       # this only for :acls.
       attrs[:acls] = nil unless attrs.has_key?(:acls)
+
+      # Similar to acls, do the same for timeout
+      attrs[:timeout] = nil unless attrs.has_key?(:timeout)
+
       svc.update_attributes!(attrs)
     else
       # Service doesn't exist yet. This can only happen for builtin services since service providers must
       # register with us to get a token.
+      # or, it's a brokered service
       svc = Service.new(req.extract)
-      raise CloudError.new(CloudError::FORBIDDEN) unless svc.is_builtin? && svc.verify_auth_token(@service_auth_token)
-      svc.token = @service_auth_token
-      svc.save!
+      if AppConfig[:service_broker] and @service_auth_token == AppConfig[:service_broker][:token] and !svc.is_builtin?
+        attrs = req.extract.dup
+        attrs[:token] = @service_auth_token
+        svc.update_attributes!(attrs)
+      else
+        raise CloudError.new(CloudError::FORBIDDEN) unless svc.is_builtin? && svc.verify_auth_token(@service_auth_token)
+        svc.token = @service_auth_token
+        svc.save!
+      end
     end
 
     render :json => {}
@@ -107,6 +118,25 @@ class ServicesController < ApplicationController
     render :json => {:handles => handles}
   end
 
+  # List brokered services
+  def list_brokered_services
+    if AppConfig[:service_broker].nil? or @service_auth_token != AppConfig[:service_broker][:token]
+      raise CloudError.new(CloudError::FORBIDDEN)
+    end
+
+    svcs = Service.all
+    brokered_svcs = svcs.select {|svc| ! svc.is_builtin? }
+    result = []
+    brokered_svcs.each do |svc|
+      result << {
+        :label => svc.label,
+        :description => svc.description,
+        :acls => svc.acls,
+      }
+    end
+    render :json =>  {:brokered_services => result}
+  end
+
   # Unregister a service offering with the CC
   #
   def delete
@@ -122,7 +152,7 @@ class ServicesController < ApplicationController
   # Asks the gateway to provision an instance of the requested service
   #
   def provision
-    req = VCAP::Services::Api::ProvisionRequest.decode(request_body)
+    req = VCAP::Services::Api::CloudControllerProvisionRequest.decode(request_body)
 
     svc = Service.find_by_label(req.label)
     raise CloudError.new(CloudError::SERVICE_NOT_FOUND) unless svc && svc.visible_to_user?(user)
