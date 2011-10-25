@@ -279,5 +279,4 @@ class VCAP::Stager::Task
 
     ret
   end
-
 end

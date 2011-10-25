@@ -1,3 +1,4 @@
+require 'erb'
 require 'fileutils'
 
 require 'vcap/cloud_controller/ipc'
@@ -16,6 +17,8 @@ end
 # Responsible for orchestrating the execution of all staging plugins selected
 # by the user.
 class VCAP::Stager::PluginRunner
+  GEMFILE_TEMPLATE_PATH  = File.join(VCAP::Stager::ASSET_DIR, 'plugin_runner_gemfile.erb')
+
   class << self
     attr_reader :registered_plugins
 
@@ -27,6 +30,24 @@ class VCAP::Stager::PluginRunner
     # Testing only
     def reset_registered_plugins
       @registered_plugins = []
+    end
+
+    # Generates a Gemfile that should be used in conjuction with running the
+    # standalone script using 'bundle exec'. We assume that every plugin has
+    # already been installed locally on the system (therefore its individual
+    # dependencies have been satisfied) and rely on Bundler to resolve possible
+    # conflicts in plugin dependencies.
+    #
+    # @param  dest_path    String  Where to place the generated Gemfile
+    # @param  plugin_gems  Array   Plugins to be loaded
+    #                              [{'name' => GEM_NAME, 'version' => GEM_VERSION}]
+    def generate_standalone_gemfile(dest_path, plugins)
+      plugin_gems = plugins.map {|p| p['gem'] }
+      template = File.read(GEMFILE_TEMPLATE_PATH)
+      renderer = ERB.new(template)
+      gemfile_contents = renderer.result(binding())
+      File.open(dest_path, 'w+') {|f| f.write(gemfile_contents) }
+      dest_path
     end
   end
 

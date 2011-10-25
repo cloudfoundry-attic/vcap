@@ -1,0 +1,12 @@
+source :rubygems
+
+gem 'vcap_logging', '>= 0.1.1'
+gem 'vcap_cloud_controller_ipc'
+
+<% for plugin_gem in plugin_gems %>
+<% if plugin_gem["version"] %>
+gem '<%= plugin_gem["name"] %>', '= <%= plugin_gem["version"] %>'
+<% else %>
+gem '<%= plugin_gem["name"] %>'
+<% end %>
+<% end %>

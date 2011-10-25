@@ -4,6 +4,20 @@ require 'fileutils'
 require 'tmpdir'
 
 describe VCAP::Stager::PluginRunner do
+  describe '.generate_standalone_gemfile' do
+    it 'should write out a Gemfile containing all plugins to be run' do
+      tmpdir = Dir.mktmpdir
+      gemfile_path = File.join(tmpdir, 'Gemfile')
+      plugins = [{'gem' => {'name' => 'test1'}},
+                 {'gem' => {'name' => 'test2', 'version' => '0.0.1'}}]
+      VCAP::Stager::PluginRunner.generate_standalone_gemfile(gemfile_path, plugins)
+      File.exist?(gemfile_path).should be_true
+      gemfile_contents = File.read(gemfile_path)
+      gemfile_contents.match(/^gem 'test1'$/).should be_true
+      gemfile_contents.match(/^gem 'test2', '= 0.0.1'$/).should be_true
+    end
+  end
+
   describe '#run_plugins' do
     before :each do
       @src_dir = Dir.mktmpdir
