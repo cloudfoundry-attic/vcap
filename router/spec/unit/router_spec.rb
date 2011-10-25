@@ -28,6 +28,14 @@ describe Router do
       Router.session_key.should be
     end
 
+    it 'should set a default client inactivity timeout' do
+      Router.client_inactivity_timeout.should be
+    end
+
+    it 'should respect a client_inactivity_timeout key when supplied' do
+      Router.config('client_inactivity_timeout' => 30)
+      Router.client_inactivity_timeout.should == 30
+    end
   end
 
   describe 'Router.register_droplet' do
