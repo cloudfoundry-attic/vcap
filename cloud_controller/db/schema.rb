@@ -64,29 +64,18 @@ ActiveRecord::Schema.define(:version => 20111013222602) do
   add_index "binding_tokens", ["service_config_id"], :name => "index_binding_tokens_on_service_config_id"
   add_index "binding_tokens", ["uuid"], :name => "index_binding_tokens_on_uuid", :unique => true
 
-  create_table "organizations", :force => true do |t|
-    t.string   "name",                               :null => false
-    t.string   "immutable_id",                       :null => false
-    t.string   "description"
-    t.string   "status",       :default => "ACTIVE", :null => false
-    t.datetime "created_at"
-    t.datetime "updated_at"
-  end
-
-  add_index "organizations", ["immutable_id"], :name => "index_organizations_on_immutable_id", :unique => true
-  add_index "organizations", ["name"], :name => "index_organizations_on_name", :unique => true
-
   create_table "resources", :force => true do |t|
-    t.string   "immutable_id",    :null => false
-    t.integer  "organization_id", :null => false
+    t.string   "name"
+    t.string   "immutable_id",  :null => false
+    t.integer  "owner_id"
     t.string   "type"
-    t.text     "metadata_hash"
+    t.text     "metadata_json"
     t.datetime "created_at"
     t.datetime "updated_at"
   end
 
+  add_index "resources", ["id"], :name => "index_resources_on_id", :unique => true
   add_index "resources", ["immutable_id"], :name => "index_resources_on_immutable_id", :unique => true
-  add_index "resources", ["organization_id", "id"], :name => "index_resources_on_organization_id_and_id", :unique => true
 
   create_table "routes", :force => true do |t|
     t.integer  "app_id"

@@ -10,14 +10,14 @@ class UsersController < ApplicationController
     user = ::User.new :email => body_params[:email]
     user.set_and_encrypt_password(body_params[:password])
 
-    #Save a personal org for this user
-    org_service = ::CollabSpaces::OrganizationService.new
-    org = org_service.create_organization(user.email)
+    #Create a personal org for this user
+    org_service = ::CollabSpaces::OrganizationService.new(:authenticated_user => user.email, :org => nil, :project => nil)
+    org = org_service.create_organization(:name => user.email)
 
     if(!org.nil? && org.valid?)
       CloudController.logger.debug("Org created #{org.inspect}")
     else
-      raise CloudError.new(CloudError::BAD_REQUEST)
+      raise CloudError.new(CloudError::SYSTEM_ERROR)
     end
 
     if (user.save)
@@ -42,10 +42,6 @@ class UsersController < ApplicationController
       end
 
       target_user.destroy
-
-      #Delete the user's' personal org
-        org_service = ::CollabSpaces::OrganizationService.new
-      org_service.delete_organization(params['email'])
 
       render :status => 204, :nothing => true
     else

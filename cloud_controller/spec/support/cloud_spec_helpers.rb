@@ -47,8 +47,8 @@ module CloudSpecHelpers
     user = User.new :email => email
     user.set_and_encrypt_password user_password
     user.save!
-    org_manager = ::CollabSpaces::OrganizationService.new
-    org = org_manager.create_organization(user.email)
+    org_manager = ::CollabSpaces::OrganizationService.new(:authenticated_user => user.email)
+    org = org_manager.create_organization(:name => user.email)
     user
   end
 

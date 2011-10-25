@@ -1,33 +1,24 @@
 class CollabSpacesController < ApplicationController
   before_filter :enforce_registration_policy, :only => :create
-  before_filter :require_admin, :only => [:delete, :list]
+  before_filter :require_admin, :only => [:delete]
 
   # POST to /orgs/:org
   def create
-
     new_organization_name = params[:org]
-
     org_manager = ::CollabSpaces::OrganizationService.new
-
     immutable_id = org_manager.create_organization(new_organization_name)
-
     render :json => {:result => 'success',  :id => immutable_id }
-
   end
 
   # DELETE to /orgs/:org
   def delete
-
     new_organization_name = params[:org]
-
     org_manager = ::CollabSpaces::OrganizationService.new
-
     if(org_manager.delete_organization(new_organization_name))
       render :json => {:result => 'success'}
     else
       raise CloudError.new(CloudError::DATABASE_ERROR)
     end
-
   end
 
   def require_admin
