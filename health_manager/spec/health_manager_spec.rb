@@ -1,14 +1,7 @@
 # Copyright (c) 2009-2011 VMware, Inc.
 require 'spec_helper'
 
-#TODO: test restart crashed instances
-#TODO: test stop duplicate instances
-#TODO: test start missing instances
-#TODO: test heartbeat timeout
-#TODO: test respond to health requests
-#TODO: test flapping instances
-#TODO: test wait for droplet to be stable
-#TODO: test that droplets have a chance to restart
+#functional tests are now implemented in functional/health_manager_spec.rb
 
 describe HealthManager do
 
