@@ -10,6 +10,7 @@ require "vcap/json_schema"
 require "vcap/subprocess"
 require "vcap/process_utils"
 require "vcap/config"
+require "vcap/priority_queue"
 
 def fixture_path(*args)
   base = File.expand_path("../", __FILE__)
