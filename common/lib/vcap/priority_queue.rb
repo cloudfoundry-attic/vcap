@@ -112,20 +112,15 @@ module VCAP
     def initialize
       super
       @set = Set.new #the set is used to check for duplicates
-      @elem_to_key = {} #the hash mapping objects to their keys (sic) is needed to remove from the set.  Silly.
     end
 
     def insert( elem, priority = 0, key = nil)
-      if @set.add? key || elem
-        super(elem, priority)
-        @elem_to_key[elem]=key if key
-      end
+      super([elem,key], priority) if @set.add? key || elem
     end
 
     def remove
-      elem = super
-      key = @elem_to_key.delete(elem) || elem
-      @set.delete key
+      elem, key = super
+      @set.delete(key || elem)
       elem
     end
   end
