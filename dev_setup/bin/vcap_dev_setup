@@ -126,7 +126,7 @@ if [ -n "$CONFIG_FILE" ]; then
   ARGS="$ARGS -c $CONFIG_FILE"
 fi
 
-CURRENT_DIR = `pwd`
+CURRENT_DIR=`pwd`
 
 cd $CLOUDFOUNDRY_HOME/vcap/staging
 gem build vcap_staging.gemspec
