@@ -1,15 +1,12 @@
 ---
 name: "net"
 runtimes:
-  - "iis":
-      version: "0x7"
-      description: ".Net"
-      executable: "iisver.cmd"
-app_servers:
-  - "iis":
-      description: "IIS Server"
-      executable: true
+  - iis:
+      version: '0x7'
+      description: 'Internet Information Services'
+      executable: ../windea/iisver.cmd
       default: true
+app_servers:
 detection:
   - "web.config": true
 staged_services:

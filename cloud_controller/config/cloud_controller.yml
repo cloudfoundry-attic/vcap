@@ -162,4 +162,5 @@ runtimes:
     version: ".* 5.8.3"
   python26:
     version: 2.6.5
-
+  iis:
+    version: 0x7
