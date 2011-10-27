@@ -6,7 +6,8 @@ require 'tmpdir'
 describe VCAP::Stager::PluginOrchestrator do
   describe '#run_plugins' do
     before :each do
-      @tmpdir = Dir.mktmpdir
+      @src_dir = Dir.mktmpdir
+      @dst_dir = Dir.mktmpdir
       @app_props = VCAP::Stager::AppProperties.new('test',
                                                    'sinatra',
                                                    'ruby18',
@@ -20,19 +21,20 @@ describe VCAP::Stager::PluginOrchestrator do
     end
 
     after :each do
-      FileUtils.rm_rf(@tmpdir)
+      FileUtils.rm_rf(@src_dir)
+      FileUtils.rm_rf(@dst_dir)
     end
 
     it 'should raise an error for unknown plugins' do
       @app_props.plugins = {'unknown_plugin' => {}}
-      orch = VCAP::Stager::PluginOrchestrator.new(@tmpdir, @app_props)
+      orch = VCAP::Stager::PluginOrchestrator.new(@src_dir, @dst_dir, @app_props)
       expect do
         orch.run_plugins
       end.to raise_error(LoadError)
     end
 
     it 'should raise an error if no framework plugin is supplied' do
-      orch = VCAP::Stager::PluginOrchestrator.new(@tmpdir, @app_props)
+      orch = VCAP::Stager::PluginOrchestrator.new(@src_dir, @dst_dir, @app_props)
       expect do
         orch.run_plugins
       end.to raise_error(VCAP::Stager::MissingFrameworkPluginError)
@@ -44,7 +46,7 @@ describe VCAP::Stager::PluginOrchestrator do
         p = create_mock_plugin("plugin_#{i}", :framework)
         VCAP::Stager::PluginRegistry.register_plugin(p)
       end
-      orch  = VCAP::Stager::PluginOrchestrator.new(@tmpdir, @app_props)
+      orch  = VCAP::Stager::PluginOrchestrator.new(@src_dir, @dst_dir, @app_props)
       expect do
         orch.run_plugins
       end.to raise_error(VCAP::Stager::DuplicateFrameworkPluginError)
@@ -53,7 +55,7 @@ describe VCAP::Stager::PluginOrchestrator do
     it 'should raise an error if a plugin of unknown type is supplied' do
       p = create_mock_plugin(:plugin0, :invalid_plugin_type)
       VCAP::Stager::PluginRegistry.register_plugin(p)
-      orch = VCAP::Stager::PluginOrchestrator.new(@tmpdir, @app_props)
+      orch = VCAP::Stager::PluginOrchestrator.new(@src_dir, @dst_dir, @app_props)
       expect do
         orch.run_plugins
       end.to raise_error(VCAP::Stager::UnknownPluginTypeError)
@@ -66,7 +68,7 @@ describe VCAP::Stager::PluginOrchestrator do
         p.should_receive(:stage).with(any_args())
         VCAP::Stager::PluginRegistry.register_plugin(p)
       end
-      orch = VCAP::Stager::PluginOrchestrator.new(@tmpdir, @app_props)
+      orch = VCAP::Stager::PluginOrchestrator.new(@src_dir, @dst_dir, @app_props)
       orch.run_plugins
     end
   end

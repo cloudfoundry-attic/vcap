@@ -1,0 +1,23 @@
+#!/bin/bash
+
+# NB: Everything here is executing _inside_ the container
+
+# Sets globbing behavior such that globs matching nothing evaluate
+# to null rather than themselves.
+shopt -s nullglob
+
+# Execute all the features' stop scripts
+for f in "${PWD}/vcap/script/feature_stop/*"
+do
+  ${f} $@
+done
+
+# Execute the framework stop script
+if [ -e "./framework_stop" ]
+then
+  ./framework_stop
+fi
+
+# Just to be safe
+head -1 ./run.pid | xargs kill -9
+head -1 ./parent.pid | xargs kill -9
