@@ -34,7 +34,7 @@ group :production do
 end
 
 # EventMachine and async support
-gem 'eventmachine',  '~> 0.12.10'
+gem 'eventmachine',  '~> 0.12.11.cloudfoundry.1'
 gem 'thin', '> 1.2'
 gem 'em-http-request', '~> 1.0.0.beta.3', :require => 'em-http'
 gem 'em-redis', :require => nil
