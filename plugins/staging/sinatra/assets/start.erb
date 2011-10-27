@@ -1,0 +1,18 @@
+echo $$ > ./run.pid
+
+<% if uses_bundler %>
+
+export PATH="$PWD/app/rubygems/ruby/<%= library_version %>/bin:$PATH"
+export GEM_PATH="$PWD/app/rubygems/ruby/<%= library_version %>"
+export GEM_HOME="$PWD/app/rubygems/ruby/<%= library_version %>"
+export RUBYOPT="-I$PWD/ruby -rstdsync'"
+cd app
+exec ruby ./rubygems/ruby/<%= library_version %>/bin/bundle exec ruby ./<%= sinatra_main %> $@
+
+<% else %>
+
+export RUBYOPT="-rubygems -I$PWD/ruby -rstdsync"
+cd app
+exec ruby ./<%= sinatra_main %> $@
+
+<% end %>
