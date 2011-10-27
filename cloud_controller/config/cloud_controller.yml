@@ -131,6 +131,8 @@ builtin_services:
     token: "0xdeadbeef"
   neo4j:
     token: "0xdeadbeef"
+  blob:
+    token: "0xdeadbeef"
 
 # Service broker
 service_broker:
