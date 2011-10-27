@@ -96,4 +96,36 @@ describe VCAP::PrioritySet do
       @qs.remove.should == "item"
     end
   end
+
+  describe 'using key other than element for duplicate elimination' do
+    it 'should prevent duplication using supplied key' do
+      @qs.insert "low"
+      @qs.insert "medium", 5
+      @qs.insert "rare", 10, "rare_id"
+
+      @qs.size.should == 3
+
+      @qs.insert "another_rare", 10, "rare_id" #different object, but same key, should not be added
+      @qs.size.should == 3
+
+      @qs.insert "another_rare", 15 #no key supplied, since the object is different it should be added
+      @qs.size.should == 4
+
+      @qs.remove.should == "another_rare"
+      @qs.remove.should == "rare"
+      @qs.remove.should == "medium"
+      @qs.remove.should == "low"
+
+      @qs.empty?.should be_true
+
+      #should be able to reinsert any item provided the identity is different
+      @qs.insert "low"
+      @qs.insert "low", 1, "other_id"
+      @qs.insert "medium", 3
+      @qs.insert "rare", 5, "rare_id"
+      @qs.insert "another_rare", 10
+
+      @qs.size.should == 5
+    end
+  end
 end

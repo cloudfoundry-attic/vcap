@@ -4,7 +4,21 @@
 #2. proper time/space complexity of a binary heap
 #3. no silly memory leaks (Ah, three weapons of the Spanish Inquisition)
 
-#additionally, we implement a PrioritySet, that is a PriorityQueue into which an element can only be inserted once
+#additionally, we implement a PrioritySet, that is a PriorityQueue
+#into which an element can only be inserted once. This PrioritySet
+#allows specifying identity for the object with a separate object.
+#The identity is for determining whether an object being inserted is a
+#duplicate, e.g.
+
+#     q.insert("boo", 1, "key")
+#     q.insert("zah", 1, "key")
+
+#will result in just one object in the queue, "boo"
+#
+#See spec/unit/priority_queue_set for
+#other examples
+
+
 
 require 'set'
 
@@ -93,17 +107,25 @@ module VCAP
     end
   end
 
+
   class PrioritySet < PriorityQueue
     def initialize
       super
-      @set = Set.new
+      @set = Set.new #the set is used to check for duplicates
+      @elem_to_key = {} #the hash mapping objects to their keys (sic) is needed to remove from the set.  Silly.
     end
-    def insert( elem, priority = 0)
-      super(elem, priority) if @set.add? elem
+
+    def insert( elem, priority = 0, key = nil)
+      if @set.add? key || elem
+        super(elem, priority)
+        @elem_to_key[elem]=key if key
+      end
     end
+
     def remove
       elem = super
-      @set.delete elem
+      key = @elem_to_key.delete(elem) || elem
+      @set.delete key
       elem
     end
   end
