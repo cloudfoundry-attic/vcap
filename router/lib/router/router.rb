@@ -4,7 +4,7 @@ class Router
   VERSION = 0.98
 
   class << self
-    attr_reader   :log, :notfound_redirect, :session_key, :trace_key
+    attr_reader   :log, :notfound_redirect, :session_key, :trace_key, :client_inactivity_timeout
     attr_accessor :server, :local_server, :timestamp, :shutting_down
     attr_accessor :client_connection_count, :app_connection_count, :outstanding_request_count
     attr_accessor :inet, :port
@@ -27,6 +27,7 @@ class Router
 
       @session_key = config['session_key'] || '14fbc303b76bacd1e0a3ab641c11d11400341c5d'
       @trace_key = config['trace_key'] || '22'
+      @client_inactivity_timeout = config['client_inactivity_timeout'] || 60
     end
 
     def setup_listeners

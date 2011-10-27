@@ -17,7 +17,7 @@ module ClientConnection
     VCAP::Component.varz[:client_connections] = Router.client_connection_count += 1
     Router.log.debug Router.connection_stats
     Router.log.debug "------------"
-    self.comm_inactivity_timeout = 60.0
+    self.comm_inactivity_timeout = Router.client_inactivity_timeout
   end
 
   def recycle_app_conn
