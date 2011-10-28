@@ -45,6 +45,7 @@ class CloudError < StandardError
   # Bits
   RESOURCES_UNKNOWN_PACKAGE_TYPE = [400, HTTP_BAD_REQUEST, "Unknown package type requested: \"%\""]
   RESOURCES_MISSING_RESOURCE = [401, HTTP_BAD_REQUEST, "Could not find the requested resource"]
+  RESOURCES_PACKAGING_FAILED = [402, HTTP_INTERNAL_SERVER_ERROR, "App packaging failed: '%s'"]
 
   # Services
   SERVICE_NOT_FOUND = [500, HTTP_NOT_FOUND, "Service not found"]
