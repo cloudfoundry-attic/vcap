@@ -71,7 +71,6 @@ describe 'Health Manager' do
       new("ruby -r#{nats_timeout_path} #{hm_path} -c #{@hm_config_file}",
           @hm_cfg['pid'],@hm_cfg, @run_dir)
 
-    @hm.reopen_stdio = false
     @app_state_file = File.join(@run_dir, 'db', 'applications.json')
   end
 

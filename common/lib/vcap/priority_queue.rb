@@ -115,7 +115,7 @@ module VCAP
     end
 
     def insert( elem, priority = 0, key = nil)
-      super([elem,key], priority) if @set.add? key || elem
+      super([elem,key], priority) if @set.add?(key || elem)
     end
 
     def remove

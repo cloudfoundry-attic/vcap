@@ -643,8 +643,11 @@ class HealthManager
     priority = Time.now.to_i - message[:last_updated]
     priority = 0 if priority < 0 #avoid timezone drama
 
-    @logger.info("Queueing priority '#{priority}' request: #{message}")
-    @request_queue.insert(message, priority)
+
+    key = message.clone
+    key.delete :last_updated
+    @logger.info("Queueing priority '#{priority}' request: #{message}, using key: #{key}.  Queue size: #{@request_queue.size}")
+    @request_queue.insert(message, priority, key)
   end
 
 
