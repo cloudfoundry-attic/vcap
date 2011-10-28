@@ -49,7 +49,7 @@ class AppsController < ApplicationController
   end
 
   def valid_upload_path?(path)
-    File.join(CloudController.uploads_dir, File.basename(path)) == path
+    path.starts_with?(CloudController.uploads_dir)
   end
 
   def get_uploaded_file
