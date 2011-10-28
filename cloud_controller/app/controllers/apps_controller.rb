@@ -78,6 +78,9 @@ class AppsController < ApplicationController
       resources = json_param(:resources)
       package = AppPackage.new(@app, file, resources)
       @app.latest_bits_from(package)
+    rescue AppPackageError => e
+      CloudController.logger.error(e)
+      raise CloudError.new(CloudError::RESOURCES_PACKAGING_FAILED, e.to_s)
     ensure
       FileUtils.rm_f(file.path) if file
     end
