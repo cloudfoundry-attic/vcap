@@ -8,3 +8,8 @@ mbus: nats://localhost:4222
 logging:
   level: info
 pid: /var/vcap/sys/run/router.pid
+
+# Config for /varz and /healthz endpoints
+#status:
+#  Uncomment and set true to show requests-per-second stats for all aps not only top 10. If not specified or set false only 10 apps are shown
+#  expose_all_apps: true
