@@ -83,3 +83,11 @@ runtimes:
     version: 2.6.5
     version_flag: '--version'
     environment:
+
+# Used for /healthz and /vars endpoints. If not provided random
+# values will be generated on component start. Uncomment to use
+# static values.
+#status:
+#  port: 34501
+#  user: thin
+#  password: thin
