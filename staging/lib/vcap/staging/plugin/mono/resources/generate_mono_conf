@@ -6,8 +6,12 @@
 apache_port = ARGV[0]
 base_dir = ARGV[1]
 vcap_services = ARGV[2]
-php_ram = ARGV[3]
-exit 1 unless apache_port && base_dir && vcap_services && php_ram
+mono_ram = ARGV[3]
+exit 1 unless apache_port && base_dir && vcap_services && mono_ram
+
+mono_ram = mono_ram.gsub(/[k]/, '000') 
+mono_ram = mono_ram.gsub(/[m]/, '000000')
+mono_ram = mono_ram.gsub(/[g]/, '000000000')  
 
 require 'erb'
 output_path = "apache/sites-available/default"
@@ -19,6 +23,7 @@ template = <<-ERB
   MonoDocumentRootDir "<%= base_dir %>/app"
   MonoServerPath rootsite "/usr/bin/mod-mono-server2"
   MonoApplications rootsite "/:<%= base_dir %>/app"
+  MonoMaxMemory <%= mono_ram %>
   ErrorLog ${APACHE_LOG_DIR}/error.log
   CustomLog ${APACHE_LOG_DIR}/access.log combined
   SetEnv VCAP_SERVICES <%= vcap_services %>
@@ -49,7 +54,6 @@ export APACHE_RUN_DIR=$APACHE_BASEDIR/run/apache2
 export APACHE_LOCK_DIR=$APACHE_BASEDIR/lock/apache2
 export APACHE_LOG_DIR=<%= base_dir %>/logs
 export LANG=C
-export PHP_INI_SCAN_DIR=$APACHE_BASEDIR/php
 ERB
 
 template = ERB.new(template)
@@ -82,13 +86,4 @@ File.open(File.expand_path(output_path), 'wb') do |file|
   file.puts(template.result(binding))
 end
 
-output_path = 'apache/php/memory.ini'
 
-template = <<-ERB
-memory_limit = <%= php_ram %>
-ERB
-
-template = ERB.new(template)
-File.open(File.expand_path(output_path), 'wb') do |file|
-  file.puts(template.result(binding))
-end
