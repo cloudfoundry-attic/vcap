@@ -297,6 +297,8 @@ if [[ $DEA == true || $ALL == true ]]; then
 
         /etc/init.d/apache2 stop
         update-rc.d -f apache2 remove
+
+		ln -s /usr/bin/mod-mono-server2 /usr/bin/mod-mono-server
 	fi    
 
     ERLANG_VERSION=R14B02
