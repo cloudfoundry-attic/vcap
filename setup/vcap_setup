@@ -290,6 +290,16 @@ if [[ $DEA == true || $ALL == true ]]; then
     elif [[ $PLATFORM == 'MacOSX' ]]; then
         echo -e "\033[31mFIXME: Implement for MacOSX \033[0m"
     fi
+    
+    # For Mono
+    if [[ $PLATFORM == 'Linux' ]]; then
+        apt-get install -qqy apache2 mono-common libapache2-mod-mono mono-apache-server2
+
+        /etc/init.d/apache2 stop
+        update-rc.d -f apache2 remove
+
+		ln -s /usr/bin/mod-mono-server2 /usr/bin/mod-mono-server
+	fi    
 
     ERLANG_VERSION=R14B02
 

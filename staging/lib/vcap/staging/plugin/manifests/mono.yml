@@ -1,0 +1,22 @@
+---
+name: "mono"
+runtimes:
+  - "aspnet":
+      version: "2.6.7" 
+      description: "Mono ASP.Net"
+      executable: "false"
+      default: true
+app_servers:
+  - "apache":
+      description: "Apache"
+      executable: "false"
+      default: true
+detection:
+  - "*.asax": true
+  - "*.asmx": true
+  - "*.aspx": true
+  - "*.ashx": true
+  - "*.asax": true
+  - "*.ascx": true
+  - "*.cs": true
+staged_services:

@@ -23,8 +23,8 @@ class App < ActiveRecord::Base
 
   AppStates = %w[STOPPED STARTED]
   PackageStates = %w[PENDING STAGED FAILED]
-  Runtimes = %w[ruby18 ruby19 java node php erlangR14B02 python26]
-  Frameworks = %w[sinatra rails3 java_web spring grails node php otp_rebar lift wsgi django unknown]
+  Runtimes = %w[ruby18 ruby19 java node php erlangR14B02 python26 aspnet]
+  Frameworks = %w[sinatra rails3 java_web spring grails node php otp_rebar lift wsgi django mono unknown]
 
   validates_presence_of :name, :framework, :runtime
 
@@ -559,6 +559,9 @@ class App < ActiveRecord::Base
     when "lift/1.0"
       self.framework = 'lift'
       self.runtime   = 'java'
+    when "monoaspnet"
+      self.framework = 'mono'
+      self.runtime = 'aspnet'
     end
     self.runtime = StagingPlugin.default_runtime_for(framework) if self.runtime.nil?
     true
