@@ -559,6 +559,9 @@ class App < ActiveRecord::Base
     when "lift/1.0"
       self.framework = 'lift'
       self.runtime   = 'java'
+    when "monoaspnet"
+      self.framework = 'mono'
+      self.runtime = 'aspnet'
     end
     self.runtime = StagingPlugin.default_runtime_for(framework) if self.runtime.nil?
     true

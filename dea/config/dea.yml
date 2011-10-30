@@ -83,3 +83,8 @@ runtimes:
     version: 2.6.5
     version_flag: '--version'
     environment:
+  aspnet:
+    executable: mono
+    version: 2.6.7
+    version_flag: '-V'
+    environment:
