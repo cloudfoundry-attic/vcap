@@ -18,6 +18,7 @@ class MonoPlugin < StagingPlugin
       system "cp -a -f #{File.join(resource_dir, "mod_mono_auto.load")} apache/mods-available"
       system "cp -a -f #{File.join(resource_dir, "mod_mono_auto.conf")} apache/mods-enabled"
       system "cp -a -f #{File.join(resource_dir, "mod_mono_auto.load")} apache/mods-enabled"
+      system "cp -a -f #{File.join(resource_dir, "generate_mono_conf")} resources"
       copy_source_files
       create_startup_script
     end
@@ -38,7 +39,7 @@ class MonoPlugin < StagingPlugin
     generate_startup_script(vars) do
       <<-EOF
 env > env.log
-ruby resources/generate_apache_conf $VCAP_APP_PORT $HOME $VCAP_SERVICES #{application_memory}m
+ruby resources/generate_mono_conf $VCAP_APP_PORT $HOME $VCAP_SERVICES #{application_memory}m
       EOF
     end
   end
