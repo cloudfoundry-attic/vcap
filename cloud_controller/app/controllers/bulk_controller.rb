@@ -39,7 +39,7 @@ class BulkController < ApplicationController
   end
 
   def retrieve_results(model)
-    model.where(where_clause).limit(batch_size).to_a
+    model.where(where_clause).order('id').limit(batch_size).to_a
   end
 
   def hash_by_id arr
