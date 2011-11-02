@@ -8,13 +8,29 @@ end
 class VCAP::Stager::PluginActionProxy
   attr_reader :services_client
 
-  def initialize(start_script_path, stop_script_path, droplet, services_client)
+  # Consumers of a PluginActionProxy can set and inspect environment variables via
+  # this hash. Settings here will persist across all calls to feature/framework start
+  # scripts and into the started application's environment.
+  #
+  # NB: Consumers MUST escape and quote their environment variables properly. We could
+  #     attempt to escape and quote them ourselves, but since we cannot know the intent
+  #     of the consumer, this would ultimately end in failure. Consider the following
+  #     example:
+  #
+  #         actions.environment['HI'] = "Hello $USER"
+  #
+  #     Is the intent here to employ variable substitution or to use the literal
+  #     string '$USER'?
+  attr_accessor :environment
+
+  def initialize(start_script_path, stop_script_path, droplet, services_client, env)
     @start_script_path = start_script_path
     @start_script      = nil
     @stop_script_path  = stop_script_path
     @stop_script       = nil
     @droplet           = droplet
     @services_client   = services_client
+    @environment       = env
   end
 
   # Returns an open file object that the user can write contents of a
@@ -35,6 +51,9 @@ class VCAP::Stager::PluginActionProxy
     @stop_script
   end
 
+  # Returns the path to the base of the droplet directory.
+  #
+  # @return String
   def droplet_base_dir
     @droplet.base_dir
   end

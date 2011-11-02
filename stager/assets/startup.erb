@@ -2,8 +2,13 @@
 
 # NB: Everything here is executing _inside_ the container
 
-# Sets globbing behavior such that globs matching nothing evaluate
-# to null rather than themselves.
+<% for name, val in environment_variables %>
+export <%= name %>=<%= val %>
+<% end %>
+
+# Sets globbing behavior such that globs matching nothing evaluate to null
+# rather than themselves. This prevents the feature_start glob below from
+# evaluating to itself when no feature start scripts exist.
 shopt -s nullglob
 
 # Execute all the features' start scripts

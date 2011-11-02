@@ -17,7 +17,7 @@ end
 # Responsible for orchestrating the execution of all staging plugins selected
 # by the user.
 class VCAP::Stager::PluginRunner
-  GEMFILE_TEMPLATE_PATH  = File.join(VCAP::Stager::ASSET_DIR, 'plugin_runner_gemfile.erb')
+  GEMFILE_TEMPLATE_PATH    = File.join(VCAP::Stager::ASSET_DIR, 'plugin_runner_gemfile.erb')
 
   class << self
     attr_reader :registered_plugins
@@ -67,6 +67,7 @@ class VCAP::Stager::PluginRunner
     @services_client = VCAP::CloudController::Ipc::ServiceConsumerV1Client.new(cc_info['host'],
                                                                                cc_info['port'],
                                                                                :staging_task_id => cc_info['task_id'])
+    @environment     = {}
   end
 
   def run_plugins
@@ -82,7 +83,8 @@ class VCAP::Stager::PluginRunner
     actions = VCAP::Stager::PluginActionProxy.new(@droplet.framework_start_path,
                                                   @droplet.framework_stop_path,
                                                   @droplet,
-                                                  @services_client)
+                                                  @services_client,
+                                                  @environment)
     @logger.info("Running framework plugin: #{framework_plugin.name}")
     framework_plugin.stage(@droplet.app_source_dir, actions, @app_properties)
 
@@ -91,10 +93,13 @@ class VCAP::Stager::PluginRunner
       actions = VCAP::Stager::PluginActionProxy.new(@droplet.feature_start_path(pname),
                                                     @droplet.feature_stop_path(pname),
                                                     @droplet,
-                                                    @services_client)
+                                                    @services_client,
+                                                    @environment)
       @logger.info("Running feature plugin: #{feature_plugin.name}")
       feature_plugin.stage(framework_plugin, @droplet.app_source_dir, actions, @app_properties)
     end
+
+    @droplet.generate_vcap_start_script(@environment)
   end
 
   protected
@@ -128,5 +133,4 @@ class VCAP::Stager::PluginRunner
 
     [framework_plugin, feature_plugins]
   end
-
 end

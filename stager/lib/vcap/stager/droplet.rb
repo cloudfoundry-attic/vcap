@@ -8,6 +8,8 @@ module VCAP
 end
 
 class VCAP::Stager::Droplet
+  VCAP_START_TEMPLATE_PATH = File.join(VCAP::Stager::ASSET_DIR, 'startup.erb')
+
   attr_reader :base_dir
   attr_reader :feature_start_dir
   attr_reader :feature_stop_dir
@@ -59,12 +61,10 @@ class VCAP::Stager::Droplet
     app_source_glob = File.join(source_dir, '*')
     system("cp -a #{app_source_glob} #{@app_source_dir} 2> /dev/null")
 
-    # Copy over the vcap start/stop scripts (expected by dea)
-    for script_info in [['startup', @vcap_start_path], ['stop', @vcap_stop_path]]
-      name, dst_path = script_info
-      FileUtils.cp(File.join(@asset_dir, name), dst_path)
-      FileUtils.chmod(0744, dst_path)
-    end
+    # Copy over the stop script (expected by dea)
+    # Start script must be generated once all environment variables have been collected
+    FileUtils.cp(File.join(@asset_dir, 'stop'), @vcap_stop_path)
+    FileUtils.chmod(0700, @vcap_stop_path)
   end
 
   def feature_start_path(name)
@@ -73,5 +73,18 @@ class VCAP::Stager::Droplet
 
   def feature_stop_path(name)
     File.join(@feature_stop_dir, name)
+  end
+
+
+  # Generates the startup script used by the DEA.
+  #
+  # @param  environment_variables  Hash    Environment variables to be exported
+  def generate_vcap_start_script(environment_variables)
+    template = File.read(File.join(@asset_dir, 'startup.erb'))
+    renderer = ERB.new(template)
+    contents = renderer.result(binding())
+    File.open(@vcap_start_path, 'w+') {|f| f.write(contents) }
+    FileUtils.chmod(0700, @vcap_start_path)
+    @vcap_start_path
   end
 end
