@@ -33,6 +33,7 @@ describe 'Health Manager' do
 
     @helper = HMExpectedStateHelperDB.new( 'run_dir' => @run_dir)
 
+
     # NATS
     port = VCAP.grab_ephemeral_port
     pid_file = File.join(@run_dir, 'nats.pid')
@@ -44,14 +45,13 @@ describe 'Health Manager' do
       'mbus'         => @nats_uri,
       'local_route' => '127.0.0.1',
       'intervals'    => {
-
         'database_scan' => 2, #60
         'droplet_lost' => 4, #30
         'droplet_analysis' => 4, #10
         'flapping_death' => 4, #3
         'flapping_timeout' => 9, #180
         'restart_timeout' => 15, #20
-
+        'request_queue' => 0.02,
         'stable_state' => 5, #60
         'nats_ping' => 1,
       },
@@ -81,57 +81,38 @@ describe 'Health Manager' do
   describe 'when running' do
     before :each do
       @helper.prepare_tests
-
       @nats_server.start
       @nats_server.wait_ready.should be_true
 
-      start_msg = nil
-
-      #receive_message is now refactored to take an optional block.
-      #the block is what is expected to trigger the message that
-      #we expect to receive.
-
-      start_msg = receive_message 'healthmanager.start' do
+      receive_message 'healthmanager.start' do
         @hm.start
-      end
-
-      start_msg.should_not be_nil
-
+      end.should_not be_nil
     end
 
     after :each do
+
       @hm.stop
       @hm.running?.should be_false
+
       @nats_server.stop
       @nats_server.running?.should be_false
       @helper.release_resources
     end
+
+    #TODO: test stop duplicate instances
+    #TODO: test heartbeat timeout
+    #TODO: test respond to health requests
+    #TODO: test flapping instances
+    #TODO: test wait for droplet to be stable
+    #TODO: test that droplets have a chance to restart
 
     it 'should receive healthmanager.nats.ping message' do
       msg = receive_message 'healthmanager.nats.ping'
       msg.should_not be_nil
     end
 
-
-    it 'should be able to new App entries' do
-      app_name = 'test_app'
-      @helper.add_app make_app_def app_name
-      app = @helper.find_app :name => app_name
-      app.should_not be_nil
-      app[:name].should == app_name
-    end
-
-    it 'shoule be able to create User entries' do
-      @helper.add_user make_user_def
-      user = @helper.find_user :email => make_user_def[:email]
-
-      user.should_not be_nil
-      user[:email].should_not be_nil
-      user[:email].should == make_user_def[:email]
-
-    end
-
-    it 'should send START message for a new instance' do
+    #test start missing instances
+    it 'should start missing instances' do
       app = nil
       msg = receive_message 'cloudcontrollers.hm.requests', 'app_create_prompter' do
         #putting enough into Expected State to trigger an instance START request
@@ -146,33 +127,27 @@ describe 'Health Manager' do
       msg['droplet'].should == app.id
     end
 
-    pending 'should signal STOP message for a stopped app' do
-      app_def = make_app_def 'to_be_stopped'
-      app_def['state'] = 'STOPPED'
-
-      msg = receive_message 'cloudcontrollers.hm.requests', 'app_stop_prompter' do
-        app = @helper.make_app_with_owner_and_instance(app_def,
-                                                       make_user_def)
-
-        heartbeat = {
-          'droplets' =>
-          [{
-             'droplet' => app.id,
-             'version' => 0,
-             'instance' => 0,
-             'index' => 0,
-             'state' => 'STARTED',
-             'state_timestamp' => 0
-           }]
-        }.to_json
-        NATS.publish('dea.heartbeat',heartbeat)
+    #test restart crashed instances
+    it 'should start crashed instances' do
+      app = @helper.make_app_with_owner_and_instance(make_app_def('crasher'), make_user_def)
+      crash_msg = {
+        'droplet' =>  app.id,
+        'version' => 0,
+        'instance' => 0,
+        'index' => 0,
+        'reason' => 'CRASHED',
+        'crash_timestamp' => Time.now.to_i
+      }
+      msg = receive_message 'cloudcontrollers.hm.requests', 'app_restart_prompter' do
+        NATS.publish('droplet.exited', crash_msg.to_json)
       end
-
       msg.should_not be_nil
-      msg = parse_json msg
-      msg['op'].should == 'STOP'
+      msg = parse_json(msg)
       msg['droplet'].should == app.id
+      msg['op'].should == 'START'
+      msg['version'].to_i.should == crash_msg['version']
     end
+
   end
 
   def make_user_def
@@ -211,7 +186,6 @@ describe 'Health Manager' do
   def parse_json(str)
     Yajl::Parser.parse(str)
   end
-
 
   def receive_message(subj, prompting_msg='foo', timeout=10)
     ret = nil

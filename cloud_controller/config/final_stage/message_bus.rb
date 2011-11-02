@@ -32,9 +32,15 @@ end
 
 EM.next_tick do
   NATS.start(:uri => AppConfig[:mbus]) do
-    options = {:type => 'CloudController', :config => AppConfig, :index => AppConfig[:index]}
-    options[:host] = CloudController.bind_address
-    VCAP::Component.register(options)
+    status_config = AppConfig[:status] || {}
+    VCAP::Component.register(:type => 'CloudController',
+                             :host => CloudController.bind_address,
+                             :index => AppConfig[:index],
+                             :config => AppConfig,
+                             :port => status_config[:port],
+                             :user => status_config[:user],
+                             :password => status_config[:password])
+
     require File.join(File.expand_path('..', __FILE__), 'varz')
     files = Dir.glob(Rails.root.join('app','subscriptions','*.rb'))
     files.each { |fn| require(fn) }

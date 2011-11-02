@@ -8,6 +8,11 @@ opts_parser = OptionParser.new do |opts|
 end
 opts_parser.parse!(ARGV.dup)
 
+if $cc_config_file.nil? && ENV["CLOUD_FOUNDRY_CONFIG_PATH"]
+  $cc_config_file = File.join(ENV["CLOUD_FOUNDRY_CONFIG_PATH"], "cloud_controller.yml")
+  puts "Using config file #{$cc_config_file}"
+end
+
 if $cc_config_file
   if File.exists?($cc_config_file)
     ENV['CLOUD_CONTROLLER_CONFIG'] = $cc_config_file

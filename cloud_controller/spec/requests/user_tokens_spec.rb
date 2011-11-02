@@ -14,6 +14,11 @@ describe "Requesting a new user token" do
     response.status.should == 400
   end
 
+  it "always returns a 200 response when admin requests" do
+    post @user_token_path, nil, headers_for(@admin.email, nil, '{}')
+    response.status.should == 200
+  end
+
   context "When user_expire is specified" do
     before { UserToken.token_expire = 1.day }
     let :token do
@@ -53,6 +58,7 @@ describe "Requesting a new user token" do
       it "a given token should be valid." do
         token.should be_valid
       end
+
     end
   end
 
