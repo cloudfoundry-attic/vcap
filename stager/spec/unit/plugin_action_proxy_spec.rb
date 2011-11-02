@@ -6,6 +6,9 @@ require 'tmpdir'
 describe VCAP::Stager::PluginActionProxy do
   before :each do
     @tmpdir = Dir.mktmpdir
+    start_path = File.join(@tmpdir, 'start')
+    stop_path = File.join(@tmpdir, 'stop')
+    @proxy = VCAP::Stager::PluginActionProxy.new(start_path, stop_path, nil, nil, nil)
   end
 
   after :each do
@@ -14,17 +17,26 @@ describe VCAP::Stager::PluginActionProxy do
 
   describe '#start_script' do
     it 'should return an open file object with mode 755' do
-      start_path = File.join(@tmpdir, 'start')
-      proxy = VCAP::Stager::PluginActionProxy.new(start_path, nil, nil, nil)
-      verify_script(proxy.start_script)
+      verify_script(@proxy.start_script)
     end
   end
 
   describe '#stop_script' do
     it 'should return an open file object with mode 755' do
-      stop_path = File.join(@tmpdir, 'stop')
-      proxy = VCAP::Stager::PluginActionProxy.new(nil, stop_path, nil, nil)
-      verify_script(proxy.stop_script)
+      verify_script(@proxy.stop_script)
+    end
+  end
+
+  describe '#abort_staging' do
+    it 'should raise an instance of VCAP::Stager::StagingAbortedError with the supplied reason' do
+      caught_message = nil
+      reason = "TESTING"
+      begin
+        @proxy.abort_staging(reason)
+      rescue VCAP::Stager::StagingAbortedError => e
+        caught_message = e.to_s
+      end
+      caught_message.should == reason
     end
   end
 

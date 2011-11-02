@@ -39,5 +39,6 @@ module VCAP
     class MissingFrameworkPluginError   < PluginRunnerError; end
     class DuplicateFrameworkPluginError < PluginRunnerError; end
     class UnknownPluginTypeError        < PluginRunnerError; end
+    class StagingAbortedError           < PluginRunnerError; end
   end
 end

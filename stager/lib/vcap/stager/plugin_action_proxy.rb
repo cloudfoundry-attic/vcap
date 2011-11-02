@@ -1,3 +1,5 @@
+require 'vcap/stager/errors'
+
 module VCAP
   module Stager
   end
@@ -56,6 +58,13 @@ class VCAP::Stager::PluginActionProxy
   # @return String
   def droplet_base_dir
     @droplet.base_dir
+  end
+
+  # Aborts staging for the supplied reason.
+  #
+  # @param  reason  String  Why staging is being aborted
+  def abort_staging(reason)
+    raise VCAP::Stager::StagingAbortedError.new(reason)
   end
 
   private
