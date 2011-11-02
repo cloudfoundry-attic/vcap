@@ -1,0 +1,14 @@
+#!/usr/bin/env ruby
+
+home = File.join(File.dirname(__FILE__),'..')
+ENV['BUNDLE_GEMFILE'] = "#{home}/Gemfile"
+
+require 'bundler/setup'
+require File.join(home, 'lib','hm2')
+
+include HealthManager2
+
+VCAP::Logging.setup_from_config({'level' => ENV['LOG_LEVEL'] || 'info'})
+
+hm2 = Manager.new() #TODO: whence the config?
+hm2.start
