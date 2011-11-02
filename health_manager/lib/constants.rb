@@ -1,0 +1,7 @@
+module HealthManager2
+  NATS_PING = 10
+  EXPECTED_STATE_UPDATE = 60
+  DROPLET_ANALYSIS = 10
+
+
+end
