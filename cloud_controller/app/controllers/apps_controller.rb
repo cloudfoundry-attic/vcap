@@ -53,18 +53,21 @@ class AppsController < ApplicationController
   end
 
   def get_uploaded_file
+    file = nil
     if CloudController.use_nginx
       path = params[:application_path]
-      if not valid_upload_path?(path)
-        CloudController.logger.warn "Illegal path: #{path}, passed to cloud_controller
-                                     something is badly misconfigured or insecure!!!"
-        raise CloudError.new(CloudError::FORBIDDEN)
+      if path != nil
+        if not valid_upload_path?(path)
+          CloudController.logger.warn "Illegal path: #{path}, passed to cloud_controller
+                                       something is badly misconfigured or insecure!!!"
+          raise CloudError.new(CloudError::FORBIDDEN)
+        end
+        wrapper_class = Class.new do
+          attr_accessor :path
+        end
+        file = wrapper_class.new
+        file.path = path
       end
-      wrapper_class = Class.new do
-        attr_accessor :path
-      end
-      file = wrapper_class.new
-      file.path = path
     else
       file = params[:application]
     end
