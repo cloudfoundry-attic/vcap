@@ -1,0 +1,9 @@
+source "http://rubygems.org"
+
+gem "rake"
+gem "rspec"
+gem "vcap_common"
+gem "vcap_logging"
+gem "eventmachine", "0.12.11.cloudfoundry.3"
+gem "yajl-ruby"
+gem "rest-client"
