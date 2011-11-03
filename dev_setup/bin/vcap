@@ -390,7 +390,7 @@ module Run
   private
 
   def self.core
-    %w(router cloud_controller dea health_manager)
+    %w(router routerv2 cloud_controller dea health_manager)
   end
 
   def self.services
@@ -433,7 +433,8 @@ module Run
   end
 
   def self.components(args)
-    args = (Run.core + Run.services) if args.empty?
+    # Using router by default
+    args = (Run.core + Run.services - ["routerv2"]) if args.empty?
     args = Run.expand_args(args)
     components = args.map do |arg|
       component = Component.new(arg)
