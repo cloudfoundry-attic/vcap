@@ -11,7 +11,7 @@ class JobManager
     end
   end
 
-  [ROUTER, DEA].each do |job|
+  [ROUTER, ROUTERV2, DEA].each do |job|
     task job.to_sym => [CF.to_sym, NATS.to_sym] do
       install(job)
     end
@@ -31,6 +31,8 @@ class JobManager
 
   all_jobs = []
   JOBS.each do |job|
+    if job.to_s == ROUTERV2.to_s then next end # Skip routerv2 if installing "all"
+
     all_jobs << job.to_sym if job != ALL
   end
 

@@ -1,0 +1,13 @@
+{
+  "name": "router",
+  "default_attributes": {},
+  "override_attributes": {"nginx" : {"router_version" : "v2"}},
+  "json_class": "Chef::Role",
+  "description": "Cloudfoundry Router",
+  "chef_type": "role",
+  "run_list" : [ "recipe[deployment]",
+                 "recipe[essentials]",
+                 "recipe[ruby]",
+                 "recipe[nginx]",
+                 "recipe[routerv2]"]
+}
