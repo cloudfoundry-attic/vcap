@@ -313,6 +313,8 @@ module Run
     puts
     kill_service_instances('neo4j', /neo4j/ )
     puts
+    kill_service_instances('blob', /server\.js/); #the entry point is server.js for blob
+    puts
 
     puts "Cleaning shared directories:"
     dirs = %w[/var/vcap/services /var/vcap/shared /var/vcap/sys /var/vcap.local/* /tmp/vcap-run]

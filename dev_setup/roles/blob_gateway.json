@@ -1,0 +1,11 @@
+{
+  "name": "blob_gateway",
+  "override_attributes": {},
+  "json_class": "Chef::Role",
+  "description": "Blob service gateway",
+  "chef_type": "role",
+  "run_list" : [ "recipe[deployment]",
+                 "recipe[essentials]",
+                 "recipe[ruby]",
+                 "recipe[blob::gateway]"]
+}

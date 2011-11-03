@@ -40,6 +40,8 @@ spec["deployment"]["group"] ||= `id -g`.strip
 spec["cloudfoundry"] ||= {}
 spec["cloudfoundry"]["home"] ||= cloudfoundry_home
 spec["cloudfoundry"]["home"] = File.expand_path(spec["cloudfoundry"]["home"])
+# hack for blob, need to copy local binary package for deployment, must know script path
+spec["blob_dir"] = File.expand_path(File.join("..", "cookbooks", "blob", "packages"), script_dir)
 
 if cloudfoundry_home != Deployment.get_cloudfoundry_home && cloudfoundry_home != spec["cloudfoundry"]["home"]
   puts "Conflicting values for cloudfoundry home directory, command line argument says #{cloudfoundry_home} but config file says #{spec["cloudfoundry"]["home"]}"
