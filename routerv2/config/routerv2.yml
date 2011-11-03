@@ -1,0 +1,21 @@
+# IP address and port on which the router is listening
+port: 2222
+inet: 0.0.0.0
+# Unix domain socket for connection between nginx and router
+sock: /tmp/routerv2.sock
+# NATS message bus URI
+mbus: nats://localhost:4222
+logging:
+  level: info
+pid: /var/vcap/sys/run/routerv2.pid
+
+# Used for /healthz and /vars endpoints. If not provided random
+# values will be generated on component start. Uncomment to use
+# static values.
+#status:
+#  port: 34503
+#  user: thin
+#  password: thin
+
+#  Uncomment and set true to show requests-per-second stats for all aps not only top 10. If not specified or set false only 10 apps are shown
+#  expose_all_apps: true

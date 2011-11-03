@@ -10,6 +10,7 @@ class JobManager
   ALL = "all"
   NATS = "nats_server"
   ROUTER = "router"
+  ROUTERV2 = "routerv2"
   CC = "cloud_controller"
   CCDB = "ccdb"
   CF = "cloudfoundry"
@@ -29,7 +30,7 @@ class JobManager
   end
 
   # All supported jobs
-  JOBS = [ALL, NATS, ROUTER, CF, CC, HM, DEA, CCDB] + SERVICES_NODE + SERVICES_GATEWAY
+  JOBS = [ALL, NATS, ROUTER, ROUTERV2, CF, CC, HM, DEA, CCDB] + SERVICES_NODE + SERVICES_GATEWAY
   SYSTEM_JOB = [CF]
 
   # List of the required properties for jobs
@@ -49,7 +50,7 @@ class JobManager
     SERVICE_GATEWAY_RUN_COMPONENTS[gateway] = gateway
   end
 
-  RUN_COMPONENTS = {ROUTER => ROUTER, CC => CC, HM => HM, DEA => DEA}.update(SERVICE_NODE_RUN_COMPONENTS).update(SERVICE_GATEWAY_RUN_COMPONENTS)
+  RUN_COMPONENTS = {ROUTER => ROUTER, ROUTERV2 => ROUTERV2, CC => CC, HM => HM, DEA => DEA}.update(SERVICE_NODE_RUN_COMPONENTS).update(SERVICE_GATEWAY_RUN_COMPONENTS)
 
   class << self
     if defined?(Rake::DSL)
@@ -96,6 +97,10 @@ class JobManager
       given_jobs = Set.new(jobs.keys)
       if (intersect = @valid_jobs.intersection(given_jobs)) != given_jobs
         puts "Input Error: Please provide valid #{type} jobs, following jobs are not recognized\n#{(given_jobs - intersect).pretty_inspect}"
+        exit 1
+      end
+      if (given_jobs.intersection(Set.new([ROUTER, ROUTERV2]))).length == 2
+        puts "Input Error: Please don't specify both #{ROUTER} and #{ROUTERV2}"
         exit 1
       end
 

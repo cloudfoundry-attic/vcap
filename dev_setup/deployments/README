@@ -58,9 +58,10 @@ jobs:
         password: <nats_password>
 
 Here is a sampling of the currently supported jobs
- - all (deploys all cloudfoundry components)
+ - all (deploys all cloudfoundry components except routerv2)
  - nats
  - router
+ - routerv2 (router and routerv2 have to be exclusively deployed)
  - cloud_controller
  - health_manager
  - dea

@@ -1,0 +1,8 @@
+# Unix domain socket for connection between nginx and router
+sock: /tmp/routerv2.sock
+
+# NATS message bus URI
+mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
+logging:
+  level: info
+pid: /var/vcap/sys/run/routerv2.pid
