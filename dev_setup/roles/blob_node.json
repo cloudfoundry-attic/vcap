@@ -1,0 +1,13 @@
+{
+  "name": "blob_node",
+  "override_attributes": {},
+  "json_class": "Chef::Role",
+  "description": "Blob service",
+  "chef_type": "role",
+  "run_list" : ["recipe[deployment]",
+                "recipe[essentials]",
+                "recipe[ruby]",
+                "recipe[nodejs]",
+                "recipe[blob]",
+                "recipe[blob::node]"]
+}
