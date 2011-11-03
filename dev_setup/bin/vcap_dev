@@ -10,7 +10,7 @@ script_dir = File.expand_path(File.dirname(__FILE__))
 
 # TODO: Once we integrate better with bin/vcap, this option parsing should
 # become more robust
-options = {"name" => DEPLOYMENT_DEFAULT_NAME}
+options = {}
 opts = OptionParser.new do |opts|
   opts.banner = "Usage: #{$0} [--name deployment_name] [--dir cloudfoundry_home_dir] [start|stop|restart|tail|status]"
   opts.on("-n", "--name deployment_name", "Name of the deployment") do |n|
@@ -21,6 +21,15 @@ opts = OptionParser.new do |opts|
   end
 end
 opts.order!(ARGV)
+
+options["name"], options["home"] = Deployment.get_deployment_target if options.empty?
+
+if options["name"]
+  puts "Targeting deployment \"#{options["name"]}\" with cloudfoundry home \"#{options["home"]}\""
+else
+  options["name"] = DEPLOYMENT_DEFAULT_NAME
+  puts "Targeting default deployment \"#{options["name"]}\""
+end
 
 if ARGV[0].nil? || !%w[start stop restart tail status].include?(ARGV[0].downcase)
     STDERR.puts "Usage: #{$0} [-n deployment_name] [-d cloudfoundry_home_dir] [start|stop|restart|tail|status]"

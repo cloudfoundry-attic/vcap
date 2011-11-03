@@ -2,9 +2,13 @@ require 'nokogiri'
 require 'fileutils'
 
 class Tomcat
-  AUTOSTAGING_JAR = 'auto-reconfiguration-0.6.0-BUILD-SNAPSHOT.jar'
+  AUTOSTAGING_JAR = 'auto-reconfiguration-0.6.2.jar'
   DEFAULT_APP_CONTEXT = "/WEB-INF/applicationContext.xml"
   DEFAULT_SERVLET_CONTEXT_SUFFIX = "-servlet.xml"
+  SERVICE_DRIVER_HASH = {
+      "mysql-5.1" => 'mysql-connector-java-5.1.12-bin.jar',
+      "postgresql-9.0" => 'postgresql-9.0-801.jdbc4.jar'
+  }
 
   def self.resource_dir
     File.join(File.dirname(__FILE__), 'resources')
@@ -23,26 +27,13 @@ class Tomcat
     webapp_path
   end
 
-  def self.configure_tomcat_application(staging_dir, webapp_root, autostaging_template, environment)
-    if autostaging_template
-      configure_autostaging(webapp_root, autostaging_template)
-    end
-  end
-
-  def self.configure_autostaging(webapp_path, autostaging_template)
-    web_config_file = File.join(webapp_path, 'WEB-INF/web.xml')
-    autostaging_context = get_autostaging_context autostaging_template
-    modify_autostaging_context(autostaging_context, web_config_file, webapp_path)
-    jar_dest = File.join(webapp_path, 'WEB-INF/lib')
-    copy_jar AUTOSTAGING_JAR, jar_dest
-  end
-
-  def self.modify_autostaging_context(autostaging_context, web_config_file, webapp_path)
-    web_config = Nokogiri::XML(open(web_config_file))
-    web_config = configure_autostaging_context_param autostaging_context, web_config, webapp_path
-    web_config = configure_autostaging_servlet autostaging_context, web_config, webapp_path
-    File.open(web_config_file, 'w') {|f| f.write(web_config.to_xml) }
-  end
+  # The staging modifications that are common to one or more framework plugins e.g. ['spring' & 'grails'
+  # requiring autostaging context_param & autostaging servlet updates and 'spring', 'grails' & 'lift'
+  # requiring the copying of the autostaging jar etc] are handled below to avoid duplication.
+  # Modifications that are specific to a framework are handled in the associated plugin (for e.g. configuring
+  # the springenv context_param that is specific to 'spring' and configuring a servlet_context_listener
+  # that is specific to 'lift'). The driver from which all of the staging modifications for each framework is
+  # made is the "configure_webapp" method of each framework plugin.
 
   # Look for the presence of the "context-param" element in the top level (global context) of WEB-INF/web.xml
   # and for a "contextConfigLocation" node within that.
@@ -52,9 +43,10 @@ class Tomcat
   # default app context is present, introduce a "contextConfigLocation" element and set its value to include
   # both the default app context as well as the context reference for autostaging.
   def self.configure_autostaging_context_param(autostaging_context, webapp_config, webapp_path)
-    autostaging_context_param_name_node = autostaging_context.xpath("//context-param/param-name").first
+    autostaging_context_param_node = autostaging_context.xpath("//context-param[param-name='contextConfigLocation']").first
+    autostaging_context_param_name_node = autostaging_context_param_node.xpath("param-name").first
     autostaging_context_param_name = autostaging_context_param_name_node.content.strip
-    autostaging_context_param_value_node = autostaging_context.xpath("//context-param/param-value").first
+    autostaging_context_param_value_node = autostaging_context_param_node.xpath("param-value").first
     autostaging_context_param_value = autostaging_context_param_value_node.content
 
     prefix = webapp_config.root.namespace ? "xmlns:" : ''
@@ -184,6 +176,58 @@ class Tomcat
 
   def self.get_autostaging_context autostaging_template
     Nokogiri::XML(open(autostaging_template))
+  end
+
+  def self.copy_service_drivers(services, webapp_root)
+    drivers = services.select { |svc|
+      SERVICE_DRIVER_HASH.has_key?(svc[:label])
+    }
+    drivers.each { |driver|
+      driver_dest = File.join(webapp_root, '../../lib')
+      copy_jar SERVICE_DRIVER_HASH[driver[:label]], driver_dest
+    } if drivers
+  end
+
+  def self.get_web_config (webapp_path)
+    web_config_file = File.join(webapp_path, 'WEB-INF/web.xml')
+    Nokogiri::XML(open(web_config_file))
+  end
+
+  def self.save_web_config (web_config, webapp_path)
+    web_config_file = File.join(webapp_path, 'WEB-INF/web.xml')
+    File.open(web_config_file, 'w') {|f| f.write(web_config.to_xml) }
+  end
+
+  def self.copy_autostaging_jar(webapp_path)
+    jar_dest = File.join(webapp_path, 'WEB-INF/lib')
+    copy_jar AUTOSTAGING_JAR, jar_dest
+  end
+
+  def self.insight_bound? services
+    services.any? { |service| service if service[:name] =~ /^Insight-.*/ and service[:label] =~ /^rabbitmq-*/ } if services #
+  end
+
+  def self.prepare_insight dir, environment, agent=nil
+
+    unless is_dashboard?(dir) or agent == nil or File.exists?(agent) == false
+      output = `unzip -q "#{agent}" -d "#{Dir.pwd}"`
+      raise "Could not unpack agent #{agent}: #{output}" unless $? == 0
+
+      tomcat_dir = File.join(dir, "tomcat")
+      output = %x[cd cf-tomcat-agent-javaagent-* ; bash install.sh #{tomcat_dir}]
+      raise "Could not install agent: #{output}" unless $? == 0
+
+      appname = environment[:name] || 'ROOT'
+      insight_props = File.join(dir, "tomcat", "insight", "insight.properties")
+      text = File.read(insight_props)
+      File.open(insight_props, "w") {|file| file.puts text.gsub(/appname/, "#{appname}")}
+
+    end
+  end
+
+  def self.is_dashboard?(dir)
+    insight_props = File.join(dir, "tomcat", "webapps", "ROOT", "insight", "insight.properties")
+    File.exists?(insight_props)
   end
 
 end

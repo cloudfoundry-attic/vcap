@@ -4,10 +4,9 @@ require 'webmock/rspec'
 
 $LOAD_PATH.unshift(File.expand_path('../../lib', __FILE__))
 require 'vcap/common'
+require 'vcap/logging'
 require 'vcap/subprocess'
 require 'vcap/stager'
-
-# XXX - Move gem cache out of home dir...
 
 # Requires supporting ruby files with custom matchers and macros, etc,
 # in spec/support/ and its subdirectories.
@@ -17,6 +16,8 @@ Dir[File.expand_path('../support/**/*.rb', __FILE__)].each {|f| require f}
 # Allows us to override staging paths.
 STAGING_TEMP = Dir.mktmpdir
 StagingPlugin.manifest_root = STAGING_TEMP
+
+VCAP::Logging.setup_from_config({:level => :debug2}) if ENV['VCAP_TEST_LOG'] == 'true'
 
 RSpec.configure do |config|
   config.before(:all) do

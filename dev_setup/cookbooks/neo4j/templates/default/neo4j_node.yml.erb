@@ -1,0 +1,15 @@
+---
+local_db: sqlite3:/var/vcap/services/neo4j/neo4j_node.db
+mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
+index: <%= node[:neo4j_node][:index] %>
+base_dir: /var/vcap/services/neo4j/instances
+pid: /var/vcap/sys/run/neo4j_node.pid
+available_memory: <%= node[:neo4j_node][:available_memory] %>
+max_memory: <%= node[:neo4j_node][:max_memory] %>
+node_id: <%= "neo4j_node_#{node[:neo4j_node][:index]}" %>
+neo4j_path: <%= node[:neo4j][:service_dir] %>
+logging:
+  level: debug
+port_range:
+  first: 45000
+  last: 55000

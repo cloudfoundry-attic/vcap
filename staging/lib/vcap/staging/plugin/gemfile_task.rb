@@ -85,7 +85,10 @@ class GemfileTask
         installed_gem_path = @cache.get(user_gem_path)
         unless installed_gem_path
           @logger.debug "Installing user gem: #{user_gem_path}"
+
           tmp_gem_dir = install_gem(user_gem_path)
+          raise "Failed installing #{gem_filename}" unless tmp_gem_dir
+
           installed_gem_path = @cache.put(user_gem_path, tmp_gem_dir)
         end
         @logger.info "Adding #{gem_filename} to app..."
@@ -95,19 +98,28 @@ class GemfileTask
         installed_gem_path = @cache.get(blessed_gem_path)
         unless installed_gem_path
           @logger.debug "Installing blessed gem: #{blessed_gem_path}"
+
           tmp_gem_dir = install_gem(blessed_gem_path)
+          raise "Failed installing #{gem_filename}" unless tmp_gem_dir
+
           installed_gem_path = @cache.put(blessed_gem_path, tmp_gem_dir)
         end
         @logger.info "Adding #{gem_filename} to app..."
         copy_gem_to_app(installed_gem_path)
 
       else
+        @logger.info("Need to fetch #{gem_filename} from RubyGems")
         missing << [ name, version ]
       end
     end
 
+    return if missing.empty?
+
     Dir.mktmpdir do |tmp_dir|
-      fetch_gems(missing, tmp_dir)
+      @logger.info("Fetching missing gems from RubyGems")
+      unless fetch_gems(missing, tmp_dir)
+        raise "Failed fetching missing gems from RubyGems"
+      end
 
       missing.each do |(name, version)|
         gem_filename = "%s-%s.gem" % [ name, version ]
@@ -115,6 +127,8 @@ class GemfileTask
 
         @logger.debug "Installing downloaded gem: #{gem_path}"
         tmp_gem_dir = install_gem(gem_path)
+        raise "Failed installing #{gem_filename}" unless tmp_gem_dir
+
         installed_gem_path = @cache.put(gem_path, tmp_gem_dir)
         output = `cp -n #{gem_path} #{blessed_gems_dir} 2>&1`
         if $?.exitstatus != 0

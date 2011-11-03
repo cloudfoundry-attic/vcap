@@ -1,3 +1,5 @@
+require 'staging_task_manager'
+
 class AppsController < ApplicationController
   before_filter :require_user, :except => [:download_staged]
   before_filter :find_app_by_name, :except => [:create, :list, :download_staged]
@@ -51,18 +53,21 @@ class AppsController < ApplicationController
   end
 
   def get_uploaded_file
+    file = nil
     if CloudController.use_nginx
       path = params[:application_path]
-      if not valid_upload_path?(path)
-        CloudController.logger.warn "Illegal path: #{path}, passed to cloud_controller
-                                     something is badly misconfigured or insecure!!!"
-        raise CloudError.new(CloudError::FORBIDDEN)
+      if path != nil
+        if not valid_upload_path?(path)
+          CloudController.logger.warn "Illegal path: #{path}, passed to cloud_controller
+                                       something is badly misconfigured or insecure!!!"
+          raise CloudError.new(CloudError::FORBIDDEN)
+        end
+        wrapper_class = Class.new do
+          attr_accessor :path
+        end
+        file = wrapper_class.new
+        file.path = path
       end
-      wrapper_class = Class.new do
-        attr_accessor :path
-      end
-      file = wrapper_class.new
-      file.path = path
     else
       file = params[:application]
     end
@@ -76,14 +81,17 @@ class AppsController < ApplicationController
       resources = json_param(:resources)
       package = AppPackage.new(@app, file, resources)
       @app.latest_bits_from(package)
+    rescue AppPackageError => e
+      CloudController.logger.error(e)
+      raise CloudError.new(CloudError::RESOURCES_PACKAGING_FAILED, e.to_s)
     ensure
-      FileUtils.rm_f(file.path)
+      FileUtils.rm_f(file.path) if file
     end
     render :nothing => true, :status => 200
   end
 
   def download
-    path = @app.package_path
+    path = @app.unstaged_package_path
     if path && File.exists?(path)
       send_file path
     else
@@ -124,7 +132,13 @@ class AppsController < ApplicationController
     error_on_lock_mismatch(@app)
     @app.lock_version += 1
     manager = AppManager.new(@app)
-    manager.stage if @app.needs_staging?
+    if @app.needs_staging?
+      if user.uses_new_stager?
+        stage_app(@app)
+      else
+        manager.stage
+      end
+    end
     manager.stop_all
     manager.started
     render :nothing => true, :status => 204
@@ -164,6 +178,18 @@ class AppsController < ApplicationController
 
   # GET /apps/:name/instances/:instance_id/files/:path'
   def files
+    # XXX - Yuck. This will have to do until we update VMC with a real
+    #       way to fetch staging logs.
+    if user.uses_new_stager? && (params[:path] == 'logs/staging.log')
+      log = StagingTaskLog.fetch_fibered(@app.id)
+      if log
+        render :text => log.task_log
+      else
+        render :nothing => true, :status => 404
+      end
+      return
+    end
+
     # will Fiber.yield
     url, auth = AppManager.new(@app).get_file_url(params[:instance_id], params[:path])
     raise CloudError.new(CloudError::APP_FILE_ERROR, params[:path] || '/') unless url
@@ -191,6 +217,48 @@ class AppsController < ApplicationController
 
   private
 
+  def stage_app(app)
+    task_mgr = StagingTaskManager.new(:logger  => CloudController.logger,
+                                      :timeout => AppConfig[:staging][:max_staging_runtime])
+    dl_uri = StagingController.download_app_uri(app)
+    ul_hdl = StagingController.create_upload(app)
+
+    result = task_mgr.run_staging_task(app, dl_uri, ul_hdl.upload_uri)
+
+    # Update run count to be consistent with previous staging code
+    if result.was_success?
+      CloudController.logger.debug("Staging task for app_id=#{app.id} succeded.", :tags => [:staging])
+      CloudController.logger.debug1("Details: #{result.task_log}", :tags => [:staging])
+      app.update_staged_package(ul_hdl.upload_path)
+      app.package_state = 'STAGED'
+      app.update_run_count()
+    else
+      CloudController.logger.warn("Staging task for app_id=#{app.id} failed: #{result.error}",
+                                  :tags => [:staging])
+      CloudController.logger.debug1("Details: #{result.task_log}", :tags => [:staging])
+      raise CloudError.new(CloudError::APP_STAGING_ERROR, result.error.to_s)
+    end
+
+  rescue => e
+    # It may be the case that upload from the stager will happen sometime in the future.
+    # Mark the upload as completed so that any upload that occurs in the future will fail.
+    if ul_hdl
+      StagingController.complete_upload(ul_hdl)
+      FileUtils.rm_f(ul_hdl.upload_path)
+    end
+    # This is in keeping with the old CC behavior. Instead of starting a single
+    # instance of a broken app (which is effectively stopped after HM flapping logic
+    # is triggered) we stop it explicitly.
+    app.state = 'STOPPED'
+    AppManager.new(app).stopped
+    app.package_state = 'FAILED'
+    app.update_run_count()
+    raise e
+
+  ensure
+    app.save!
+  end
+
   def find_app_by_name
     # XXX - What do we want semantics to be like for multiple apps w/ same name (possible w/ contribs)
     @app = user.apps_owned.find_by_name(params[:name])
@@ -208,7 +276,6 @@ class AppsController < ApplicationController
   # App from the request params and makes the necessary AppManager calls.
   def update_app_from_params(app)
     CloudController.logger.debug "app: #{app.id || "nil"} update_from_parms"
-
     error_on_lock_mismatch(app)
     app.lock_version += 1
 
@@ -247,7 +314,14 @@ class AppsController < ApplicationController
 
     # Process any changes that require action on out part here.
     manager = AppManager.new(app)
-    manager.stage if app.needs_staging?
+
+    if app.needs_staging?
+      if user.uses_new_stager?
+        stage_app(app)
+      else
+        manager.stage
+      end
+    end
 
     if changed.include?('state')
       if app.stopped?
@@ -405,4 +479,6 @@ class AppsController < ApplicationController
       raise CloudError.new(CloudError::ACCOUNT_NOT_ENOUGH_MEMORY, "#{mem_quota}M")
     end
   end
+
+
 end

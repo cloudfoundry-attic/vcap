@@ -2,6 +2,7 @@ require File.expand_path('../../common', __FILE__)
 require File.join(File.expand_path('../', __FILE__), 'tomcat.rb')
 
 class JavaWebPlugin < StagingPlugin
+
   def framework
     'java_web'
   end
@@ -23,17 +24,29 @@ class JavaWebPlugin < StagingPlugin
       unless File.exist? web_config_file
         raise "Web application staging failed: web.xml not found"
       end
-      do_pre_tomcat_config_setup(webapp_root)
-      Tomcat.configure_tomcat_application(destination_directory, webapp_root, self.autostaging_template, environment)  unless self.skip_staging(webapp_root)
+      services = environment[:services] if environment
+      copy_service_drivers(webapp_root, services)
+      Tomcat.prepare_insight destination_directory, environment, insight_agent if Tomcat.insight_bound? services
+      configure_webapp(webapp_root, self.autostaging_template, environment) unless self.skip_staging(webapp_root)
       create_startup_script
     end
   end
 
-  def do_pre_tomcat_config_setup webapp_path
+  # The driver from which all of the staging modifications are made for Java based plugins [java_web, spring,
+  # grails & lift]. Each framework plugin overrides this method to provide the implementation it needs.
+  # Modifications needed by the implementations that are common to one or more plugins are provided
+  # by the Tomcat class used by all of the Java based plugins. E.g are the updates for autostaging context_param,
+  # autostaging servlet [both needed by 'spring' & 'grails'] & copying the autostaging jar ['spring', 'grails' &
+  # 'lift'].
+  def configure_webapp webapp_root, autostaging_template, environment
   end
 
   def create_app_directories
     FileUtils.mkdir_p File.join(destination_directory, 'logs')
+  end
+
+  def copy_service_drivers webapp_root, services
+    Tomcat.copy_service_drivers(services, webapp_root) if services
   end
 
   # The Tomcat start script runs from the root of the staged application.

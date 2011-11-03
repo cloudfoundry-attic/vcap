@@ -222,7 +222,14 @@ module DEA
       NATS.start(:uri => @nats_uri) do
 
         # Register ourselves with the system
-        VCAP::Component.register(:type => 'DEA', :host => @local_ip, :config => @config, :index => @config['index'])
+        status_config = @config['status'] || {}
+        VCAP::Component.register(:type => 'DEA',
+                           :host => @local_ip,
+                           :index => @config['index'],
+                           :config => @config,
+                           :port => status_config['port'],
+                           :user => status_config['user'],
+                           :password => status_config['password'])
 
         uuid = VCAP::Component.uuid
 
@@ -400,6 +407,7 @@ module DEA
               :file_uri => "http://#{@local_ip}:#{@file_viewer_port}/droplets/",
               :credentials => @file_auth,
               :staged => instance[:staged],
+              :debug_ip => instance[:debug_ip],
               :debug_port => instance[:debug_port]
             }
             if include_stats && instance[:state] == :RUNNING
@@ -571,6 +579,7 @@ module DEA
 
         if debug
           debug_port = VCAP.grab_ephemeral_port
+          instance[:debug_ip] = VCAP.local_ip
           instance[:debug_port] = debug_port
           instance[:debug_mode] = debug
 
@@ -868,7 +877,7 @@ module DEA
         if state && state['state'] == 'RUNNING'
           block.call(true)
           timer.cancel
-        elsif instance[:debug_mode] != "wait"
+        elsif instance[:debug_mode] != "suspend"
           attempts += 1
           if attempts > 600 || instance[:state] != :STARTING # 5 minutes or instance was stopped
             block.call(false)
@@ -1074,6 +1083,7 @@ module DEA
       env << "VCAP_SERVICES='#{create_services_for_env(services)}'"
       env << "VCAP_APP_HOST='#{@local_ip}'"
       env << "VCAP_APP_PORT='#{instance[:port]}'"
+      env << "VCAP_DEBUG_IP='#{instance[:debug_ip]}'"
       env << "VCAP_DEBUG_PORT='#{instance[:debug_port]}'"
 
       if vars = debug_env(instance)

@@ -15,7 +15,7 @@ end
 module VCAP::Services::Api
   class AsyncHttpRequest
     class << self
-      def new(url, token, verb, msg=VCAP::Services::Api::EMPTY_REQUEST)
+      def new(url, token, verb, timeout, msg=VCAP::Services::Api::EMPTY_REQUEST)
 
         req = {
           :head => {
@@ -24,11 +24,15 @@ module VCAP::Services::Api
           },
           :body => msg.encode,
         }
-        EM::HttpRequest.new(url).send(verb.to_sym, req)
+        if timeout
+          EM::HttpRequest.new(url, :inactivity_timeout => timeout).send(verb.to_sym, req)
+        else
+          EM::HttpRequest.new(url).send(verb.to_sym, req)
+        end
       end
 
-      def fibered(url, token, verb, msg=VCAP::Services::Api::EMPTY_REQUEST)
-        req = new(url, token, verb, msg)
+      def fibered(url, token, verb, timeout, msg=VCAP::Services::Api::EMPTY_REQUEST)
+        req = new(url, token, verb, timeout, msg)
         f = Fiber.current
         req.callback { f.resume(req) }
         req.errback  { f.resume(req) }
