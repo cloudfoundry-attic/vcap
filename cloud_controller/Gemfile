@@ -10,7 +10,7 @@ gem 'logging', '>= 1.5.0'
 # VCAP common components
 gem 'vcap_common', :require => ['vcap/common', 'vcap/component'], :path => '../common'
 gem 'vcap_logging', :require => ['vcap/logging']
-gem 'vcap_staging', '= 0.1.12'
+gem 'vcap_staging', '= 0.1.24'
 
 # For queuing staging tasks
 gem 'em-hiredis'
@@ -34,7 +34,7 @@ group :production do
 end
 
 # EventMachine and async support
-gem 'eventmachine',  '~> 0.12.10'
+gem 'eventmachine',  '~> 0.12.11.cloudfoundry.1'
 gem 'thin', '> 1.2'
 gem 'em-http-request', '~> 1.0.0.beta.3', :require => 'em-http'
 gem 'em-redis', :require => nil
@@ -57,5 +57,6 @@ group :test do
   gem 'mocha'
   gem 'ci_reporter'
   gem 'sinatra'  # For service gateway shims
+  gem 'delorean'
 end
 

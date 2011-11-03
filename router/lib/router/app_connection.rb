@@ -1,7 +1,7 @@
 # Copyright (c) 2009-2011 VMware, Inc.
 module AppConnection
 
-  attr_reader :oustanding_requests
+  attr_reader :outstanding_requests
 
   def initialize(client, request, droplet)
     Router.log.debug "Creating AppConnection"

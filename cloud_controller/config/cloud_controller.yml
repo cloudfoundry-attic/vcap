@@ -64,9 +64,12 @@ directories:
 
 # NATS message bus URI
 mbus: nats://localhost:4222/
+
 keys:
   password: 'password key goes here'
   token: 'token key goes here'
+  token_expiration: 604800 # 7 * 24 * 60 * 60 (= 1 week)
+
 pid: /var/vcap/sys/run/cloudcontroller.pid
 rails_environment: development
 database_environment: # replaces database.yml
@@ -101,8 +104,6 @@ staging:
     user: zxsfhgjg
     password: ZNVfdase9
 
-allow_debug: false
-
 # admin support
 admins: [derek@gmail.com, foobar@vmware.com]
 https_required: false
@@ -135,7 +136,11 @@ builtin_services:
 service_broker:
     token: "0xdeadbeef"
 
-# used for /info/runtimes endpoint (served unfiltered as JSON)
+# Enable/disable starting apps in debug modes.
+allow_debug: true
+
+# Supported runtime versions and debug modes.
+# Used for /info/runtimes endpoint (served unfiltered as JSON)
 runtimes:
   ruby18:
     version: 1.8.7
@@ -147,7 +152,7 @@ runtimes:
     version: 1.6.0
     debug_modes:
       - run
-      - wait
+      - suspend
   php:
     version: 5.3.[2-6]
   erlangR14B02:
@@ -155,3 +160,10 @@ runtimes:
   python26:
     version: 2.6.5
 
+# Used for /healthz and /vars endpoints. If not provided random
+# values will be generated on component start. Uncomment to use
+# static values.
+#status:
+#  port: 34500
+#  user: thin
+#  password: thin

@@ -2,7 +2,7 @@ require 'nokogiri'
 require 'fileutils'
 
 class Tomcat
-  AUTOSTAGING_JAR = 'auto-reconfiguration-0.6.1.jar'
+  AUTOSTAGING_JAR = 'auto-reconfiguration-0.6.2.jar'
   DEFAULT_APP_CONTEXT = "/WEB-INF/applicationContext.xml"
   DEFAULT_SERVLET_CONTEXT_SUFFIX = "-servlet.xml"
   SERVICE_DRIVER_HASH = {
@@ -201,6 +201,33 @@ class Tomcat
   def self.copy_autostaging_jar(webapp_path)
     jar_dest = File.join(webapp_path, 'WEB-INF/lib')
     copy_jar AUTOSTAGING_JAR, jar_dest
+  end
+
+  def self.insight_bound? services
+    services.any? { |service| service if service[:name] =~ /^Insight-.*/ and service[:label] =~ /^rabbitmq-*/ } if services #
+  end
+
+  def self.prepare_insight dir, environment, agent=nil
+
+    unless is_dashboard?(dir) or agent == nil or File.exists?(agent) == false
+      output = `unzip -q "#{agent}" -d "#{Dir.pwd}"`
+      raise "Could not unpack agent #{agent}: #{output}" unless $? == 0
+
+      tomcat_dir = File.join(dir, "tomcat")
+      output = %x[cd cf-tomcat-agent-javaagent-* ; bash install.sh #{tomcat_dir}]
+      raise "Could not install agent: #{output}" unless $? == 0
+
+      appname = environment[:name] || 'ROOT'
+      insight_props = File.join(dir, "tomcat", "insight", "insight.properties")
+      text = File.read(insight_props)
+      File.open(insight_props, "w") {|file| file.puts text.gsub(/appname/, "#{appname}")}
+
+    end
+  end
+
+  def self.is_dashboard?(dir)
+    insight_props = File.join(dir, "tomcat", "webapps", "ROOT", "insight", "insight.properties")
+    File.exists?(insight_props)
   end
 
 end

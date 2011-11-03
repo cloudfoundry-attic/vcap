@@ -11,6 +11,8 @@ end
 class VCAP::Spec::ForkedComponent::Base
   attr_reader :pid, :pid_filename, :output_basedir, :name, :cmd
 
+  attr_accessor :reopen_stdio
+
   # @param  cmd             String  Command to run
   # @param  name            String  Short name for this component (e.g. 'redis')
   # @param  output_basedir  String  Stderr/stdout will be placed under this directory
@@ -21,14 +23,21 @@ class VCAP::Spec::ForkedComponent::Base
     @name = name
     @output_basedir = output_basedir
     @pid_filename   = pid_filename
+
+    @reopen_stdio = true
+
   end
 
   def start
     pid = fork do
-      fn = File.join(@output_basedir, "#{@name}.#{Process.pid}.out")
-      outfile = File.new(fn, 'w+')
-      $stderr.reopen(outfile)
-      $stdout.reopen(outfile)
+
+      if @reopen_stdio
+        fn = File.join(@output_basedir, "#{@name}.#{Process.pid}.out")
+        outfile = File.new(fn, 'w+')
+        $stderr.reopen(outfile)
+        $stdout.reopen(outfile)
+      end
+
       exec(@cmd)
     end
 

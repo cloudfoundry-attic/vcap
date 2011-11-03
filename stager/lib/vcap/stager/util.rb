@@ -1,7 +1,8 @@
 require 'fileutils'
-require 'rest_client'
+require 'net/http'
 require 'uri'
 
+require 'vcap/common'
 
 module VCAP
   module Stager
@@ -9,6 +10,87 @@ module VCAP
 end
 
 module VCAP::Stager::Util
+  class HttpStatusError < StandardError; end
+
+  class IOBuffer
+    attr_reader :size
+
+    def initialize(*ios)
+      @ios        = ios.dup
+      @io_off     = 0
+      @stream_off = 0
+      @size       = @ios.reduce(0) {|sum, io| sum + io.size }
+    end
+
+    def read(nbytes_left=nil, dst=nil)
+      ret = nil
+      nbytes_left ||= @size - @stream_off
+      while (@io_off < @ios.length) && (nbytes_left > 0)
+        cur_io = @ios[@io_off]
+        tbuf = cur_io.read(nbytes_left)
+        if tbuf == nil
+          # EOF encountered, no bytes read. This can happen
+          # if a previous read read exactly the number of bytes remaining for the io.
+          @io_off += 1
+        else
+          if ret
+            ret += tbuf
+          else
+            ret = tbuf
+          end
+          # EOF encountered after reading > 0 bytes.
+          @io_off += 1 if tbuf.length < nbytes_left
+          @stream_off += tbuf.length
+          nbytes_left -= tbuf.length
+        end
+      end
+      dst += ret if dst
+      ret
+    end
+
+    def rewind
+      @io_off = 0
+      @stream_off = 0
+      @ios.each {|io| io.rewind }
+    end
+
+  end
+
+  class MultipartFileStream
+    attr_reader :boundary, :size, :header, :footer
+
+    def initialize(fieldname, file)
+      @boundary  = VCAP.secure_uuid
+      @fieldname = fieldname
+      @header    = make_header(@boundary, fieldname, File.basename(file.path))
+      @footer    = make_footer(@boundary)
+      @io_buf    = VCAP::Stager::Util::IOBuffer.new(@header, file, @footer)
+      @size      = @io_buf.size
+    end
+
+    def read(*args)
+      @io_buf.read(*args)
+    end
+
+    def size
+      @io_buf.size
+    end
+
+    private
+
+    def make_header(boundary, fieldname, filename)
+      hdr =  "--#{boundary}\r\n"
+      hdr += "Content-Disposition: form-data; name=\"#{fieldname}\"; filename=\"#{filename}\"\r\n"
+      hdr += "Content-Type: application/octet-stream\r\n"
+      hdr += "\r\n"
+      StringIO.new(hdr)
+    end
+
+    def make_footer(boundary)
+      StringIO.new("\r\n--#{boundary}--\r\n")
+    end
+  end
+
   class << self
     # Downloads the zipped app living at _app_uri_ and stores it in a temporary file.
     #
@@ -16,49 +98,51 @@ module VCAP::Stager::Util
     #
     # @param   app_uri    String   Uri where one can fetch the app. Credentials should be included
     #                              in the uri (i.e. 'http://user:pass@www.foo.com/bar.zip')
-    # @param   dest_path  String   When the app should be saved on disk
-    #
-    # @return  Net::HTTPResponse
+    # @param   dest_path  String   Where the app should be saved on disk
     def fetch_zipped_app(app_uri, dest_path)
-      save_app = proc do |resp|
-        unless resp.kind_of?(Net::HTTPSuccess)
-          raise VCAP::Stager::AppDownloadError,
-                "Non 200 status code (#{resp.code})"
-        end
+      uri = URI.parse(app_uri)
+      req = make_request(Net::HTTP::Get, uri)
 
-        begin
-          File.open(dest_path, 'w+') do |f|
+      File.open(dest_path, 'wb+') do |f|
+        Net::HTTP.start(uri.host, uri.port) do |http|
+          http.request(req) do |resp|
             resp.read_body do |chunk|
               f.write(chunk)
             end
+            # Throws if non-200
+            resp.value
           end
-        rescue => e
-          FileUtils.rm_f(dest_path)
-          raise e
         end
-
-        resp
       end
 
-      req = RestClient::Request.new(:url => app_uri,
-                                    :method => :get,
-                                    :block_response => save_app)
-      req.execute
+    rescue
+      FileUtils.rm_f(dest_path)
+      raise
     end
 
     # Uploads the file living at _droplet_path_ to the uri using a PUT request.
     #
-    # NB: This streams the file off of disk in 1k chunks.
+    # NB: This streams the file off of disk.
     #
     # @param  uri           String  Where the app should be uploaded to
     # @param  droplet_path  String  The location on disk of the droplet to be uploaded
-    #
-    # @return Net::HTTPResponse
     def upload_droplet(droplet_uri, droplet_path)
-      RestClient.post(droplet_uri,
-                      :upload => {
-                        :droplet => File.new(droplet_path, 'rb')
-                      })
+      uri  = URI.parse(droplet_uri)
+      req  = make_request(Net::HTTP::Post, uri)
+      droplet = File.open(droplet_path)
+      mpfs = MultipartFileStream.new('upload[droplet]', droplet)
+      req.content_length = mpfs.size
+      req.set_content_type('multipart/form-data', :boundary => mpfs.boundary)
+      req.body_stream = mpfs
+
+      ret = Net::HTTP.start(uri.host, uri.port) do |http|
+        http.request(req)
+      end
+
+      # Throws if non-200
+      ret.value
+    ensure
+      droplet.close if droplet
     end
 
 
@@ -118,5 +202,21 @@ module VCAP::Stager::Util
       end
     end
 
+    private
+
+    # Creates an instance of a class derived from Net::HTTPRequest
+    # and sets basic auth info
+    #
+    # @param  klass  Net::HTTPRequest
+    # @param  uri    URI::HTTP
+    #
+    # @return Net::HTTPRequest
+    def make_request(klass, uri)
+      req = klass.new(uri.request_uri)
+      if uri.user
+        req.basic_auth(uri.user, uri.password)
+      end
+      req
+    end
   end
 end

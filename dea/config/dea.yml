@@ -66,7 +66,7 @@ runtimes:
     debug_env:
       run:
         - JAVA_OPTS="$JAVA_OPTS -Xdebug -Xrunjdwp:transport=dt_socket,address=$VCAP_DEBUG_PORT,server=y,suspend=n"
-      wait:
+      suspend:
         - JAVA_OPTS="$JAVA_OPTS -Xdebug -Xrunjdwp:transport=dt_socket,address=$VCAP_DEBUG_PORT,server=y,suspend=y"
   php:
     executable: php
@@ -83,3 +83,11 @@ runtimes:
     version: 2.6.5
     version_flag: '--version'
     environment:
+
+# Used for /healthz and /vars endpoints. If not provided random
+# values will be generated on component start. Uncomment to use
+# static values.
+#status:
+#  port: 34501
+#  user: thin
+#  password: thin

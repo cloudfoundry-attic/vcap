@@ -10,7 +10,8 @@ require 'bundler/setup'
 
 require 'dea/agent'
 
-cfg_overrides = { 'config_file' => File.join(File.dirname(__FILE__), '../config/dea.yml') }
+cfg_path = ENV["CLOUD_FOUNDRY_CONFIG_PATH"] || File.join(File.dirname(__FILE__), '../config')
+cfg_overrides = { 'config_file' => File.join(cfg_path, 'dea.yml') }
 
 options = OptionParser.new do |opts|
   opts.banner = 'Usage: dea [OPTIONS]'

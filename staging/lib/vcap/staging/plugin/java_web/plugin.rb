@@ -2,6 +2,7 @@ require File.expand_path('../../common', __FILE__)
 require File.join(File.expand_path('../', __FILE__), 'tomcat.rb')
 
 class JavaWebPlugin < StagingPlugin
+
   def framework
     'java_web'
   end
@@ -23,8 +24,10 @@ class JavaWebPlugin < StagingPlugin
       unless File.exist? web_config_file
         raise "Web application staging failed: web.xml not found"
       end
-      copy_service_drivers(webapp_root)
-      configure_webapp( webapp_root, self.autostaging_template, environment) unless self.skip_staging(webapp_root)
+      services = environment[:services] if environment
+      copy_service_drivers(webapp_root, services)
+      Tomcat.prepare_insight destination_directory, environment, insight_agent if Tomcat.insight_bound? services
+      configure_webapp(webapp_root, self.autostaging_template, environment) unless self.skip_staging(webapp_root)
       create_startup_script
     end
   end
@@ -42,8 +45,7 @@ class JavaWebPlugin < StagingPlugin
     FileUtils.mkdir_p File.join(destination_directory, 'logs')
   end
 
-  def copy_service_drivers webapp_root
-    services = environment[:services] if environment
+  def copy_service_drivers webapp_root, services
     Tomcat.copy_service_drivers(services, webapp_root) if services
   end
 

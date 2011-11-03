@@ -222,7 +222,14 @@ module DEA
       NATS.start(:uri => @nats_uri) do
 
         # Register ourselves with the system
-        VCAP::Component.register(:type => 'DEA', :host => @local_ip, :config => @config, :index => @config['index'])
+        status_config = @config['status'] || {}
+        VCAP::Component.register(:type => 'DEA',
+                           :host => @local_ip,
+                           :index => @config['index'],
+                           :config => @config,
+                           :port => status_config['port'],
+                           :user => status_config['user'],
+                           :password => status_config['password'])
 
         uuid = VCAP::Component.uuid
 
@@ -870,7 +877,7 @@ module DEA
         if state && state['state'] == 'RUNNING'
           block.call(true)
           timer.cancel
-        elsif instance[:debug_mode] != "wait"
+        elsif instance[:debug_mode] != "suspend"
           attempts += 1
           if attempts > 600 || instance[:state] != :STARTING # 5 minutes or instance was stopped
             block.call(false)

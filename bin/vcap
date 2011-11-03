@@ -136,7 +136,7 @@ class Component
         # Make sure db is setup, this is slow and we should make it faster, but
         # should help for now.
         if is_cloud_controller?
-          Dir.chdir("#{File.dirname(__FILE__)}/../cloud_controller") { `rake db:migrate CLOUD_CONTROLLER_CONFIG=#{@configuration_path}` }
+          Dir.chdir("#{File.dirname(__FILE__)}/../cloud_controller") { `bundle exec rake db:migrate CLOUD_CONTROLLER_CONFIG=#{@configuration_path}` }
         end
         exec("#{component_start_path}")
       end
@@ -344,7 +344,7 @@ module Run
     end
 
     cc_dir = File.expand_path(File.join(DIR, '..', 'cloud_controller'))
-    run_command("Resetting the CloudController database", "cd #{cc_dir} 2>&1 && rake db:drop 2>&1")
+    run_command("Resetting the CloudController database", "cd #{cc_dir} 2>&1 && bundle exec rake db:drop 2>&1")
     puts
 
     cc_log_dir = File.join(cc_dir, 'log')
