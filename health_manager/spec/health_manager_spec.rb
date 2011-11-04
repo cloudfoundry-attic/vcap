@@ -42,7 +42,16 @@ describe HealthManager do
         'flapping_death' => 3,
         'flapping_timeout' => 5,
         'restart_timeout' => 2,
-        'stable_state' => 1
+        'stable_state' => 1,
+        'request_queue' => 0
+      },
+      'rails_environment' => 'test',
+      'database_environment' => {
+        'test' => {
+          'adapter' => 'sqlite3',
+          'database' => 'db/test.sqlite3',
+          'encoding' => 'utf8'
+        }
       }
     })
 
