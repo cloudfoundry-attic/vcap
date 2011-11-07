@@ -713,6 +713,7 @@ class HealthManager
           start_message = encode_json(@request_queue.remove)
           NATS.publish('cloudcontrollers.hm.requests', start_message)
           @logger.info("Requesting the start of missing instances: #{start_message}")
+          VCAP::Component.varz[:healthmanager_queue_length] = @request_queue.size
         end
       end
     end
@@ -738,6 +739,8 @@ class HealthManager
     VCAP::Component.varz[:crashed_instances] = -1
 
     VCAP::Component.varz[:down_instances]    = -1
+
+    VCAP::Component.varz[:healthmanager_queue_length] = 0
 
     VCAP::Component.varz[:total] = {
       :frameworks => {},
