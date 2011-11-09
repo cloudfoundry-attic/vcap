@@ -292,6 +292,7 @@ class AppsController < ApplicationController
     end
 
     app.metadata[:debug] = body_params[:debug] if body_params
+    app.metadata[:command] = body_params[:command] if body_params[:command]
 
     # 'app.save' can actually raise an exception, if whatever is
     # invalid happens all the way down at the DB layer.

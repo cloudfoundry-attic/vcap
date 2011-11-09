@@ -852,16 +852,14 @@ module DEA
     def detect_app_ready(instance, manifest, &block)
       state_file = manifest['state_file']
       if state_file
+        @logger.debug("Detecting state ready")
         state_file = File.join(instance[:dir], state_file)
         detect_state_ready(instance, state_file, &block)
+      elsif instance[:port]
+        @logger.debug("Detecting port ready")
+        detect_port_ready(instance, &block)
       else
-        standalone = manifest['standalone']
-        if standalone
-          @logger.debug("Found a standalone app")
-          block.call(true)
-        else
-          detect_port_ready(instance, &block)
-        end
+        block.call(true)
       end
     end
 

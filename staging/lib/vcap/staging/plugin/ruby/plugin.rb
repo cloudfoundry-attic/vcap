@@ -4,15 +4,9 @@ class RubyPlugin < StagingPlugin
     'ruby'
   end
 
-  def resource_dir
-    File.join(File.dirname(__FILE__), 'resources')
-  end
-
   def stage_application
     Dir.chdir(destination_directory) do
       create_app_directories
-      FileUtils.cp_r(resource_dir, destination_directory)
-      FileUtils.mv(File.join(destination_directory, "resources", "droplet.yaml"), destination_directory)
       copy_source_files
       compile_gems
       create_startup_script
@@ -20,16 +14,11 @@ class RubyPlugin < StagingPlugin
   end
 
   def start_command
-    config = YAML.load_file('app/app.yaml')
-    cmd = config['command']
+    cmd = @environment[:meta][:command]
     cmd = cmd.sub(/ruby/, "#{local_runtime}")
     cmd = cmd.sub(/rake/, "#{local_runtime} -S rake")
     cmd = cmd.sub(/bundle/,"#{gem_bin_dir}/bundle")
     cmd = cmd.sub(/rackup/, "#{local_runtime} -S rackup")
-    #if uses_bundler?
-      #TODO handle cases where cmd already starts with bundle? or should we even do this?
-      #cmd="#{local_runtime} ./rubygems/ruby/#{library_version}/bin/bundle exec #{cmd}"
-    #end
     cmd
   end
 
@@ -42,6 +31,7 @@ class RubyPlugin < StagingPlugin
   def startup_script
     vars = environment_hash
     if uses_bundler?
+       #TODO add local_runtime minus "ruby".  Problem the rackup gem in 1.9.1 is requiring ruby18?  Not so in 1.9.2
       vars['PATH'] = "$PWD/app/rubygems/ruby/#{library_version}/bin:$PATH"
       vars['GEM_PATH'] = vars['GEM_HOME'] = "$PWD/app/rubygems/ruby/#{library_version}"
       vars['RUBYOPT'] = '-I$PWD/ruby -rstdsync'

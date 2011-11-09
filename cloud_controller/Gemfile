@@ -48,7 +48,6 @@ gem 'ruby-hmac', :require => 'hmac-sha1'
 gem 'SystemTimer', :platforms => :mri_18
 gem 'uuidtools'
 gem 'rest-client', '= 1.6.7'
-gem 'rubyzip'
 
 # rspec-rails is outside the 'test' group in order to consistently provide Rake tasks.
 gem 'rspec-rails', '>= 2.4.1'

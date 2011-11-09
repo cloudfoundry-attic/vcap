@@ -120,7 +120,9 @@ class App < ActiveRecord::Base
     { :services => services,
       :framework => framework,
       :runtime => runtime,
-      :resources => resource_requirements }
+      :resources => resource_requirements,
+      :meta => metadata,
+    }
   end
 
   def staging_task_properties
@@ -129,7 +131,9 @@ class App < ActiveRecord::Base
       :framework   => framework,
       :runtime     => runtime,
       :resources   => resource_requirements,
-      :environment => environment}
+      :meta => metadata,
+      :environment => environment,
+    }
   end
 
   # Returns an array of the URLs that point to this application
