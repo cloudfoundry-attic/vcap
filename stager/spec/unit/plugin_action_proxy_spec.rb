@@ -36,7 +36,7 @@ describe VCAP::Stager::PluginActionProxy do
       rescue VCAP::Stager::StagingAbortedError => e
         caught_message = e.to_s
       end
-      caught_message.should == reason
+      caught_message.should == "Staging aborted:\n #{reason}"
     end
   end
 

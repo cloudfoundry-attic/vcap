@@ -35,10 +35,10 @@ module VCAP
     class InternalError        < TaskError; set_desc "Unexpected internal error encountered (possibly a bug).";   end
 
     # A PluginRunnerError occurs while the application is being staged inside of the container
-    class PluginRunnerError             < Error; end
-    class MissingFrameworkPluginError   < PluginRunnerError; end
-    class DuplicateFrameworkPluginError < PluginRunnerError; end
-    class UnknownPluginTypeError        < PluginRunnerError; end
-    class StagingAbortedError           < PluginRunnerError; end
+    class PluginRunnerError             < TaskError;         set_desc "Failed running staging plugins"            end
+    class MissingFrameworkPluginError   < PluginRunnerError; set_desc "Missing framework plugin";                 end
+    class DuplicateFrameworkPluginError < PluginRunnerError; set_desc "Duplicate framework plugins specified";    end
+    class UnknownPluginTypeError        < PluginRunnerError; set_desc "Unknown plugin type";                      end
+    class StagingAbortedError           < PluginRunnerError; set_desc "Staging aborted";                          end
   end
 end

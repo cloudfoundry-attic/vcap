@@ -1,0 +1,22 @@
+require 'bundler/setup'
+require 'yaml'
+
+$LOAD_PATH.unshift(File.expand_path('../../lib', __FILE__))
+
+if ARGV.length != 2
+  $stderr.puts "Usage: plugin_runner [serialized plugin runner path] [error path]"
+  exit 1
+end
+
+plugin_runner_path, error_path = ARGV
+
+begin
+  plugin_runner = VCAP::Stager::PluginRunner.from_file(plugin_runner_path)
+  plugin_runner.run_plugins
+  exit 0
+rescue => e
+  File.open(error_path, 'w+') do |f|
+    YAML.dump(e, f)
+  end
+  exit 1
+end

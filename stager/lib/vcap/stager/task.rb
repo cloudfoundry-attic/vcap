@@ -11,6 +11,7 @@ require 'vcap/staging/plugin/common'
 
 require 'vcap/stager/constants'
 require 'vcap/stager/errors'
+require 'vcap/stager/plugin_runner'
 
 module VCAP
   module Stager
@@ -92,7 +93,11 @@ class VCAP::Stager::Task
         download_app(dirs[:unstaged], dirs[:base])
 
         task_logger.info("Staging application")
-        run_staging_plugin(dirs[:unstaged], dirs[:staged], dirs[:base], task_logger)
+        if @app_props['plugins']
+          run_plugins(dirs[:unstaged], dirs[:staged], dirs[:base])
+        else
+          run_staging_plugin(dirs[:unstaged], dirs[:staged], dirs[:base], task_logger)
+        end
 
         task_logger.info("Uploading droplet")
         upload_droplet(dirs[:staged], dirs[:base])
@@ -238,6 +243,74 @@ class VCAP::Stager::Task
     FileUtils.rm_f(plugin_config_path) if plugin_config_path
   end
 
+  # Stages our app into dst_dir, looking for the app source in src_dir
+  #
+  # NB: This is the entry point for *new style* staging plugins
+  #
+  # @param  src_dir      String  Location of the unstaged app
+  # @param  dst_dir      String  Where to place the staged app
+  # @param  base_dir     String  Directory to use to place scratch files (houses {src,dst} dir)
+  def run_plugins(src_dir, dst_dir, base_dir)
+    runner_path  = File.join(base_dir, 'plugin_runner')
+    gemfile_path = File.join(base_dir, 'Gemfile')
+    error_path   = File.join(base_dir, 'plugin_runner_error')
+    stager_uid   = get_uid()
+
+    unless stager_uid != nil
+      @vcap_logger.error("Failed to get our uid!")
+      raise VCAP::Stager::InternalError
+    end
+
+    runner = VCAP::Stager::PluginRunner.new(src_dir, dst_dir, @app_props, @cc_info)
+    runner.to_file(runner_path)
+    runner.generate_gemfile(gemfile_path)
+    runner_cmd = "GEMFILE_PATH='%s' bundle exec %s %s" % [gemfile_path,
+                                                          VCAP::Stager::PluginRunner::RUNNER_BIN_PATH,
+                                                          error_path]
+    # Can't wait until containers!
+    if @user
+      runner_cmd = "sudo -u '##{@user[:uid]}' #{runner_cmd}"
+      @vcap_logger.debug("Chowning #{base_dir} to #{@user}")
+      res = run_logged("sudo chown -R #{@user[:user]} #{base_dir}")
+      raise VCAP::Stager::StagingPluginError, "Failed chowning base directory" unless res[:success]
+    end
+
+    @vcap_logger.debug("Executing plugin runner with command #{runner_cmd}")
+    res = run_logged(runner_cmd, 0, @max_staging_duration)
+
+    if res[:timed_out]
+      @vcap_logger.error("Plugin runner timed out after #{@max_staging_duration} secs")
+      raise VCAP::Stager::StagingTimeoutError
+
+    elsif !res[:success]
+      @vcap_logger.error("Failed running staging plugins")
+
+      begin
+        err = YAML.load_file(error_path)
+      rescue => e
+        @vcap_logger.error("Failed reading error file at #{error_path}")
+        @vcap_logger.error(e)
+        # We can't communicate the specific reason that staging failed (if any),
+        # so just raise a generic error.
+        raise VCAP::Stager::PluginRunnerError
+      end
+
+      @vcap_logger.error(e)
+      if err.kind_of?(VCAP::Stager::TaskError)
+        raise err
+      else
+        # Unhandled exception, raise a generic error
+        raise VCAP::Stager::PluginRunnerError
+      end
+    end
+
+  ensure
+    if @user
+      @vcap_logger.debug("Chowning #{base_dir} back to #{stager_uid}")
+      run_logged("sudo chown -R #{@stager_uid} #{base_dir}")
+    end
+  end
+
   # Packages and uploads the droplet in staged_dir
   #
   # NB: See download_app for an explanation of why we shell out here...
@@ -278,5 +351,14 @@ class VCAP::Stager::Task
     @vcap_logger.send(level, "stderr: #{ret[:stderr]}") if ret[:stderr] != ''
 
     ret
+  end
+
+  def get_uid
+    ret = run_logged('id')
+    if ret[:success]
+      ret[:stdout] =~ /uid=(\d+)/ ? $1 : nil
+    else
+      nil
+    end
   end
 end

@@ -1,5 +1,6 @@
 require 'erb'
 require 'fileutils'
+require 'yaml'
 
 require 'vcap/cloud_controller/ipc'
 require 'vcap/logging'
@@ -17,7 +18,8 @@ end
 # Responsible for orchestrating the execution of all staging plugins selected
 # by the user.
 class VCAP::Stager::PluginRunner
-  GEMFILE_TEMPLATE_PATH    = File.join(VCAP::Stager::ASSET_DIR, 'plugin_runner_gemfile.erb')
+  GEMFILE_TEMPLATE_PATH  = File.join(VCAP::Stager::ASSET_DIR, 'plugin_runner_gemfile.erb')
+  RUNNER_BIN_PATH        = File.join(VCAP::Stager::BIN_DIR, 'plugin_runner')
 
   class << self
     attr_reader :registered_plugins
@@ -32,22 +34,8 @@ class VCAP::Stager::PluginRunner
       @registered_plugins = []
     end
 
-    # Generates a Gemfile that should be used in conjuction with running the
-    # standalone script using 'bundle exec'. We assume that every plugin has
-    # already been installed locally on the system (therefore its individual
-    # dependencies have been satisfied) and rely on Bundler to resolve possible
-    # conflicts in plugin dependencies.
-    #
-    # @param  dest_path    String  Where to place the generated Gemfile
-    # @param  plugin_gems  Array   Plugins to be loaded
-    #                              [{'name' => GEM_NAME, 'version' => GEM_VERSION}]
-    def generate_standalone_gemfile(dest_path, plugins)
-      plugin_gems = plugins.map {|p| p['gem'] }
-      template = File.read(GEMFILE_TEMPLATE_PATH)
-      renderer = ERB.new(template)
-      gemfile_contents = renderer.result(binding())
-      File.open(dest_path, 'w+') {|f| f.write(gemfile_contents) }
-      dest_path
+    def from_file(src_path)
+      YAML.load_file(src_path)
     end
   end
 
@@ -63,7 +51,7 @@ class VCAP::Stager::PluginRunner
     @dest_dir        = dest_dir
     @droplet         = VCAP::Stager::Droplet.new(dest_dir)
     @app_properties  = app_properties
-    @logger          = VCAP::Logging.logger('vcap.stager.plugin_orchestrator')
+    @logger          = VCAP::Logging.logger('vcap.stager.plugin_runner')
     @services_client = VCAP::CloudController::Ipc::ServiceConsumerV1Client.new(cc_info['host'],
                                                                                cc_info['port'],
                                                                                :staging_task_id => cc_info['task_id'])
@@ -71,7 +59,7 @@ class VCAP::Stager::PluginRunner
   end
 
   def run_plugins
-    for plugin_info in @app_properties['plugins']
+    for plugin_info in @app_properties['plugins']['staging']
       require(plugin_info['gem']['name'])
     end
 
@@ -102,6 +90,31 @@ class VCAP::Stager::PluginRunner
     @droplet.generate_vcap_start_script(@environment)
   end
 
+  # Generates a Gemfile that should be used in conjuction with running the
+  # standalone script using 'bundle exec'. We assume that every plugin has
+  # already been installed locally on the system (therefore its individual
+  # dependencies have been satisfied) and rely on Bundler to resolve possible
+  # conflicts in plugin dependencies.
+  #
+  # @param  dest_path    String  Where to place the generated Gemfile
+  def generate_gemfile(dest_path)
+    plugin_gems = @app_properties['plugins']['staging'].map {|p| p['gem'] }
+    template = File.read(GEMFILE_TEMPLATE_PATH)
+    renderer = ERB.new(template)
+    gemfile_contents = renderer.result(binding())
+    File.open(dest_path, 'w+') {|f| f.write(gemfile_contents) }
+    dest_path
+  end
+
+  # Serializes *self* to the supplied path
+  #
+  # @param  dest_path  String  Where to serialize ourselves
+  def to_file(dest_path)
+    File.open(dest_path, 'w+') do |f|
+      YAML.dump(self, f)
+    end
+  end
+
   protected
 
   def collect_plugins
@@ -113,7 +126,8 @@ class VCAP::Stager::PluginRunner
       when :framework
         @logger.debug("Found framework plugin: #{plugin.name}")
         if framework_plugin
-          raise VCAP::Stager::DuplicateFrameworkPluginError, "Only one framework plugin allowed"
+          errstr = [framework_plugin.name, plugin.name].join(', ')
+          raise VCAP::Stager::DuplicateFrameworkPluginError, errstr
         else
           framework_plugin = plugin
         end
@@ -123,12 +137,12 @@ class VCAP::Stager::PluginRunner
         feature_plugins << plugin
 
       else
-        raise VCAP::Stager::UnknownPluginTypeError, "Unknown plugin type: #{ptype}"
+        raise VCAP::Stager::UnknownPluginTypeError, ptype
 
       end
     end
     unless framework_plugin
-      raise VCAP::Stager::MissingFrameworkPluginError, "No framework plugin found"
+      raise VCAP::Stager::MissingFrameworkPluginError
     end
 
     [framework_plugin, feature_plugins]

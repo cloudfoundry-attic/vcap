@@ -82,6 +82,68 @@ describe VCAP::Stager::Task do
     end
   end
 
+  describe '#run_plugins' do
+    before :each do
+      @tmp_dir = Dir.mktmpdir
+      @props = {
+        'runtime'     => 'ruby',
+        'framework'   => 'sinatra',
+        'services'    => [{}],
+        'plugins'     => {'staging' => []},
+        'resources'   => {
+          'memory'    => 128,
+          'disk'      => 1024,
+          'fds'       => 64,
+        },
+      }
+      @cc_info = {
+        'host' => '127.0.0.1',
+        'port' => '9022',
+        'task_id' => 'test',
+      }
+      @task = VCAP::Stager::Task.new(1, @props, nil, nil, @cc_info, nil)
+      @task.stub(:get_uid).and_return(0)
+    end
+
+    after :each do
+      FileUtils.rm_rf(@tmp_dir)
+    end
+
+    it 'should raise an instance of VCAP::Stager::StagingTimeoutError on plugin runner timeout' do
+      @task.stub(:run_logged).and_return({:success => false, :timed_out => true})
+      expect do
+        @task.send(:run_plugins, @tmp_dir, @tmp_dir, @tmp_dir)
+      end.to raise_error(VCAP::Stager::StagingTimeoutError)
+    end
+
+    it 'should raise the serialized error if it is a VCAP::Stager::TaskError' do
+      error_file = File.join(@tmp_dir, 'plugin_runner_error')
+      error = VCAP::Stager::InternalError.new
+      File.open(error_file, 'w+') {|f| YAML.dump(error, f) }
+      @task.stub(:run_logged).and_return({:success => false, :timed_out => false})
+      expect do
+        @task.send(:run_plugins, @tmp_dir, @tmp_dir, @tmp_dir)
+      end.to raise_error(VCAP::Stager::InternalError)
+    end
+
+    it 'should raise an instance of VCAP::Stager::PluginRunnerError if the serialized error is not an instance of VCAP::Stager::TaskError' do
+      error_file = File.join(@tmp_dir, 'plugin_runner_error')
+      error = StandardError.new
+      File.open(error_file, 'w+') {|f| YAML.dump(error, f) }
+      @task.stub(:run_logged).and_return({:success => false, :timed_out => false})
+      expect do
+        @task.send(:run_plugins, @tmp_dir, @tmp_dir, @tmp_dir)
+      end.to raise_error(VCAP::Stager::PluginRunnerError)
+    end
+
+    it 'should raise an instance of VCAP::Stager::PluginRunnerError if it cannot read the error file' do
+      @task.stub(:run_logged).and_return({:success => false, :timed_out => false})
+      expect do
+        @task.send(:run_plugins, @tmp_dir, @tmp_dir, @tmp_dir)
+      end.to raise_error(VCAP::Stager::PluginRunnerError)
+    end
+  end
+
   describe '#upload_app' do
     before :each do
       @tmp_dir = Dir.mktmpdir

@@ -4,13 +4,14 @@ require 'fileutils'
 require 'tmpdir'
 
 describe VCAP::Stager::PluginRunner do
-  describe '.generate_standalone_gemfile' do
+  describe '#generate_gemfile' do
     it 'should write out a Gemfile containing all plugins to be run' do
       tmpdir = Dir.mktmpdir
       gemfile_path = File.join(tmpdir, 'Gemfile')
       plugins = [{'gem' => {'name' => 'test1'}},
                  {'gem' => {'name' => 'test2', 'version' => '0.0.1'}}]
-      VCAP::Stager::PluginRunner.generate_standalone_gemfile(gemfile_path, plugins)
+      runner = VCAP::Stager::PluginRunner.new(tmpdir, tmpdir, {'plugins' => {'staging' => plugins}}, {})
+      runner.generate_gemfile(gemfile_path)
       File.exist?(gemfile_path).should be_true
       gemfile_contents = File.read(gemfile_path)
       gemfile_contents.match(/^gem 'test1'$/).should be_true
@@ -32,7 +33,7 @@ describe VCAP::Stager::PluginRunner do
         'name'             => 'testapp',
         'framework'        => 'sinatra',
         'runtime'          => 'ruby18',
-        'plugins'          => [],
+        'plugins'          => {'staging' => []},
         'service_configs'  => [],
         'service_bindings' => [],
         'resource_limits'  => {
@@ -50,7 +51,7 @@ describe VCAP::Stager::PluginRunner do
     end
 
     it 'should raise an error for unknown plugins' do
-      @app_props['plugins'] = [{'gem' => {'name' => 'invalid_gem'}}]
+      @app_props['plugins']['staging'] = [{'gem' => {'name' => 'invalid_gem'}}]
       orch = VCAP::Stager::PluginRunner.new(@src_dir, @dst_dir, @app_props, @cc_info)
       expect do
         orch.run_plugins
