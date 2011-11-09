@@ -128,18 +128,19 @@ Dir.mktmpdir do |tmpdir|
   # save the deployment target for later use
   Deployment.save_deployment_target(deployment_name, cloudfoundry_home)
 
-  puts "---------------"
-  puts "Deployment info"
-  puts "---------------"
-  puts "Status: successful"
+  puts "\nDeployment Info".green
+  puts "***************".green
+  puts "* Status:" + " Success".green
 
   vcap_dev_path = File.expand_path(File.join(script_dir, "..", "bin", "vcap_dev"))
-  puts "Config files: #{deployment_config_path}"
-  puts "Deployment name: #{deployment_name}"
-  puts "NOTE: If you want to run ruby/vmc please source the profile #{Deployment.get_deployment_profile_file}"
+  puts "* Config files:" + " #{deployment_config_path}"
+  puts "* Deployment name:" + " #{deployment_name}"
+  puts "*" + " Note:".red
+  puts "  * If you want to run ruby/vmc please source the profile #{Deployment.get_deployment_profile_file}"
+  puts "  * If you want to run cloudfoundry components by hand please source the profile #{Deployment.get_local_deployment_run_profile}"
   args = ""
   args << (deployment_name != DEPLOYMENT_DEFAULT_NAME ? " -n #{deployment_name}" : "")
   args << (cloudfoundry_home != Deployment.get_cloudfoundry_home ? " -d #{cloudfoundry_home}" : "")
   args << " start"
-  puts "Command to run cloudfoundry: #{vcap_dev_path} #{args.strip}"
+  puts "* Command to run cloudfoundry:" + " #{vcap_dev_path} #{args.strip}".green
 end

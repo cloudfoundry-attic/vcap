@@ -8,6 +8,53 @@ describe UsersController do
     request.env["HTTP_AUTHORIZATION"] = ""
   end
 
+  describe "#info" do
+    it 'should return an user info as an user requesting for himself' do
+      User.find_by_email(@user.email).should_not be_nil
+      @user.admin?.should be_false
+      @user_headers.each {|key, value| request.env[key] = value}
+      get :info, {:email => @user.email}
+      response.status.should == 200
+      json = Yajl::Parser.parse(response.body)
+      json.should be_kind_of(Hash)
+      json['email'].should == @user.email
+    end
+
+    it 'should return an user info as an admin requesting for an existent user' do
+      User.find_by_email(@user.email).should_not be_nil
+      @admin.admin?.should be_true
+      @admin_headers.each {|key, value| request.env[key] = value}
+      get :info, {:email => @user.email}
+      response.status.should == 200
+      json = Yajl::Parser.parse(response.body)
+      json.should be_kind_of(Hash)
+      json['email'].should == @user.email
+    end
+
+    it 'should return an error as an admin requesting for a non-existent user' do
+      @admin.admin?.should be_true
+      @admin_headers.each {|key, value| request.env[key] = value}
+      get :info, {:email => 'non-existent@example.com'}
+      response.status.should == 403
+      json = Yajl::Parser.parse(response.body)
+      json.should be_kind_of(Hash)
+      json['code'].should == 201
+      json['description'].should == 'User not found'
+    end
+
+    it 'should return an error as a user requesting for another user' do
+      User.find_by_email(@user.email).should_not be_nil
+      @user.admin?.should be_false
+      @user_headers.each {|key, value| request.env[key] = value}
+      get :info, {:email => @admin.email}
+      response.status.should == 403
+      json = Yajl::Parser.parse(response.body)
+      json.should be_kind_of(Hash)
+      json['code'].should == 200
+      json['description'].should == 'Operation not permitted'
+    end
+  end
+
   describe "#list" do
     it 'should return 200 as an admin' do
       @admin.admin?.should be_true

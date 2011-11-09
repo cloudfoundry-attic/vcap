@@ -144,7 +144,6 @@ class ApplicationController < ActionController::Base
   end
 
   def render_cloud_error(e)
-    log_exception(e)
     @error = e
     render :status => e.status, :json => e.to_json
   end

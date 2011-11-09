@@ -49,3 +49,12 @@ template node[:deployment][:info_file] do
     :deployment_log_path => node[:deployment][:log_path]
   })
 end
+
+file node[:deployment][:local_run_profile] do
+  owner node[:deployment][:user]
+  group node[:deployment][:group]
+  content <<-EOH
+    export PATH=#{node[:ruby][:path]}/bin:`#{node[:ruby][:path]}/bin/gem env gempath`/bin:$PATH
+    export CLOUD_FOUNDRY_CONFIG_PATH=#{node[:deployment][:config_path]}
+  EOH
+end
