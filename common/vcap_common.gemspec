@@ -1,6 +1,6 @@
 spec = Gem::Specification.new do |s|
   s.name = 'vcap_common'
-  s.version = 0.99
+  s.version = '1.0.0'
   s.date = '2011-02-09'
   s.summary = 'vcap common'
   s.homepage = "http://github.com/vmware-ac/core"
@@ -15,6 +15,8 @@ spec = Gem::Specification.new do |s|
   s.add_dependency('nats')
   s.add_dependency('logging', '>= 1.5.0')
   s.add_dependency('posix-spawn')
+  s.add_dependency('rake')
+  s.add_dependency('vcap_logging')
 
   s.require_paths = ['lib']
 

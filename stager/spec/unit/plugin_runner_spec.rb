@@ -4,21 +4,6 @@ require 'fileutils'
 require 'tmpdir'
 
 describe VCAP::Stager::PluginRunner do
-  describe '#generate_gemfile' do
-    it 'should write out a Gemfile containing all plugins to be run' do
-      tmpdir = Dir.mktmpdir
-      gemfile_path = File.join(tmpdir, 'Gemfile')
-      plugins = [{'gem' => {'name' => 'test1'}},
-                 {'gem' => {'name' => 'test2', 'version' => '0.0.1'}}]
-      runner = VCAP::Stager::PluginRunner.new(tmpdir, tmpdir, {'plugins' => {'staging' => plugins}}, {})
-      runner.generate_gemfile(gemfile_path)
-      File.exist?(gemfile_path).should be_true
-      gemfile_contents = File.read(gemfile_path)
-      gemfile_contents.match(/^gem 'test1'$/).should be_true
-      gemfile_contents.match(/^gem 'test2', '= 0.0.1'$/).should be_true
-    end
-  end
-
   describe '#run_plugins' do
     before :each do
       @src_dir = Dir.mktmpdir
@@ -33,7 +18,7 @@ describe VCAP::Stager::PluginRunner do
         'name'             => 'testapp',
         'framework'        => 'sinatra',
         'runtime'          => 'ruby18',
-        'plugins'          => {'staging' => []},
+        'plugins'          => {},
         'service_configs'  => [],
         'service_bindings' => [],
         'resource_limits'  => {
@@ -42,7 +27,7 @@ describe VCAP::Stager::PluginRunner do
           'fds'    => 1024,
         }
       }
-      VCAP::Stager::PluginRunner.reset_registered_plugins()
+      VCAP::PluginRegistry.plugins = {}
     end
 
     after :each do
@@ -51,11 +36,11 @@ describe VCAP::Stager::PluginRunner do
     end
 
     it 'should raise an error for unknown plugins' do
-      @app_props['plugins']['staging'] = [{'gem' => {'name' => 'invalid_gem'}}]
+      @app_props['plugins']['unknown'] = {}
       orch = VCAP::Stager::PluginRunner.new(@src_dir, @dst_dir, @app_props, @cc_info)
       expect do
         orch.run_plugins
-      end.to raise_error(LoadError)
+      end.to raise_error(VCAP::Stager::UnsupportedPluginError)
     end
 
     it 'should raise an error if no framework plugin is supplied' do
@@ -69,8 +54,9 @@ describe VCAP::Stager::PluginRunner do
       plugins = []
       2.times do |i|
         name = "plugin_#{i}"
+        @app_props['plugins'][name] = {}
         p = create_mock_plugin(name, :framework)
-        VCAP::Stager::PluginRunner.register_plugins(p)
+        VCAP::PluginRegistry.register_plugins(p)
       end
       orch  = VCAP::Stager::PluginRunner.new(@src_dir, @dst_dir, @app_props, @cc_info)
       expect do
@@ -79,8 +65,9 @@ describe VCAP::Stager::PluginRunner do
      end
 
     it 'should raise an error if a plugin of unknown type is supplied' do
-      p = create_mock_plugin(:plugin0, :invalid_plugin_type)
-      VCAP::Stager::PluginRunner.register_plugins(p)
+      p = create_mock_plugin('plugin0', :invalid_plugin_type)
+      VCAP::PluginRegistry.register_plugins(p)
+      @app_props['plugins']['plugin0'] = {}
       orch = VCAP::Stager::PluginRunner.new(@src_dir, @dst_dir, @app_props, @cc_info)
       expect do
         orch.run_plugins
@@ -91,9 +78,10 @@ describe VCAP::Stager::PluginRunner do
       plugin_types = [:framework, :feature, :feature]
       plugin_types.each_with_index do |ptype, ii|
         name = "plugin_#{ii}"
+        @app_props['plugins'][name] = {}
         p = create_mock_plugin(name, ptype)
         p.should_receive(:stage).with(any_args())
-        VCAP::Stager::PluginRunner.register_plugins(p)
+        VCAP::PluginRegistry.register_plugins(p)
       end
       orch = VCAP::Stager::PluginRunner.new(@src_dir, @dst_dir, @app_props, @cc_info)
       orch.run_plugins
@@ -102,7 +90,7 @@ describe VCAP::Stager::PluginRunner do
 
   def create_mock_plugin(name, type)
     ret = mock(name)
-    ret.stub(:plugin_type).and_return(type)
+    ret.stub(:staging_plugin_type).and_return(type)
     ret.stub(:name).and_return(name)
     ret
   end

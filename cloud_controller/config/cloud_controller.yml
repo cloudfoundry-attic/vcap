@@ -96,7 +96,7 @@ staging:
   max_staging_runtime:    120 # secs
   # Create a secure environment for staging
   secure: false
-  new_stager_percent: 100
+  new_stager_percent: 0
 
 allow_debug: false
 

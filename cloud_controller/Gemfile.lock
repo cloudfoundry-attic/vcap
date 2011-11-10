@@ -1,14 +1,3 @@
-PATH
-  remote: ../common
-  specs:
-    vcap_common (0.99)
-      eventmachine (~> 0.12.10)
-      logging (>= 1.5.0)
-      nats
-      posix-spawn
-      thin
-      yajl-ruby
-
 GEM
   remote: http://rubygems.org/
   specs:
@@ -136,6 +125,13 @@ GEM
       polyglot (>= 0.3.1)
     tzinfo (0.3.26)
     uuidtools (2.1.2)
+    vcap_common (1.0)
+      eventmachine (~> 0.12.10)
+      logging (>= 1.5.0)
+      nats
+      posix-spawn
+      thin
+      yajl-ruby
     vcap_logging (0.1.0)
     vcap_stager_ipc (0.0.2)
       eventmachine
@@ -179,7 +175,7 @@ DEPENDENCIES
   sqlite3
   thin (> 1.2)
   uuidtools
-  vcap_common!
+  vcap_common
   vcap_logging
   vcap_stager_ipc (= 0.0.2)
   vcap_staging (= 0.1.22)

@@ -102,7 +102,6 @@ describe VCAP::Stager::Task do
         'task_id' => 'test',
       }
       @task = VCAP::Stager::Task.new(1, @props, nil, nil, @cc_info, nil)
-      @task.stub(:get_uid).and_return(0)
     end
 
     after :each do

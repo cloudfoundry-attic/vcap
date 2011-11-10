@@ -7,7 +7,7 @@ gem 'logging', '= 1.5.2'
 gem 'rest-client', '= 1.6.7'
 gem 'yajl-ruby', '>= 0.7.9'
 
-gem 'vcap_common'
+gem 'vcap_common', '>= 1.0.0'
 gem 'vcap_logging', '>= 0.1.1'
 gem 'vcap_staging', '>= 0.1.11'
 gem 'vcap_stager_ipc', '= 0.0.2'

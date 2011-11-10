@@ -254,26 +254,10 @@ class VCAP::Stager::Task
     runner_path  = File.join(base_dir, 'plugin_runner')
     gemfile_path = File.join(base_dir, 'Gemfile')
     error_path   = File.join(base_dir, 'plugin_runner_error')
-    stager_uid   = get_uid()
-
-    unless stager_uid != nil
-      @vcap_logger.error("Failed to get our uid!")
-      raise VCAP::Stager::InternalError
-    end
 
     runner = VCAP::Stager::PluginRunner.new(src_dir, dst_dir, @app_props, @cc_info)
     runner.to_file(runner_path)
-    runner.generate_gemfile(gemfile_path)
-    runner_cmd = "GEMFILE_PATH='%s' bundle exec %s %s" % [gemfile_path,
-                                                          VCAP::Stager::PluginRunner::RUNNER_BIN_PATH,
-                                                          error_path]
-    # Can't wait until containers!
-    if @user
-      runner_cmd = "sudo -u '##{@user[:uid]}' #{runner_cmd}"
-      @vcap_logger.debug("Chowning #{base_dir} to #{@user}")
-      res = run_logged("sudo chown -R #{@user[:user]} #{base_dir}")
-      raise VCAP::Stager::StagingPluginError, "Failed chowning base directory" unless res[:success]
-    end
+    runner_cmd = "#{@ruby_path} %s %s" % [VCAP::Stager::PluginRunner::RUNNER_BIN_PATH, error_path]
 
     @vcap_logger.debug("Executing plugin runner with command #{runner_cmd}")
     res = run_logged(runner_cmd, 0, @max_staging_duration)
@@ -302,12 +286,6 @@ class VCAP::Stager::Task
         # Unhandled exception, raise a generic error
         raise VCAP::Stager::PluginRunnerError
       end
-    end
-
-  ensure
-    if @user
-      @vcap_logger.debug("Chowning #{base_dir} back to #{stager_uid}")
-      run_logged("sudo chown -R #{@stager_uid} #{base_dir}")
     end
   end
 

@@ -40,5 +40,6 @@ module VCAP
     class DuplicateFrameworkPluginError < PluginRunnerError; set_desc "Duplicate framework plugins specified";    end
     class UnknownPluginTypeError        < PluginRunnerError; set_desc "Unknown plugin type";                      end
     class StagingAbortedError           < PluginRunnerError; set_desc "Staging aborted";                          end
+    class UnsupportedPluginError        < PluginRunnerError; set_desc "Unsupported plugin";                       end
   end
 end

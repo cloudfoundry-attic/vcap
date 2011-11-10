@@ -40,7 +40,7 @@ GEM
     vcap_cloud_controller_ipc (0.0.1)
       rake
       yajl-ruby
-    vcap_common (0.99)
+    vcap_common (1.0.0)
       eventmachine (~> 0.12.10)
       logging (>= 1.5.0)
       nats
@@ -77,7 +77,7 @@ DEPENDENCIES
   rspec
   sinatra
   vcap_cloud_controller_ipc
-  vcap_common
+  vcap_common (>= 1.0.0)
   vcap_logging (>= 0.1.1)
   vcap_stager_ipc (= 0.0.2)
   vcap_staging (>= 0.1.11)
