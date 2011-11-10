@@ -42,6 +42,17 @@ describe AppsController do
       Yajl::Parser.parse(response.body)['env'].should == []
     end
 
+    it "enforces AccountCapacity limits for users" do
+      max_app_count = AccountCapacity.default[:apps]
+      User.any_instance.stubs(:no_more_apps?).returns(max_app_count)
+      headers_for(@user, nil, @args).each { |key, value| request.env[key] = value }
+      post :create
+      User.any_instance.unstub(:no_more_apps?)
+      resp = Yajl::Parser.parse(response.body)
+      error = resp['description'].include? "Too many applications"
+      error.should eq(true)
+    end
+
     after :each do
       delete :delete, :name => @app_name
     end
