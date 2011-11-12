@@ -1,0 +1,4 @@
+#!/bin/bash
+echo $$ > ./run.pid
+cd <%= app_dir %>
+exec <%= node_executable %> <%= main_file %> $@

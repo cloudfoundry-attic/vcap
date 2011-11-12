@@ -1,0 +1,3 @@
+#!/bin/bash
+PID=$(head -1 ./run.pid)
+kill -9 $PID
