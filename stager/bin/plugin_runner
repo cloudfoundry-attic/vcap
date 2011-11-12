@@ -4,20 +4,38 @@ $LOAD_PATH.unshift(File.expand_path('../../lib', __FILE__))
 require 'bundler/setup'
 require 'yaml'
 
-if ARGV.length != 2
-  $stderr.puts "Usage: plugin_runner [serialized plugin runner path] [error path]"
+require 'vcap/plugin_registry'
+require 'vcap/stager/plugin_runner'
+
+# task_path should be the location of a task file serialized with
+# VCAP::Stager::PluginRunner.serialize_task
+
+if ARGV.length != 1
+  $stderr.puts "Usage: plugin_runner [task_path]"
   exit 1
 end
 
-plugin_runner_path, error_path = ARGV
-
+task = VCAP::PluginRunner.deserialize_task(ARGV[0])
 begin
-  plugin_runner = VCAP::Stager::PluginRunner.from_file(plugin_runner_path)
-  plugin_runner.run_plugins
+  if task['opts']['config_dir']
+    VCAP::PluginRegistry.configure_plugins(task['opts']['config_dir'])
+  end
+
+  if task['opts']['log_path']
+    VCAP::Logging.setup_from_config(:log_file => task['opts']['log_path'])
+  else
+    # Logs to stdout by default
+    VCAP::Logging.setup_from_config({})
+  end
+
+  plugin_runner = VCAP::Stager::PluginRunner.new(VCAP::PluginRegistry.plugins)
+  plugin_runner.run_plugins(task['source_dir'], task['dest_dir'], task['app_props'], task['cc_info'])
   exit 0
 rescue => e
-  File.open(error_path, 'w+') do |f|
-    YAML.dump(e, f)
+  if task['opts']['error_path']
+    File.open(task['opts']['error_path'], 'w+') do |f|
+      YAML.dump(e, f)
+    end
   end
   exit 1
 end

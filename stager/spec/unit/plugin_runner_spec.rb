@@ -27,7 +27,6 @@ describe VCAP::Stager::PluginRunner do
           'fds'    => 1024,
         }
       }
-      VCAP::PluginRegistry.plugins = {}
     end
 
     after :each do
@@ -37,61 +36,52 @@ describe VCAP::Stager::PluginRunner do
 
     it 'should raise an error for unknown plugins' do
       @app_props['plugins']['unknown'] = {}
-      orch = VCAP::Stager::PluginRunner.new(@src_dir, @dst_dir, @app_props, @cc_info)
+      runner = VCAP::Stager::PluginRunner.new
       expect do
-        orch.run_plugins
+        runner.run_plugins(@src_dir, @dst_dir, @app_props, @cc_info)
       end.to raise_error(VCAP::Stager::UnsupportedPluginError)
     end
 
     it 'should raise an error if no framework plugin is supplied' do
-      orch = VCAP::Stager::PluginRunner.new(@src_dir, @dst_dir, @app_props, @cc_info)
+      runner = VCAP::Stager::PluginRunner.new
       expect do
-        orch.run_plugins
+        runner.run_plugins(@src_dir, @dst_dir, @app_props, @cc_info)
       end.to raise_error(VCAP::Stager::MissingFrameworkPluginError)
     end
 
     it 'should raise an error if > 1 framework plugins are supplied' do
-      plugins = []
+      frameworks = ['sinatra', 'unknown']
+      plugins = {}
       2.times do |i|
         name = "plugin_#{i}"
         @app_props['plugins'][name] = {}
-        p = create_mock_plugin(name, :framework)
-        VCAP::PluginRegistry.register_plugins(p)
+        plugins[name] = create_mock_plugin(name, frameworks[i])
       end
-      orch  = VCAP::Stager::PluginRunner.new(@src_dir, @dst_dir, @app_props, @cc_info)
+      runner  = VCAP::Stager::PluginRunner.new(plugins)
       expect do
-        orch.run_plugins
+        runner.run_plugins(@src_dir, @dst_dir, @app_props, @cc_info)
       end.to raise_error(VCAP::Stager::DuplicateFrameworkPluginError)
      end
 
-    it 'should raise an error if a plugin of unknown type is supplied' do
-      p = create_mock_plugin('plugin0', :invalid_plugin_type)
-      VCAP::PluginRegistry.register_plugins(p)
-      @app_props['plugins']['plugin0'] = {}
-      orch = VCAP::Stager::PluginRunner.new(@src_dir, @dst_dir, @app_props, @cc_info)
-      expect do
-        orch.run_plugins
-      end.to raise_error(VCAP::Stager::UnknownPluginTypeError)
-    end
-
     it 'should call stage on each of the registered plugins' do
-      plugin_types = [:framework, :feature, :feature]
-      plugin_types.each_with_index do |ptype, ii|
+      plugins = {}
+      frameworks = ['sinatra', nil, nil]
+      frameworks.each_with_index do |framework, ii|
         name = "plugin_#{ii}"
         @app_props['plugins'][name] = {}
-        p = create_mock_plugin(name, ptype)
+        p = create_mock_plugin(name, framework)
         p.should_receive(:stage).with(any_args())
-        VCAP::PluginRegistry.register_plugins(p)
+        plugins[name] = p
       end
-      orch = VCAP::Stager::PluginRunner.new(@src_dir, @dst_dir, @app_props, @cc_info)
-      orch.run_plugins
+      runner = VCAP::Stager::PluginRunner.new(plugins)
+      runner.run_plugins(@src_dir, @dst_dir, @app_props, @cc_info)
     end
   end
 
-  def create_mock_plugin(name, type)
-    ret = mock(name)
-    ret.stub(:staging_plugin_type).and_return(type)
+  def create_mock_plugin(name, framework=nil)
+    ret = mock()
     ret.stub(:name).and_return(name)
+    ret.stub(:framework).and_return(framework) if framework
     ret
   end
 end

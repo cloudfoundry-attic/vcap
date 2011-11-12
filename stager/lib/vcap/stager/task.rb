@@ -251,13 +251,14 @@ class VCAP::Stager::Task
   # @param  dst_dir      String  Where to place the staged app
   # @param  base_dir     String  Directory to use to place scratch files (houses {src,dst} dir)
   def run_plugins(src_dir, dst_dir, base_dir)
-    runner_path  = File.join(base_dir, 'plugin_runner')
-    gemfile_path = File.join(base_dir, 'Gemfile')
-    error_path   = File.join(base_dir, 'plugin_runner_error')
+    task_path = File.join(base_dir, 'task')
+    task_opts = {
+      'log_path'   => File.join(base_dir, 'staging.log'),
+      'error_path' => File.join(base_dir, 'plugin_runner_error'),
+    }
 
-    runner = VCAP::Stager::PluginRunner.new(src_dir, dst_dir, @app_props, @cc_info)
-    runner.to_file(runner_path)
-    runner_cmd = "#{@ruby_path} %s %s" % [VCAP::Stager::PluginRunner::RUNNER_BIN_PATH, error_path]
+    VCAP::Stager::PluginRunner.serialize_task(task_path, src_dir, dst_dir, @app_props, @cc_info, task_opts)
+    runner_cmd = "#{@ruby_path} %s %s" % [VCAP::Stager::PluginRunner::RUNNER_BIN_PATH, task_path]
 
     @vcap_logger.debug("Executing plugin runner with command #{runner_cmd}")
     res = run_logged(runner_cmd, 0, @max_staging_duration)
@@ -270,9 +271,9 @@ class VCAP::Stager::Task
       @vcap_logger.error("Failed running staging plugins")
 
       begin
-        err = YAML.load_file(error_path)
+        err = YAML.load_file(task_opts['error_path'])
       rescue => e
-        @vcap_logger.error("Failed reading error file at #{error_path}")
+        @vcap_logger.error("Failed reading error file at #{task_opts['error_path']}")
         @vcap_logger.error(e)
         # We can't communicate the specific reason that staging failed (if any),
         # so just raise a generic error.
