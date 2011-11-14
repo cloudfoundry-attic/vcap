@@ -1,0 +1,16 @@
+#!/bin/bash
+
+for path in tmp/lxc/instance-*; do
+  [ -d ${path} ] || continue
+
+  instance=$(basename ${path})
+
+  echo "Killing ${instance}..."
+  lxc-stop -n ${instance}
+  lxc-destroy -n ${instance}
+  umount ${path}/union
+  rm -rf ${path}
+  ip link del veth-$(echo ${instance} | cut -d- -f2)
+
+  echo
+done
