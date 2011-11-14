@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# Change to directory that holds this script
+cd $(dirname $(readlink -f ${0}))
+
+if [ ! -f started ]; then
+  echo "Container is not running..."
+  exit 1
+fi
+
+lxc-stop -n instance-<%= config["id"] %>
+lxc-destroy -n instance-<%= config["id"] %>
+umount union
+rm started
