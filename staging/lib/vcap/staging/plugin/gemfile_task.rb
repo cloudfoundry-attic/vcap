@@ -55,6 +55,49 @@ class GemfileTask
     install_gems([ ['bundler', '1.0.10'] ])
   end
 
+  def install_autoconfig
+    #TODO this is temporary assuming we publish the autoconfig gem, will be able to make similar install_gems call as above
+    blessed_gems_dir = File.join(@cache_base_dir, "blessed_gems")
+    autoconfig_gem_filename = 'cf-autoconfig-0.0.1.gem'
+    json_dep_filename = 'json_pure-1.6.2.gem'
+    cfruntime_dep_filename = 'cf-runtime-0.0.1.gem'
+    if File.exists?(File.join(blessed_gems_dir, autoconfig_gem_filename))
+       install_gems([ ['cf-autoconfig', '0.0.1'] ])
+    else
+        install_from_tmp autoconfig_gem_filename
+    end
+    if File.exists?(File.join(blessed_gems_dir, json_dep_filename))
+       install_gems([ ['json_pure', '1.6.2'] ])
+    else
+        install_from_tmp json_dep_filename
+    end
+    if File.exists?(File.join(blessed_gems_dir, cfruntime_dep_filename))
+       install_gems([ ['cf-runtime', '0.0.1'] ])
+    else
+        install_from_tmp cfruntime_dep_filename
+    end
+
+    #Add the autoconfig gem to the app's Gemfile
+    File.open(@app_dir + '/Gemfile', 'a') {
+        |f| f.puts("\n" + 'gem "cf-autoconfig"') }
+  end
+
+  def install_from_tmp(gem_filename)
+    blessed_gems_dir = File.join(@cache_base_dir, "blessed_gems")
+    gem_path     = File.join('/tmp', gem_filename)
+    @logger.debug "Installing downloaded gem: #{gem_path}"
+    tmp_gem_dir = install_gem(gem_path)
+    raise "Failed installing #{gem_filename}" unless tmp_gem_dir
+
+    installed_gem_path = @cache.put(gem_path, tmp_gem_dir)
+    output = `cp -n #{gem_path} #{blessed_gems_dir} 2>&1`
+    if $?.exitstatus != 0
+      @logger.debug "Failed adding #{gem_path} to #{blessed_gems_dir}: #{output}"
+    end
+    @logger.info "Adding #{gem_filename} to app..."
+    copy_gem_to_app(installed_gem_path)
+  end
+
   # The application includes some version of Thin in its bundle.
   def bundles_thin?
     dependencies.assoc('thin')
@@ -63,6 +106,11 @@ class GemfileTask
   # The application includes some version of Rack in its bundle.
   def bundles_rack?
     dependencies.assoc('rack')
+  end
+
+  #The application includes some version of cf-runtime in its bundle
+  def bundles_cf_runtime?
+    dependencies.assoc('cf-runtime')
   end
 
   private
