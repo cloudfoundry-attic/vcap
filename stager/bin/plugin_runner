@@ -1,7 +1,9 @@
 ENV['BUNDLE_GEMFILE'] ||= File.expand_path('../../Gemfile', __FILE__)
 $LOAD_PATH.unshift(File.expand_path('../../lib', __FILE__))
 
-require 'bundler/setup'
+require 'bundler'
+Bundler.require
+
 require 'yaml'
 
 require 'vcap/plugin_registry'
@@ -15,7 +17,7 @@ if ARGV.length != 1
   exit 1
 end
 
-task = VCAP::PluginRunner.deserialize_task(ARGV[0])
+task = VCAP::Stager::PluginRunner.deserialize_task(ARGV[0])
 begin
   if task['opts']['config_dir']
     VCAP::PluginRegistry.configure_plugins(task['opts']['config_dir'])
@@ -37,5 +39,5 @@ rescue => e
       YAML.dump(e, f)
     end
   end
-  exit 1
+  raise e
 end

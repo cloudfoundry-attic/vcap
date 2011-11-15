@@ -32,7 +32,7 @@ GEM
     sinatra (1.2.6)
       rack (~> 1.1)
       tilt (>= 1.2.2, < 2.0)
-    thin (1.2.11)
+    thin (1.3.0)
       daemons (>= 1.0.9)
       eventmachine (>= 0.12.6)
       rack (>= 1.0.0)
@@ -45,9 +45,13 @@ GEM
       logging (>= 1.5.0)
       nats
       posix-spawn
+      rake
       thin
+      vcap_logging
       yajl-ruby
     vcap_logging (0.1.1)
+    vcap_node_staging_plugin (0.0.1)
+      rake
     vcap_stager_ipc (0.0.2)
       eventmachine
       rake
@@ -79,6 +83,7 @@ DEPENDENCIES
   vcap_cloud_controller_ipc
   vcap_common (>= 1.0.0)
   vcap_logging (>= 0.1.1)
+  vcap_node_staging_plugin
   vcap_stager_ipc (= 0.0.2)
   vcap_staging (>= 0.1.11)
   webmock

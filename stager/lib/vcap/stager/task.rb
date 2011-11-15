@@ -63,6 +63,8 @@ class VCAP::Stager::Task
     @manifest_dir         = option(opts, :manifest_dir)
     @tmpdir_base          = opts[:tmpdir]
     @user                 = opts[:user]
+    @plugin_config_dir    = opts[:plugin_config_dir]
+    @plugins              = VCAP::Stager.config[:enabled_framework_plugins]
     @download_app_helper_path = option(opts, :download_app_helper_path)
     @upload_droplet_helper_path = option(opts, :upload_droplet_helper_path)
   end
@@ -93,7 +95,10 @@ class VCAP::Stager::Task
         download_app(dirs[:unstaged], dirs[:base])
 
         task_logger.info("Staging application")
-        if @app_props['plugins']
+        # Temporary hack until all plugins are converted
+        new_style_plugin = @plugins[@app_props['framework'].to_sym]
+        if new_style_plugin
+          @app_props['plugins'] = {new_style_plugin => {}}
           run_plugins(dirs[:unstaged], dirs[:staged], dirs[:base])
         else
           run_staging_plugin(dirs[:unstaged], dirs[:staged], dirs[:base], task_logger)
@@ -253,6 +258,7 @@ class VCAP::Stager::Task
   def run_plugins(src_dir, dst_dir, base_dir)
     task_path = File.join(base_dir, 'task')
     task_opts = {
+      'config_dir' => @plugin_config_dir,
       'log_path'   => File.join(base_dir, 'staging.log'),
       'error_path' => File.join(base_dir, 'plugin_runner_error'),
     }

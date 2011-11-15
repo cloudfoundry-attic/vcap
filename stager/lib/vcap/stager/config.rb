@@ -26,7 +26,10 @@ class VCAP::Stager::Config < VCAP::Config
       optional(:dirs) => {
         optional(:manifests) => String,     # Where all of the staging manifests live
         optional(:tmp)       => String,     # Default is /tmp
+        optional(:plugin_configs) => String, # Where the staging plugin configs live.
       },
+
+      optional(:enabled_framework_plugins) => Hash, # Optional map of framework => new style staging plugin
 
       :secure                => VCAP::JsonSchema::BoolSchema.new,
 
@@ -40,6 +43,7 @@ class VCAP::Stager::Config < VCAP::Config
   def self.from_file(*args)
     config = super(*args)
 
+    config[:enabled_framework_plugins] ||= {}
     config[:dirs] ||= {}
     config[:dirs][:manifests] ||= StagingPlugin::DEFAULT_MANIFEST_ROOT
     config[:run_plugin_path]  ||= File.expand_path('../../../../bin/run_plugin', __FILE__)

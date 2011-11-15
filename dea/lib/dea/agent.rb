@@ -1177,7 +1177,7 @@ module DEA
       if instance[:pid] || [:STARTING, :RUNNING].include?(instance[:state])
         instance[:state] = :STOPPED unless instance[:state] == :CRASHED
         instance[:state_timestamp] = Time.now.to_i
-        stop_cmd = File.join(instance[:dir], 'stop')
+        stop_cmd = "cd #{instance[:dir]} && ./stop"
         stop_cmd = "su -c #{stop_cmd} #{username}" if @secure
         stop_cmd = "#{stop_cmd} 2> /dev/null"
 
