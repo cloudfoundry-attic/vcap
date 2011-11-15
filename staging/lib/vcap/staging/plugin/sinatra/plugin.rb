@@ -4,24 +4,44 @@ class SinatraPlugin < StagingPlugin
     'sinatra'
   end
 
+  def resource_dir
+    File.join(File.dirname(__FILE__), 'resources')
+  end
+
   def stage_application
     Dir.chdir(destination_directory) do
       create_app_directories
       copy_source_files
+      setup_autoconfig_script
+      add_autoconfig_gem
       compile_gems
       create_startup_script
       create_stop_script
     end
   end
 
+  def add_autoconfig_gem
+    if uses_bundler?
+      File.open(File.join(destination_directory, 'app','Gemfile'), 'a') {|f| f.puts('gem "cf-autoconfig"') }
+    end
+  end
+
+  def setup_autoconfig_script
+    sinatra_main = detect_main_file
+    FileUtils.cp(File.join(resource_dir,"auto_stage.rb"),File.join(destination_directory,'app'))
+    text = File.read(File.join(destination_directory, 'app','auto_stage.rb'))
+    replaced_text = text.gsub(/@@MAIN_FILE@@/, sinatra_main)
+    File.open(File.join(destination_directory, 'app','auto_stage.rb'), 'w') {|f| f.puts(replaced_text) }
+  end
+
   # Sinatra has a non-standard startup process.
   # TODO - Synthesize a 'config.ru' file for each app to avoid this.
   def start_command
-    sinatra_main = detect_main_file
+    auto_config_main = 'auto_stage.rb'
     if uses_bundler?
-      "#{local_runtime} ./rubygems/ruby/#{library_version}/bin/bundle exec #{local_runtime} ./#{sinatra_main} $@"
+      "#{local_runtime} ./rubygems/ruby/#{library_version}/bin/bundle exec #{local_runtime} ./#{auto_config_main} $@"
     else
-      "#{local_runtime} #{sinatra_main} $@"
+      "#{local_runtime} #{auto_config_main} $@"
     end
   end
 
