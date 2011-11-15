@@ -32,16 +32,32 @@ class Rails3Plugin < StagingPlugin
     end
   end
 
+  def resource_dir
+    File.join(File.dirname(__FILE__), 'resources')
+  end
+
   def stage_application
     Dir.chdir(destination_directory) do
       create_app_directories
       copy_source_files
+      add_autoconfig_gem
       compile_gems
       configure_database # TODO - Fail if we just configured a database that the user did not bundle a driver for.
+      setup_autoconfig
       create_asset_plugin if disables_static_assets?
       create_startup_script
       create_stop_script
     end
+  end
+
+  def add_autoconfig_gem
+    if uses_bundler?
+      File.open(File.join(destination_directory, 'app','Gemfile'), 'a') {|f| f.puts('gem "cf-autoconfig"') }
+    end
+  end
+
+  def setup_autoconfig
+     FileUtils.cp(File.join(resource_dir,"01-autoconfig.rb"),File.join(destination_directory,'app','config','initializers'))
   end
 
   def startup_script
@@ -53,6 +69,7 @@ class Rails3Plugin < StagingPlugin
       vars['GEM_PATH'] = vars['GEM_HOME'] = "$PWD/app/rubygems/ruby/#{library_version}"
     end
     vars['RUBYOPT'] = '-I$PWD/ruby -rstdsync'
+    vars['DISABLE_AUTO_CONFIG'] = 'mysql:postgresql'
     generate_startup_script(vars) do
       cmds = ['mkdir ruby', 'echo "\$stdout.sync = true" >> ./ruby/stdsync.rb']
       cmds << <<-MIGRATE

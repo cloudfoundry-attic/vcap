@@ -33,6 +33,7 @@ module GemfileSupport
 
     task.install
     task.install_bundler
+    task.install_auto_config
     task.remove_gems_cached_in_app
 
     @rack = task.bundles_rack?
