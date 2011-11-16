@@ -1,10 +1,9 @@
 class UserTokensController < ApplicationController
-  skip_before_filter :fetch_user_from_token, :only => :create
 
   def create
     email = params['email']
     password = body_params[:password]
-    if ::User.valid_login?(email, password)
+    if ::User.valid_login?(email, password) || (@current_user && @current_user.admin?)
       # This could just check the ::User.admins variable, but using this method to support changes in admin? in the future
       user = ::User.find_by_email(email)
       if AppConfig[:https_required] or (user.admin? and AppConfig[:https_required_for_admins])

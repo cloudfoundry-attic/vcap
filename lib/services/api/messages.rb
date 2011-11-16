@@ -18,7 +18,7 @@ module VCAP
       #
       class ServiceOfferingRequest < JsonMessage
         required :label,       SERVICE_LABEL_REGEX
-        required :url,         URI::regexp(%w(http))
+        required :url,         URI::regexp(%w(http https))
 
         optional :description, String
         optional :info_url,    URI::regexp(%w(http https))
