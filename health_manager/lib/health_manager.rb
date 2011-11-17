@@ -96,7 +96,14 @@ class HealthManager
     @stable_state = config['intervals']['stable_state']
     @nats_ping = config['intervals']['nats_ping'] || 10
     @request_queue_interval = config['intervals']['request_queue'] || 0.02
+    @flapping_restart = config['intervals']['flapping_restart'] || 0
     @database_environment = config['database_environment']
+    @persist_flapping = config['persist_flapping'] || false
+    @persistence_dir = config['persistence_dir'] || '/tmp'
+
+    @flapping_versions = {}
+    @flapping_status_recovered = false
+    @flapping_file = 'flapping_versions'
 
     @droplets = {}
     @request_queue = VCAP::PrioritySet.new
@@ -280,9 +287,13 @@ class HealthManager
           end
 
           if index_entry[:state] == DOWN && now - index_entry[:last_action] > @restart_timeout
-            @logger.info("Preparing to restart instance (app_id=#{app_id}, index=#{index}). Reason: droplet state is STARTED, but instance state is DOWN.")
-            index_entry[:last_action] = now
-            missing_indices << index
+            if has_history_of_flapping?(app_id, droplet_entry)
+              @logger.info("No restart for instance (app_id=#{app_id}, index=#{index}) due to flapping history for live version")
+            else
+              @logger.info("Preparing to restart instance (app_id=#{app_id}, index=#{index}). Reason: droplet state is STARTED, but instance state is DOWN.")
+              index_entry[:last_action] = now
+              missing_indices << index
+            end
           end
         end
       end
@@ -632,6 +643,65 @@ class HealthManager
     entry_updated
   end
 
+  def has_history_of_flapping?(app_id, droplet_entry)
+    return false unless persist_flapping?
+    return droplet_entry[:live_version] == @flapping_versions[app_id]
+  end
+
+  def persist_flapping_status
+    return unless persist_flapping?
+    return unless @flapping_status_recovered
+
+    @droplets.each do |id, droplet|
+
+      version_hash = droplet[:live_version]
+      next unless version_hash
+
+      version = droplet[:versions][version_hash]
+      next unless version
+
+      indices = version[:indices]
+      next unless indices
+
+      if indices.values.all? {|index| index[:state] == FLAPPING}
+        @flapping_versions[id] = version_hash
+      end
+    end
+    persist_json(@flapping_versions, @persistence_dir, @flapping_file)
+    @flapping_versions
+  end
+
+  def persist_json(obj, dir, filename)
+    start = Time.now
+    tmp = File.new(File.join(dir, "temp-#{filename}-start"), 'w')
+    tmp.puts(encode_json(obj))
+    tmp.close
+    FileUtils.mv(tmp.path, File.join(dir, filename))
+  end
+
+  def restore_flapping_status
+    return unless persist_flapping?
+
+    path = File.join(@persistence_dir, @flapping_file)
+    if File.exist?(path)
+      File.open(path, 'r') do |f|
+        string_keyed = parse_json(f)
+
+        string_keyed.each do |app_id, version|
+          app_id = app_id.to_i
+          #forget the flapping status of removed apps and stale versions
+          next unless @droplets[app_id]
+          next unless @droplets[app_id][:live_version] == version
+
+          @flapping_versions[app_id] = version
+        end
+      end
+    end
+
+    @flapping_status_recovered = true
+    @flapping_versions
+  end
+
   def start_instances(droplet_id, indices)
     droplet_entry = @droplets[droplet_id]
     start_message = {
@@ -647,7 +717,7 @@ class HealthManager
     else
       #old behavior: send the message immediately
       NATS.publish('cloudcontrollers.hm.requests', start_message.to_json)
-      @logger.info("Requesting the start of extra instances: #{start_message}")
+      @logger.info("Requesting the start of missing instances: #{start_message}")
     end
 
 
@@ -691,8 +761,14 @@ class HealthManager
   end
 
   def configure_timers
-    EM.next_tick { update_from_db }
-    EM.add_periodic_timer(@database_scan) { update_from_db }
+    EM.next_tick {
+      update_from_db
+      restore_flapping_status
+    }
+    EM.add_periodic_timer(@database_scan) {
+      update_from_db
+      persist_flapping_status
+    }
 
     # Do first pass without the individual analysis
     EM.next_tick { analyze_all_apps(collect_stats = false) }
@@ -706,6 +782,13 @@ class HealthManager
       NATS.publish('healthmanager.nats.ping', "#{Time.now.to_f}")
     end
 
+    if restart_flapping?
+      EM.add_periodic_timer(@flapping_restart) do
+        restart_flapping
+      end
+    end
+
+
     if queue_requests?
       EM.add_periodic_timer(@request_queue_interval) do
         unless @request_queue.empty?
@@ -717,7 +800,10 @@ class HealthManager
         end
       end
     end
+
   end
+
+
 
   def register_as_component
     status_config = @config['status'] || {}
@@ -799,9 +885,22 @@ class HealthManager
     NATS.publish('healthmanager.start')
   end
 
+  def persist_flapping?
+    @persist_flapping
+  end
+
   def queue_requests?
     @request_queue_interval != 0
   end
+
+  def restart_flapping
+
+  end
+
+  def restart_flapping?
+    @flapping_restart != 0
+  end
+
 end
 
 if $0 == __FILE__ || File.expand_path($0) == File.expand_path(File.join(File.dirname(__FILE__), '../bin/health_manager'))
