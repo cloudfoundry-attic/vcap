@@ -2,6 +2,20 @@
 require 'spec_helper'
 
 #functional tests are now implemented in functional/health_manager_spec.rb
+class HealthManager
+  def get_droplet id
+    @droplets[id]
+  end
+  def get_droplets
+    @droplets
+  end
+  def get_flapping_versions
+    @flapping_versions
+  end
+  def set_flapping_versions value
+    @flapping_versions = value
+  end
+end
 
 describe HealthManager do
 
@@ -42,11 +56,28 @@ describe HealthManager do
   end
 
   after(:all) do
-    #::User.destroy_all
-    #::App.destroy_all
+    ::User.destroy_all
+    ::App.destroy_all
+  end
+
+  before(:all) do
+    @flapping_death = 3
   end
 
   before(:each) do
+    create_hm
+    hash = Hash.new {|h,k| h[k] = 0}
+    VCAP::Component.stub!(:varz).and_return(hash)
+    build_user_and_app
+  end
+
+  after(:each) do
+    FileUtils.rm_rf('/tmp/flapping_versions')
+  end
+
+
+  def create_hm options = {}
+    VCAP::Logging.reset
     @hm = HealthManager.new({
       'mbus' => 'nats://localhost:4222/',
       'logging' => {
@@ -56,7 +87,7 @@ describe HealthManager do
         'database_scan' => 1,
         'droplet_lost' => 300,
         'droplets_analysis' => 0.5,
-        'flapping_death' => 3,
+        'flapping_death' => @flapping_death,
         'flapping_timeout' => 5,
         'restart_timeout' => 2,
         'stable_state' => 1,
@@ -70,11 +101,7 @@ describe HealthManager do
           'encoding' => 'utf8'
         }
       }
-    })
-
-    hash = Hash.new {|h,k| h[k] = 0}
-    VCAP::Component.stub!(:varz).and_return(hash)
-    build_user_and_app
+    }.merge options)
   end
 
   def make_heartbeat_message(indices, state)
@@ -88,66 +115,25 @@ describe HealthManager do
     { 'droplets' => droplets }.to_json
   end
 
-  pending "should not do anything when everything is running" do
-    NATS.should_receive(:start).with(:uri => 'nats://localhost:4222/')
+  def should_publish_start_message(options = {})
 
-    NATS.should_receive(:subscribe).with('dea.heartbeat').and_return { |_, block| @hb_block = block }
-    NATS.should_receive(:subscribe).with('droplet.exited')
-    NATS.should_receive(:subscribe).with('droplet.updated')
-    NATS.should_receive(:subscribe).with('healthmanager.status')
-    NATS.should_receive(:subscribe).with('healthmanager.health')
-    NATS.should_receive(:publish).with('healthmanager.start')
+    message = {
+      'droplet' => @app.id,
+      'op' => 'START',
+      'last_updated' => @app.last_updated.to_i,
+      'version' => "#{@app.staged_package_hash}-#{@app.run_count}",
+      'indices' => [0]
+    }.merge options
 
-    NATS.should_receive(:subscribe).with('vcap.component.discover')
-    NATS.should_receive(:publish).with('vcap.component.announce', /\{.*\}/)
-
-    EM.run do
-      @hm.stub!(:register_error_handler)
-      @hm.run
-
-      EM.add_periodic_timer(1) do
-        @hb_block.call({:droplets => [
-          {
-            :droplet => @app.id,
-            :version => @app.staged_package_hash,
-            :state => :RUNNING,
-            :instance => 'instance 1',
-            :index => 0
-          },
-          {
-            :droplet => @app.id,
-            :version => @app.staged_package_hash,
-            :state => :RUNNING,
-            :instance => 'instance 2',
-            :index => 1
-          },
-          {
-            :droplet => @app.id,
-            :version => @app.staged_package_hash,
-            :state => :RUNNING,
-            :instance => 'instance 3',
-            :index => 2
-          }
-        ]}.to_json)
-      end
-
-      EM.add_timer(4.5) do
-        EM.stop_event_loop
-      end
-    end
+    should_publish_to_nats("cloudcontrollers.hm.requests", message)
   end
 
   it "should detect instances that are down and send a START request" do
-    stats = { :frameworks => {}, :runtimes => {}, :down => 0 }
-    should_publish_to_nats "cloudcontrollers.hm.requests", {
-          'droplet' => 1,
-          'op' => 'START',
-          'last_updated' => @app.last_updated.to_i,
-          'version' => "#{@app.staged_package_hash}-#{@app.run_count}",
-          'indices' => [0,1,2]
-        }
 
-    @hm.analyze_app(@app.id, @droplet_entry, stats)
+    should_publish_start_message({'indices' => [0,1,2]})
+
+    stats = analyze_app
+
 
     stats[:down].should == 3
     stats[:frameworks]['sinatra'][:missing_instances].should == 3
@@ -155,7 +141,7 @@ describe HealthManager do
   end
 
   it "should detect extra instances and send a STOP request" do
-    stats = { :frameworks => {}, :runtimes => {}, :running => 0, :down => 0 }
+
     timestamp = Time.now.to_i
     version_entry = { indices: {
         0 => { :state => 'RUNNING', :timestamp => timestamp, :last_action => @app.last_updated, :instance => '0' },
@@ -163,15 +149,16 @@ describe HealthManager do
         2 => { :state => 'RUNNING', :timestamp => timestamp, :last_action => @app.last_updated, :instance => '2' },
         3 => { :state => 'RUNNING', :timestamp => timestamp, :last_action => @app.last_updated, :instance => '3' }
     }}
+
     should_publish_to_nats "cloudcontrollers.hm.requests", {
-          'droplet' => 1,
+          'droplet' => @app.id,
           'op' => 'STOP',
           'last_updated' => @app.last_updated.to_i,
           'instances' => [ version_entry[:indices][3][:instance] ]
         }
     @droplet_entry[:versions][@droplet_entry[:live_version]] = version_entry
 
-    @hm.analyze_app(@app.id, @droplet_entry, stats)
+    stats = analyze_app
 
     stats[:running].should == 3
     stats[:frameworks]['sinatra'][:running_instances].should == 3
@@ -183,38 +170,126 @@ describe HealthManager do
 
     droplet_entries.size.should == 1
     droplet_entry = droplet_entries[0]
-    droplet_entry[:versions].should_not be_nil
-    version_entry = droplet_entry[:versions][@droplet_entry[:live_version]]
-    version_entry.should_not be_nil
-    index_entry = version_entry[:indices][0]
-    index_entry.should_not be_nil
-    index_entry[:state].should == 'RUNNING'
+    ensure_state_for_live_instance(droplet_entry, 'RUNNING')
   end
 
   it "should restart an instance that exits unexpectedly" do
-    should_publish_to_nats "cloudcontrollers.hm.requests", {
-          'droplet' => 1,
-          'op' => 'START',
-          'last_updated' => @app.last_updated.to_i,
-          'version' => "#{@app.staged_package_hash}-#{@app.run_count}",
-          'indices' => [0]
-        }
+    should_publish_start_message
 
     @hm.process_heartbeat_message(make_heartbeat_message([0], "RUNNING"))
-    droplet_entry = @hm.process_exited_message({
-                                                     'droplet' => 1,
-                                                     'version' => "#{@app.staged_package_hash}-#{@app.run_count}",
-                                                     'index' => 0,
-                                                     'instance' => 0,
-                                                     'reason' => 'CRASHED',
-                                                     'crash_timestamp' => Time.now.to_i
-                                                 }.to_json)
+    droplet_entry = induce_crash()
+    ensure_state_for_live_instance(droplet_entry, 'DOWN')
+  end
 
+  def induce_crash(options = {})
+    @hm.process_exited_message({
+                                 'droplet' => @app.id,
+                                 'version' => "#{@app.staged_package_hash}-#{@app.run_count}",
+                                 'index' => 0,
+                                 'instance' => 0,
+                                 'reason' => 'CRASHED',
+                                 'crash_timestamp' => Time.now.to_i
+                               }.merge(options).to_json)
+  end
+
+  def ensure_state_for_live_instance droplet_entry, state, indices = [0]
     droplet_entry[:versions].should_not be_nil
-    version_entry = droplet_entry[:versions][@droplet_entry[:live_version]]
+    version_entry = droplet_entry[:versions][droplet_entry[:live_version]]
     version_entry.should_not be_nil
-    index_entry = version_entry[:indices][0]
-    index_entry.should_not be_nil
-    index_entry[:state].should == 'DOWN'
+
+    indices.each { |i|
+      index_entry = version_entry[:indices][i]
+      index_entry.should_not be_nil
+      index_entry[:state].should == state
+    }
+  end
+
+  def ensure_state droplet_entry, state
+    droplet_entry.should_not be_nil
+    droplet_entry[:state].should == state
+  end
+
+  def get_droplet
+    @hm.get_droplet(@app.id)
+  end
+
+  def analyze_app
+    stats = { :frameworks => {}, :runtimes => {}, :down => 0, :running => 0 }
+    @hm.analyze_app(@app.id, @droplet_entry, stats)
+    stats
+  end
+
+
+  it 'should not restart flapping instances' do
+
+    should_publish_start_message.exactly(@flapping_death).times
+    @flapping_death.times {
+      ensure_state_for_live_instance(induce_crash, 'DOWN')
+    }
+
+    @droplet_entry = induce_crash() #  @droplet_entry property is the one used by analyze_app
+    ensure_state_for_live_instance(@droplet_entry, 'FLAPPING')
+    analyze_app
+  end
+
+  it 'should NOT persist flapping history when not enabled' do
+
+    should_publish_start_message.exactly(@flapping_death).times
+    @flapping_death.times { ensure_state_for_live_instance(induce_crash, 'DOWN') }
+    ensure_state_for_live_instance(induce_crash, 'FLAPPING')
+    #same as the example above, but with a restart of HM.  The history of flapping is forgotten...
+    should_publish_start_message 'indices' => [0,1,2]
+    create_hm
+    build_user_and_app
+    analyze_app
+    ensure_state(get_droplet, 'STARTED')
+  end
+
+  it 'should persist flapping history when enabled' do
+
+    create_hm 'persist_flapping' => true
+    build_user_and_app
+
+    should_publish_start_message.exactly(@flapping_death).times
+    @flapping_death.times { ensure_state_for_live_instance(induce_crash, 'DOWN') }
+
+    ensure_state_for_live_instance(induce_crash, 'FLAPPING')
+
+    @hm.restore_flapping_status #need to attempt to restore before persisting can happen
+    flappers = @hm.persist_flapping_status
+    flappers.should == { @app.id => get_droplet[:live_version] }
+
+    create_hm 'persist_flapping' => true
+    build_user_and_app
+
+    @hm.update_from_db
+    restored_flappers = @hm.restore_flapping_status
+    restored_flappers.should == flappers
+
+    analyze_app #should NOT publish a start message
+  end
+
+  it 'should not declare flapping if there are non-flapping instances' do
+
+    create_hm 'persist_flapping' => true
+    build_user_and_app
+
+    indices = [0,2]
+
+    indices.each do |i|
+      should_publish_start_message( 'indices'=>[i] ).exactly(@flapping_death).times
+      @flapping_death.times {
+        ensure_state_for_live_instance( induce_crash( 'index' => i ), 'DOWN', [i])
+      }
+      ensure_state_for_live_instance( induce_crash( 'index' => i ), 'FLAPPING', [i])
+    end
+
+    @hm.process_heartbeat_message(make_heartbeat_message([0,1,2]-indices, "RUNNING"))
+
+    @hm.restore_flapping_status
+    flappers = @hm.persist_flapping_status
+
+    flappers.should == { }
+
   end
 end
