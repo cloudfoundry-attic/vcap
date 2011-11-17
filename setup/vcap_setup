@@ -445,6 +445,7 @@ if [[ -z "$redis_current" ]]; then
             REDIS=true
         fi
     fi
+fi
 
 if [[ $REDIS == true || $ALL_SERVICES == true ]]; then
     echo "Installing Redis (version $REDIS_VERSION)"
