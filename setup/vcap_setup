@@ -363,6 +363,7 @@ if [[ $DEA == true || $ALL == true ]]; then
         mkdir "/var/vcap.local"
         chmod  777 "/var/vcap.local"
     fi
+fi
 
 if [[ $ALL != true ]]; then
     read -p "Should I do a production setup and secure this system? [y/N] "
@@ -444,22 +445,22 @@ if [[ -z "$redis_current" ]]; then
             REDIS=true
         fi
     fi
+fi
 
-    if [[ $REDIS == true || $ALL_SERVICES == true ]]; then
-        echo "Installing Redis (version $REDIS_VERSION)"
-        pushd .
-        cd /tmp
-        wget --no-check-certificate -O redis_master.tgz http://redis.googlecode.com/files/redis-$REDIS_VERSION.tar.gz
-        tar -zxf redis_master.tgz
-        cd redis-$REDIS_VERSION/src
-        make
-        cp redis-server /usr/bin
-        cp redis-cli /usr/bin
-        cd ../..
-        rm redis_master.tgz
-        rm -fr redis-$REDIS_VERSION
-        popd
-    fi
+if [[ $REDIS == true || $ALL_SERVICES == true ]]; then
+    echo "Installing Redis (version $REDIS_VERSION)"
+    pushd .
+    cd /tmp
+    wget --no-check-certificate -O redis_master.tgz http://redis.googlecode.com/files/redis-$REDIS_VERSION.tar.gz
+    tar -zxf redis_master.tgz
+    cd redis-$REDIS_VERSION/src
+    make
+    cp redis-server /usr/bin
+    cp redis-cli /usr/bin
+    cd ../..
+    rm redis_master.tgz
+    rm -fr redis-$REDIS_VERSION
+    popd
 else
     echo "Redis Server (version $REDIS_VERSION) is current"
 fi

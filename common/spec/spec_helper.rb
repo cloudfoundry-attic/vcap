@@ -1,5 +1,6 @@
 # Copyright (c) 2009-2011 VMware, Inc.
 $:.unshift File.expand_path("../../lib", __FILE__)
+$:.unshift File.expand_path("../../lib/vcap/user_pools", __FILE__)
 require "bundler"
 Bundler.require(:default, :spec)
 
@@ -11,6 +12,13 @@ require "vcap/subprocess"
 require "vcap/process_utils"
 require "vcap/config"
 require "vcap/priority_queue"
+
+RSpec.configure do |c|
+  # declare an exclusion filter
+  if Process.uid != 0
+    c.filter_run_excluding :needs_root => true
+  end
+end
 
 def fixture_path(*args)
   base = File.expand_path("../", __FILE__)
