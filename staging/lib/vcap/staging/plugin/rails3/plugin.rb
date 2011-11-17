@@ -40,6 +40,7 @@ class Rails3Plugin < StagingPlugin
       configure_database # TODO - Fail if we just configured a database that the user did not bundle a driver for.
       create_asset_plugin if disables_static_assets?
       create_startup_script
+      create_stop_script
     end
   end
 
@@ -61,6 +62,11 @@ fi
       MIGRATE
       cmds.join("\n")
       end
+  end
+
+  def stop_script
+    vars = environment_hash
+    generate_stop_script(vars)
   end
 
   # Rails applications often disable asset serving in production mode, and delegate that to

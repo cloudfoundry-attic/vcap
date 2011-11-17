@@ -48,4 +48,29 @@ describe AppsController do
 
   end
 
+  describe '#account_capacity_limits' do
+
+    before :each do
+      build_admin_and_user
+      @app_name = 'example_app'
+      @args = {'name' => @app_name, 'staging' => {'model' => 'sinatra', 'stack' => 'ruby18' }}
+    end
+
+    it "enforces AccountCapacity limit for maximum number of apps allowed" do
+      max_app_count = AccountCapacity.default[:apps]
+      User.any_instance.stubs(:no_more_apps?).returns(max_app_count)
+      headers_for(@user, nil, @args).each { |key, value| request.env[key] = value }
+      post :create
+      User.any_instance.unstub(:no_more_apps?)
+      resp = Yajl::Parser.parse(response.body)
+      error = resp['description'].include? "Too many applications"
+      error.should eq(true)
+    end
+
+    after :each do
+      delete :delete, :name => @app_name
+    end
+
+  end
+
 end

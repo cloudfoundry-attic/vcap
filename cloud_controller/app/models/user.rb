@@ -102,7 +102,7 @@ class User < ActiveRecord::Base
   # Returns the actual current count of apps, or nil if there is room.
   def no_more_apps?
     count = apps_owned.count
-    if account_capacity[:apps] < count
+    if account_capacity[:apps] <= count
       count
     end
   end
