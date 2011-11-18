@@ -5,7 +5,7 @@ require 'fileutils'
 module VCAP end
 module VCAP::EMRun
   class << self
-    CLOSE_FDS_PATH = File.expand_path("close_fds", __FILE__)
+    CLOSE_FDS_PATH = File.expand_path("../close_fds", __FILE__)
 
     def init(logger = nil)
       @logger = logger || Logger.new(STDOUT)
