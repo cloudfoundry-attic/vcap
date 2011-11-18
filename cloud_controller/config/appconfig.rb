@@ -34,7 +34,6 @@ required = { :external_uri => 'api.vcap.me',
              :support_address => 'http://support.cloudfoundry.com',
              :rails_environment => 'development',
              :local_route  => '127.0.0.1',
-             :local_register_only => true,
              :allow_external_app_uris => false,
              :staging => { :max_concurrent_stagers => 10,
                            :max_staging_runtime => 60 },
@@ -225,4 +224,9 @@ if AppConfig[:bootstrap_users]
       exit 1
     end
   end
+end
+
+unless AppConfig.has_key?(:allow_registration)
+  $stderr.puts "Allow registration not set, defaulting to true"
+  AppConfig[:allow_registration] = true
 end
