@@ -43,6 +43,10 @@ class StagingTask
     }
   end
 
+  def user
+    @app.owner
+  end
+
   def run(timeout=AppConfig[:staging][:max_staging_runtime])
     stager_client = VCAP::Stager::Ipc::FiberedNatsClient.new(@nats)
     begin
@@ -58,7 +62,6 @@ class StagingTask
 
     result
   end
-
 
   def cleanup
     FileUtils.rm_f(@upload_path)

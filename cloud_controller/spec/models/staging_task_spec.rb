@@ -46,9 +46,18 @@ describe StagingTask do
     end
   end
 
-  def create_stub_app(id)
+  describe '#user' do
+    it 'should be the owner of the app being staged' do
+      app = create_stub_app(1, 'test')
+      task = StagingTask.new(app)
+      task.user.should == app.owner
+    end
+  end
+
+  def create_stub_app(id, owner=nil)
     app = stub("app_#{id}")
     app.stubs(:id).returns(id)
+    app.stubs(:owner).returns(owner)
     app
   end
 end
