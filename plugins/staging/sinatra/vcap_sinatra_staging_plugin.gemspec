@@ -1,6 +1,5 @@
-# -*- encoding: utf-8 -*-
 $:.push File.expand_path("../lib", __FILE__)
-require "vcap/plugins/staging/sinatra_staging_plugin/version"
+require "vcap/plugins/staging/sinatra/version"
 
 Gem::Specification.new do |s|
   s.name        = "vcap_sinatra_staging_plugin"
@@ -11,16 +10,11 @@ Gem::Specification.new do |s|
   s.summary     = %q{Stages sinatra applications for deployment in Cloud Foundry.}
   s.description = %q{Modifies applications for deployment in CF.}
 
-  s.rubyforge_project = "vcap_sinatra_staging_plugin"
-
   s.files         = %w(Rakefile Gemfile) + Dir.glob("{lib,spec,assets,test_assets}/**/*")
   s.executables   = []
   s.bindir        = 'bin'
   s.require_paths = ["lib"]
 
-  # XXX - These need to be development dependencies. Figure out why bundler isn't installing
-  #       them later...
-  s.add_dependency("rspec")
-  s.add_dependency("rspec-core")
-  s.add_dependency("rake")
+  s.add_development_dependency("rspec")
+  s.add_development_dependency("rake")
 end
