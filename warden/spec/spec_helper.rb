@@ -30,7 +30,7 @@ shared_context :warden do
     File.expand_path("../../tmp/warden.sock", __FILE__)
   }
 
-  let(:warden_container_root) {
+  let(:container_root) {
     File.expand_path("../../root", __FILE__)
   }
 
@@ -40,12 +40,13 @@ shared_context :warden do
     @pid = fork do
       Signal.trap("TERM") { exit }
 
-      Warden::Server::Logger.setup_logger \
-        :level => :debug,
-        :file => File.expand_path("../../tmp/warden.log", __FILE__)
-
-      ENV["warden_container_root"] = warden_container_root
-      Warden::Server.unix_domain_path = unix_domain_path
+      Warden::Server.setup \
+        :server => {
+          :container_root => container_root,
+          :unix_domain_path => unix_domain_path },
+        :logger => {
+          :level => :debug,
+          :file => File.expand_path("../../tmp/warden.log", __FILE__) }
       Warden::Server.run!
     end
 
@@ -65,7 +66,7 @@ shared_context :warden do
     Process.waitpid(@pid)
 
     # Destroy all artifacts
-    Dir[File.join(warden_container_root, ".instance-*")].each do |path|
+    Dir[File.join(container_root, ".instance-*")].each do |path|
       next if path.match(/-skeleton$/)
 
       started = File.join(path, "started")
