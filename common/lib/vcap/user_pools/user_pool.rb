@@ -15,6 +15,7 @@ module VCAP
       EMRun.init
       @free_users = UserPoolUtil.open_pool(name)
       @busy_users = Hash.new
+      @logger.debug("Initialized user pool #{name} with #{@free_users.size} users.")
     end
 
     def alloc_user
