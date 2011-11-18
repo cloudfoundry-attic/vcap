@@ -1,0 +1,16 @@
+require "bundler/gem_tasks"
+require "rspec/core/rake_task"
+require "rspec/core/version"
+
+desc "Run all examples"
+RSpec::Core::RakeTask.new(:spec) do |t|
+  t.rspec_opts = %w[--color --format documentation]
+end
+
+namespace :warden do
+  desc "Run Warden server"
+  task :start do
+    require "warden/server"
+    Warden::Server.run!
+  end
+end

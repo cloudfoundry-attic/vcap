@@ -1,0 +1,28 @@
+#!/usr/bin/env ruby
+
+require "socket"
+require "shellwords"
+require "hiredis"
+
+include Shellwords
+
+def prompt(str)
+  STDOUT.print "%s> " % str
+  STDOUT.flush
+  STDIN.gets
+end
+
+connection = Hiredis::Connection.new
+connection.connect_unix("/tmp/warden.sock")
+
+loop do
+  line = prompt("warden")
+  break unless line
+
+  words = shellwords(line)
+  next if words.empty?
+
+  # Issue command
+  connection.write(words)
+  STDOUT.puts connection.read.inspect
+end
