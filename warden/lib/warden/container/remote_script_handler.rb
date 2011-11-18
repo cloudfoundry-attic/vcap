@@ -6,24 +6,6 @@ module Warden
 
     class RemoteScriptHandler < ScriptHandler
 
-      def initialize(command = nil)
-        super()
-        @command = command
-      end
-
-      def post_init
-        send_command if @command
-      end
-
-      def send_command
-        send_data @command + "\n"
-
-        # Make bash exit without losing the exit status. This can otherwise
-        # be done by shutting down the write side of the socket, causing EOF
-        # on stdin for the remote. However, EM doesn't do shutdown...
-        send_data "exit $?\n"
-      end
-
       def unbind
         if buffer.empty?
           # The wrapper script was terminated before it could return anything.
