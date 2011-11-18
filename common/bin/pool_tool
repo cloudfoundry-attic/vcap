@@ -1,5 +1,5 @@
 #!/usr/bin/env ruby
-$:.unshift(File.join(File.dirname(__FILE__), '..'))
+$:.unshift(File.join(File.dirname(__FILE__), '../lib/vcap/user_pools'))
 require 'optparse'
 require 'user_pool_util'
 
@@ -9,7 +9,7 @@ module PoolTool
   class << self
     def require_root
       if Process.uid != 0
-        puts "this operation requires root privileges."
+        puts "This operation requires root privileges."
         exit 1
       end
     end
@@ -19,7 +19,7 @@ module PoolTool
       if not VCAP::UserPoolUtil.pool_exists?(name)
         VCAP::UserPoolUtil.install_pool(name, size.to_i)
       else
-        puts "pool with name #{name} already exists, can't install."
+        puts "Pool with name #{name} already exists, can't install."
         exit 1
       end
     end
@@ -29,7 +29,7 @@ module PoolTool
       if VCAP::UserPoolUtil.pool_exists?(name)
         VCAP::UserPoolUtil.remove_pool(name)
       else
-        puts "no pool with name #{name}, can't do remove"
+        puts "No pool with name #{name}, can't do remove."
         exit 1
       end
     end
@@ -50,7 +50,7 @@ module PoolTool
           opts.on("-c", "--create NAME,SIZE", "Create pool NAME with SIZE users.") do |opt|
             name, size = opt.split(',')
             if size == nil
-              puts "invalid input to create, see ./pool_tool -h"
+              puts "Invalid input to create, see ./pool_tool -h."
               exit 1
             end
             install_pool(name, size)
