@@ -3,9 +3,6 @@ require "warden/container/base"
 require "warden/container/script_handler"
 require "warden/container/remote_script_handler"
 
-require "fiber"
-require "set"
-
 module Warden
 
   module Container
@@ -30,19 +27,8 @@ module Warden
         end
       end
 
-      def initialize
-        super
-
-        @created = false
-        @destroyed = false
-      end
-
-      def path
-        File.join(Server.container_root, ".instance-#{handle}")
-      end
-
-      def rootfs
-        File.join(path, "union")
+      def container_root_path
+        File.join(container_path, "union")
       end
 
       def env
@@ -57,78 +43,40 @@ module Warden
         "env #{env.map { |k, v| "#{k}=#{v}" }.join(" ")}"
       end
 
-      def create
-        if @created
-          raise WardenError.new("container is already created")
-        end
-
-        @created = true
-
+      def do_create
         # Create container
-        command = "#{env_command} root/create.sh #{handle}"
+        command = "#{env_command} #{root_path}/create.sh #{handle}"
         debug command
         handler = ::EM.popen(command, ScriptHandler)
         handler.yield { error "could not create container" }
         debug "container created"
 
         # Start container
-        command = File.join(path, "start.sh")
+        command = File.join(container_path, "start.sh")
         debug command
         handler = ::EM.popen(command, ScriptHandler)
         handler.yield { error "could not start container" }
         debug "container started"
-
-        # Any client should now be able to look this container up
-        register
       end
 
-      def destroy
-        unless @created
-          raise WardenError.new("container is not yet created")
-        end
-
-        if @destroyed
-          raise WardenError.new("container is already destroyed")
-        end
-
-        @destroyed = true
-
-        # Clients should no longer be able to look this container up
-        unregister
-
+      def do_destroy
         # Stop container
-        command = File.join(path, "stop.sh")
+        command = File.join(container_path, "stop.sh")
         debug command
         handler = ::EM.popen(command, ScriptHandler)
         handler.yield { error "could not stop container" }
         debug "container stopped"
 
         # Destroy container
-        command = "rm -rf #{path}"
+        command = "rm -rf #{container_path}"
         debug command
         handler = ::EM.popen(command, ScriptHandler)
         handler.yield { error "could not destroy container" }
         debug "container destroyed"
-
-        # Release network address only if the container has successfully been
-        # destroyed. If not, the network address will "leak" and cannot be
-        # reused until this process is restarted. We should probably add extra
-        # logic to destroy a container in a failure scenario.
-        ::EM.add_timer(5) {
-          Server.network_pool.release(network)
-        }
       end
 
-      def run(script)
-        unless @created
-          raise WardenError.new("container is not yet created")
-        end
-
-        if @destroyed
-          raise WardenError.new("container is already destroyed")
-        end
-
-        socket_path = File.join(path, "union/tmp/runner.sock")
+      def do_run(script)
+        socket_path = File.join(container_root_path, "/tmp/runner.sock")
         unless File.exist?(socket_path)
           error "socket does not exist: #{socket_path}"
         end
@@ -137,10 +85,10 @@ module Warden
         result = handler.yield { error "runner unexpectedly terminated" }
         debug "runner successfully terminated: #{result.inspect}"
 
-        # Mix in path to the container's rootfs
+        # Mix in path to the container's root path
         status, stdout_path, stderr_path = result
-        stdout_path = File.join(rootfs, stdout_path) if stdout_path
-        stderr_path = File.join(rootfs, stderr_path) if stderr_path
+        stdout_path = File.join(container_root_path, stdout_path) if stdout_path
+        stderr_path = File.join(container_root_path, stderr_path) if stderr_path
         [status, stdout_path, stderr_path]
       end
     end

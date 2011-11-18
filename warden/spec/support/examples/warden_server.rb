@@ -1,27 +1,10 @@
-require "spec_helper"
-require "hiredis"
+require "support/warden_server"
+require "support/warden_client"
 
-describe Warden::Server do
+shared_examples "a warden server" do
 
-  include_context :warden
-
-  def create_client
-    client = Hiredis::Connection.new
-    client.connect_unix(unix_domain_path)
-
-    def client.read
-      reply = super
-      raise reply if reply.kind_of?(StandardError)
-      reply
-    end
-
-    def client.call(*args)
-      write(args)
-      read
-    end
-
-    client
-  end
+  include_context :warden_server
+  include_context :warden_client
 
   let(:client) {
     create_client
