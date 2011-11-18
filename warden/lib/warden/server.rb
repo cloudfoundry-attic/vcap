@@ -3,6 +3,7 @@ require "warden/event_emitter"
 require "warden/logger"
 require "warden/errors"
 require "warden/container/lxc"
+require "warden/container/insecure"
 require "warden/pool/network_pool"
 
 require "eventmachine"

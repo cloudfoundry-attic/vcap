@@ -6,12 +6,16 @@ module Warden
 
     class RemoteScriptHandler < ScriptHandler
 
-      def initialize(command)
+      def initialize(command = nil)
         super()
         @command = command
       end
 
       def post_init
+        send_command if @command
+      end
+
+      def send_command
         send_data @command + "\n"
 
         # Make bash exit without losing the exit status. This can otherwise

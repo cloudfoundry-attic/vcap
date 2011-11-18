@@ -1,10 +1,14 @@
 require "support/warden_server"
 require "support/warden_client"
 
-shared_examples "a warden server" do
+shared_examples "a warden server" do |container_klass|
 
   include_context :warden_server
   include_context :warden_client
+
+  let(:container_klass) {
+    container_klass
+  }
 
   let(:client) {
     create_client
@@ -70,8 +74,8 @@ shared_examples "a warden server" do
       client.write(["run", @handle, "sleep 5"])
       client.flush
 
-      # Wait for the container to be booted
-      sleep 1
+      # Wait for the command to run
+      sleep 0.1
 
       reply = other_client.call("destroy", @handle)
       reply.should == "ok"
