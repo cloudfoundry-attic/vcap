@@ -47,7 +47,7 @@ module VCAP::EMRun
       f = Fiber.current
       EM.system("#{cmd} 2>&1") { |output, status|
         if status.exitstatus != expected_exit_status
-          @logger.error("run (#{cmd}) expected #{expected} saw #{status.exitstatus}")
+          @logger.error("run (#{cmd}) expected #{expected_exit_status} saw #{status.exitstatus}")
           @logger.error("run output: #{output}")
         end
         f.resume([output, status.exitstatus])
