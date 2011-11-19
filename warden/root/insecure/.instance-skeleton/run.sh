@@ -4,10 +4,18 @@
 self=$(readlink -f ${0})
 cd $(dirname ${self})
 
+# Determine artifact path for this job
+if [ -n "${job_path}" ]; then
+tmp=${job_path}
+else
+tmp=$(mktemp -d)
+fi
+
+mkdir -p ${tmp}
+
 # Run script with PWD=root. Bash closes stdin for processes that is moves to
 # the background so we need to pass the script via a temporary file.
 cd root
-tmp=$(mktemp --tmpdir=. -d)
 cat ${1:-/dev/null} > ${tmp}/stdin
 env -i bash < ${tmp}/stdin 1> ${tmp}/stdout 2> ${tmp}/stderr &
 cd ..
@@ -19,4 +27,4 @@ touch pids/${parent_pid}
 wait ${child_pid} 2> /dev/null
 child_exit_status=${?}
 rm pids/${parent_pid}
-echo ${child_exit_status} ${tmp}
+echo ${child_exit_status} > ${tmp}/exit_status

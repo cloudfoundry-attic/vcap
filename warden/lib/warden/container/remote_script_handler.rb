@@ -6,18 +6,10 @@ module Warden
 
     class RemoteScriptHandler < ScriptHandler
 
+      # This handler is only interesting in knowning when the descriptor was
+      # closed. Success/failure is determined by other logic.
       def unbind
-        if buffer.empty?
-          # The wrapper script was terminated before it could return anything.
-          # It is likely that the container was destroyed while the script
-          # was being executed.
-          set_deferred_failure "execution aborted"
-        else
-          status, path = buffer.chomp.split
-          stdout_path = File.join(path, "stdout") if path
-          stderr_path = File.join(path, "stderr") if path
-          set_deferred_success [status.to_i, stdout_path, stderr_path]
-        end
+        set_deferred_success
       end
     end
   end

@@ -56,12 +56,20 @@ module Warden
         def setup
           # noop
         end
+
+        # Generates process-wide unique job IDs
+        def generate_job_id
+          @job_id ||= 0
+          @job_id += 1
+        end
       end
 
       attr_reader :connections
+      attr_reader :jobs
 
       def initialize
         @connections = ::Set.new
+        @jobs = {}
         @created = false
         @destroyed = false
       end
@@ -103,16 +111,6 @@ module Warden
 
       def container_path
         File.join(root_path, ".instance-#{handle}")
-      end
-
-      def sh(command)
-        handler = ::EM.popen(command, ScriptHandler)
-        yield handler if block_given?
-        handler.yield # Yields fiber
-
-      rescue WardenError
-        error "error running: #{command.inspect}"
-        raise
       end
 
       def create
@@ -161,7 +159,7 @@ module Warden
         raise WardenError.new("not implemented")
       end
 
-      def run(script)
+      def spawn(script)
         unless @created
           raise WardenError.new("container is not yet created")
         end
@@ -170,11 +168,80 @@ module Warden
           raise WardenError.new("container is already destroyed")
         end
 
-        do_run(script)
+        job = create_job(script)
+        jobs[job.job_id.to_s] = job
+
+        # Return job id to caller
+        job.job_id
       end
 
-      def do_run(script)
-        raise WardenError.new("not implemented")
+      def link(job_id)
+        unless @created
+          raise WardenError.new("container is not yet created")
+        end
+
+        if @destroyed
+          raise WardenError.new("container is already destroyed")
+        end
+
+        job = jobs[job_id.to_s]
+        unless job
+          raise WardenError.new("no such job")
+        end
+
+        job.yield
+      end
+
+      def run(script)
+        link(spawn(script))
+      end
+
+      protected
+
+      def sh(command)
+        handler = ::EM.popen(command, ScriptHandler)
+        yield handler if block_given?
+        handler.yield # Yields fiber
+
+      rescue WardenError
+        error "error running: #{command.inspect}"
+        raise
+      end
+
+      class Job
+
+        attr_reader :container
+        attr_reader :job_id
+        attr_reader :path
+
+        def initialize(container)
+          @container = container
+          @job_id = container.class.generate_job_id
+          @path = File.join("tmp", job_id.to_s)
+
+          @status = nil
+          @yielded = []
+        end
+
+        def finish
+          exit_status_path = File.join(container.container_root_path, path, "exit_status")
+          stdout_path = File.join(container.container_root_path, path, "stdout")
+          stderr_path = File.join(container.container_root_path, path, "stderr")
+
+          exit_status = File.read(exit_status_path) if File.exist?(exit_status_path)
+          exit_status = exit_status.to_i if exit_status && !exit_status.empty?
+          stdout_path = nil unless File.exist?(stdout_path)
+          stderr_path = nil unless File.exist?(stderr_path)
+
+          @status = [exit_status, stdout_path, stderr_path]
+          @yielded.each { |f| f.resume(@status) }
+        end
+
+        def yield
+          return @status if @status
+          @yielded << Fiber.current
+          Fiber.yield
+        end
       end
     end
   end

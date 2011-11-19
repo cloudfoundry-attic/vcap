@@ -80,10 +80,9 @@ shared_examples "a warden server" do |container_klass|
       reply = other_client.call("destroy", @handle)
       reply.should == "ok"
 
-      # Expect an error for the running command
-      lambda {
-        client.read
-      }.should raise_error(/execution aborted/i)
+      # The command should not have exited cleanly
+      reply = client.read
+      reply[0].should_not == 0
     end
   end
 end
