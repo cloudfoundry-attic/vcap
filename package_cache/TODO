@@ -3,14 +3,9 @@
 
 -clean out TODO list.
 
--finish removing requirements to run as root.
-
 -add storage quota support
 
 -add container support
-
--remove requirement that stuff runs as root in package_cache, get it to
-use all this new stuff.
 
 -look at removing the copy into the public inbox.
 
@@ -35,14 +30,10 @@ a per-user storage quota should at least provide an upper bound on space consume
 a periodic cleaning of the inbox (say of files who have been there over some short
 fixed interval (say 2 minutes) might also be a good measure.
 
--sometimes gem downloads failing, investigate and better error reporting
-on download fails perhaps.
-
 #MUST HAVE
 ---------
 
 -add functional test for error handling.
-
 -audit inbox permission stuff.
 
 #CLEANUP
@@ -62,11 +53,3 @@ on download fails perhaps.
 -add back pressure when we hit a limit on number of outstanding requests, stager
 can back off and retry.
 
-#OTHER FEATURES
---------------
-
--think about fs_cleaner_daemon for inbox, among other things, or just add
- some inbox cleaner to prevent resource leaks - prolly cleaner thread
- type thing.
-
--change debug formatter to say method() instead of `in method`

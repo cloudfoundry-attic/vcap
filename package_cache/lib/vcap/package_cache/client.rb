@@ -44,7 +44,7 @@ class VCAP::PackageCache::Client
       end
     rescue => e
       @logger.error "PackageCache Error."
-      if e.response
+      if e.respond_to?('response')
         raise VCAP::PackageCache::ServerError.new(e.response)
       end
       @logger.error e.message

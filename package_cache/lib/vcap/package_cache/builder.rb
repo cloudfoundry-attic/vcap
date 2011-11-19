@@ -36,6 +36,7 @@ class VCAP::PackageCache::Builder
   end
 
   def clean_up!
+    @logger.debug("cleaning up #{@build_dir}")
     FileUtils.rm_rf @build_dir
   end
 end

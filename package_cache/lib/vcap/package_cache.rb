@@ -18,7 +18,7 @@ module VCAP
       attr_accessor :directories
 
       def init(config_file)
-        puts "initializing package cache"
+         puts "Initializing package cache."
         begin
           config = VCAP::PackageCache::Config.from_file(config_file)
         rescue VCAP::JsonSchema::ValidationError => ve
@@ -34,6 +34,10 @@ module VCAP
       end
 
       def start_server!
+        if Process.uid != 0
+          puts "Package cache must be run as root."
+          exit 1
+        end
         #XXX matt's logging stuff, disabled till' I figure out how to setup a new
         #formatter for debugging.
         #VCAP::Logging.setup_from_config(@config[:logging])
@@ -54,7 +58,7 @@ module VCAP
       private
       def purge_directory!(path)
         @logger.info("purging #{path}")
-        FileUtils.rm_f Dir.glob("#{path}/*")
+        FileUtils.rm_rf Dir.glob("#{path}/*"), :secure => true
       end
 
       def clean_directories
@@ -67,7 +71,7 @@ module VCAP
 
       def init_directories
         @directories = Hash.new
-        dir_names = %w[inbox downloads cache builds]
+        dir_names = %w[inbox cache builds]
         base_dir = @config[:base_dir]
         dir_names.each {|name|
           @directories[name] = File.join(base_dir, name)
@@ -76,6 +80,7 @@ module VCAP
 
       def install_directories
         @directories.each { |name, path|
+          @logger.debug("setting up #{path}")
           FileUtils.mkdir_p(path) if not Dir.exists?(path)
         }
       end
