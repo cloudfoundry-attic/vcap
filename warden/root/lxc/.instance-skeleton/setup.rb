@@ -57,10 +57,20 @@ chroot ".", "useradd -mU vcap"
 
 # Add runner script
 write "usr/bin/runner", <<-EOS
-#!/bin/sh
+#!/bin/bash
+
+# Determine artifact path for this job
+read job_path
+if [ -n "${job_path}" ]; then
+tmp=${job_path}
+else
 tmp=$(mktemp -d)
+fi
+
+mkdir -p ${tmp} || exit 1
+
 sudo -u vcap env -i bash 1> ${tmp}/stdout 2> ${tmp}/stderr
-echo ${?} ${tmp}
+echo ${?} > ${tmp}/exit_status
 EOS
 
 script "chmod +x usr/bin/runner"
