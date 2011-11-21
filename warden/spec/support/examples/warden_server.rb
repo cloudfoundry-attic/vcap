@@ -71,8 +71,7 @@ shared_examples "a warden server" do |container_klass|
     end
 
     it "should work when the container gets destroyed" do
-      client.write(["run", @handle, "sleep 5"])
-      client.flush
+      client.write("run", @handle, "sleep 5")
 
       # Wait for the command to run
       sleep 0.1
@@ -83,6 +82,75 @@ shared_examples "a warden server" do |container_klass|
       # The command should not have exited cleanly
       reply = client.read
       reply[0].should_not == 0
+    end
+  end
+
+  describe "re-attaching running jobs" do
+
+    context "on the same connection" do
+
+      it "works when the client links to its unfinished job" do
+        handle = client.call("create")
+        job = client.call("spawn", handle, "sleep 0.05")
+        sleep 0.00
+        result = client.call("link", handle, job)
+
+        # Only test exit status
+        result[0].should == 0
+      end
+
+      it "works when the client links to its finished job" do
+        handle = client.call("create")
+        job = client.call("spawn", handle, "sleep 0.00")
+        sleep 0.05
+        result = client.call("link", handle, job)
+
+        # Only test exit status
+        result[0].should == 0
+      end
+    end
+
+    context "on different connections" do
+
+      let(:c1) { create_client }
+      let(:c2) { create_client }
+
+      it "works when both c1 and c2 link to c1's unfinished job" do
+        handle = c1.call("create")
+        job = c1.call("spawn", handle, "sleep 0.05")
+
+        c1.write("link", handle, job)
+        c2.write("link", handle, job)
+
+        r1 = c1.read
+        r2 = c2.read
+        r1.should == r2
+      end
+
+      it "works when both c1 and c2 link to c1's finished job" do
+        handle = c1.call("create")
+        job = c1.call("spawn", handle, "sleep 0.00")
+
+        sleep 0.05
+        c1.write("link", handle, job)
+        c2.write("link", handle, job)
+
+        r1 = c1.read
+        r2 = c2.read
+        r1.should == r2
+      end
+
+      it "works when c2 links to c1's job after c1 disconnected" do
+        handle = c1.call("create")
+        job = c1.call("spawn", handle, "sleep 0.05")
+        c1.disconnect
+
+        # Link on different connection
+        result = c2.call("link", handle, job)
+
+        # Only test exit status
+        result[0].should == 0
+      end
     end
   end
 end

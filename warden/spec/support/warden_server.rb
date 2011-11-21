@@ -15,6 +15,7 @@ shared_context :warden_server do
     FileUtils.rm_f(unix_domain_path)
 
     @pid = fork do
+      Process.setsid
       Signal.trap("TERM") { exit }
 
       Warden::Server.setup \
@@ -25,6 +26,10 @@ shared_context :warden_server do
         :logger => {
           :level => :debug,
           :file => File.expand_path("../../../tmp/warden.log", __FILE__) }
+
+      colored_test_name = "\033[37;1m%s\033[0m" % example.metadata[:full_description]
+      Warden::Logger.logger.info colored_test_name
+
       Warden::Server.run!
     end
 
@@ -40,7 +45,7 @@ shared_context :warden_server do
   end
 
   after :each do
-    `kill -9 #{@pid}`
+    `kill -9 -#{@pid}`
     Process.waitpid(@pid)
 
     # Destroy all artifacts

@@ -175,67 +175,67 @@ module Warden
           return
         end
 
-        case request.first
-        when "ping"
-          send_status "pong"
-        when "create"
-          process_create(request)
-        when "destroy"
-          process_destroy(request)
-        when "run"
-          process_run(request)
-        else
-          send_error "unknown command #{request.first.inspect}"
+        begin
+          method = "process_#{request.first}"
+          if respond_to?(method)
+            result = send(method, Request.new(request))
+          else
+            raise WardenError.new("unknown command #{request.first.inspect}")
+          end
+
+          send_object(result)
+        rescue WardenError => e
+          send_error e.message
         end
+      end
+
+      def process_ping(_)
+        "pong"
       end
 
       def process_create(request)
-        begin
-          container = Server.container_klass.new(self)
-          container.create
-          send_status container.handle
-        rescue WardenError => e
-          send_error e.message
-        end
+        container = Server.container_klass.new(self)
+        container.create
       end
 
       def process_destroy(request)
-        if request.size != 2
-          send_error "invalid number of arguments"
-          return
-        end
+        request.require_arguments 2
+        container = find_container(request[1])
+        container.destroy
+      end
 
-        container = Server.container_klass.registry[request[1]]
-        unless container
-          send_error "unknown handle"
-          return
-        end
+      def process_spawn(request)
+        request.require_arguments 3
+        container = find_container(request[1])
+        container.spawn(request[2])
+      end
 
-        begin
-          container.destroy
-          send_status "ok"
-        rescue WardenError => e
-          send_error e.message
-        end
+      def process_link(request)
+        request.require_arguments 3
+        container = find_container(request[1])
+        container.link(request[2])
       end
 
       def process_run(request)
-        if request.size != 3
-          send_error "invalid number of arguments"
-          return
-        end
+        request.require_arguments 3
+        container = find_container(request[1])
+        container.run(request[2])
+      end
 
-        container = Server.container_klass.registry[request[1]]
-        unless container
-          send_error "unknown handle"
-          return
-        end
+      protected
 
-        begin
-          result = container.run(request[2])
-          send_object result
-        rescue WardenError => e
-          send_error e.message
+      def find_container(handle)
+        Server.container_klass.registry[handle].tap do |container|
+          raise WardenError.new("unknown handle") if container.nil?
+        end
+      end
+
+      class Request < Array
+
+        def require_arguments(num)
+          if size != num
+            raise WardenError.new("invalid number of arguments")
+          end
         end
       end
     end
