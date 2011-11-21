@@ -22,7 +22,8 @@ shared_context :warden_server do
         :server => {
           :unix_domain_path => unix_domain_path,
           :container_root => container_root,
-          :container_klass => container_klass },
+          :container_klass => container_klass,
+          :container_grace_time => 1 },
         :logger => {
           :level => :debug,
           :file => File.expand_path("../../../tmp/warden.log", __FILE__) }
