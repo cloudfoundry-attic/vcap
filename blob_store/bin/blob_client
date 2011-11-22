@@ -1,0 +1,55 @@
+#!/usr/bin/env ruby
+$:.unshift(File.join(File.dirname(__FILE__), '../lib'))
+require 'optparse'
+require 'client'
+
+module Client
+  USAGE = 'usage: blob_client [OPTIONS], try -h for more options'
+  class << self
+    def init
+      @client = VCAP::BlobStore::Client.new({"endpoint" => "http://localhost:9999",
+                                                "user" => "admin",
+                                                "password" => "admin"})
+
+    end
+    def parse_options
+      options = OptionParser.new do |opts|
+          opts.banner = USAGE
+
+          opts.on("-c", "--create PATH", "Upload file at PATH to blob store.") do |opt|
+            path = opt
+            raise "Invalid file path #{path}." unless File.exists?(path)
+            file = File.new(path)
+            puts @client.create(file)
+          end
+
+          opts.on("-d", "--delete KEY", "Delete object KEY.") do |opt|
+            @client.delete(opt)
+          end
+
+          opts.on("-g", "--get KEY[:PATH]", "Get Object with KEY, dump to stdout, optionally store to PATH.") do |opt|
+            key, path = opt.split(':')
+            if path
+              file = File.open(path,'w')
+              @client.get(key, file)
+            else
+              puts @client.get(key)
+            end
+          end
+
+          opts.on("-h", "--help", "Help.") do
+            puts opts
+            exit
+          end
+      end
+      options.parse!(ARGV)
+    end
+  end
+  Client.init
+  if ARGV.length == 0
+    puts USAGE
+    exit
+  end
+  parse_options
+
+end

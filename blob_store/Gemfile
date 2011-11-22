@@ -1,0 +1,14 @@
+source :rubygems
+
+gem "rake"
+gem "sinatra"
+gem "thin"
+gem "uuidtools"
+gem "httpclient"
+
+group :test do
+  gem "rack-test"
+  gem "rspec"
+  gem "rcov"
+  gem "ci_reporter"
+end

@@ -1,0 +1,5 @@
+---
+path: /var/vcap/blob_store
+port: 9999
+users:
+  admin: admin
