@@ -2,7 +2,7 @@ PATH
   remote: .
   specs:
     vcap_common (0.99)
-      eventmachine (~> 0.12.11.cloudfoundry.1)
+      eventmachine (~> 0.12.11.cloudfoundry.2)
       logging (>= 1.5.0)
       nats
       posix-spawn
@@ -22,7 +22,7 @@ GEM
       http_parser.rb (>= 0.5.1)
     em-socksify (0.1.0)
       eventmachine
-    eventmachine (0.12.11.cloudfoundry.1)
+    eventmachine (0.12.11.cloudfoundry.2)
     http_parser.rb (0.5.1)
     json_pure (1.5.3)
     little-plugger (1.1.2)
