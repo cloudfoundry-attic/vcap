@@ -4,39 +4,40 @@ require 'optparse'
 require 'client'
 
 module Client
-
   USAGE = 'usage: blob_client [OPTIONS], try -h for more options'
-
   class << self
-    def initialize
+    def init
       @client = VCAP::BlobStore::Client.new({"endpoint" => "http://localhost:9999",
                                                 "user" => "admin",
                                                 "password" => "admin"})
 
     end
-
     def parse_options
       options = OptionParser.new do |opts|
           opts.banner = USAGE
 
-          opts.on("-p", "--put string", "Add string to blob store.") do |opt|
-            @client.create(opt)
-          end
-
-          opts.on("-c", "--create PATH", "Upload FILE to blob store.") do |opt|
+          opts.on("-c", "--create PATH", "Upload file at PATH to blob store.") do |opt|
             path = opt
             raise "Invalid file path #{path}." unless File.exists?(path)
+            file = File.new(path)
+            puts @client.create(file)
           end
 
           opts.on("-d", "--delete KEY", "Delete object KEY.") do |opt|
             @client.delete(opt)
           end
 
-          opts.on("-g", "--get KEY[,PATH]", "Get Object with KEY, optionally store to PATH.") do
-            puts @client.get(opt)
+          opts.on("-g", "--get KEY[:PATH]", "Get Object with KEY, dump to stdout, optionally store to PATH.") do |opt|
+            key, path = opt.split(':')
+            if path
+              file = File.open(path,'w')
+              @client.get(key, file)
+            else
+              puts @client.get(key)
+            end
           end
 
-          opts.on("-h", "--help", "Help") do
+          opts.on("-h", "--help", "Help.") do
             puts opts
             exit
           end
@@ -44,6 +45,7 @@ module Client
       options.parse!(ARGV)
     end
   end
+  Client.init
   if ARGV.length == 0
     puts USAGE
     exit
