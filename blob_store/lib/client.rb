@@ -1,5 +1,6 @@
 require 'httpclient'
 require 'base64'
+require 'errors'
 
 module VCAP
   module BlobStore
@@ -17,19 +18,25 @@ module VCAP
       def create(file)
         response = @client.post("#{@endpoint}/resources", {:content => file}, @headers)
         if response.status != 200
-          raise BlobstoreError, "Could not create object, #{response.status}/#{response.content}"
+          raise BlobStoreError, "Could not create object, #{response.status}/#{response.content}"
         end
         response.content
       end
 
       def get(id, file = nil)
+        bits = nil
         response = @client.get("#{@endpoint}/resources/#{id}", {}, @headers) do |block|
-          file.write(block) if file
+          if file
+            file.write(block)
+          else
+            bits = block
+          end
         end
 
         if response.status != 200
-          raise BlobstoreError, "Could not fetch object, #{response.status}/#{response.content}"
+          raise BlobStoreError, "Could not fetch object, #{response.status}/#{response.content}"
         end
+        bits
       end
 
       def delete(id)

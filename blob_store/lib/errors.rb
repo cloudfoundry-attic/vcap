@@ -1,7 +1,7 @@
 module VCAP
-  module Blobstore
+  module BlobStore
 
-    class BlobstoreError < StandardError; end
-    class NotFound < BlobstoreError; end
+    class BlobStoreError < StandardError; end
+    class NotFound < BlobStoreError; end
   end
 end
