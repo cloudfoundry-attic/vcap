@@ -1,6 +1,6 @@
 source :rubygems
 
-gem 'eventmachine', '=0.12.10'
+gem 'eventmachine',  '~> 0.12.11.cloudfoundry.1'
 gem 'nats'
 gem 'rake'
 gem 'logging', '= 1.5.2'
