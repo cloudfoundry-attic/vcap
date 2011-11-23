@@ -40,7 +40,7 @@ class NetPlugin < StagingPlugin
 
   def stop_script_template    
     <<-SCRIPT
-    & $($rLayer) -stop -pid=$($process.Id)
+    & "$($rLayer)" -stop -pid=$($process.Id)
     SCRIPT
   end  
   
