@@ -31,16 +31,16 @@ class NetPlugin < StagingPlugin
     $psi.WindowStyle = [System.Diagnostics.ProcessWindowStyle]::Hidden
     $process = [System.Diagnostics.Process]::Start($psi)
     echo $process.Id >> ..\\run.pid
-    <%= stop_script_template.lines.map { |l| "echo " + l.strip.inspect + " >> ..\\\\stop\r\n" }.join %>
+    <%= stop_script_template.lines.map { |l| "echo " + l.strip + " >> ..\\\\stop\r\n" }.join %>
     Wait-Process -Id $process.Id
     SCRIPT
 	
     ERB.new(template).result(binding).lines.reject {|l| l =~ /^\s*$/}.join
   end
 
-  def stop_script_template    
+  def stop_script_template
     <<-SCRIPT
-    & "$($rLayer)" -stop -pid=$($process.Id)
+    "&`"$($rLayer)`" -stop -pid=$($process.Id)"
     SCRIPT
   end  
   
