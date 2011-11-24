@@ -11,6 +11,7 @@ namespace :warden do
   desc "Run Warden server"
   task :start do
     require "warden/server"
+    Warden::Server.setup
     Warden::Server.run!
   end
 end

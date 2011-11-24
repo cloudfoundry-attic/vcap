@@ -3,6 +3,7 @@ require "warden/errors"
 require "warden/container/script_handler"
 
 require "eventmachine"
+require "em/posix/spawn"
 require "set"
 
 module Warden
@@ -11,6 +12,8 @@ module Warden
 
     class Base
 
+      include ::EM::POSIX::Spawn
+      include EventEmitter
       include Logger
 
       class << self
@@ -72,20 +75,30 @@ module Warden
         @jobs = {}
         @created = false
         @destroyed = false
+
+        on(:after_create) {
+          # Clients should be able to look this container up
+          self.class.registry[handle] = self
+        }
+
+        on(:before_destroy) {
+          # Clients should no longer be able to look this container up
+          self.class.registry.delete(handle)
+        }
+
+        on(:after_destroy) {
+          # Release network address only if the container has successfully been
+          # destroyed. If not, the network address will "leak" and cannot be
+          # reused until this process is restarted. We should probably add
+          # extra logic to destroy a container in a failure scenario.
+          ::EM.add_timer(5) {
+            Server.network_pool.release(network)
+          }
+        }
       end
 
       def handle
         @network.to_hex
-      end
-
-      def register
-        self.class.registry[handle] = self
-        nil
-      end
-
-      def unregister
-        self.class.registry.delete(handle)
-        nil
       end
 
       def gateway_ip
@@ -133,10 +146,9 @@ module Warden
 
         @created = true
 
+        emit(:before_create)
         do_create
-
-        # Any client should now be able to look this container up
-        register
+        emit(:after_create)
 
         handle
       end
@@ -156,18 +168,9 @@ module Warden
 
         @destroyed = true
 
-        # Clients should no longer be able to look this container up
-        unregister
-
+        emit(:before_destroy)
         do_destroy
-
-        # Release network address only if the container has successfully been
-        # destroyed. If not, the network address will "leak" and cannot be
-        # reused until this process is restarted. We should probably add extra
-        # logic to destroy a container in a failure scenario.
-        ::EM.add_timer(5) {
-          Server.network_pool.release(network)
-        }
+        emit(:after_destroy)
 
         "ok"
       end
@@ -215,10 +218,27 @@ module Warden
 
       protected
 
-      def sh(command)
-        handler = ::EM.popen(command, ScriptHandler)
-        yield handler if block_given?
-        handler.yield # Yields fiber
+      def sh(*args)
+        env, argv, options =  extract_process_spawn_arguments(*args)
+        options = { :timeout => 5.0, :max => 1024 * 1024 }.merge(options)
+        p = Child.new(env, *(argv + [options]))
+
+        f = Fiber.current
+        p.callback { f.resume(:ok) }
+        p.errback { |err| f.resume(:err, err) }
+
+        status, err = Fiber.yield
+        if status == :err
+          message = case err
+                    when MaximumOutputExceeded
+                      "command exceeded maximum output"
+                    when TimeoutExceeded
+                      "command exceeded maximum runtime"
+                    else
+                      "unknown error"
+                    end
+          raise WardenError.new(message)
+        end
 
       rescue WardenError
         error "error running: #{command.inspect}"
