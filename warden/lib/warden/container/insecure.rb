@@ -39,20 +39,11 @@ module Warden
       end
 
       def create_job(script)
-        # Store script in temporary file. This is done because run.sh moves the
-        # subshell that actually runs the script to the background, and with
-        # that closes its stdin. In addition, we cannot capture stdin before
-        # executing the subshell because we cannot shutdown the write side of a
-        # socket from EM.
-        stdin = Tempfile.new("stdin", container_path)
-        stdin.write(script)
-        stdin.close
-
-        # Create new job and run script
         job = Job.new(self)
-        command = "env job_path=#{container_root_path}/#{job.path} #{container_path}/run.sh #{stdin.path}"
-        handler = ::EM.popen(command, RemoteScriptHandler)
-        handler.callback { job.finish }
+        env = { "job_path" => File.join(container_root_path, job.path) }
+        child = Child.new(env, File.join(container_path, "run.sh"), :input => script)
+        child.callback { job.finish }
+        child.errback { job.finish }
 
         job
       end
