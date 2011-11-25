@@ -82,7 +82,7 @@ staging:
   secure: false
 
 # admin support
-admins: [ <%= node[:cloud_controller][:admins].join(",") %> ]
+admins: [ <%= node[:cloud_controller][:admins].join(", ") %> ]
 https_required: false
 https_required_for_admins: false
 
