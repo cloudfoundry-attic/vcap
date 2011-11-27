@@ -31,7 +31,7 @@ read -p "Enter the password you want to use for root postgresql user: " POSTGRES
 echo "Installing dependencies"
 if [[ $PLATFORM == 'Linux' ]]; then
   sudo apt-get update
-  sudo apt-get -qqy install coreutils autoconf curl git-core ruby bison build-essential zlib1g-dev libssl-dev libreadline5-dev
+  sudo apt-get -qqy install coreutils autoconf libtool curl git-core ruby bison build-essential zlib1g-dev libssl-dev libreadline5-dev
 else
   echo "Sorry, we can't install dependencies for your system yet."
 fi
