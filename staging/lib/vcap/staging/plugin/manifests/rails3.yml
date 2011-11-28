@@ -18,6 +18,22 @@ runtimes:
        rails_env: "production"
        bundle_gemfile:
        rack_env: "production"
+  - "jruby18":
+      version: "1.8.7p330"
+      description: "JRuby 1.6.5"
+      executable: "jruby"
+      environment:
+       rails_env: "production"
+       bundle_gemfile:
+       rack_env: "production"
+  - "jruby19":
+      version: "1.9.2p136"
+      description: "JRuby 1.6.5 (Ruby 1.9 mode)"
+      executable: "jruby19"
+      environment:
+       rails_env: "production"
+       bundle_gemfile:
+       rack_env: "production"
 app_servers:
   - "thin":
       description: "Thin"
