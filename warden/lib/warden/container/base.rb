@@ -12,7 +12,6 @@ module Warden
 
     class Base
 
-      include ::EM::POSIX::Spawn
       include EventEmitter
       include Logger
 
@@ -219,33 +218,88 @@ module Warden
       protected
 
       def sh(*args)
-        env, argv, options =  extract_process_spawn_arguments(*args)
+        options =
+          if args[-1].respond_to?(:to_hash)
+            args.pop.to_hash
+          else
+            {}
+          end
+
         options = { :timeout => 5.0, :max => 1024 * 1024 }.merge(options)
-        p = Child.new(env, *(argv + [options]))
+        p = DeferredChild.new(*(args + [options]))
+        p.yield
+      end
 
-        f = Fiber.current
-        p.callback { f.resume(:ok) }
-        p.errback { |err| f.resume(:err, err) }
+      # Thin utility class around EM::POSIX::Spawn::Child. It instruments the
+      # logger in case of error conditions. Also, it considers any non-zero
+      # exit status as an error. In this case, it tries to log as much
+      # information as possible and subsequently triggers the failure callback.
 
-        status, err = Fiber.yield
-        if status == :err
-          message = case err
-                    when MaximumOutputExceeded
-                      "command exceeded maximum output"
-                    when TimeoutExceeded
-                      "command exceeded maximum runtime"
-                    else
-                      "unknown error"
-                    end
-          raise WardenError.new(message)
+      class DeferredChild
+
+        include ::EM::POSIX::Spawn
+        include ::EM::Deferrable
+        include Logger
+
+        attr_reader :env
+        attr_reader :argv
+        attr_reader :options
+
+        def initialize(*args)
+          @env, @argv, @options = extract_process_spawn_arguments(*args)
+
+          p = Child.new(env, *(argv + [options]))
+
+          p.callback {
+            unless p.success?
+              # Log last line of stderr. Don't use this as message for the raised
+              # error to prevent internal information from leaking to clients.
+              error "stderr: #{p.err.split(/\n/).last.inspect}"
+
+              err = WardenError.new("command exited with failure")
+              set_deferred_failure(err)
+            end
+
+            set_deferred_success
+          }
+
+          p.errback { |err|
+            message = case err
+                      when MaximumOutputExceeded
+                        "command exceeded maximum output"
+                      when TimeoutExceeded
+                        "command exceeded maximum runtime"
+                      end
+
+            err = WardenError.new(message)
+            set_deferred_failure(err)
+          }
         end
 
-      rescue WardenError
-        error "error running: #{command.inspect}"
-        raise
+        # Helper to inject log message
+        def set_deferred_success
+          debug "successfully ran #{argv.inspect}"
+          super
+        end
+
+        # Helper to inject log message
+        def set_deferred_failure(err)
+          error "error running #{argv.inspect}: #{err.message}"
+          super
+        end
+
+        def yield
+          f = Fiber.current
+          callback { f.resume(:ok) }
+          errback { |err| f.resume(:err, err) }
+          status, err = Fiber.yield
+          raise err if status == :err
+        end
       end
 
       class Job
+
+        include Logger
 
         attr_reader :container
         attr_reader :job_id
@@ -270,14 +324,21 @@ module Warden
           stdout_path = nil unless File.exist?(stdout_path)
           stderr_path = nil unless File.exist?(stderr_path)
 
-          @status = [exit_status, stdout_path, stderr_path]
-          @yielded.each { |f| f.resume(@status) }
+          status = [exit_status, stdout_path, stderr_path]
+          debug "job exit status: #{exit_status}"
+
+          resume(status)
         end
 
         def yield
           return @status if @status
           @yielded << Fiber.current
           Fiber.yield
+        end
+
+        def resume(status)
+          @status = status
+          @yielded.each { |f| f.resume(@status) }
         end
       end
     end

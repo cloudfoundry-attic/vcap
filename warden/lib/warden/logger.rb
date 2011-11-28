@@ -35,6 +35,8 @@ module Warden
       trimmed_file = file_parts.
         reverse.
         take_while { |e| e != "lib" }.
+        map.
+        with_index { |e,i| i == 0 ? e : e[0, 1] }.
         reverse.
         join("/")
 
