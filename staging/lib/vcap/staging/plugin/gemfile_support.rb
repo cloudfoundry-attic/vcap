@@ -29,15 +29,15 @@ module GemfileSupport
     app_dir  = File.join(destination_directory, 'app')
     ruby_cmd = "env -i #{safe_env} #{ruby}"
 
-    task = GemfileTask.new(app_dir, library_version, ruby_cmd, base_dir, @staging_uid, @staging_gid)
+    @task = GemfileTask.new(app_dir, library_version, ruby_cmd, base_dir, @staging_uid, @staging_gid)
 
-    task.install
-    task.install_bundler
-    task.remove_gems_cached_in_app
+    @task.install
+    @task.install_bundler
+    @task.remove_gems_cached_in_app
 
-    @rack = task.bundles_rack?
-    @thin = task.bundles_thin?
-
+    @rack = @task.bundles_rack?
+    @thin = @task.bundles_thin?
+    @cfruntime = @task.bundles_cf_runtime?
     write_bundle_config
   end
 
@@ -57,6 +57,14 @@ module GemfileSupport
 
   def uses_bundler?
     File.exists?(File.join(source_directory, 'Gemfile.lock'))
+  end
+
+  def uses_cf_runtime?
+    @cfruntime
+  end
+
+  def install_autoconfig_gem
+    @task.install_autoconfig
   end
 
   def packaged_with_bundler_in_deployment_mode?
