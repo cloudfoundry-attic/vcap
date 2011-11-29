@@ -585,4 +585,17 @@ echo "$STARTED" >> ../run.pid
   def insight_agent
     StagingPlugin.platform_config['insight_agent']
   end
+
+  def autoconfig_enabled?
+    autoconfig = true
+    cf_config_file =  destination_directory + '/app/config/cloudfoundry.yml'
+    if File.exists? cf_config_file
+      config = YAML.load_file(cf_config_file)
+      if config['autoconfig'] == false
+        autoconfig = false
+      end
+    end
+    #Return true if user has not explicitly opted out and they are not using cf-runtime gem
+    autoconfig && !(uses_cf_runtime?)
+  end
 end
