@@ -4,6 +4,7 @@ $:.unshift File.join(File.dirname(__FILE__), '..', 'lib')
 
 require 'rubygems'
 require 'rspec'
+require 'digest/md5'
 require 'health_manager'
 
 module Spec

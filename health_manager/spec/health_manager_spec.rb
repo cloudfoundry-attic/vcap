@@ -1,5 +1,6 @@
 # Copyright (c) 2009-2011 VMware, Inc.
 require 'spec_helper'
+require 'benchmark'
 
 #functional tests are now implemented in functional/health_manager_spec.rb
 class HealthManager
@@ -19,25 +20,37 @@ end
 
 describe HealthManager do
 
-  def build_user_and_app
-    @user = ::User.find_by_email('test@example.com')
-    unless @user
-      @user = ::User.new(:email => "test@example.com")
-      @user.set_and_encrypt_password('HASHEDPASSWORD')
-      @user.save!
+  def build_user(prefix='test')
+    email = prefix + '@example.com'
+    user = ::User.find_by_email(email)
+    unless user
+      user = ::User.new(:email => email)
+      user.set_and_encrypt_password('HASHEDPASSWORD')
+      user.save!
     end
+    user
+  end
 
-    @app = @user.apps.find_by_name('testapp')
-    unless @app
-      @app = ::App.new(:name => "testapp", :owner => @user, :runtime => "ruby19", :framework => "sinatra")
-      @app.package_hash = "f49cf6381e322b147053b74e4500af8533ac1e4c"
-      @app.staged_package_hash = "4db6cf8d1d9949790c7e836f29f12dc37c15b3a9"
-      @app.state = "STARTED"
-      @app.package_state = "STAGED"
-      @app.instances = 3
-      @app.save!
-      @app.set_urls(['http://testapp.vcap.me'])
+  def build_app(user, prefix='test')
+    appname = prefix+'app'
+    app = user.apps.find_by_name(appname)
+    unless app
+      app = ::App.new(:name => appname, :owner => user, :runtime => "ruby19", :framework => "sinatra")
+      app.package_hash = Digest::MD5.hexdigest("package_hash"+appname)
+      app.staged_package_hash = Digest::MD5.hexdigest("staged_package_hash"+appname)
+      app.state = "STARTED"
+      app.package_state = "STAGED"
+      app.instances = 3
+      app.save!
+      app.set_urls(['http://'+appname+'.vcap.me'])
     end
+    app
+  end
+
+  def build_user_and_app(prefix = 'test')
+    user = build_user(prefix)
+    @app = build_app(user, prefix)
+
     @droplet_entry = {
         :last_updated => @app.last_updated - 2, # take off 2 seconds so it looks 'quiescent'
         :state => 'STARTED',
@@ -49,7 +62,21 @@ describe HealthManager do
         :runtime => 'ruby19'
     }
     @hm.update_droplet(@app)
+
   end
+
+  def build_many_users_and_apps(n_users, n_apps_per)
+
+    n_users.times do |i|
+      user = build_user('test'+i.to_s)
+      n_apps_per.times do |j|
+        prefix = "test#{i}-#{j}"
+        app = build_app(user, prefix)
+        @hm.update_droplet(app)
+      end
+    end
+  end
+
 
   def should_publish_to_nats(message, payload)
     NATS.should_receive(:publish).with(message, payload.to_json)
@@ -67,6 +94,7 @@ describe HealthManager do
   before(:each) do
     create_hm
     hash = Hash.new {|h,k| h[k] = 0}
+    hash[:running] = Hash.new {|h,k| h[k] = 0}
     VCAP::Component.stub!(:varz).and_return(hash)
     build_user_and_app
   end
@@ -150,12 +178,12 @@ describe HealthManager do
         3 => { :state => 'RUNNING', :timestamp => timestamp, :last_action => @app.last_updated, :instance => '3' }
     }}
 
-    should_publish_to_nats "cloudcontrollers.hm.requests", {
+    should_publish_to_nats("cloudcontrollers.hm.requests", {
           'droplet' => @app.id,
           'op' => 'STOP',
           'last_updated' => @app.last_updated.to_i,
           'instances' => [ version_entry[:indices][3][:instance] ]
-        }
+        })
     @droplet_entry[:versions][@droplet_entry[:live_version]] = version_entry
 
     stats = analyze_app
@@ -291,5 +319,21 @@ describe HealthManager do
 
     flappers.should == { }
 
+  end
+
+  it 'should be able to analyze many apps in reasonable time' do
+    n_users = 1000
+    n_apps = 2
+
+    Benchmark.bmbm do |x|
+      x.report('user/app creation') { build_many_users_and_apps(n_users,n_apps) }
+
+      NATS.should_receive(:publish).at_least(n_users * n_apps ).times
+      x.report('update_from_db') { @hm.update_from_db }
+
+      x.report('analysis, no stats') { @hm.analyze_all_apps(false) }
+      x.report('analysis, with stats') { @hm.analyze_all_apps(true) }
+    end
+    App.count.should >= n_users * n_apps
   end
 end
