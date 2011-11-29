@@ -77,11 +77,15 @@ module Warden
     end
 
     def self.run!
-      container_klass.setup
-
       ::EM.run {
-        FileUtils.rm_f(unix_domain_path)
-        server = ::EM.start_unix_domain_server(unix_domain_path, ClientConnection)
+        f = Fiber.new do
+          container_klass.setup
+
+          FileUtils.rm_f(unix_domain_path)
+          ::EM.start_unix_domain_server(unix_domain_path, ClientConnection)
+        end
+
+        f.resume
       }
     end
 
@@ -237,6 +241,19 @@ module Warden
         request.require_arguments { |n| n == 3 }
         container = find_container(request[1])
         container.run(request[2])
+      end
+
+      def process_net(request)
+        request.require_arguments { |n| n >= 3 }
+        container = find_container(request[1])
+
+        case request[2]
+        when "in"
+          request.require_arguments { |n| n == 3 }
+          container.net_inbound_port
+        else
+          raise WardenError.new("invalid argument")
+        end
       end
 
       protected

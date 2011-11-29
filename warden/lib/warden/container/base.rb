@@ -92,7 +92,7 @@ module Warden
           # reused until this process is restarted. We should probably add
           # extra logic to destroy a container in a failure scenario.
           ::EM.add_timer(5) {
-            Server.network_pool.release(network)
+            self.class.network_pool.release(network)
           }
         }
       end
@@ -214,6 +214,18 @@ module Warden
 
       def run(script)
         link(spawn(script))
+      end
+
+      def net_inbound_port
+        unless @created
+          raise WardenError.new("container is not yet created")
+        end
+
+        if @destroyed
+          raise WardenError.new("container is already destroyed")
+        end
+
+        _net_inbound_port
       end
 
       protected
