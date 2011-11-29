@@ -1,0 +1,22 @@
+---
+name: "php"
+runtimes:
+  - "php":
+      description: "PHP 5"
+      version: "5.3"
+      executable: "php"
+      default: true
+app_servers:
+  - "apache":
+      description: "Apache"
+      executable: "false"
+      default: true
+detection:
+  - "*.php": true
+staged_services:
+  - "name": "mysql"
+    "version": "*"
+  - "name": "postgresql"
+    "version": "*"
+
+# vim: filetype=yaml
