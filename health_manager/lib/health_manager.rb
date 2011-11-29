@@ -512,7 +512,6 @@ class HealthManager
             running += 1 if index_entry[:state] == RUNNING
           end
         end
-
         response_json = encode_json(:droplet => droplet_id, :version => version, :healthy => running)
         NATS.publish(reply, response_json)
       end
@@ -719,8 +718,6 @@ class HealthManager
       NATS.publish('cloudcontrollers.hm.requests', start_message.to_json)
       @logger.info("Requesting the start of missing instances: #{start_message}")
     end
-
-
   end
 
   def queue_request message
