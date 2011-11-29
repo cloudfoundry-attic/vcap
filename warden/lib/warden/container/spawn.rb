@@ -11,7 +11,9 @@ module Warden
 
     module Spawn
 
-      protected
+      def self.included(base)
+        base.extend(self)
+      end
 
       def sh(*args)
         options =
@@ -21,9 +23,18 @@ module Warden
             {}
           end
 
+        skip_raise = options.delete(:raise) == false
         options = { :timeout => 5.0, :max => 1024 * 1024 }.merge(options)
+
         p = DeferredChild.new(*(args + [options]))
         p.yield
+
+      rescue WardenError => err
+        if skip_raise
+          nil
+        else
+          raise
+        end
       end
 
       # Thin utility class around EM::POSIX::Spawn::Child. It instruments the
@@ -60,14 +71,14 @@ module Warden
           }
 
           p.errback { |err|
-            message = case err
-                      when MaximumOutputExceeded
-                        "command exceeded maximum output"
-                      when TimeoutExceeded
-                        "command exceeded maximum runtime"
-                      end
+            if err == MaximumOutputExceeded
+              err = WardenError.new("command exceeded maximum output")
+            elsif err == TimeoutExceeded
+              err = WardenError.new("command exceeded maximum runtime")
+            else
+              err = WardenError.new("unexpected error: #{err.inspect}")
+            end
 
-            err = WardenError.new(message)
             set_deferred_failure(err)
           }
         end
