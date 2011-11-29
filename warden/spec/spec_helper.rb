@@ -1,4 +1,5 @@
 require "rspec"
+require "tempfile"
 
 Dir["./spec/support/**/*.rb"].each { |f| require f }
 
