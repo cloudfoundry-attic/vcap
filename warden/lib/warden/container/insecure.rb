@@ -20,33 +20,21 @@ module Warden
 
       def do_create
         # Create container
-        command = "#{root_path}/create.sh #{handle}"
-        debug command
-        handler = ::EM.popen(command, ScriptHandler)
-        handler.yield { error "could not create container" }
+        sh "#{root_path}/create.sh #{handle}"
         debug "container created"
 
         # Start container
-        command = "#{container_path}/start.sh"
-        debug command
-        handler = ::EM.popen(command, ScriptHandler)
-        handler.yield { error "could not start container" }
+        sh "#{container_path}/start.sh"
         debug "container started"
       end
 
       def do_destroy
         # Stop container
-        command = "#{container_path}/stop.sh"
-        debug command
-        handler = ::EM.popen(command, ScriptHandler)
-        handler.yield { error "could not stop container" }
+        sh "#{container_path}/stop.sh"
         debug "container stopped"
 
         # Destroy container
-        command = "rm -rf #{container_path}"
-        debug command
-        handler = ::EM.popen(command, ScriptHandler)
-        handler.yield { error "could not destroy container" }
+        sh "rm -rf #{container_path}"
         debug "container destroyed"
       end
 
@@ -62,7 +50,6 @@ module Warden
 
         # Run script
         command = "#{container_path}/run.sh #{stdin.path}"
-        debug command
         handler = ::EM.popen(command, RemoteScriptHandler)
         result = handler.yield { error "runner unexpectedly terminated" }
         debug "runner successfully terminated: #{result.inspect}"

@@ -1,5 +1,6 @@
 require "warden/logger"
 require "warden/errors"
+require "warden/container/script_handler"
 
 require "eventmachine"
 require "set"
@@ -102,6 +103,16 @@ module Warden
 
       def container_path
         File.join(root_path, ".instance-#{handle}")
+      end
+
+      def sh(command)
+        handler = ::EM.popen(command, ScriptHandler)
+        yield handler if block_given?
+        handler.yield # Yields fiber
+
+      rescue WardenError
+        error "error running: #{command.inspect}"
+        raise
       end
 
       def create

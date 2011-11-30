@@ -45,33 +45,21 @@ module Warden
 
       def do_create
         # Create container
-        command = "#{env_command} #{root_path}/create.sh #{handle}"
-        debug command
-        handler = ::EM.popen(command, ScriptHandler)
-        handler.yield { error "could not create container" }
+        sh "#{env_command} #{root_path}/create.sh #{handle}"
         debug "container created"
 
         # Start container
-        command = File.join(container_path, "start.sh")
-        debug command
-        handler = ::EM.popen(command, ScriptHandler)
-        handler.yield { error "could not start container" }
+        sh "#{container_path}/start.sh"
         debug "container started"
       end
 
       def do_destroy
         # Stop container
-        command = File.join(container_path, "stop.sh")
-        debug command
-        handler = ::EM.popen(command, ScriptHandler)
-        handler.yield { error "could not stop container" }
+        sh "#{container_path}/stop.sh"
         debug "container stopped"
 
         # Destroy container
-        command = "rm -rf #{container_path}"
-        debug command
-        handler = ::EM.popen(command, ScriptHandler)
-        handler.yield { error "could not destroy container" }
+        sh "rm -rf #{container_path}"
         debug "container destroyed"
       end
 
@@ -81,7 +69,15 @@ module Warden
           error "socket does not exist: #{socket_path}"
         end
 
-        handler = ::EM.connect_unix_domain(socket_path, RemoteScriptHandler, script)
+        handler = ::EM.connect_unix_domain(socket_path, RemoteScriptHandler)
+        handler.send_data(script + "\n")
+
+        # Make bash exit without losing the exit status. This can otherwise
+        # be done by shutting down the write side of the socket, causing EOF
+        # on stdin for the remote. However, EM doesn't do shutdown...
+        handler.send_data "exit $?\n"
+
+        # Wait for bash to exit and eof.
         result = handler.yield { error "runner unexpectedly terminated" }
         debug "runner successfully terminated: #{result.inspect}"
 
