@@ -3,7 +3,12 @@ require "warden/client"
 
 describe Warden::Client do
 
-  include_context :warden
+  include_context :warden_server
+
+  let(:container_klass) {
+    # These specs shouldn't impact container-related code
+    mock("container klass").as_null_object
+  }
 
   let(:client) {
     Warden::Client.new(unix_domain_path)

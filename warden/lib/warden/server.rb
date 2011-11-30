@@ -23,10 +23,20 @@ module Warden
       @container_root
     end
 
+    # This is hard-coded to LXC; we can be smarter using `uname`, "/etc/issue", etc.
+    def self.default_container_klass
+      ::Warden::Container::LXC
+    end
+
+    def self.container_klass
+      @container_klass
+    end
+
     def self.setup_server(config = nil)
       config ||= {}
       @unix_domain_path = config[:unix_domain_path] || "/tmp/warden.sock"
       @container_root = config[:container_root] || File.expand_path(File.join("..", "..", "..", "root"), __FILE__)
+      @container_klass = config[:container_klass] || default_container_klass
     end
 
     def self.setup_logger(config = nil)
@@ -39,18 +49,13 @@ module Warden
       network_start_address = Network::Address.new(config[:start_address] || "10.254.0.0")
       network_size = config[:size] || 64
       network_pool = Pool::NetworkPool.new(network_start_address, network_size)
-      Container::LXC.network_pool = network_pool
+      container_klass.network_pool = network_pool
     end
 
     def self.setup(config = {})
       setup_server config[:server]
       setup_logger config[:logger]
       setup_network config[:network]
-    end
-
-    # This is hard-coded to LXC but will be configurable down the line
-    def self.container_klass
-      ::Warden::Container::LXC
     end
 
     def self.run!

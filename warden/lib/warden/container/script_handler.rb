@@ -42,7 +42,11 @@ module Warden
       end
 
       def unbind
-        set_deferred_success
+        if get_status.exitstatus != 0
+          set_deferred_failure
+        else
+          set_deferred_success
+        end
       end
     end
   end
