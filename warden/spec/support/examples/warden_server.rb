@@ -153,4 +153,54 @@ shared_examples "a warden server" do |container_klass|
       end
     end
   end
+
+  context "container cleanup" do
+
+    before(:each) do
+      @handle = client.call("create")
+
+      # Test that the container is running
+      result = client.call("run", @handle, "echo")
+      result[0].should == 0
+    end
+
+    it "destroys unreferenced containers after some time" do
+      # Disconnect the client
+      client.disconnect
+
+      # Let the grace time pass
+      sleep 1.1
+
+      # Test that the container can no longer be referenced
+      lambda {
+        client.reconnect
+        result = client.call("run", @handle, "echo")
+      }.should raise_error(/unknown handle/)
+    end
+
+    it "doesn't destroy containers when referenced by another client" do
+      # Disconnect the client
+      client.disconnect
+      client.reconnect
+
+      # Wait some time, but don't run out of grace time
+      sleep 0.1
+
+      # Test that the container can still be referenced
+      lambda {
+        result = client.call("run", @handle, "echo")
+        result[0].should == 0
+      }.should_not raise_error
+
+      # Wait for the original grace time to run out
+      sleep 1.0
+
+      # The new connection should have taken over ownership of this container
+      # and canceled the original grace time
+      lambda {
+        result = client.call("run", @handle, "echo")
+        result[0].should == 0
+      }.should_not raise_error
+    end
+  end
 end

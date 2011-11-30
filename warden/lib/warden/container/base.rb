@@ -98,7 +98,7 @@ module Warden
 
       def register_connection(conn)
         if @destroy_timer
-          @destroy_timer.cancel
+          ::EM.cancel_timer(@destroy_timer)
           @destroy_timer = nil
         end
 
@@ -108,7 +108,11 @@ module Warden
 
             # Destroy container after grace period
             if connections.size == 0
-              @destroy_timer = ::EM.add_timer(5) { destroy }
+              @destroy_timer =
+                ::EM.add_timer(Server.container_grace_time) {
+                  f = Fiber.new { destroy }
+                  f.resume
+                }
             end
           }
         end

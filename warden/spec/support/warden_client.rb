@@ -2,26 +2,40 @@ require "hiredis"
 
 shared_context :warden_client do
 
-  def create_client
-    client = Hiredis::Connection.new
-    client.connect_unix(unix_domain_path)
+  class ClientSpecificallyMadeForSpecs < ::Hiredis::Connection
 
-    def client.read
+    attr_reader :path
+
+    def initialize(path)
+      super()
+
+      @path = path
+      reconnect
+    end
+
+    def reconnect
+      disconnect if connected?
+      connect_unix(path)
+    end
+
+    def read
       reply = super
       raise reply if reply.kind_of?(StandardError)
       reply
     end
 
-    def client.write(*args)
+    def write(*args)
       super(args)
       flush
     end
 
-    def client.call(*args)
+    def call(*args)
       write(*args)
       read
     end
+  end
 
-    client
+  def create_client
+    ClientSpecificallyMadeForSpecs.new(unix_domain_path)
   end
 end

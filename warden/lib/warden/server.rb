@@ -16,8 +16,16 @@ module Warden
 
   module Server
 
+    def self.default_unix_domain_path
+      "/tmp/warden.sock"
+    end
+
     def self.unix_domain_path
       @unix_domain_path
+    end
+
+    def self.default_container_root
+      File.expand_path(File.join("..", "..", "..", "root"), __FILE__)
     end
 
     def self.container_root
@@ -33,11 +41,20 @@ module Warden
       @container_klass
     end
 
+    def self.default_container_grace_time
+      5 * 60 # 5 minutes
+    end
+
+    def self.container_grace_time
+      @container_grace_time
+    end
+
     def self.setup_server(config = nil)
       config ||= {}
-      @unix_domain_path = config[:unix_domain_path] || "/tmp/warden.sock"
-      @container_root = config[:container_root] || File.expand_path(File.join("..", "..", "..", "root"), __FILE__)
-      @container_klass = config[:container_klass] || default_container_klass
+      @unix_domain_path = config.delete(:unix_domain_path) { default_unix_domain_path }
+      @container_root = config.delete(:container_root) { default_container_root  }
+      @container_klass = config.delete(:container_klass) { default_container_klass }
+      @container_grace_time = config.delete(:container_grace_time) { default_container_grace_time }
     end
 
     def self.setup_logger(config = nil)
@@ -227,6 +244,9 @@ module Warden
       def find_container(handle)
         Server.container_klass.registry[handle].tap do |container|
           raise WardenError.new("unknown handle") if container.nil?
+
+          # Let the container know that this connection references it
+          container.register_connection(self)
         end
       end
 
