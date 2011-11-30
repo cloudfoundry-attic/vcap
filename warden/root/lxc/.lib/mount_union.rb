@@ -24,7 +24,7 @@ def union_branch_opts
   branches_rw = [ "rootfs" ]
   branch_opts = [
     branches_rw.map { |e| "%s=rw" % e },
-    branches_ro.map { |e| "%s=ro" % e },
+    branches_ro.map { |e| "%s=ro+wh" % e },
   ].flatten.join(":")
 end
 
