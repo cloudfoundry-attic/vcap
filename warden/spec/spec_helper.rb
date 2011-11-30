@@ -25,3 +25,13 @@ def done
     ::EM.stop_event_loop
   }
 end
+
+RSpec.configure do |config|
+  config.before(:each) do
+    # Run every logging statement, but discard output
+    Warden::Server.setup \
+      :logger => {
+        :level => :debug2,
+        :file => "/dev/null" }
+  end
+end
