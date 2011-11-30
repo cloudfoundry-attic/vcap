@@ -56,7 +56,7 @@ module Warden
               set_deferred_failure(err)
             end
 
-            set_deferred_success
+            set_deferred_success(p.out)
           }
 
           p.errback { |err|
@@ -73,7 +73,7 @@ module Warden
         end
 
         # Helper to inject log message
-        def set_deferred_success
+        def set_deferred_success(result)
           debug "successfully ran #{argv.inspect}"
           super
         end
@@ -86,10 +86,11 @@ module Warden
 
         def yield
           f = Fiber.current
-          callback { f.resume(:ok) }
+          callback { |result| f.resume(:ok, result) }
           errback { |err| f.resume(:err, err) }
-          status, err = Fiber.yield
-          raise err if status == :err
+          status, result = Fiber.yield
+          raise result if status == :err
+          result
         end
       end
     end
