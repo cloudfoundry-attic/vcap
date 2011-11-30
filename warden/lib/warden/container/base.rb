@@ -97,10 +97,19 @@ module Warden
       end
 
       def register_connection(conn)
+        if @destroy_timer
+          @destroy_timer.cancel
+          @destroy_timer = nil
+        end
+
         if connections.add?(conn)
           conn.on(:close) {
             connections.delete(conn)
-            destroy if connections.size == 0
+
+            # Destroy container after grace period
+            if connections.size == 0
+              @destroy_timer = ::EM.add_timer(5) { destroy }
+            end
           }
         end
       end
@@ -124,6 +133,8 @@ module Warden
 
         # Any client should now be able to look this container up
         register
+
+        handle
       end
 
       def do_create
@@ -153,6 +164,8 @@ module Warden
         ::EM.add_timer(5) {
           Server.network_pool.release(network)
         }
+
+        "ok"
       end
 
       def do_destroy

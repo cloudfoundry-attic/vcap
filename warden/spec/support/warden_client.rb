@@ -12,8 +12,13 @@ shared_context :warden_client do
       reply
     end
 
+    def client.write(*args)
+      super(args)
+      flush
+    end
+
     def client.call(*args)
-      write(args)
+      write(*args)
       read
     end
 
