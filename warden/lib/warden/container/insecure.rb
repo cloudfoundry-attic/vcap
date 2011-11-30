@@ -38,7 +38,7 @@ module Warden
         debug "container destroyed"
       end
 
-      def do_run(script)
+      def create_job(script)
         # Store script in temporary file. This is done because run.sh moves the
         # subshell that actually runs the script to the background, and with
         # that closes its stdin. In addition, we cannot capture stdin before
@@ -48,20 +48,13 @@ module Warden
         stdin.write(script)
         stdin.close
 
-        # Run script
-        command = "#{container_path}/run.sh #{stdin.path}"
+        # Create new job and run script
+        job = Job.new(self)
+        command = "env job_path=#{container_root_path}/#{job.path} #{container_path}/run.sh #{stdin.path}"
         handler = ::EM.popen(command, RemoteScriptHandler)
-        result = handler.yield { error "runner unexpectedly terminated" }
-        debug "runner successfully terminated: #{result.inspect}"
+        handler.callback { job.finish }
 
-        # Mix in path to the container's root path
-        status, stdout_path, stderr_path = result
-        stdout_path = File.join(container_root_path, stdout_path) if stdout_path
-        stderr_path = File.join(container_root_path, stderr_path) if stderr_path
-        [status, stdout_path, stderr_path]
-
-      ensure
-        stdin.close!
+        job
       end
     end
   end

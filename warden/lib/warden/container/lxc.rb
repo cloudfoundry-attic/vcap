@@ -63,13 +63,19 @@ module Warden
         debug "container destroyed"
       end
 
-      def do_run(script)
+      def create_job(script)
         socket_path = File.join(container_root_path, "/tmp/runner.sock")
         unless File.exist?(socket_path)
           error "socket does not exist: #{socket_path}"
         end
 
+        job = Job.new(self)
         handler = ::EM.connect_unix_domain(socket_path, RemoteScriptHandler)
+
+        # Send path to job artifact directory on the first line
+        handler.send_data(job.path + "\n")
+
+        # The remainder of stdin will be consumed by a subshell
         handler.send_data(script + "\n")
 
         # Make bash exit without losing the exit status. This can otherwise
@@ -77,15 +83,9 @@ module Warden
         # on stdin for the remote. However, EM doesn't do shutdown...
         handler.send_data "exit $?\n"
 
-        # Wait for bash to exit and eof.
-        result = handler.yield { error "runner unexpectedly terminated" }
-        debug "runner successfully terminated: #{result.inspect}"
+        handler.callback { job.finish }
 
-        # Mix in path to the container's root path
-        status, stdout_path, stderr_path = result
-        stdout_path = File.join(container_root_path, stdout_path) if stdout_path
-        stderr_path = File.join(container_root_path, stderr_path) if stderr_path
-        [status, stdout_path, stderr_path]
+        job
       end
     end
   end
