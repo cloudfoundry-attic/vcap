@@ -16,7 +16,7 @@ mkdir -p ${tmp}
 # Run script with PWD=root. Bash closes stdin for processes that is moves to
 # the background so we need to pass the script via a temporary file.
 cd root
-cat ${1:-/dev/null} > ${tmp}/stdin
+cat - > ${tmp}/stdin
 env -i bash < ${tmp}/stdin 1> ${tmp}/stdout 2> ${tmp}/stderr &
 cd ..
 

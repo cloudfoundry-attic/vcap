@@ -216,25 +216,25 @@ module Warden
       end
 
       def process_destroy(request)
-        request.require_arguments 2
+        request.require_arguments { |n| n == 2 }
         container = find_container(request[1])
         container.destroy
       end
 
       def process_spawn(request)
-        request.require_arguments 3
+        request.require_arguments { |n| n == 3 }
         container = find_container(request[1])
         container.spawn(request[2])
       end
 
       def process_link(request)
-        request.require_arguments 3
+        request.require_arguments { |n| n == 3 }
         container = find_container(request[1])
         container.link(request[2])
       end
 
       def process_run(request)
-        request.require_arguments 3
+        request.require_arguments { |n| n == 3 }
         container = find_container(request[1])
         container.run(request[2])
       end
@@ -252,8 +252,8 @@ module Warden
 
       class Request < Array
 
-        def require_arguments(num)
-          if size != num
+        def require_arguments
+          unless yield(size)
             raise WardenError.new("invalid number of arguments")
           end
         end
