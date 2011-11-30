@@ -11,10 +11,6 @@ shared_context :warden_server do
     File.expand_path("../../../root", __FILE__)
   }
 
-  let(:container_klass) {
-    Warden::Container::LXC
-  }
-
   before :each do
     FileUtils.rm_f(unix_domain_path)
 

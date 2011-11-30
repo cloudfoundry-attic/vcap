@@ -42,7 +42,11 @@ module Warden
       end
 
       def unbind
-        if get_status.exitstatus != 0
+        exit_status = get_status.exitstatus
+        debug "exit status: #{exit_status}"
+        debug "stdout: #{@buffer.inspect}"
+
+        if exit_status != 0
           set_deferred_failure
         else
           set_deferred_success
