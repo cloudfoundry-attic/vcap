@@ -10,7 +10,7 @@ fi
 
 <%= union_mount_command %>
 lxc-create -n instance-<%= config["id"] %> -f config
-lxc-start -n instance-<%= config["id"] %> -d -o lxc.log
+./close_fds lxc-start -n instance-<%= config["id"] %> -d -o lxc.log
 ifconfig veth-<%= config["id"] %> <%= config["network_gateway_ip"] %> netmask <%= config["network_netmask"] %>
 touch started
 
