@@ -12,11 +12,16 @@ require "vcap/subprocess"
 require "vcap/process_utils"
 require "vcap/config"
 require "vcap/priority_queue"
+require 'vcap/quota'
 
 RSpec.configure do |c|
   # declare an exclusion filter
   if Process.uid != 0
     c.filter_run_excluding :needs_root => true
+  end
+
+  unless ENV['QUOTA_TEST_USER'] && ENV['QUOTA_TEST_FS']
+    c.filter_run_excluding :needs_quota => true
   end
 end
 
