@@ -2,7 +2,7 @@ PATH
   remote: ../common
   specs:
     vcap_common (0.99)
-      eventmachine (~> 0.12.11.cloudfoundry.1)
+      eventmachine (~> 0.12.11.cloudfoundry.2)
       logging (>= 1.5.0)
       nats
       posix-spawn
@@ -17,7 +17,7 @@ GEM
       builder (>= 2.1.2)
     daemons (1.1.2)
     diff-lcs (1.1.2)
-    eventmachine (0.12.11.cloudfoundry.1)
+    eventmachine (0.12.11.cloudfoundry.2)
     http_parser.rb (0.5.1)
     json_pure (1.5.1)
     little-plugger (1.1.2)
@@ -52,7 +52,7 @@ PLATFORMS
 DEPENDENCIES
   bundler (>= 1.0.10)
   ci_reporter
-  eventmachine (~> 0.12.11.cloudfoundry.1)
+  eventmachine (~> 0.12.11.cloudfoundry.2)
   http_parser.rb
   nats (>= 0.4.10)
   rake

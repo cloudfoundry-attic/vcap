@@ -1,7 +1,7 @@
 ---
 # Cloud Controller URI
 external_uri: api.<%= node[:deployment][:domain] %>
-description: "VMware's Cloud Application Platform"
+description: <%= node[:deployment][:welcome] %>
 support_address: http://support.cloudfoundry.com
 
 # local_route is the IP address of a well known server on your network, it
@@ -10,8 +10,8 @@ support_address: http://support.cloudfoundry.com
 # value of nil, should work in most cases.
 local_route: <%= node[:cloud_controller][:local_route] %>
 
-# Specifies if new users can register only from the host that is running the cloud controller
-local_register_only: false
+# Specifies if new users are allowed to register via VMC
+allow_registration: true
 
 # Allow applications to register URIs that are outside your domain.
 # Legacy (FIXME REMOVE)
@@ -70,7 +70,7 @@ database_environment: # replaces database.yml
     encoding: utf8
     username: <%= node[:ccdb][:user] %>
     password: <%= node[:ccdb][:password] %>
-    adapter: postgresql
+    adapter: <%= node[:ccdb][:adapter] %>
     timeout: 2000
     template: template0 # Required for utf8 encoding
 # App staging parameters
@@ -90,9 +90,9 @@ https_required_for_admins: false
 # Normal user accounts
 default_account_capacity:
   memory:   2048
-  app_uris: 4
-  services: 16
-  apps:     20
+  app_uris: <%= node[:capacity][:max_uris] %>
+  services: <%= node[:capacity][:max_services] %>
+  apps:     <%= node[:capacity][:max_apps] %>
 
 # Services we provide, and their tokens. Avoids bootstrapping DB.
 builtin_services:
