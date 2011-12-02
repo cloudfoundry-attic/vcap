@@ -43,6 +43,46 @@ class VCAP::Services::Api::ServiceGatewayClient
     perform_request(Net::HTTP::Delete, "/gateway/v1/configurations/#{args[:service_id]}")
   end
 
+  def create_snapshot(args)
+    resp = perform_request(Net::HTTP::Post, "/gateway/v1/configurations/#{args[:service_id]}/snapshots")
+    VCAP::Services::Api::Job.decode(resp.body)
+  end
+
+  def enum_snapshots(args)
+    resp = perform_request(Net::HTTP::Get, "/gateway/v1/configurations/#{args[:service_id]}/snapshots")
+    VCAP::Services::Api::SnapshotList.decode(resp.body)
+  end
+
+  def snapshot_details(args)
+    resp = perform_request(Net::HTTP::Get, "/gateway/v1/configurations/#{args[:service_id]}/snapshots/#{args[:snapshot_id]}")
+    VCAP::Services::Api::Snapshot.decode(resp.body)
+  end
+
+  def rollback_snapshot(args)
+    resp = perform_request(Net::HTTP::Put, "/gateway/v1/configurations/#{args[:service_id]}/snapshots/#{args[:snapshot_id]}")
+    VCAP::Services::Api::Job.decode(resp.body)
+  end
+
+  def serialized_url(args)
+    resp = perform_request(Net::HTTP::Get, "/gateway/v1/configurations/#{args[:service_id]}/serialized/url")
+    VCAP::Services::Api::Job.decode(resp.body)
+  end
+
+  def import_from_url(args)
+    resp = perform_request(Net::HTTP::Put, "/gateway/v1/configurations/#{args[:service_id]}/serialized/url", args[:msg])
+    VCAP::Services::Api::Job.decode(resp.body)
+  end
+
+  def import_from_data(args)
+    resp = perform_request(Net::HTTP::Put, "/gateway/v1/configurations/#{args[:service_id]}/serialized/data", args[:msg])
+    VCAP::Services::Api::Job.decode(resp.body)
+  end
+
+  def job_info(args)
+    resp = perform_request(Net::HTTP::Get, "/gateway/v1/configurations/#{args[:service_id]}/jobs/#{args[:job_id]}")
+    VCAP::Services::Api::Job.decode(resp.body)
+  end
+
   def bind(args)
     msg = VCAP::Services::Api::GatewayBindRequest.new(args)
     resp = perform_request(Net::HTTP::Post, "/gateway/v1/configurations/#{msg.service_id}/handles", msg)

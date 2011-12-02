@@ -34,7 +34,6 @@ module VCAP
       class BrokeredServiceOfferingRequest < JsonMessage
         required :label,        SERVICE_LABEL_REGEX
         required :options,      [{"name" => String, "acls" => {"users" => [String], "wildcards" => [String] } , "credentials" => Hash}]
-        #required :options,      [::JsonSchema::WILDCARD]
         optional :description,  String
       end
 
@@ -123,6 +122,32 @@ module VCAP
         required :binding_options
       end
 
+      class Snapshot < JsonMessage
+        required :snapshot_id,  String
+        required :date,  String
+        required :size,  Integer
+      end
+
+      class SnapshotList < JsonMessage
+        required :snapshots,  [::JsonSchema::WILDCARD]
+      end
+
+      class Job < JsonMessage
+        required :job_id,  String
+        required :status,  String
+        required :start_time, String
+        optional :description, String
+        optional :complete_time, String
+        optional :result, ::JsonSchema::WILDCARD
+      end
+
+      class SerializedURL < JsonMessage
+        required :url, URI::regexp(%w(http https))
+      end
+
+      class SerializedData < JsonMessage
+        required :data,  String
+      end
     end
   end
 end

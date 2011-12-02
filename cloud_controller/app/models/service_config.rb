@@ -116,6 +116,82 @@ class ServiceConfig < ActiveRecord::Base
     end
   end
 
+  def create_snapshot
+    endpoint = "#{service.url}/gateway/v1/configurations/#{name}/snapshots"
+    result = perform_gateway_request(:create_snapshot, endpoint, service.token, :post, service.timeout, VCAP::Services::Api::Job, empty_msg_class, :service_id => name)
+    result
+  end
+
+  def enum_snapshots
+    endpoint = "#{service.url}/gateway/v1/configurations/#{name}/snapshots"
+    result = perform_gateway_request(:enum_snapshots, endpoint, service.token, :get, service.timeout, VCAP::Services::Api::SnapshotList, empty_msg_class, :service_id => name)
+    result
+  end
+
+  def snapshot_details(sid)
+    endpoint = "#{service.url}/gateway/v1/configurations/#{name}/snapshots/#{sid}"
+    result = perform_gateway_request(:snapshot_details, endpoint, service.token, :get, service.timeout, VCAP::Services::Api::Snapshot, empty_msg_class, :service_id => name, :snapshot_id => sid)
+    result
+  end
+
+  def rollback_snapshot(sid)
+    endpoint = "#{service.url}/gateway/v1/configurations/#{name}/snapshots/#{sid}"
+    result = perform_gateway_request(:rollback_snapshot, endpoint, service.token, :put, service.timeout, VCAP::Services::Api::Job, empty_msg_class, :service_id => name, :snapshot_id => sid)
+    result
+  end
+
+  def serialized_url
+    endpoint = "#{service.url}/gateway/v1/configurations/#{name}/serialized/url"
+    result = perform_gateway_request(:serialized_url, endpoint, service.token, :get, service.timeout, VCAP::Services::Api::Job, empty_msg_class, :service_id => name)
+    result
+  end
+
+  def import_from_url req
+    endpoint = "#{service.url}/gateway/v1/configurations/#{name}/serialized/url"
+    result = perform_gateway_request(:import_from_url, endpoint, service.token, :put, service.timeout, VCAP::Services::Api::Job, req, :service_id => name, :msg => req)
+    result
+  end
+
+  def import_from_data req
+    endpoint = "#{service.url}/gateway/v1/configurations/#{name}/serialized/data"
+    result = perform_gateway_request(:import_from_data, endpoint, service.token, :put, service.timeout, VCAP::Services::Api::Job, req, :service_id => name, :msg => req)
+    result
+  end
+
+  def job_info job_id
+    endpoint = "#{service.url}/gateway/v1/configurations/#{name}/jobs/#{job_id}"
+    result = perform_gateway_request(:job_info, endpoint, service.token, :get, service.timeout, VCAP::Services::Api::Job, empty_msg_class, :service_id => name, :job_id => job_id)
+    result
+  end
+
+  def empty_msg_class
+    VCAP::Services::Api::EMPTY_REQUEST
+  end
+
+  # Perform gateway request and decode request to object
+  #
+  def perform_gateway_request(action, endpoint, token, http_method, timeout, decoder_class, msg, opts={})
+    result = nil
+    if EM.reactor_running?
+      http = VCAP::Services::Api::AsyncHttpRequest.fibered(endpoint, token, http_method, timeout, msg)
+      if !http.error.empty?
+        raise "Error sending #{action} request for #{name} to gateway #{service.url}: #{http.error}"
+      elsif http.response_header.status != 200
+        raise "Error sending #{action} request for #{name}: non 200 response from gateway #{service.url}: #{http.response_header.status} #{http.response}"
+      end
+      result = decoder_class.decode(http.response)
+    else
+      uri = URI.parse(endpoint)
+      gw = VCAP::Services::Api::ServiceGatewayClient.new(uri.host, token, uri.port)
+      result = gw.send(action, opts)
+    end
+    result.extract
+  rescue => e
+    CloudController.logger.error("Error talking to gateway: #{e}")
+    CloudController.logger.error(e)
+    raise CloudError.new(CloudError::SERVICE_GATEWAY_ERROR)
+  end
+
   def provisioned_by?(user)
     (self.user_id == user.id)
   end
