@@ -138,6 +138,10 @@ builtin_services:
 service_broker:
     token: "0xdeadbeef"
 
+# lifecycle
+service_lifecycle:
+  max_upload_size: 1 # in MB
+
 # Enable/disable starting apps in debug modes.
 allow_debug: true
 
