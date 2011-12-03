@@ -52,7 +52,7 @@ describe HealthManager do
     @app = build_app(user, prefix)
 
     @droplet_entry = {
-        :last_updated => @app.last_updated - 2, # take off 2 seconds so it looks 'quiescent'
+        :last_updated => @app.last_updated - 2,
         :state => 'STARTED',
         :crashes => {},
         :versions => {},
@@ -83,6 +83,10 @@ describe HealthManager do
   end
 
   after(:all) do
+    clean_db
+  end
+
+  def clean_db
     ::User.destroy_all
     ::App.destroy_all
   end
@@ -118,7 +122,7 @@ describe HealthManager do
         'flapping_death' => @flapping_death,
         'flapping_timeout' => 5,
         'restart_timeout' => 2,
-        'stable_state' => 1,
+        'stable_state' => -1, #ensures all droplets are deemed quiescent for testing pursposes
         'request_queue' => 0
       },
       'rails_environment' => 'test',
@@ -158,7 +162,7 @@ describe HealthManager do
 
   it "should detect instances that are down and send a START request" do
 
-    should_publish_start_message({'indices' => [0,1,2]})
+    should_publish_start_message('indices' => [0,1,2])
 
     stats = analyze_app
 
@@ -210,14 +214,16 @@ describe HealthManager do
   end
 
   def induce_crash(options = {})
-    @hm.process_exited_message({
+    r = @hm.process_exited_message({
                                  'droplet' => @app.id,
                                  'version' => "#{@app.staged_package_hash}-#{@app.run_count}",
                                  'index' => 0,
                                  'instance' => 0,
                                  'reason' => 'CRASHED',
                                  'crash_timestamp' => Time.now.to_i
-                               }.merge(options).to_json)
+                                   }.merge(options).to_json)
+    #puts r.to_yaml
+    r
   end
 
   def ensure_state_for_live_instance droplet_entry, state, indices = [0]
@@ -247,16 +253,21 @@ describe HealthManager do
     stats
   end
 
-
   it 'should not restart flapping instances' do
 
-    should_publish_start_message.exactly(@flapping_death).times
-    @flapping_death.times {
-      ensure_state_for_live_instance(induce_crash, 'DOWN')
-    }
+    instances = @droplet_entry[:instances]
 
-    @droplet_entry = induce_crash() #  @droplet_entry property is the one used by analyze_app
-    ensure_state_for_live_instance(@droplet_entry, 'FLAPPING')
+
+    instances.times {|i|
+      should_publish_start_message('indices'=>[i]).exactly(@flapping_death).times
+
+      @flapping_death.times {
+        ensure_state_for_live_instance(induce_crash('index'=>i), 'DOWN', [i])
+      }
+
+      @droplet_entry = induce_crash('index'=>i)
+      ensure_state_for_live_instance(@droplet_entry, 'FLAPPING', [i])
+    }
     analyze_app
   end
 
@@ -285,7 +296,13 @@ describe HealthManager do
 
     @hm.restore_flapping_status #need to attempt to restore before persisting can happen
     flappers = @hm.persist_flapping_status
-    flappers.should == { @app.id => get_droplet[:live_version] }
+
+    d = get_droplet
+
+    flappers.should == { @app.id => {
+        'version' => d[:live_version],
+        'timestamp'=> d[:versions][d[:live_version]][:indices].values.map { |i| i[:state_timestamp]}.max
+      }}
 
     create_hm 'persist_flapping' => true
     build_user_and_app
@@ -321,19 +338,42 @@ describe HealthManager do
 
   end
 
-  it 'should be able to analyze many apps in reasonable time' do
-    n_users = 1000
-    n_apps = 2
+  it 'should be able to run long-running sweep tasks without blocking the EM loop' do
 
-    Benchmark.bmbm do |x|
-      x.report('user/app creation') { build_many_users_and_apps(n_users,n_apps) }
-
-      NATS.should_receive(:publish).at_least(n_users * n_apps ).times
-      x.report('update_from_db') { @hm.update_from_db }
-
-      x.report('analysis, no stats') { @hm.analyze_all_apps(false) }
-      x.report('analysis, with stats') { @hm.analyze_all_apps(true) }
+    EM.run do
+      EM.next_tick { start_long_running_sweep }
+      EM.add_periodic_timer(1) {
+        EM.stop if @hm.analysis_complete?
+      }
+      queue_small_task
     end
-    App.count.should >= n_users * n_apps
+
+    ensure_long_running_sweep_successful
+    ensure_sufficient_progress_on_small_tasks
   end
+
+  def queue_small_task
+    @small_tasks ||= 0
+    @small_tasks += 1
+    EM.next_tick { queue_small_task }
+  end
+
+  def start_long_running_sweep
+    n_users = 100
+    n_apps = 2
+    clean_db
+    build_many_users_and_apps(n_users, n_apps)
+    NATS.should_receive(:publish).exactly(n_users * n_apps).times
+    @hm.update_from_db
+    @hm.analyze_all_apps true
+  end
+
+  def ensure_long_running_sweep_successful
+    @hm.analysis_complete?.should be_true
+  end
+
+  def ensure_sufficient_progress_on_small_tasks
+    @small_tasks.should > 10000
+  end
+
 end
