@@ -247,7 +247,7 @@ if [[ $DEA == true || $ALL == true ]]; then
     pushd .
     cd /tmp
 
-    NODE_VERSION=0.4.7
+    NODE_VERSION=0.4.12
 
     if [[ ! `node -v` == 'v'$NODE_VERSION ]]; then
         wget http://nodejs.org/dist/node-v$NODE_VERSION.tar.gz
