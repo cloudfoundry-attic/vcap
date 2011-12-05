@@ -18,6 +18,13 @@ module VCAP
     end
   end
 
+  class Healthz
+    def call(env)
+      healthz = Component.updated_healthz
+      [200, { 'Content-Type' => 'application/json' }, healthz]
+    end
+  end
+
   # Common component setup for discovery and monitoring
   class Component
 
@@ -62,7 +69,7 @@ module VCAP
             [username, password] == auth
           end
           map '/healthz' do
-            run lambda { |env| [200, RACK_TEXT_HDR, Component.updated_healthz] }
+            run Healthz.new
           end
           map '/varz' do
             run Varz.new

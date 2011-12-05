@@ -46,6 +46,8 @@ class HMExpectedStateHelperDB
 
   def prepare_tests
 
+    [App, User].each {|model| model.reset_column_information}
+
     ActiveRecord::Base.establish_connection config
     ActiveRecord::Migration.verbose = false
 

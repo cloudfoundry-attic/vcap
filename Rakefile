@@ -3,20 +3,20 @@
 desc "Run specs"
 task "spec" do |t|
   CoreComponents.in_each_dir do
-    system "rake spec"
+    system "bundle exec rake spec"
   end
 end
 
 desc "Run specs using RCov"
 task "spec:rcov" do |t|
   CoreComponents.in_each_dir do
-    system "rake spec:rcov"
+    system "bundle exec rake spec:rcov"
   end
 end
 
 desc "Run integration tests. (Requires a running cloud)"
 task "tests" do |t|
-  system "cd tests; rake tests"
+  system "cd tests; bundle exec rake tests"
 end
 
 namespace "db" do

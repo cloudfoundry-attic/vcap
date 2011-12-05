@@ -10,6 +10,7 @@ class NodePlugin < StagingPlugin
       create_app_directories
       copy_source_files
       create_startup_script
+      create_stop_script
     end
   end
 
@@ -19,9 +20,15 @@ class NodePlugin < StagingPlugin
   end
 
   private
+
   def startup_script
     vars = environment_hash
     generate_startup_script(vars)
+  end
+
+  def stop_script
+    vars = environment_hash
+    generate_stop_script(vars)
   end
 
   # TODO - I'm fairly sure this problem of 'no standard startup command' is

@@ -21,10 +21,6 @@ cd apache
 bash ./start.sh > ../logs/stdout.log 2> ../logs/stderr.log &
 STARTED=$!
 echo "$STARTED" >> ../run.pid
-echo "#!/bin/bash" >> ../stop
-echo "kill -9 $STARTED" >> ../stop
-echo "kill -9 $PPID" >> ../stop
-chmod 755 ../stop
 wait $STARTED
       EXPECTED
     end
@@ -44,10 +40,6 @@ cd apache
 bash ./start.sh > ../logs/stdout.log 2> ../logs/stderr.log &
 STARTED=$!
 echo "$STARTED" >> ../run.pid
-echo "#!/bin/bash" >> ../stop
-echo "kill -9 $STARTED" >> ../stop
-echo "kill -9 $PPID" >> ../stop
-chmod 755 ../stop
 wait $STARTED
       EXPECTED
     end

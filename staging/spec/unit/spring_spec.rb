@@ -38,10 +38,6 @@ cd tomcat
 ./bin/catalina.sh run > ../logs/stdout.log 2> ../logs/stderr.log &
 STARTED=$!
 echo "$STARTED" >> ../run.pid
-echo "#!/bin/bash" >> ../stop
-echo "kill -9 $STARTED" >> ../stop
-echo "kill -9 $PPID" >> ../stop
-chmod 755 ../stop
 wait $STARTED
       EXPECTED
     end
@@ -75,10 +71,6 @@ cd tomcat
 ./bin/catalina.sh run > ../logs/stdout.log 2> ../logs/stderr.log &
 STARTED=$!
 echo "$STARTED" >> ../run.pid
-echo "#!/bin/bash" >> ../stop
-echo "kill -9 $STARTED" >> ../stop
-echo "kill -9 $PPID" >> ../stop
-chmod 755 ../stop
 wait $STARTED
       EXPECTED
     end
@@ -124,7 +116,7 @@ describe "A Spring web application being staged without a context-param in its w
     stage :spring do |staged_dir|
       web_config_file = File.join(staged_dir, 'tomcat/webapps/ROOT/WEB-INF/web.xml')
       File.exist?(web_config_file).should == true
-      
+
       web_config = Nokogiri::XML(open(web_config_file))
       context_param_node =  web_config.xpath("//context-param")
       context_param_node.length.should_not == 0
@@ -140,14 +132,14 @@ describe "A Spring web application being staged without a context-param in its w
 
       context_param_value_node = context_param_name_node.first.xpath("param-value")
       context_param_value_node.length.should_not == 0
-      
+
       context_param_value = context_param_value_node.first.content
       default_context_index = context_param_value.index('/WEB-INF/applicationContext.xml')
       default_context_index.should_not == nil
 
       auto_reconfiguration_context_index = context_param_value.index('classpath:META-INF/cloud/cloudfoundry-auto-reconfiguration-context.xml')
       auto_reconfiguration_context_index.should_not == nil
-      
+
       auto_reconfiguration_context_index.should > default_context_index + "/WEB-INF/applicationContext.xml".length
     end
   end
@@ -341,7 +333,7 @@ describe "A Spring web application being staged with a Spring DispatcherServlet 
     stage :spring do |staged_dir|
       web_config_file = File.join(staged_dir, 'tomcat/webapps/ROOT/WEB-INF/web.xml')
       File.exist?(web_config_file).should == true
-      
+
       web_config = Nokogiri::XML(open(web_config_file))
       init_param_node =  web_config.xpath("//init-param")
       init_param_node.length.should_not == 0
@@ -357,7 +349,7 @@ describe "A Spring web application being staged with a Spring DispatcherServlet 
 
       init_param_value_node = init_param_name_node.xpath("param-value")
       init_param_value_node.length.should_not == 0
-      
+
       init_param_value = init_param_value_node.first.content
       dispatcher_servlet_index = init_param_value.index('/WEB-INF/dispatcher-servlet.xml')
       dispatcher_servlet_index.should_not == nil

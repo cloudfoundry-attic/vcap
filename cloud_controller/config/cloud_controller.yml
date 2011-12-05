@@ -131,9 +131,10 @@ builtin_services:
     token: "0xdeadbeef"
   neo4j:
     token: "0xdeadbeef"
-  mssql:
+  atmos:
     token: "0xdeadbeef"
-
+  mssql:
+    token: "0xdeadbeef"    
 
 # Service broker
 service_broker:
@@ -163,4 +164,12 @@ runtimes:
   python26:
     version: 2.6.5
   iis:
-    version: 0x7
+    version: 0x7    
+
+# Used for /healthz and /vars endpoints. If not provided random
+# values will be generated on component start. Uncomment to use
+# static values.
+#status:
+#  port: 34500
+#  user: thin
+#  password: thin
