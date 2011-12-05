@@ -6,6 +6,10 @@ shared_examples "a warden server" do |container_klass|
   include_context :warden_server
   include_context :warden_client
 
+  let(:uidpool_config) {
+    nil
+  }
+
   let(:container_klass) {
     container_klass
   }

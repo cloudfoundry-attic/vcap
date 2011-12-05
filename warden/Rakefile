@@ -11,7 +11,7 @@ namespace :warden do
   desc "Run Warden server"
   task :start do
     require "warden/server"
-    Warden::Server.setup
+    Warden::Server.setup(:logging => {:level => :debug2})
     Warden::Server.run!
   end
 end

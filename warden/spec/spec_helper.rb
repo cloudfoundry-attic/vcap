@@ -16,6 +16,14 @@ def em(options = {})
   }
 end
 
+def em_fibered(options = {}, &blk)
+  em(options) do
+    Fiber.new do
+      blk.call
+    end.resume
+  end
+end
+
 def done
   raise "reactor not running" if !::EM.reactor_running?
 
@@ -27,11 +35,18 @@ def done
 end
 
 RSpec.configure do |config|
+  if Process.uid != 0
+    config.filter_run_excluding :needs_root => true
+  end
+
   config.before(:each) do
-    # Run every logging statement, but discard output
-    Warden::Server.setup \
+    config = {
+      # Run every logging statement, but discard output
       :logger => {
         :level => :debug2,
-        :file => "/dev/null" }
+        :file  => '/dev/null',
+      },
+    }
+    Warden::Server.setup(config)
   end
 end

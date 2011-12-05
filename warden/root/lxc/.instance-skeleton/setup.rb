@@ -53,7 +53,9 @@ end
 write "selinux/enforce", 0
 
 # Add vcap user
-chroot ".", "useradd -mU vcap"
+useradd_cmd = "useradd -mU vcap"
+useradd_cmd += " -u #{config['vcap_uid']}" if config['vcap_uid']
+chroot ".", useradd_cmd
 
 # Add runner script
 write "usr/bin/runner", <<-EOS

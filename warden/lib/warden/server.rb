@@ -16,6 +16,10 @@ module Warden
 
   module Server
 
+    def self.config
+      @config
+    end
+
     def self.default_unix_domain_path
       "/tmp/warden.sock"
     end
@@ -71,6 +75,7 @@ module Warden
     end
 
     def self.setup(config = {})
+      @config = config
       setup_server config[:server]
       setup_logger config[:logger]
       setup_network config[:network]
@@ -79,7 +84,7 @@ module Warden
     def self.run!
       ::EM.run {
         f = Fiber.new do
-          container_klass.setup
+          container_klass.setup(self.config)
 
           FileUtils.rm_f(unix_domain_path)
           ::EM.start_unix_domain_server(unix_domain_path, ClientConnection)

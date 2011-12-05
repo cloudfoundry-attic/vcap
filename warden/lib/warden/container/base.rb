@@ -56,7 +56,7 @@ module Warden
         end
 
         # Called before the server starts.
-        def setup
+        def setup(config={})
           # noop
         end
 

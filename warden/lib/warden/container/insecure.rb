@@ -11,7 +11,7 @@ module Warden
 
     class Insecure < Base
 
-      def self.setup
+      def self.setup(config={})
         # noop
       end
 

@@ -2,6 +2,7 @@ require "warden/errors"
 require "warden/container/base"
 require "warden/container/script_handler"
 require "warden/container/remote_script_handler"
+require "warden/container/uid_pool"
 
 module Warden
 
@@ -10,6 +11,13 @@ module Warden
     class LXC < Base
 
       class << self
+        # This needs to be set before using any containers. The users contained
+        # in this pool are used to enforce disk usage limits via filesystem
+        # quotas.
+        #
+        # NB: This imposes a hard limit on the number of containers that may exist
+        #     at any one time (similar to network_pool in base.rb). Size it appropriately.
+        attr_accessor :uid_pool
 
         def iptables_rule(chain, rule)
           regexp = Regexp.new("\\s" + Regexp.escape(rule).gsub(" ", "\\s+") + "(\\s|$)")
@@ -23,7 +31,7 @@ module Warden
           end
         end
 
-        def setup
+        def setup(config={})
           unless Process.uid == 0
             raise WardenError.new("lxc requires root privileges")
           end
@@ -64,8 +72,16 @@ module Warden
             message += " (expected >= 1000, got: #{PortPool.instance.available})"
             raise WardenError.new(message)
           end
+
+          # Acquire users for quota limits
+          if config[:uidpool]
+            up_config = config[:uidpool]
+            self.uid_pool = Warden::Container::UidPool.acquire(up_config[:name], up_config[:count])
+          end
         end
       end
+
+      attr_reader :uid
 
       def initialize
         super
@@ -78,7 +94,15 @@ module Warden
         on(:after_destroy) {
           # Inbound port forwarding rules SHOULD be deleted after the container is stopped
           clear_inbound_port_forwarding_rules
+
+          # Release uid used for this container (if any). Only do so if the container
+          # was successfully destroyed.
+          self.class.uid_pool.release(self.uid) if self.uid
         }
+
+        # XXX - Possible to leak a uid here if connection registration fails. Need to refactor
+        #       Base to make atomic resource allocation easier.
+        @uid = self.class.uid_pool.acquire if self.class.uid_pool
       end
 
       def container_root_path
@@ -86,12 +110,14 @@ module Warden
       end
 
       def env
-        {
+        env = {
           "id" => handle,
           "network_gateway_ip" => gateway_ip.to_human,
           "network_container_ip" => container_ip.to_human,
-          "network_netmask" => self.class.network_pool.netmask.to_human
+          "network_netmask" => self.class.network_pool.netmask.to_human,
         }
+        env['vcap_uid'] = self.uid if self.uid
+        env
       end
 
       def env_command
