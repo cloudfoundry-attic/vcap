@@ -126,14 +126,4 @@ if [ -n "$CONFIG_FILE" ]; then
   ARGS="$ARGS -c $CONFIG_FILE"
 fi
 
-CURRENT_DIR=`pwd`
-
-cd $CLOUDFOUNDRY_HOME/vcap/staging
-gem build vcap_staging.gemspec
-
-cp -f vcap_staging*.gem ../cloud_controller/vendor/cache/
-mv -f vcap_staging*.gem ../stager/vendor/cache/
-
-cd $CURRENT_DIR
-
 $CLOUDFOUNDRY_HOME/vcap/dev_setup/lib/chefsolo_launch.rb $ARGS
