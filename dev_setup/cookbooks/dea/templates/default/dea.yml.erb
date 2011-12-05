@@ -62,7 +62,7 @@ runtimes:
 <% if node[:dea][:runtimes].include?("nodejs") %>
   node:
     executable: <%= File.join(node[:nodejs][:path], "bin", "node") %>
-    version: 0.4.[2-9]
+    version: 0.4.12
     version_flag: '-v'
     environment:
 <% end %>
