@@ -17,6 +17,7 @@ class DotNetPlugin < StagingPlugin
     #todo: vladi: VMC_APP_NAME is deprecated, this should be replaced with the proper VCAP env variable
     template = <<-SCRIPT
     <%= after_env_before_script %>
+    Uhuru.CloudFoundry.DEA.Plugins.dll
     Uhuru.CloudFoundry.DEA.Plugins.IISPlugin
     SCRIPT
     ERB.new(template).result(binding).lines.reject {|l| l =~ /^\s*$/}.join
