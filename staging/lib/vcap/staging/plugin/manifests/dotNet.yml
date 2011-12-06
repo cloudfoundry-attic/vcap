@@ -1,5 +1,5 @@
 ---
-name: "net"
+name: "dotNet"
 runtimes:
   - iis:
       version: '0x7'
