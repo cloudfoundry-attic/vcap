@@ -1,0 +1,13 @@
+---
+
+pid: /var/vcap/sys/run/uaa.pid
+# NATS message bus URI
+mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
+
+name: UAA
+
+database:
+  driverClassName: org.postgresql.Driver
+  url: jdbc:postgresql://<% #{node[:uaadb][:host]} %>:<% #{node[:uaadb][:port]} %>/<% #{node[:uaadb][:database]} %>
+  username: root
+  password: changeme
