@@ -118,7 +118,13 @@ module VCAP
           result[1].lines.each do |line|
             next unless line.match(/[^\s]+\s+[+-]+\s+\d+/)
             fields = line.split(/\s+/)
-            quota_info[fields[0]] = {
+            if self.ids_only
+              match = fields[0].match(/^#(\d+)$/)
+              uid = match[1].to_i
+            else
+              uid = fields[0]
+            end
+            quota_info[uid] = {
               :usage => {
                 :block => fields[2].to_i,
                 :inode => fields[6].to_i

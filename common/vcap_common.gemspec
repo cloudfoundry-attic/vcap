@@ -15,6 +15,7 @@ spec = Gem::Specification.new do |s|
   s.add_dependency('nats')
   s.add_dependency('logging', '>= 1.5.0')
   s.add_dependency('posix-spawn')
+  s.add_development_dependency('rake')
 
   s.require_paths = ['lib']
 
