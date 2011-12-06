@@ -1,0 +1,16 @@
+#!/bin/bash
+ 
+# Usage: ./deploy [user@host]
+ 
+host="${1:-ubuntu@vcap}"
+root="$(cd "$(dirname "$0")" && pwd)"/..
+
+echo $root
+
+# The host key might change when we instantiate a new VM, so
+# we remove (-R) the old host key from known_hosts
+ssh-keygen -R "${host#*@}" 2> /dev/null
+
+ssh -t -o 'StrictHostKeyChecking no' "$host" "sudo apt-get install rdate && sudo rdate -ncv ptbtime1.ptb.de"
+cd $root && tar cj . --exclude=.git | ssh -o 'StrictHostKeyChecking no' "$host" 'rm -rf ~/chef && mkdir ~/chef && cd ~/chef && tar xj'
+ssh -t -o 'StrictHostKeyChecking no' "$host" "echo Connecting to $host && cd ~/chef && bin/vcap_dev_setup"
