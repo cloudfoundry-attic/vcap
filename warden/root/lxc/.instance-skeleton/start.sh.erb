@@ -9,9 +9,21 @@ if [ -f started ]; then
 fi
 
 <%= union_mount_command %>
-lxc-create -n instance-<%= config["id"] %> -f config
-./close_fds lxc-start -n instance-<%= config["id"] %> -d -o lxc.log
-ifconfig veth-<%= config["id"] %> <%= config["network_gateway_ip"] %> netmask <%= config["network_netmask"] %>
+
+lxc-create \
+  --name "instance-<%= config["id"] %>" \
+  --config config
+
+./close_fds lxc-start \
+  --name "instance-<%= config["id"] %>" \
+  --daemon \
+  --console "console.log" \
+  --logfile "lxc.log" \
+  --logpriority INFO
+
+ifconfig veth-<%= config["id"] %> <%= config["network_gateway_ip"] %> \
+  netmask <%= config["network_netmask"] %>
+
 touch started
 
 # Wait for the runner socket to come up

@@ -57,6 +57,32 @@ useradd_cmd = "useradd -mU vcap"
 useradd_cmd += " -u #{config['vcap_uid']}" if config['vcap_uid']
 chroot ".", useradd_cmd
 
+# Fake upstart triggers
+write "etc/init/lxc.conf", <<-EOS
+start on startup
+script
+  /sbin/initctl emit stopped JOB=udevtrigger --no-wait
+  /sbin/initctl emit started JOB=udev --no-wait
+end script
+EOS
+
+# Remove console related upstart scripts
+sh "rm -f etc/init/tty[2-9]*"
+sh "rm -f etc/init/console-setup.conf"
+
+dev_entries = [
+  %w{console tty tty1},
+  %w{fd stdin stdout stderr},
+  %w{random urandom},
+  %w{null zero} ].flatten
+
+# Remove everything from /dev unless whitelisted
+Dir["dev/*"].each { |e|
+  unless dev_entries.include? File.basename(e)
+    sh "rm -rf #{e}"
+  end
+}
+
 # Add runner script
 write "usr/bin/runner", <<-EOS
 #!/bin/bash
