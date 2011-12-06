@@ -207,4 +207,24 @@ shared_examples "a warden server" do |container_klass|
       }.should_not raise_error
     end
   end
+
+
+  describe "container limits" do
+    before :each do
+      @handle = client.call("create")
+    end
+
+    it 'should raise an error attempting to get an unknown limit' do
+      expect do
+        client.call('limit', @handle, 'does_not_exist')
+      end.to raise_error(/unknown limit/i)
+    end
+
+    it 'should raise an error attempting to set an unknown limit' do
+      expect do
+        client.call('limit', @handle, 'does_not_exist', 12345)
+      end.to raise_error(/unknown limit/i)
+    end
+  end
+
 end

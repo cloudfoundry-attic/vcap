@@ -1,3 +1,5 @@
+require 'vcap/quota'
+
 require "warden/errors"
 require "warden/container/base"
 require "warden/container/script_handler"
@@ -18,6 +20,9 @@ module Warden
         # NB: This imposes a hard limit on the number of containers that may exist
         #     at any one time (similar to network_pool in base.rb). Size it appropriately.
         attr_accessor :uid_pool
+
+        # Filesystem disk quotas should be set on
+        attr_accessor :quota_filesystem
 
         def iptables_rule(chain, rule)
           regexp = Regexp.new("\\s" + Regexp.escape(rule).gsub(" ", "\\s+") + "(\\s|$)")
@@ -78,10 +83,15 @@ module Warden
             up_config = config[:uidpool]
             self.uid_pool = Warden::Container::UidPool.acquire(up_config[:name], up_config[:count])
           end
+
+          if config[:quota_filesystem]
+            self.quota_filesystem = config[:quota_filesystem]
+          end
         end
       end
 
       attr_reader :uid
+      attr_accessor :disk_quota
 
       def initialize
         super
@@ -100,9 +110,14 @@ module Warden
           self.class.uid_pool.release(self.uid) if self.uid
         }
 
+        @disk_quota = 0
+
         # XXX - Possible to leak a uid here if connection registration fails. Need to refactor
         #       Base to make atomic resource allocation easier.
         @uid = self.class.uid_pool.acquire if self.class.uid_pool
+
+        # Reset quota for user
+        set_quota(0) if self.uid && self.class.quota_filesystem
       end
 
       def container_root_path
@@ -192,7 +207,44 @@ module Warden
         raise
       end
 
+      def get_limit_disk
+        unless self.uid && self.class.quota_filesystem
+          raise WardenError.new("Command unsupported")
+        end
+
+        self.disk_quota
+      end
+
+      def set_limit_disk(args)
+        unless self.uid && self.class.quota_filesystem
+          raise WardenError.new("Command unsupported")
+        end
+
+        unless args.length == 1
+          raise WardenError.new("Invalid number of arguments: expected 1, got #{args.length}")
+        end
+
+        begin
+          block_limit = args[0].to_i
+        rescue
+          raise WardenError.new("Invalid limit")
+        end
+
+        set_quota(block_limit)
+
+        "ok"
+      end
+
       protected
+
+      def set_quota(block_limit)
+        quota_setter = SetQuota.new
+        quota_setter.user = self.uid
+        quota_setter.filesystem = self.class.quota_filesystem
+        quota_setter.quotas[:block][:hard] = block_limit
+        quota_setter.run
+        self.disk_quota = block_limit
+      end
 
       def clear_inbound_port_forwarding_rules
         commands = [
@@ -201,6 +253,14 @@ module Warden
           %{sed s/-A/-D/},
           %{xargs -L 1 -r iptables -t nat} ]
         sh commands.join(" | ")
+      end
+
+      class SetQuota < VCAP::Quota::SetQuota
+        include Spawn
+
+        def execute(command)
+          sh(command)
+        end
       end
 
       class PortPool

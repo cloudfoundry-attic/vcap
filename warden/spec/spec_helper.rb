@@ -39,7 +39,12 @@ RSpec.configure do |config|
     config.filter_run_excluding :needs_root => true
   end
 
+  unless ENV['WARDEN_TEST_QUOTA_FS']
+    config.filter_run_excluding :needs_quota_fs => true
+  end
+
   config.before(:each) do
+    @quota_fs = ENV['WARDEN_TEST_QUOTA_FS']
     config = {
       # Run every logging statement, but discard output
       :logger => {

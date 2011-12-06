@@ -35,6 +35,7 @@ shared_context :warden_server do
           :container_klass => container_klass,
           :container_grace_time => 1 },
         :uidpool => uidpool_config,
+        :quota_filesystem => @quota_fs,
         :logger => {
           :level => :debug,
           :file => File.expand_path("../../../tmp/warden.log", __FILE__) }

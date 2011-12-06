@@ -261,6 +261,17 @@ module Warden
         end
       end
 
+      def process_limit(request)
+        request.require_arguments { |n| n >= 3 }
+        container = find_container(request[1])
+
+        if request.length > 3
+          container.set_limit(request[2], request.slice(3, request.length - 3))
+        else
+          container.get_limit(request[2])
+        end
+      end
+
       protected
 
       def find_container(handle)

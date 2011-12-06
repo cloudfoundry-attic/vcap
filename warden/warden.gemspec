@@ -21,4 +21,5 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency "eventmachine"
   s.add_runtime_dependency "hiredis", "~> 0.4.0"
   s.add_runtime_dependency "em-posix-spawn"
+  s.add_runtime_dependency "vcap_common"
 end

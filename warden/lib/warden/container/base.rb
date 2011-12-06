@@ -228,6 +228,24 @@ module Warden
         _net_inbound_port
       end
 
+      def get_limit(limit_name)
+        getter = "get_limit_#{limit_name}"
+        if respond_to?(getter)
+          self.send(getter)
+        else
+          raise WardenError.new("Unknown limit #{limit_name}")
+        end
+      end
+
+      def set_limit(limit_name, args)
+        setter = "set_limit_#{limit_name}"
+        if respond_to?(setter)
+          self.send(setter, args)
+        else
+          raise WardenError.new("Unknown limit #{limit_name}")
+        end
+      end
+
       protected
 
       class Job
