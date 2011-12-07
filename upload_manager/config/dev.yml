@@ -1,0 +1,7 @@
+---
+listen_port: 3200
+logging:
+  level: debug
+pid_file: /var/vcap/sys/run/upload_manager.pid
+base_dir: /var/vcap.local/upload_manager
+purge_resource_pool_on_startup: 'true'
