@@ -28,7 +28,7 @@ max_memory: 4096
 secure: <%= node[:dea][:secure] %>
 
 # Allow more than one application to run per DEA
-multi_tenant: <%= node[:dea][:secure] %>
+multi_tenant: <%= node[:dea][:multi_tenant] %>
 
 # Provide ulimit based resource isolation in a multi tenant setup.
 enforce_ulimit: <%= node[:dea][:enforce_ulimit] %>
