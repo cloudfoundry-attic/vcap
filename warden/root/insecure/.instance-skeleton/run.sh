@@ -5,13 +5,9 @@ self=$(readlink -f ${0})
 cd $(dirname ${self})
 
 # Determine artifact path for this job
-if [ -n "${job_path}" ]; then
-tmp=${job_path}
-else
-tmp=$(mktemp -d)
-fi
-
-mkdir -p ${tmp}
+mkdir -p root/tmp
+tmp=$(mktemp -d $(readlink -f root/tmp/runner-XXXXXX))
+echo -n ${tmp}
 
 # Run script with PWD=root. Bash closes stdin for processes that is moves to
 # the background so we need to pass the script via a temporary file.
