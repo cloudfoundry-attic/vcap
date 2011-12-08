@@ -104,6 +104,7 @@ module Warden
 
       attr_reader :uid
       attr_accessor :disk_quota
+      attr_accessor :mem_limit
 
       def initialize
         super
@@ -142,6 +143,12 @@ module Warden
             self.destroy
           end
         end
+
+        @mem_limit = 0
+      end
+
+      def cgroup_root_path
+        File.join("/dev/cgroup", "instance-#{self.handle}")
       end
 
       def container_root_path
@@ -255,6 +262,34 @@ module Warden
         end
 
         set_quota(block_limit)
+
+        "ok"
+      end
+
+      def get_limit_mem
+        self.mem_limit
+      end
+
+      def set_limit_mem(args)
+        unless args.length == 1
+          raise WardenError.new("Invalid number of arguments: expected 1, got #{args.length}")
+        end
+
+        begin
+          mem_limit = args[0].to_i
+        rescue
+          raise WardenError.new("Invalid limit")
+        end
+
+        begin
+          mem_limit_path = File.join(self.cgroup_root_path, "memory.limit_in_bytes")
+          File.open(mem_limit_path, 'w') do |f|
+            f.write(mem_limit.to_s)
+          end
+          self.mem_limit = mem_limit
+        rescue => e
+          raise WardenError.new("Failed setting memory limit: #{e}")
+        end
 
         "ok"
       end

@@ -3,6 +3,33 @@ require "spec_helper"
 describe "server implementing LXC" do
   it_behaves_like "a warden server", Warden::Container::LXC
 
+  describe 'should allow setting memory limits', :needs_root => true do
+    include_context :warden_server
+    include_context :warden_client
+
+    let(:container_klass) {
+      Warden::Container::LXC
+    }
+
+    let(:quota_config) {
+      nil
+    }
+
+    let (:client) {
+      create_client
+    }
+
+    it 'sets "memory.limit_in_bytes" in the correct cgroup' do
+      handle = client.call("create")
+      client.call("limit", handle, "mem").should == 0
+      hund_mb = 100 * 1024 * 1024
+      client.call("limit", handle, "mem", hund_mb).should == "ok"
+      client.call("limit", handle, "mem").should == hund_mb
+      raw_lim = File.read(File.join("/dev/cgroup/", "instance-#{handle}", "memory.limit_in_bytes"))
+      raw_lim.to_i.should == hund_mb
+    end
+  end
+
   describe 'when configured with quota support', :needs_quota_config => true do
     include_context :warden_server
     include_context :warden_client
