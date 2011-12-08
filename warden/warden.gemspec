@@ -5,8 +5,8 @@ require "warden/version"
 Gem::Specification.new do |s|
   s.name        = "warden"
   s.version     = Warden::VERSION
-  s.authors     = ["Pieter Noordhuis"]
-  s.email       = ["pcnoordhuis@gmail.com"]
+  s.authors     = ["Pieter Noordhuis", "Matt Page"]
+  s.email       = ["pcnoordhuis@gmail.com", "mpage@vmware.com"]
   s.homepage    = ""
   s.summary     = %q{TODO: Write a gem summary}
   s.description = %q{TODO: Write a gem description}
@@ -22,4 +22,5 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency "hiredis", "~> 0.4.0"
   s.add_runtime_dependency "em-posix-spawn"
   s.add_runtime_dependency "vcap_common"
+  s.add_runtime_dependency "sleepy_penguin"
 end
