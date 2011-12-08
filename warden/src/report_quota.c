@@ -17,24 +17,22 @@
  *
  * @return         0 on success
  *                -1 mount point not found
+ *                -2 cannot open mtab
  */
 static int lookup_device(const char* dir, char** dev_name) {
-  FILE* mtab = NULL;
+  FILE* mtab                = NULL;
   struct mntent* mtab_entry = NULL;
-  size_t fsname_len = 0;
-  int retval = -1;
+  size_t fsname_len         = 0;
+  int retval                = -1;
 
-  /* Using /etc/mtab here is supposedly a no-no, but the macro we're supposed
-   * to use (_PATH_MNTTAB) resolves to "/etc/fstab" (at least on my Ubuntu system).
-   */
-  mtab = setmntent("/etc/mtab", "r");
-  if (NULL == mtab) {
+  assert(NULL != dir);
+  assert(NULL != dev_name);
+
+  if (NULL == (mtab = setmntent(_PATH_MOUNTED, "r"))) {
     return -2;
   }
 
-  /* Could move into conditional, but prefer this stylistically */
-  mtab_entry = getmntent(mtab);
-  while (NULL != mtab_entry) {
+  while (NULL != (mtab_entry = getmntent(mtab))) {
     if (!strcmp(mtab_entry->mnt_dir, dir)) {
       fsname_len = strlen(mtab_entry->mnt_fsname) + 1;
 
@@ -45,8 +43,6 @@ static int lookup_device(const char* dir, char** dev_name) {
       retval = 0;
       break;
     }
-
-    mtab_entry = getmntent(mtab);
   }
 
   endmntent(mtab);
@@ -108,7 +104,7 @@ static int print_quota_usage(const char* filesystem, int uid) {
   char emsg[1024];
   struct dqblk quota_info;
 
-  memset(&quota_info, 0, sizeof(struct dqblk));
+  memset(&quota_info, 0, sizeof(quota_info));
 
   if (quotactl(QCMD(Q_GETQUOTA, USRQUOTA), filesystem, uid, (caddr_t) &quota_info) < 0) {
     sprintf(emsg, "Failed retrieving quota for uid=%d", uid);
@@ -135,11 +131,13 @@ static int print_quota_usage(const char* filesystem, int uid) {
   return 0;
 }
 
-int
-main(int argc, char* argv[]) {
+int main(int argc, char* argv[]) {
+  char* filesystem  = NULL;
   char* device_name = NULL;
-  int* uids = NULL;
-  int ii = 0, num_uids = 0;
+  char** uid_strs   = NULL;
+  int* uids         = NULL;
+  int num_uids      = 0;
+  int ii            = 0;
 
   if (argc < 3) {
     printf("Usage: report_quota [filesystem] [uid]+\n");
@@ -148,21 +146,21 @@ main(int argc, char* argv[]) {
     exit(1);
   }
 
+  filesystem = argv[1];
+  num_uids   = argc - 2;
+  uid_strs   = argv + 2;
+
   if (lookup_device(argv[1], &device_name) < 0) {
-    printf("Couldn't find device for %s", argv[1]);
+    printf("Couldn't find device for %s\n", argv[1]);
     exit(1);
   }
 
-  num_uids = argc - 2;
-  uids = malloc(sizeof(int) * num_uids);
-  if (NULL == uids) {
-    perror("malloc()");
-    free(device_name);
-    exit(1);
-  }
-  memset(uids, 0, sizeof(int) * num_uids);
+  uids = malloc(sizeof(*uids) * num_uids);
+  assert(NULL != uids);
+
+  memset(uids, 0, sizeof(*uids) * num_uids);
   for (ii = 0; ii < num_uids; ii++) {
-    uids[ii] = atoi(argv[ii + 2]);
+    uids[ii] = atoi(uid_strs[ii]);
   }
 
   for (ii = 0; ii < num_uids; ii++) {
@@ -171,8 +169,9 @@ main(int argc, char* argv[]) {
     }
   }
 
-  // Pedantry!
+  /* Pedantry! */
   free(device_name);
+  free(uids);
 
   return 0;
 }
