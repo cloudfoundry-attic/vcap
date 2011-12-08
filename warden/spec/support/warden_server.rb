@@ -16,14 +16,6 @@ shared_context :warden_server do
   before :each do
     FileUtils.rm_f(unix_domain_path)
 
-    # Create uid pool
-    if uidpool_config
-      em_fibered(:timeout => 2) do
-        @pool = Warden::Container::UidPool.acquire(uidpool_config[:name], uidpool_config[:count])
-        EM.stop
-      end
-    end
-
     @pid = fork do
       Process.setsid
       Signal.trap("TERM") { exit }
@@ -34,8 +26,7 @@ shared_context :warden_server do
           :container_root => container_root,
           :container_klass => container_klass,
           :container_grace_time => 1 },
-        :uidpool => uidpool_config,
-        :quota_filesystem => @quota_fs,
+        :quota => quota_config,
         :logger => {
           :level => :debug,
           :file => File.expand_path("../../../tmp/warden.log", __FILE__) }
@@ -73,14 +64,6 @@ shared_context :warden_server do
 
       # Container should be stopped and destroyed by now...
       system("rm -rf #{path}")
-    end
-
-    # Destroy uid pool
-    if uidpool_config
-      em_fibered(:timeout => 2) do
-        Warden::Container::UidPool.destroy(uidpool_config[:name])
-        EM.stop
-      end
     end
   end
 end

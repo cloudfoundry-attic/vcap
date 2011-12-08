@@ -24,6 +24,14 @@ module Warden
         # Filesystem disk quotas should be set on
         attr_accessor :quota_filesystem
 
+        # Periodically checks that containers are within their disk usage limits. Destroys
+        # any containers in violation.
+        attr_accessor :quota_monitor
+
+        def default_quota_check_interval
+          5
+        end
+
         def iptables_rule(chain, rule)
           regexp = Regexp.new("\\s" + Regexp.escape(rule).gsub(" ", "\\s+") + "(\\s|$)")
           rules = sh("iptables -t nat -S #{chain}").
@@ -78,14 +86,18 @@ module Warden
             raise WardenError.new(message)
           end
 
-          # Acquire users for quota limits
-          if config[:uidpool]
-            up_config = config[:uidpool]
+          if config[:quota]
+            # Acquire users for quota limits
+            up_config = config[:quota][:uidpool]
             self.uid_pool = Warden::Container::UidPool.acquire(up_config[:name], up_config[:count])
-          end
 
-          if config[:quota_filesystem]
-            self.quota_filesystem = config[:quota_filesystem]
+            # Set up the quota monitor
+            self.quota_filesystem = config[:quota][:filesystem]
+            check_interval = config[:quota][:check_interval] || self.default_quota_check_interval
+            self.quota_monitor = QuotaMonitor.new(config[:quota][:report_quota_path],
+                                                  self.quota_filesystem,
+                                                  check_interval)
+            self.quota_monitor.init
           end
         end
       end
@@ -107,17 +119,29 @@ module Warden
 
           # Release uid used for this container (if any). Only do so if the container
           # was successfully destroyed.
-          self.class.uid_pool.release(self.uid) if self.uid
+          if self.class.quota_monitor
+            self.class.quota_monitor.unregister(self)
+            set_quota(0)
+            self.class.uid_pool.release(self.uid)
+          end
         }
 
-        @disk_quota = 0
+        if self.class.quota_monitor
+          # XXX - Possible to leak a uid here if connection registration fails. Need to refactor
+          #       Base to make atomic resource allocation easier.
+          @uid = self.class.uid_pool.acquire
+          @disk_quota = 0
 
-        # XXX - Possible to leak a uid here if connection registration fails. Need to refactor
-        #       Base to make atomic resource allocation easier.
-        @uid = self.class.uid_pool.acquire if self.class.uid_pool
+          # Reset quota for user
+          set_quota(0)
 
-        # Reset quota for user
-        set_quota(0) if self.uid && self.class.quota_filesystem
+          self.class.quota_monitor.register(self) do
+            self.warn "Disk quota (#{self.disk_quota}) exceeded, destroying"
+            self.class.quota_monitor.unregister(self)
+            # TODO - Change this to stop() once available
+            self.destroy
+          end
+        end
       end
 
       def container_root_path
@@ -260,6 +284,119 @@ module Warden
 
         def execute(command)
           sh(command)
+        end
+      end
+
+      class QuotaMonitor
+        include Logger
+        include Spawn
+
+        def initialize(report_quota_path, filesystem, check_interval=5)
+          @filesystem        = filesystem
+          @callbacks         = {}
+          @check_interval    = check_interval
+          @initialized       = false
+          @report_quota_path = report_quota_path
+          @quota_check_fiber = Fiber.new do
+            loop do
+              start = Time.now.to_i
+              check_quotas
+              elapsed = Time.now.to_i - start
+              next_check = @check_interval - elapsed
+              if next_check <= 0
+                next_check = 0.1
+              end
+              EM.add_timer(next_check) { @quota_check_fiber.resume }
+              Fiber.yield
+            end
+          end
+        end
+
+        def init
+          return if @initialized
+          EM.add_timer(@check_interval) { @quota_check_fiber.resume }
+          @initialized = true
+        end
+
+        def register(container, &blk)
+          debug "Registering container for uid #{container.uid}"
+          @callbacks[container.uid] = blk
+        end
+
+        def unregister(container)
+          debug "Unregistering container for uid #{container.uid}"
+          @callbacks.delete(container.uid)
+        end
+
+        private
+
+        def check_quotas
+          debug "Checking quotas"
+
+          begin
+            # RepQuota#run will raise an error if the repquota command fails,
+            # so we are safe to ignore the status code here.
+            quota_info = get_quota_usage
+          rescue WardenError => we
+            # This is non-fatal. Assuming the quota was set correctly, this
+            # only means that the container won't be torn down in the event of
+            # a quota violation.
+            warn "Failed retrieving quota usage: #{we}"
+            return
+          end
+
+          for uid, info in quota_info
+            callback = @callbacks[uid]
+            blocks_used = info[:usage][:block]
+            blocks_allowed = info[:quotas][:block][:hard]
+            # 0 indicates no limit
+            next unless blocks_allowed > 0
+            debug "Uid #{uid} used=#{blocks_used}, allowed=#{blocks_allowed} #{info}"
+            if callback && (blocks_used >= blocks_allowed)
+              info "Uid #{uid} is in violation (used=#{blocks_used}, allowed=#{blocks_allowed})"
+              callback.call
+            end
+          end
+
+          debug "Done checking quotas"
+        end
+
+        def get_quota_usage
+          if @callbacks.keys.empty?
+            return {}
+          end
+
+          cmd = [@report_quota_path]
+          cmd << @filesystem
+          cmd << @callbacks.keys
+          cmd = cmd.flatten.join(' ')
+
+          debug "Running #{cmd}"
+          output = sh(cmd)
+
+          usage = {}
+          output.lines.each do |line|
+            fields = line.split(/\s+/)
+            fields = fields.map {|f| f.to_i }
+            usage[fields[0]] = {
+              :usage => {
+                :block => fields[1],
+                :inode => fields[5],
+              },
+              :quotas => {
+                :block => {
+                  :soft => fields[2],
+                  :hard => fields[3],
+                },
+                :inode => {
+                  :soft => fields[6],
+                  :hard => fields[7],
+                },
+              },
+            }
+          end
+
+          usage
         end
       end
 

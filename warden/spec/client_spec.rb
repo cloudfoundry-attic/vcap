@@ -5,7 +5,7 @@ describe Warden::Client do
 
   include_context :warden_server
 
-  let(:uidpool_config) {
+  let(:quota_config) {
     nil
   }
 
