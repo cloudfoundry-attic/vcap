@@ -254,21 +254,20 @@ module Warden
 
         attr_reader :container
         attr_reader :job_id
-        attr_reader :path
 
         def initialize(container)
           @container = container
           @job_id = container.class.generate_job_id
-          @path = File.join("tmp", job_id.to_s)
 
           @status = nil
           @yielded = []
         end
 
-        def finish
-          exit_status_path = File.join(container.container_root_path, path, "exit_status")
-          stdout_path = File.join(container.container_root_path, path, "stdout")
-          stderr_path = File.join(container.container_root_path, path, "stderr")
+        def finish(path = nil)
+          path ||= "/idontexist"
+          exit_status_path = File.join(path, "exit_status")
+          stdout_path = File.join(path, "stdout")
+          stderr_path = File.join(path, "stderr")
 
           exit_status = File.read(exit_status_path) if File.exist?(exit_status_path)
           exit_status = exit_status.to_i if exit_status && !exit_status.empty?

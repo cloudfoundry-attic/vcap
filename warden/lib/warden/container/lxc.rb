@@ -184,26 +184,21 @@ module Warden
       end
 
       def create_job(script)
+        job = Job.new(self)
+
+        runner = File.expand_path("../../../../src/runner", __FILE__)
         socket_path = File.join(container_root_path, "/tmp/runner.sock")
         unless File.exist?(socket_path)
           error "socket does not exist: #{socket_path}"
         end
 
-        job = Job.new(self)
-        handler = ::EM.connect_unix_domain(socket_path, RemoteScriptHandler)
-
-        # Send path to job artifact directory on the first line
-        handler.send_data(job.path + "\n")
-
-        # The remainder of stdin will be consumed by a subshell
-        handler.send_data(script + "\n")
-
-        # Make bash exit without losing the exit status. This can otherwise
-        # be done by shutting down the write side of the socket, causing EOF
-        # on stdin for the remote. However, EM doesn't do shutdown...
-        handler.send_data "exit $?\n"
-
-        handler.callback { job.finish }
+        p = DeferredChild.new(runner, "connect", socket_path, :input => script)
+        p.callback { |path_inside_container|
+          job.finish(File.join(container_root_path, path_inside_container))
+        }
+        p.errback {
+          job.finish
+        }
 
         job
       end

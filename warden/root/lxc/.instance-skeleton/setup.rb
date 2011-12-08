@@ -83,31 +83,14 @@ Dir["dev/*"].each { |e|
   end
 }
 
-# Add runner script
-write "usr/bin/runner", <<-EOS
-#!/bin/bash
-
-# Determine artifact path for this job
-read job_path
-if [ -n "${job_path}" ]; then
-tmp=${job_path}
-else
-tmp=$(mktemp -d)
-fi
-
-mkdir -p ${tmp} || exit 1
-
-sudo -u vcap env -i bash 1> ${tmp}/stdout 2> ${tmp}/stderr
-echo ${?} > ${tmp}/exit_status
-EOS
-
-script "chmod +x usr/bin/runner"
+# Add runner
+sh "cp ../../../../src/runner bin/"
 
 # Add upstart job
 write "etc/init/runner.conf", <<-EOS
 start on filesystem
 respawn
-exec socat -ly unix-listen:/tmp/runner.sock,fork exec:/usr/bin/runner,nofork
+exec runner listen /tmp/runner.sock
 EOS
 
 Dir.chdir(PATH)

@@ -20,7 +20,7 @@ EOS
 # Install packages
 chroot ".", <<-EOS
 apt-get update
-apt-get install -y socat
+# apt-get install -y <list of packages>
 EOS
 
 # Remove files we don't need

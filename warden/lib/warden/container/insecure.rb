@@ -41,10 +41,14 @@ module Warden
 
       def create_job(script)
         job = Job.new(self)
-        env = { "job_path" => File.join(container_root_path, job.path) }
-        p = DeferredChild.new(env, File.join(container_path, "run.sh"), :input => script)
-        p.callback { job.finish }
-        p.errback { job.finish }
+
+        p = DeferredChild.new(File.join(container_path, "run.sh"), :input => script)
+        p.callback { |absolute_path|
+          job.finish(absolute_path)
+        }
+        p.errback {
+          job.finish
+        }
 
         job
       end
