@@ -104,5 +104,7 @@ sh "cp ../../../../src/runner bin/"
 write "etc/init/runner.conf", <<-EOS
 start on filesystem
 respawn
+env ARTIFACT_PATH=/tmp
+env RUN_AS_UID=#{chroot ".", "id -u vcap"}
 exec runner listen /tmp/runner.sock
 EOS
