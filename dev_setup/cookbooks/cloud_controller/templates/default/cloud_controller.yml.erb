@@ -10,8 +10,8 @@ support_address: http://support.cloudfoundry.com
 # value of nil, should work in most cases.
 local_route: <%= node[:cloud_controller][:local_route] %>
 
-# Specifies if new users can register only from the host that is running the cloud controller
-local_register_only: false
+# Specifies if new users are allowed to register via VMC
+allow_registration: true
 
 # Allow applications to register URIs that are outside your domain.
 # Legacy (FIXME REMOVE)
@@ -82,7 +82,7 @@ staging:
   secure: false
 
 # admin support
-admins: [ <%= node[:cloud_controller][:admins].join(",") %> ]
+admins: [ <%= node[:cloud_controller][:admins].join(", ") %> ]
 https_required: false
 https_required_for_admins: false
 

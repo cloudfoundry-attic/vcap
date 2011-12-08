@@ -1,0 +1,48 @@
+#!/usr/bin/env ruby
+# Copyright (c) 2009-2011 VMware, Inc.
+
+require "fileutils"
+
+def close_fds
+  3.upto(get_max_open_fd) do |fd|
+    begin
+      IO.for_fd(fd, "r").close
+    rescue
+    end
+  end
+end
+
+def get_max_open_fd
+  max = 0
+
+  dir = nil
+  if File.directory?("/proc/self/fd/") # Linux
+    dir = "/proc/self/fd/"
+  elsif File.directory?("/dev/fd/") # Mac
+    dir = "/dev/fd/"
+  end
+
+  if dir
+    Dir.foreach(dir) do |entry|
+      begin
+        pid = Integer(entry)
+        max = pid if pid > max
+      rescue
+      end
+    end
+  else
+    max = 65535
+  end
+
+  max
+end
+
+close_fds
+
+# deletes itself when run by the DEA
+delete_script = ARGV.shift
+if delete_script == "true"
+  FileUtils.rm(__FILE__)
+end
+
+exec(*ARGV)
