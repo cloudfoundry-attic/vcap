@@ -22,6 +22,11 @@ class DotNetPlugin < StagingPlugin
     plugin_staging_info[:logs][:dea_error] = "logs/err.log"
     plugin_staging_info[:logs][:startup] = "logs/startup.log"
     plugin_staging_info[:logs][:app] = "logs/stdout.log"
+
+    plugin_staging_info[:auto_wire_templates] = Hash.new
+    plugin_staging_info[:auto_wire_templates]["mssql-2008"] = "Data Source={host},{port};Initial Catalog={name};User Id={user};Password={password};MultipleActiveResultSets=true"
+    plugin_staging_info[:auto_wire_templates]["mysql-5.1"] = "server={host};port={port};Database={name};Uid={user};Pwd={password};"
+
     plugin_staging_info.to_json
   end
 
