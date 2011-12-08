@@ -153,6 +153,10 @@ module Warden
         File.join(root_path, ".instance-#{handle}")
       end
 
+      def cgroup_root_path
+        File.join("/dev/cgroup", "instance-#{self.handle}")
+      end
+
       def create
         if @created
           raise WardenError.new("container is already created")
