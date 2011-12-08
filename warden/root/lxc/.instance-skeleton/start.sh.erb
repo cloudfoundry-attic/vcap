@@ -8,7 +8,7 @@ if [ -f started ]; then
   exit 1
 fi
 
-<%= union_mount_command %>
+<%= mount_union_command(Dir.pwd) %>
 
 lxc-create \
   --name "instance-<%= config["id"] %>" \

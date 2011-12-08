@@ -1,5 +1,5 @@
 lxc.utsname = <%= config["id"] %>
-lxc.rootfs = <%= File.join(PATH, "union") %>
+lxc.rootfs = <%= File.join(Dir.pwd, "union") %>
 lxc.tty = 1
 lxc.pts = 0
 

@@ -1,10 +1,10 @@
 #!/usr/bin/env ruby
 
-PATH = File.expand_path("..", __FILE__)
-Dir.chdir(PATH)
-require "../.lib/global"
+require File.expand_path("../../.lib/global", $0)
 
-Dir.chdir("union")
+mount_union
+
+Dir.chdir File.expand_path("../union", $0)
 
 write "lib/init/fstab", <<-EOS
 # nothing

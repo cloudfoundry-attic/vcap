@@ -1,9 +1,9 @@
 #!/usr/bin/env ruby
 
-PATH = File.expand_path("..", __FILE__)
-Dir.chdir(PATH)
-require "../.lib/global"
+require File.expand_path("../../.lib/global", $0)
 require "erb"
+
+mount_union
 
 config = {
   "id" => "test",
@@ -13,7 +13,21 @@ config = {
   "copy_root_password" => "0"
 }.merge(ENV)
 
-Dir.chdir("union")
+Dir.chdir File.expand_path("..", $0)
+
+# Write control scripts
+write "start.sh", ERB.new(File.read "start.sh.erb").result
+write "stop.sh", ERB.new(File.read "stop.sh.erb").result
+
+script <<-EOS
+chmod +x start.sh
+chmod +x stop.sh
+EOS
+
+# Write LXC configuration
+write "config", ERB.new(File.read "config.erb").result
+
+Dir.chdir "union"
 
 # Hostname
 write "etc/hostname", config["id"]
@@ -92,17 +106,3 @@ start on filesystem
 respawn
 exec runner listen /tmp/runner.sock
 EOS
-
-Dir.chdir(PATH)
-
-# Write control scripts
-write "start.sh", ERB.new(File.read "start.sh.erb").result
-write "stop.sh", ERB.new(File.read "stop.sh.erb").result
-
-script <<-EOS
-chmod +x start.sh
-chmod +x stop.sh
-EOS
-
-# Write LXC configuration
-write "config", ERB.new(File.read "config.erb").result
