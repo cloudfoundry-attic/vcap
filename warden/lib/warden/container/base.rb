@@ -30,33 +30,46 @@ module Warden
         # this attribute to hold an instance of Warden::Pool::NetworkPool.
         attr_accessor :network_pool
 
+        # Acquire resources required for every container instance.
+        def acquire(resources)
+          unless resources[:network]
+            network = network_pool.acquire
+            unless network
+              raise WardenError.new("could not acquire network")
+            end
+
+            resources[:network] = network
+          end
+        end
+
+        # Release resources required for every container instance.
+        def release(resources)
+          if network = resources.delete(:network)
+              # Release network after some time to make sure the kernel has
+              # time to clean up things such as lingering connections.
+              ::EM.add_timer(5) {
+                network_pool.release(network)
+              }
+          end
+        end
+
         # Override #new to make sure that acquired resources are released when
         # one of the pooled resourced can not be required. Acquiring the
         # necessary resources must be atomic to prevent leakage.
         def new(conn)
-          network = network_pool.acquire
-          unless network
-            raise WardenError.new("could not acquire network")
-          end
-
-          instance = allocate
-          instance.instance_eval {
-            initialize
-            register_connection(conn)
-
-            # Assign acquired resources only after connection has been registered
-            @network = network
-          }
-
+          resources = {}
+          acquire(resources)
+          instance = super(resources)
+          instance.register_connection(conn)
           instance
 
-        rescue
-          network_pool.release(network) if network
+        rescue WardenError
+          release(resources)
           raise
         end
 
         # Called before the server starts.
-        def setup(config={})
+        def setup(config = {})
           # noop
         end
 
@@ -67,10 +80,12 @@ module Warden
         end
       end
 
+      attr_reader :resources
       attr_reader :connections
       attr_reader :jobs
 
-      def initialize
+      def initialize(resources)
+        @resources = resources
         @connections = ::Set.new
         @jobs = {}
         @created = false
@@ -86,27 +101,27 @@ module Warden
           self.class.registry.delete(handle)
         }
 
-        on(:after_destroy) {
-          # Release network address only if the container has successfully been
-          # destroyed. If not, the network address will "leak" and cannot be
-          # reused until this process is restarted. We should probably add
-          # extra logic to destroy a container in a failure scenario.
-          ::EM.add_timer(5) {
-            self.class.network_pool.release(network)
-          }
+        on(:finalize) {
+          # Release all resources after the container has been destroyed and
+          # the after_destroy have executed.
+          self.class.release(resources)
         }
       end
 
+      def network
+        resources[:network]
+      end
+
       def handle
-        @network.to_hex
+        network.to_hex
       end
 
       def gateway_ip
-        @network + 1
+        network + 1
       end
 
       def container_ip
-        @network + 2
+        network + 2
       end
 
       def register_connection(conn)
@@ -171,6 +186,7 @@ module Warden
         emit(:before_destroy)
         do_destroy
         emit(:after_destroy)
+        emit(:finalize)
 
         "ok"
       end

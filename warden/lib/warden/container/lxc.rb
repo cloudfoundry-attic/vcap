@@ -12,25 +12,159 @@ module Warden
 
     class LXC < Base
 
-      class << self
-        # This needs to be set before using any containers. The users contained
-        # in this pool are used to enforce disk usage limits via filesystem
-        # quotas.
-        #
-        # NB: This imposes a hard limit on the number of containers that may exist
-        #     at any one time (similar to network_pool in base.rb). Size it appropriately.
-        attr_accessor :uid_pool
+      module Quota
 
-        # Filesystem disk quotas should be set on
-        attr_accessor :quota_filesystem
+        include Spawn
 
-        # Periodically checks that containers are within their disk usage limits. Destroys
-        # any containers in violation.
-        attr_accessor :quota_monitor
-
-        def default_quota_check_interval
-          5
+        def self.included(base)
+          base.extend(ClassMethods)
         end
+
+        def initialize(*args)
+          super
+
+          if self.class.quota_monitor
+            # Reset quota for user
+            set_quota(0)
+
+            self.class.quota_monitor.register(self) do
+              self.warn "Disk quota (#{self.disk_quota}) exceeded, destroying"
+              self.class.quota_monitor.unregister(self)
+              # TODO - Change this to stop() once available
+              self.destroy
+            end
+          end
+
+          on(:after_destroy) {
+            # Release uid used for this container (if any). Only do so if the container
+            # was successfully destroyed.
+            if self.class.quota_monitor
+              self.class.quota_monitor.unregister(self)
+              set_quota(0)
+            end
+          }
+        end
+
+        def uid
+          @resources[:uid]
+        end
+
+        def disk_quota
+          @disk_quota ||= 0
+        end
+
+        def disk_quota=(v)
+          @disk_quota = v
+        end
+
+        def get_limit_disk
+          unless self.uid && self.class.quota_filesystem
+            raise WardenError.new("Command unsupported")
+          end
+
+          self.disk_quota
+        end
+
+        def set_limit_disk(args)
+          unless self.uid && self.class.quota_filesystem
+            raise WardenError.new("Command unsupported")
+          end
+
+          unless args.length == 1
+            raise WardenError.new("Invalid number of arguments: expected 1, got #{args.length}")
+          end
+
+          begin
+            block_limit = args[0].to_i
+          rescue
+            raise WardenError.new("Invalid limit")
+          end
+
+          set_quota(block_limit)
+
+          "ok"
+        end
+
+        protected
+
+        def set_quota(block_limit)
+          quota_setter = SetQuota.new
+          quota_setter.user = self.uid
+          quota_setter.filesystem = self.class.quota_filesystem
+          quota_setter.quotas[:block][:hard] = block_limit
+          quota_setter.run
+          self.disk_quota = block_limit
+        end
+
+        class SetQuota < VCAP::Quota::SetQuota
+          include Spawn
+
+          def execute(command)
+            sh(command)
+          end
+        end
+
+        module ClassMethods
+
+          # This needs to be set before using any containers. The users contained
+          # in this pool are used to enforce disk usage limits via filesystem
+          # quotas.
+          #
+          # NB: This imposes a hard limit on the number of containers that may exist
+          #     at any one time (similar to network_pool in base.rb). Size it appropriately.
+          attr_accessor :uid_pool
+
+          # Filesystem disk quotas should be set on
+          attr_accessor :quota_filesystem
+
+          # Periodically checks that containers are within their disk usage limits. Destroys
+          # any containers in violation.
+          attr_accessor :quota_monitor
+
+          def default_quota_check_interval
+            5
+          end
+
+          def acquire(resources)
+            super(resources)
+
+            unless resources[:uid]
+              if uid_pool
+                resources[:uid] = uid_pool.acquire
+              end
+            end
+          end
+
+          def release(resources)
+            super(resources)
+
+            if uid = resources.delete(:uid)
+              # If an uid was acquired, it should also be possible to release it again
+              uid_pool.release(uid)
+            end
+          end
+
+          def setup(config = {})
+            if config[:quota]
+              # Acquire users for quota limits
+              up_config = config[:quota][:uidpool]
+              self.uid_pool = Warden::Container::UidPool.acquire(up_config[:name], up_config[:count])
+
+              # Set up the quota monitor
+              self.quota_filesystem = config[:quota][:filesystem]
+              check_interval = config[:quota][:check_interval] || self.default_quota_check_interval
+              self.quota_monitor = QuotaMonitor.new(config[:quota][:report_quota_path],
+                                                    self.quota_filesystem,
+                                                    check_interval)
+              self.quota_monitor.init
+            end
+          end
+        end
+      end
+
+      include Quota
+
+      class << self
 
         def iptables_rule(chain, rule)
           regexp = Regexp.new("\\s" + Regexp.escape(rule).gsub(" ", "\\s+") + "(\\s|$)")
@@ -44,7 +178,9 @@ module Warden
           end
         end
 
-        def setup(config={})
+        def setup(config = {})
+          super(config)
+
           unless Process.uid == 0
             raise WardenError.new("lxc requires root privileges")
           end
@@ -85,28 +221,11 @@ module Warden
             message += " (expected >= 1000, got: #{PortPool.instance.available})"
             raise WardenError.new(message)
           end
-
-          if config[:quota]
-            # Acquire users for quota limits
-            up_config = config[:quota][:uidpool]
-            self.uid_pool = Warden::Container::UidPool.acquire(up_config[:name], up_config[:count])
-
-            # Set up the quota monitor
-            self.quota_filesystem = config[:quota][:filesystem]
-            check_interval = config[:quota][:check_interval] || self.default_quota_check_interval
-            self.quota_monitor = QuotaMonitor.new(config[:quota][:report_quota_path],
-                                                  self.quota_filesystem,
-                                                  check_interval)
-            self.quota_monitor.init
-          end
         end
       end
 
-      attr_reader :uid
-      attr_accessor :disk_quota
-
-      def initialize
-        super
+      def initialize(*args)
+        super(*args)
 
         on(:before_create) {
           # Inbound port forwarding rules MUST be deleted before the container is started
@@ -116,32 +235,7 @@ module Warden
         on(:after_destroy) {
           # Inbound port forwarding rules SHOULD be deleted after the container is stopped
           clear_inbound_port_forwarding_rules
-
-          # Release uid used for this container (if any). Only do so if the container
-          # was successfully destroyed.
-          if self.class.quota_monitor
-            self.class.quota_monitor.unregister(self)
-            set_quota(0)
-            self.class.uid_pool.release(self.uid)
-          end
         }
-
-        if self.class.quota_monitor
-          # XXX - Possible to leak a uid here if connection registration fails. Need to refactor
-          #       Base to make atomic resource allocation easier.
-          @uid = self.class.uid_pool.acquire
-          @disk_quota = 0
-
-          # Reset quota for user
-          set_quota(0)
-
-          self.class.quota_monitor.register(self) do
-            self.warn "Disk quota (#{self.disk_quota}) exceeded, destroying"
-            self.class.quota_monitor.unregister(self)
-            # TODO - Change this to stop() once available
-            self.destroy
-          end
-        end
       end
 
       def container_root_path
@@ -226,44 +320,7 @@ module Warden
         raise
       end
 
-      def get_limit_disk
-        unless self.uid && self.class.quota_filesystem
-          raise WardenError.new("Command unsupported")
-        end
-
-        self.disk_quota
-      end
-
-      def set_limit_disk(args)
-        unless self.uid && self.class.quota_filesystem
-          raise WardenError.new("Command unsupported")
-        end
-
-        unless args.length == 1
-          raise WardenError.new("Invalid number of arguments: expected 1, got #{args.length}")
-        end
-
-        begin
-          block_limit = args[0].to_i
-        rescue
-          raise WardenError.new("Invalid limit")
-        end
-
-        set_quota(block_limit)
-
-        "ok"
-      end
-
       protected
-
-      def set_quota(block_limit)
-        quota_setter = SetQuota.new
-        quota_setter.user = self.uid
-        quota_setter.filesystem = self.class.quota_filesystem
-        quota_setter.quotas[:block][:hard] = block_limit
-        quota_setter.run
-        self.disk_quota = block_limit
-      end
 
       def clear_inbound_port_forwarding_rules
         commands = [
@@ -272,14 +329,6 @@ module Warden
           %{sed s/-A/-D/},
           %{xargs -L 1 -r iptables -t nat} ]
         sh commands.join(" | ")
-      end
-
-      class SetQuota < VCAP::Quota::SetQuota
-        include Spawn
-
-        def execute(command)
-          sh(command)
-        end
       end
 
       class QuotaMonitor
