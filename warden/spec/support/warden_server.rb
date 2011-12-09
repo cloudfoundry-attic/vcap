@@ -27,6 +27,9 @@ shared_context :warden_server do
           :container_klass => container_klass,
           :container_grace_time => 1 },
         :quota => quota_config,
+        :network => {
+          :allow_networks => "4.2.2.3/32",
+          :deny_networks => "4.2.2.0/24" },
         :logger => {
           :level => :debug,
           :file => File.expand_path("../../../tmp/warden.log", __FILE__) }

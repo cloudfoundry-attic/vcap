@@ -68,8 +68,8 @@ module Warden
 
     def self.setup_network(config = nil)
       config ||= {}
-      network_start_address = Network::Address.new(config[:start_address] || "10.254.0.0")
-      network_size = config[:size] || 64
+      network_start_address = Network::Address.new(config[:pool_start_address] || "10.254.0.0")
+      network_size = config[:pool_size] || 64
       network_pool = Pool::NetworkPool.new(network_start_address, network_size)
       container_klass.network_pool = network_pool
     end

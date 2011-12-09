@@ -95,4 +95,47 @@ describe "server implementing LXC" do
       end.to raise_error(/unknown handle/)
     end
   end
+
+  describe "ip filtering", :netfilter => true do
+
+    include_context :warden_server
+    include_context :warden_client
+
+    let(:container_klass) {
+      Warden::Container::LXC
+    }
+
+    let(:quota_config) {
+      nil
+    }
+
+    let (:client) {
+      create_client
+    }
+
+    before(:each) do
+      @handle = client.call("create")
+    end
+
+    it "should deny traffic to denied networks" do
+      # Make sure the host can reach an IP in the denied range
+     `ping -q -W 1 -c 1 4.2.2.2`.should match(/\b1 received\b/i)
+
+      reply = client.call("run", @handle, "ping -q -W 1 -c 1 4.2.2.2")
+      reply[0].should == 1
+      File.read(reply[1]).should match(/\b0 received\b/i)
+    end
+
+    it "should allow traffic to allowed networks" do
+      reply = client.call("run", @handle, "ping -q -W 1 -c 1 4.2.2.3")
+      reply[0].should == 0
+      File.read(reply[1]).should match(/\b1 received\b/i)
+    end
+
+    it "should allow other traffic" do
+      reply = client.call("run", @handle, "ping -q -W 1 -c 1 8.8.8.8")
+      reply[0].should == 0
+      File.read(reply[1]).should match(/\b1 received\b/i)
+    end
+  end
 end

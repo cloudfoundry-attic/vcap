@@ -1,5 +1,6 @@
 require "warden/errors"
 require "warden/container/spawn"
+require "warden/container/features/net_helper"
 
 module Warden
 
@@ -8,6 +9,8 @@ module Warden
     module Features
 
       module NetIn
+
+        include Spawn
 
         def self.included(base)
           base.extend(ClassMethods)
@@ -35,7 +38,7 @@ module Warden
             "--destination-port #{port}",
             "--jump DNAT",
             "--to-destination #{container_ip.to_human}:#{port}" ]
-            sh "iptables -t nat -A warden #{rule.join(" ")}"
+            sh "iptables -t nat -A warden-prerouting #{rule.join(" ")}"
 
             # Port may be re-used after this container has been destroyed
             on(:after_destroy) {
@@ -54,7 +57,7 @@ module Warden
 
         def clear_inbound_port_forwarding_rules
           commands = [
-            %{iptables -t nat -S warden},
+            %{iptables -t nat -S warden-prerouting},
             %{grep " #{Regexp.escape(container_ip.to_human)}:"},
             %{sed s/-A/-D/},
             %{xargs -L 1 -r iptables -t nat} ]
@@ -63,10 +66,19 @@ module Warden
 
         module ClassMethods
 
+          include NetHelper
           include Spawn
 
           def setup(config = {})
             super(config)
+
+            # Prepare chain for DNAT
+            sh "iptables -t nat -N warden-prerouting", :raise => false
+            sh "iptables -t nat -F warden-prerouting"
+            iptables_rule "PREROUTING",
+              %{--in-interface #{external_interface}},
+              %{--jump warden-prerouting},
+              :table => :nat
 
             # 1k available ports should be "good enough"
             if PortPool.instance.available < 1000

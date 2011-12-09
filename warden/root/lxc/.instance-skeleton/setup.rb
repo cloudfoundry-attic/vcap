@@ -102,7 +102,7 @@ sh "cp ../../../../src/runner bin/"
 
 # Add upstart job
 write "etc/init/runner.conf", <<-EOS
-start on filesystem
+start on filesystem and net-device-up IFACE=veth0
 respawn
 env ARTIFACT_PATH=/tmp
 env RUN_AS_UID=#{chroot ".", "id -u vcap"}

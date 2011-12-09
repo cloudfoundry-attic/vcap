@@ -1,5 +1,6 @@
 require "warden/errors"
 require "warden/container/spawn"
+require "warden/container/features/net_helper"
 
 module Warden
 
@@ -15,41 +16,65 @@ module Warden
 
         module ClassMethods
 
+          include NetHelper
           include Spawn
 
-          def iptables_rule(chain, rule)
-            regexp = Regexp.new("\\s" + Regexp.escape(rule).gsub(" ", "\\s+") + "(\\s|$)")
-            rules = sh("iptables -t nat -S #{chain}").
-              split(/\n/).
-              select { |e| e =~ regexp }
-            rule_enabled = !rules.empty?
+          # Network blacklist
+          attr_accessor :deny_networks
 
-            unless rule_enabled
-              sh "iptables -t nat -A #{chain} #{rule}"
-            end
-          end
+          # Network whitelist
+          attr_accessor :allow_networks
 
           def setup(config = {})
             super(config)
 
-            ip_route = sh("ip route get 1.1.1.1").chomp
-
-            external_interface = ip_route[/ dev (\w+)/i, 1]
-            if external_interface.nil?
-              raise WardenError.new("unable to detect external interface")
+            deny_networks = []
+            if config[:network]
+              deny_networks = [config[:network][:deny_networks]].flatten.compact
             end
 
-            external_ip = ip_route[/ src ([\d\.]+)/i, 1]
-            if external_ip.nil?
-              raise WardenError.new("unable to detect external ip")
+            allow_networks = []
+            if config[:network]
+              deny_networks = [config[:network][:allow_networks]].flatten.compact
             end
 
             sh "echo 1 > /proc/sys/net/ipv4/ip_forward"
-            sh "iptables -t nat -N warden", :raise => false
-            sh "iptables -t nat -F warden"
 
-            iptables_rule("POSTROUTING", "-o #{external_interface} -j MASQUERADE")
-            iptables_rule("PREROUTING", "-i #{external_interface} -j warden")
+            # Containers may not communicate with local interfaces
+            sh "iptables -N warden-input", :raise => false
+            sh "iptables -F warden-input"
+            iptables_rule "INPUT",
+              %{--in-interface veth+},
+              %{--jump warden-input}
+            iptables_rule "warden-input",
+              %{--jump DROP}
+
+            # Filter outgoing traffic
+            sh "iptables -N warden-forward", :raise => false
+            sh "iptables -F warden-forward"
+            iptables_rule "FORWARD",
+              %{--in-interface veth+},
+              %{--jump warden-forward}
+
+            # Whitelist
+            allow_networks.each do |network|
+              iptables_rule "FORWARD",
+                %{--destination #{network}},
+                %{--jump RETURN}
+            end
+
+            # Blacklist
+            deny_networks.each do |network|
+              iptables_rule "FORWARD",
+                %{--destination #{network}},
+                %{--jump DROP}
+            end
+
+            # Masquerade outgoing traffic
+            iptables_rule "POSTROUTING",
+              %{--out-interface #{external_interface}},
+              %{--jump MASQUERADE},
+              :table => :nat
           end
         end
       end
