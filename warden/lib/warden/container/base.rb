@@ -1,7 +1,6 @@
 require "warden/logger"
 require "warden/errors"
 require "warden/container/spawn"
-require "warden/container/script_handler"
 
 require "eventmachine"
 require "set"

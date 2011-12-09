@@ -1,7 +1,5 @@
 require "warden/errors"
 require "warden/container/base"
-require "warden/container/script_handler"
-require "warden/container/remote_script_handler"
 require "tempfile"
 require "socket"
 
