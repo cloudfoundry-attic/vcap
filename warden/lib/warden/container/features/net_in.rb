@@ -75,10 +75,9 @@ module Warden
             # Prepare chain for DNAT
             sh "iptables -t nat -N warden-prerouting", :raise => false
             sh "iptables -t nat -F warden-prerouting"
-            iptables_rule "PREROUTING",
+            iptables_rule "-t nat -A PREROUTING",
               %{--in-interface #{external_interface}},
-              %{--jump warden-prerouting},
-              :table => :nat
+              %{--jump warden-prerouting}
 
             # 1k available ports should be "good enough"
             if PortPool.instance.available < 1000
