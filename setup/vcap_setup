@@ -234,7 +234,9 @@ if [[ $DEA == true || $ALL == true ]]; then
 
       # FIXME: Gem installation is deffered for MRI.
       # Maybe JRuby should do the same?
-      jruby -S gem install jruby-openssl bundler thin trinidad sinatra
+      JRUBY_DEFAULT_INSTALL_GEMS="jruby-openssl bundler json thin trinidad sinatra"
+      jruby -S gem install $JRUBY_DEFAULT_INSTALL_GEMS
+      jruby19 -S gem install $JRUBY_DEFAULT_INSTALL_GEMS
       echo -e "\033[31mFIXME: Gem installation is deffered for MRI. \033[0m"
       echo -e "\033[31mMaybe JRuby should do the same? \033[0m"
     fi
