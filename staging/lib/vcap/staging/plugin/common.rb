@@ -71,7 +71,6 @@ class StagingPlugin
     `env -i PATH=#{ENV['PATH']} #{exe} #{get_ver}`
   end
 
-
   # Transforms lowercased/underscored word into camelcase.
   #
   # EX: camelize('foo_bar') returns 'FooBar'
@@ -580,6 +579,18 @@ echo "$STARTED" >> ../run.pid
         exit 1
       end
     end
+  end
+
+  def ruby_engine
+    runtime['ruby_engine']
+  end
+
+  def ruby_library_prefix
+    ruby_engine
+  end
+
+  def ruby_library_version
+    runtime['library_version']
   end
 
   def insight_agent

@@ -42,11 +42,11 @@ module GemfileSupport
   end
 
   def library_prefix
-    self.runtime['ruby_engine']
+    self.ruby_library_prefix
   end
 
   def library_version
-    self.runtime['library_version']
+    self.ruby_library_version
   end
 
   # Can we expect to run this app on Rack?
