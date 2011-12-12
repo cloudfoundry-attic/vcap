@@ -10,8 +10,49 @@ module Warden
 
       module NetOut
 
+        include Spawn
+
         def self.included(base)
           base.extend(ClassMethods)
+        end
+
+        def initialize(*args)
+          super(*args)
+
+          on(:before_create) {
+            # Outbound whitelisting rules MUST be deleted before the container is started
+            clear_outbound_whitelisting_rules
+          }
+
+          on(:after_destroy) {
+            # Outbound whitelisting rules SHOULD be deleted after the container is stopped
+            clear_outbound_whitelisting_rules
+          }
+        end
+
+        def do_net_out(spec)
+          address, port = spec.split(":")
+
+          rule = []
+          rule << %{--in-interface veth-#{handle}}
+          rule << %{--destination "#{address}"}
+          rule << %{--destination-port "#{port}"} if port
+          rule << %{--jump RETURN}
+
+          sh "iptables -I warden-forward #{rule.join(" ")}"
+
+          "ok"
+        end
+
+        protected
+
+        def clear_outbound_whitelisting_rules
+          commands = [
+            %{iptables -S warden-forward},
+            %{grep " -i veth-#{handle}"},
+            %{sed s/-A/-D/},
+            %{xargs -L 1 -r iptables} ]
+          sh commands.join(" | ")
         end
 
         module ClassMethods

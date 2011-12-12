@@ -1,15 +1,29 @@
 require "spec_helper"
 
+shared_context :server_lxc do
+
+  include_context :warden_server
+  include_context :warden_client
+
+  let(:container_klass) {
+    Warden::Container::LXC
+  }
+
+  let(:quota_config) {
+    nil
+  }
+
+  let (:client) {
+    create_client
+  }
+end
+
 describe "server implementing LXC" do
   it_behaves_like "a warden server", Warden::Container::LXC
 
   describe 'when configured with quota support', :needs_quota_config => true do
-    include_context :warden_server
-    include_context :warden_client
 
-    let(:container_klass) {
-      Warden::Container::LXC
-    }
+    include_context :server_lxc
 
     let(:quota_config) {
       { :uidpool => {
@@ -20,10 +34,6 @@ describe "server implementing LXC" do
         :check_interval => 0.25,
         :report_quota_path => ENV['WARDEN_TEST_REPORT_QUOTA_PATH'],
       }
-    }
-
-    let (:client) {
-      create_client
     }
 
     it 'allocates a user per container' do
@@ -98,32 +108,31 @@ describe "server implementing LXC" do
 
   describe "ip filtering", :netfilter => true do
 
-    include_context :warden_server
-    include_context :warden_client
-
-    let(:container_klass) {
-      Warden::Container::LXC
-    }
-
-    let(:quota_config) {
-      nil
-    }
-
-    let (:client) {
-      create_client
-    }
+    include_context :server_lxc
 
     before(:each) do
       @handle = client.call("create")
     end
 
     it "should deny traffic to denied networks" do
-      # Make sure the host can reach an IP in the denied range
-     `ping -q -W 1 -c 1 4.2.2.2`.should match(/\b1 received\b/i)
+      # make sure the host can reach an ip in the denied range
+      `ping -q -w 1 -c 1 4.2.2.2`.should match(/\b1 received\b/i)
 
       reply = client.call("run", @handle, "ping -q -W 1 -c 1 4.2.2.2")
       reply[0].should == 1
       File.read(reply[1]).should match(/\b0 received\b/i)
+    end
+
+    it "should allow traffic after explicitly allowing its destination" do
+      # make sure the host can reach an ip in the denied range
+      `ping -q -w 1 -c 1 4.2.2.2`.should match(/\b1 received\b/i)
+
+      reply = client.call("net", @handle, "out", "4.2.2.2")
+      reply.should == "ok"
+
+      reply = client.call("run", @handle, "ping -q -W 1 -c 1 4.2.2.2")
+      reply[0].should == 0
+      File.read(reply[1]).should match(/\b1 received\b/i)
     end
 
     it "should allow traffic to allowed networks" do

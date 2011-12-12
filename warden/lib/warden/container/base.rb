@@ -231,7 +231,7 @@ module Warden
         link(spawn(script))
       end
 
-      def net_inbound_port
+      def net_in
         unless @created
           raise WardenError.new("container is not yet created")
         end
@@ -240,7 +240,19 @@ module Warden
           raise WardenError.new("container is already destroyed")
         end
 
-        _net_inbound_port
+        do_net_in
+      end
+
+      def net_out(spec)
+        unless @created
+          raise WardenError.new("container is not yet created")
+        end
+
+        if @destroyed
+          raise WardenError.new("container is already destroyed")
+        end
+
+        do_net_out(spec)
       end
 
       def get_limit(limit_name)
