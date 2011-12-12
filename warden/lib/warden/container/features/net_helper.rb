@@ -1,3 +1,4 @@
+require "optparse"
 require "warden/container/spawn"
 
 module Warden
@@ -10,26 +11,89 @@ module Warden
 
         include Spawn
 
-        protected
+        # This method makes an attempt at parsing the semantics of typical
+        # iptables commands. This is done to be able to compare existing rules
+        # with new rules, to see if they should be added or not. It is nowhere
+        # near complete but should provide enough functionality here.
 
-        def iptables_rule(chain, *args)
-          options =
-            if args[-1].respond_to?(:to_hash)
-              args.pop.to_hash
+        def parse_iptables_command(command)
+          buffer = command.dup
+          rule = {}
+
+          # Remove command name if present
+          if buffer =~ /^\s*([^\s]*iptables)/
+            buffer = buffer[$&.length, buffer.length]
+          end
+
+          while !buffer.chomp.empty?
+            case buffer
+
+            # Commands
+            when /^\s*-(?:-new|N)\s+([^\s]+)(?:\s|$)/
+              rule["command"] = [:new, $1]
+              rule["chain"] = $1
+            when /^\s*-(?:-append|A)\s+([^\s]+)(?:\s|$)/
+              rule["command"] = [:append, $1]
+              rule["chain"] = $1
+            when /^\s*-(?:-delete|D)\s+([^\s]+)(?:\s|$)/
+              rule["command"] = [:delete, $1]
+              rule["chain"] = $1
+            when /^\s*-(?:-policy|P)\s+([^\s]+)\s+([^\s]+)(?:\s|$)/
+              rule["command"] = [:policy, $1, $2]
+              rule["chain"] = $1
+
+            # Options
+            when /^\s*-(?:-table|t)\s+([^\s]+)(?:\s|$)/
+              rule["table"] = $1
+            when /^\s*(\!\s+)?-(?:-proto|p)\s+([^\s]+)(?:\s|$)/
+              rule["protocol"] = [$1.nil?, $2]
+            when /^\s*(\!\s+)?-(?:-source|s)\s+([^\s]+)(?:\s|$)/
+              rule["source"] = [$1.nil?, $2]
+            when /^\s*(\!\s+)?-(?:-destination|d)\s+([^\s]+)(?:\s|$)/
+              rule["destination"] = [$1.nil?, $2]
+            when /^\s*(\!\s+)?-(?:-in-interface|i)\s+([^\s]+)(?:\s|$)/
+              rule["in-interface"] = [$1.nil?, $2]
+            when /^\s*(\!\s+)?-(?:-out-interface|o)\s+([^\s]+)(?:\s|$)/
+              rule["out-interface"] = [$1.nil?, $2]
+            when /^\s*-(?:-jump|j)\s+([^\s]+)(?:\s|$)/
+              rule["jump"] = $1
+            when /^\s*-(?:-goto|g)\s+([^\s]+)(?:\s|$)/
+              rule["goto"] = $1
+            when /^\s*-(?:-numeric|n)(?:\s|$)/
+              # doesn't affect rule, ignore
             else
-              {}
+              raise "cannot parse: #{buffer.inspect}"
             end
 
-          rule = args.join(" ")
-          regexp = Regexp.new("\\s" + Regexp.escape(rule).gsub(" ", "\\s+") + "(\\s|$)")
-          table = %{-t "#{options[:table]}"} if options.has_key?(:table)
-          rules = sh("iptables #{table} -S #{chain}").
-            split(/\n/).
-            select { |e| e =~ regexp }
-          rule_enabled = !rules.empty?
+            # Trim buffer
+            buffer = buffer[$&.length, buffer.length]
+          end
 
-          unless rule_enabled
-            sh "iptables #{table} -A #{chain} #{rule}"
+          rule
+        end
+
+        protected
+
+        def iptables_existing_rules(chain, table = nil)
+          command = %{iptables -S "#{chain}"}
+          command << %{ -t "#{table}"} if table
+
+          rules = sh(command).
+            split(/\n/).
+            map { |command| parse_iptables_command(command) }
+
+          Set.new(rules)
+        end
+
+        def iptables_rule(*args)
+          command = ["iptables", args].join(" ")
+          options = parse_iptables_command(command)
+          table = options.delete("table")
+
+          # Check whether or not this rule should be added
+          rules = iptables_existing_rules(options["chain"], table)
+          unless rules.member?(options)
+            sh(command)
           end
         end
 
