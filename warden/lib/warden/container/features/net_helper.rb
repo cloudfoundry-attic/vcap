@@ -11,6 +11,21 @@ module Warden
 
         include Spawn
 
+        IPT_COMMAND_NEW     = /^\s*-(?:-new|N)\s+([^\s]+)(?:\s|$)/
+        IPT_COMMAND_APPEND  = /^\s*-(?:-append|A)\s+([^\s]+)(?:\s|$)/
+        IPT_COMMAND_DELETE  = /^\s*-(?:-delete|D)\s+([^\s]+)(?:\s|$)/
+        IPT_COMMAND_POLICY  = /^\s*-(?:-policy|P)\s+([^\s]+)\s+([^\s]+)(?:\s|$)/
+
+        IPT_OPT_TABLE       = /^\s*-(?:-table|t)\s+([^\s]+)(?:\s|$)/
+        IPT_OPT_PROTO       = /^\s*(\!\s+)?-(?:-proto|p)\s+([^\s]+)(?:\s|$)/
+        IPT_OPT_SOURCE      = /^\s*(\!\s+)?-(?:-source|s)\s+([^\s]+)(?:\s|$)/
+        IPT_OPT_DESTINATION = /^\s*(\!\s+)?-(?:-destination|d)\s+([^\s]+)(?:\s|$)/
+        IPT_OPT_IN_IFACE    = /^\s*(\!\s+)?-(?:-in-interface|i)\s+([^\s]+)(?:\s|$)/
+        IPT_OPT_OUT_IFACE   = /^\s*(\!\s+)?-(?:-out-interface|o)\s+([^\s]+)(?:\s|$)/
+        IPT_OPT_JUMP        = /^\s*-(?:-jump|j)\s+([^\s]+)(?:\s|$)/
+        IPT_OPT_GOTO        = /^\s*-(?:-goto|g)\s+([^\s]+)(?:\s|$)/
+        IPT_OPT_NUMERIC     = /^\s*-(?:-numeric|n)(?:\s|$)/
+
         # This method makes an attempt at parsing the semantics of typical
         # iptables commands. This is done to be able to compare existing rules
         # with new rules, to see if they should be added or not. It is nowhere
@@ -29,37 +44,37 @@ module Warden
             case buffer
 
             # Commands
-            when /^\s*-(?:-new|N)\s+([^\s]+)(?:\s|$)/
+            when IPT_COMMAND_NEW
               rule["command"] = [:new, $1]
               rule["chain"] = $1
-            when /^\s*-(?:-append|A)\s+([^\s]+)(?:\s|$)/
+            when IPT_COMMAND_APPEND
               rule["command"] = [:append, $1]
               rule["chain"] = $1
-            when /^\s*-(?:-delete|D)\s+([^\s]+)(?:\s|$)/
+            when IPT_COMMAND_DELETE
               rule["command"] = [:delete, $1]
               rule["chain"] = $1
-            when /^\s*-(?:-policy|P)\s+([^\s]+)\s+([^\s]+)(?:\s|$)/
+            when IPT_COMMAND_POLICY
               rule["command"] = [:policy, $1, $2]
               rule["chain"] = $1
 
             # Options
-            when /^\s*-(?:-table|t)\s+([^\s]+)(?:\s|$)/
+            when IPT_OPT_TABLE
               rule["table"] = $1
-            when /^\s*(\!\s+)?-(?:-proto|p)\s+([^\s]+)(?:\s|$)/
+            when IPT_OPT_PROTO
               rule["protocol"] = [$1.nil?, $2]
-            when /^\s*(\!\s+)?-(?:-source|s)\s+([^\s]+)(?:\s|$)/
+            when IPT_OPT_SOURCE
               rule["source"] = [$1.nil?, $2]
-            when /^\s*(\!\s+)?-(?:-destination|d)\s+([^\s]+)(?:\s|$)/
+            when IPT_OPT_DESTINATION
               rule["destination"] = [$1.nil?, $2]
-            when /^\s*(\!\s+)?-(?:-in-interface|i)\s+([^\s]+)(?:\s|$)/
+            when IPT_OPT_IN_IFACE
               rule["in-interface"] = [$1.nil?, $2]
-            when /^\s*(\!\s+)?-(?:-out-interface|o)\s+([^\s]+)(?:\s|$)/
+            when IPT_OPT_OUT_IFACE
               rule["out-interface"] = [$1.nil?, $2]
-            when /^\s*-(?:-jump|j)\s+([^\s]+)(?:\s|$)/
+            when IPT_OPT_JUMP
               rule["jump"] = $1
-            when /^\s*-(?:-goto|g)\s+([^\s]+)(?:\s|$)/
+            when IPT_OPT_GOTO
               rule["goto"] = $1
-            when /^\s*-(?:-numeric|n)(?:\s|$)/
+            when IPT_OPT_NUMERIC
               # doesn't affect rule, ignore
             else
               raise "cannot parse: #{buffer.inspect}"
