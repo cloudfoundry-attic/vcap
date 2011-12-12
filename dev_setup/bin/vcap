@@ -15,6 +15,7 @@
 # - redis
 # - mysql
 # - mongo
+# - mvstore
 #
 
 require 'yaml'
@@ -311,6 +312,8 @@ module Run
     puts
     kill_service_instances('mongodb', /mongod/)
     puts
+    kill_service_instances('mvstore', /mongod/)
+    puts
     kill_service_instances('neo4j', /neo4j/ )
     puts
 
@@ -394,7 +397,7 @@ module Run
   end
 
   def self.services
-    %w(redis mysql mongodb)
+    %w(redis mysql mongodb mvstore)
   end
 
   def self.alias_args(args)

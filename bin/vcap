@@ -356,6 +356,8 @@ module Run
     puts
     kill_service_instances('mongodb', /mongod/)
     puts
+    kill_service_instances('mvstore', /mvstore/)
+    puts
     kill_service_instances('neo4j', /neo4j/ )
     puts
 
@@ -439,7 +441,7 @@ module Run
   end
 
   def self.services
-    %w(redis mysql mongodb neo4j)
+    %w(redis mysql mongodb mvstore neo4j)
   end
 
   def self.alias_args(args)

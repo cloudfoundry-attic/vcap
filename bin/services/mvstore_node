@@ -1,0 +1,3 @@
+#!/usr/bin/env ruby
+
+exec(File.expand_path("../../../services/mvstore/bin/mvstore_node", __FILE__), *ARGV)
