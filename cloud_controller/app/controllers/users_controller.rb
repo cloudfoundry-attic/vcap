@@ -47,7 +47,7 @@ class UsersController < ApplicationController
     target_user = ::User.find_by_email(params['email'])
     if target_user
       if target_user.email == user.email || @current_user.admin?
-        render :json => { :email => target_user.email }
+        render :json => { :email => target_user.email, :admin => target_user.admin? }
       else
         raise CloudError.new(CloudError::FORBIDDEN)
       end

@@ -18,6 +18,7 @@ describe UsersController do
       json = Yajl::Parser.parse(response.body)
       json.should be_kind_of(Hash)
       json['email'].should == @user.email
+      json['admin'].should == @user.admin?
     end
 
     it 'should return an user info as an admin requesting for an existent user' do
@@ -29,6 +30,7 @@ describe UsersController do
       json = Yajl::Parser.parse(response.body)
       json.should be_kind_of(Hash)
       json['email'].should == @user.email
+      json['admin'].should == @user.admin?
     end
 
     it 'should return an error as an admin requesting for a non-existent user' do
