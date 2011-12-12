@@ -30,7 +30,7 @@ module Warden
           }
         end
 
-        def _net_inbound_port
+        def do_net_in
           port = PortPool.acquire
 
           rule = [

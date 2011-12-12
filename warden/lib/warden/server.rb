@@ -255,7 +255,10 @@ module Warden
         case request[2]
         when "in"
           request.require_arguments { |n| n == 3 }
-          container.net_inbound_port
+          container.net_in
+        when "out"
+          request.require_arguments { |n| n == 4 }
+          container.net_out(request[3])
         else
           raise WardenError.new("invalid argument")
         end
