@@ -63,5 +63,12 @@ o To use a custom deployment config
    To Stop:
       $HOME/projects/vcap/dev_setup/bin/vcap_dev -d $HOME/projects -n dea stop
 
+o To use a custom domain
+  e.g. If you do not want your CloudFoundry domain as vcap.me
+  $HOME/projects/vcap/dev_setup/bin/vcap_dev_setup -D myowndomain.com
+
+  Later, you will target your CloudFoundry installation with:
+    vmc target api.myowndomain.com
+
 NOTE: To learn more about custom deployment config files and multi host setups
 see the README file vcap/dev_setup/deployments/README.
