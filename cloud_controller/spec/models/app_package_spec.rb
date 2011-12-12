@@ -20,6 +20,96 @@ describe AppPackage do
     end
   end
 
+  describe '#get_unzipped_size' do
+    before :each do
+      @tmpdir = Dir.mktmpdir
+    end
+
+    after :each do
+      FileUtils.rm_rf(@tmpdir)
+    end
+
+    it 'should raise an instance of AppPackageError if unzip exits with a nonzero status' do
+      invalid_zip = Tempfile.new('unzipped_size_test')
+      app_package = AppPackage.new(nil, invalid_zip)
+      em do
+        Fiber.new do
+          expect do
+            app_package.send(:get_unzipped_size)
+          end.to raise_error(AppPackageError, /Failed listing/)
+          EM.stop
+        end.resume
+      end
+    end
+
+    it 'should return the total size of the unzipped droplet' do
+      [1, 5].each do |file_count|
+        zipname = File.join(@tmpdir, "test#{file_count}.zip")
+        unzipped_size = create_zip(zipname, file_count)
+        app_package = AppPackage.new(nil, File.new(zipname))
+        computed_size = nil
+        em do
+          Fiber.new do
+            computed_size = app_package.send(:get_unzipped_size)
+            EM.stop
+          end.resume
+        end
+        computed_size.should == unzipped_size
+      end
+    end
+  end
+
+  describe '#check_package_size' do
+    before :each do
+      @tmpdir = Dir.mktmpdir
+      @saved_size = AppConfig[:max_droplet_size]
+      @saved_pool = CloudController.resource_pool
+    end
+
+    after :each do
+      FileUtils.rm_rf(@tmpdir)
+      AppConfig[:max_droplet_size] = @saved_size
+      CloudController.resource_pool = @saved_pool
+    end
+
+    it 'should raise an instance of AppPackageError if the unzipped size is too large' do
+      zipname = File.join(@tmpdir, "test.zip")
+      unzipped_size = create_zip(zipname, 10, 1024)
+      app_package = AppPackage.new([], File.new(zipname))
+      AppConfig[:max_droplet_size] = unzipped_size - 1024
+      em do
+        Fiber.new do
+          expect do
+            app_package.send(:check_package_size)
+          end.to raise_error(AppPackageError, /exceeds/)
+          EM.stop
+        end.resume
+      end
+    end
+
+    it 'should raise an instance of AppPackageError if the total size is too large' do
+      CloudController.resource_pool = FilesystemPool.new(:directory => @tmpdir)
+      tf = Tempfile.new('mytemp')
+      tf.write("A" * 1024)
+      tf.close
+      CloudController.resource_pool.add_path(tf.path)
+      sha1 = Digest::SHA1.file(tf.path).hexdigest
+      zipname = File.join(@tmpdir, "test.zip")
+      unzipped_size = create_zip(zipname, 1, 1024)
+      app_package = AppPackage.new(nil, File.new(zipname), [{:sha1 => sha1, :fn => 'test/path'}])
+      AppConfig[:max_droplet_size] = unzipped_size + 512
+      em do
+        Fiber.new do
+          expect do
+            app_package.send(:check_package_size)
+          end.to raise_error(AppPackageError, /exceeds/)
+          EM.stop
+        end.resume
+      end
+
+    end
+  end
+
   describe '.blocking_defer' do
     it 'should result the result of the deferred operation' do
       deferred_result = nil
@@ -65,5 +155,18 @@ describe AppPackage do
       EM.add_timer(timeout) { EM.stop }
       yield
     end
+  end
+
+  def create_zip(zip_name, file_count, file_size=1024)
+    total_size = file_count * file_size
+    file_paths = []
+    file_count.times do |ii|
+      tf = Tempfile.new("ziptest_#{ii}")
+      file_paths << tf.path
+      tf.write("A" * file_size)
+      tf.close
+    end
+    system("zip #{zip_name} #{file_paths.join(' ')}").should be_true
+    total_size
   end
 end
