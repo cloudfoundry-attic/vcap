@@ -1,0 +1,18 @@
+---
+local_db: sqlite3:/var/vcap/services/mvstore/mvstore_node.db
+mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
+base_dir: /var/vcap/services/mvstore/instances
+mvstore_log_dir: /var/vcap/services/mvstore/logs
+pid: /var/vcap/sys/run/mvstore_node.pid
+index: <%= node[:mvstore_node][:index] %>
+available_memory: <%= node[:mvstore_node][:available_memory] %>
+max_memory: <%= node[:mvstore_node][:max_memory] %>
+node_id: <%= "mvstore_node_#{node[:mvstore_node][:index]}" %>
+mvstore_path: <%= File.join(node[:mvstore][:path], "bin", "mvStore", "server", "bin", "mvstored") %>
+mvstore_restore_path: mvstore_restore
+port_range:
+  first: 25001
+  last: 45000
+migration_nfs: /mnt/migration
+logging:
+  level: debug

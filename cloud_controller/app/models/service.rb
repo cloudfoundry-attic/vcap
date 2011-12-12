@@ -100,6 +100,8 @@ class Service < ActiveRecord::Base
       'database'
     when /postgresql/
       'database'
+    when /mvstore/
+      'database'
     when /redis/
       'key-value'
     when /mongodb/

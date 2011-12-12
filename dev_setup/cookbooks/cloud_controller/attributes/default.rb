@@ -16,4 +16,4 @@ default[:cloud_controller][:staging][:spring] = "spring.yml"
 default[:cloud_controller][:staging][:java_web] = "java_web.yml"
 
 # Default builtin services
-default[:cloud_controller][:builtin_services] = ["redis", "mongodb", "mysql", "neo4j"]
+default[:cloud_controller][:builtin_services] = ["redis", "mongodb", "mysql", "neo4j", "mvstore"]
