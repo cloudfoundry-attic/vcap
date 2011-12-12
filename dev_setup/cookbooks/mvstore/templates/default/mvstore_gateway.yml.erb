@@ -1,0 +1,16 @@
+---
+cloud_controller_uri: <%= node[:cloud_controller][:service_api_uri] %>
+service:
+  name: mvstore
+  version: "1.0"
+  description: 'MVStore database'
+  plans: ['free']
+  tags: ['mvstore', 'nosql']
+host: localhost
+index: 0
+token: <%= node[:mvstore_node][:token] %>
+mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
+pid: /var/vcap/sys/run/mvstore_service.pid
+logging:
+  level: debug
+# allow_over_provisioning: false
