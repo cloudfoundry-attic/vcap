@@ -227,4 +227,12 @@ shared_examples "a warden server" do |container_klass|
     end
   end
 
+  describe "container statistics" do
+    it 'should respond to the "stats" command' do
+      handle = client.call("create")
+      result = client.call("stats", handle)
+      result.kind_of?(Array).should be_true
+    end
+  end
+
 end

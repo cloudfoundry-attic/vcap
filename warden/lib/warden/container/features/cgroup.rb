@@ -31,6 +31,25 @@ module Warden
             end
           end
         end
+
+        def cgroup_root_path
+          File.join("/dev/cgroup", "instance-#{self.handle}")
+        end
+
+        def get_stats
+          stats = super
+
+          begin
+            File.open(File.join(cgroup_root_path, "memory.usage_in_bytes"), 'r') do |f|
+              usage = f.read
+              stats['mem_usage_B'] = Integer(usage.chomp)
+            end
+          rescue => e
+            raise WardenError.new("Failed getting memory usage: #{e}")
+          end
+
+          stats
+        end
       end
     end
   end

@@ -275,6 +275,12 @@ module Warden
         end
       end
 
+      def process_stats(request)
+        request.require_arguments { |n| n == 2 }
+        container = find_container(request[1])
+        container.stats
+      end
+
       protected
 
       def find_container(handle)

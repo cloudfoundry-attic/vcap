@@ -153,10 +153,6 @@ module Warden
         File.join(root_path, ".instance-#{handle}")
       end
 
-      def cgroup_root_path
-        File.join("/dev/cgroup", "instance-#{self.handle}")
-      end
-
       def create
         if @created
           raise WardenError.new("container is already created")
@@ -275,6 +271,22 @@ module Warden
         else
           raise WardenError.new("Unknown limit #{limit_name}")
         end
+      end
+
+      def stats
+        unless @created
+          raise WardenError.new("container is not yet created")
+        end
+
+        if @destroyed
+          raise WardenError.new("container is already destroyed")
+        end
+
+        get_stats.to_a
+      end
+
+      def get_stats
+        {}
       end
 
       protected

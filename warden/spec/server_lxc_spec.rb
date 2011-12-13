@@ -18,10 +18,10 @@ shared_context :server_lxc do
   }
 end
 
-describe "server implementing LXC" do
+describe "server implementing LXC", :needs_root => true do
   it_behaves_like "a warden server", Warden::Container::LXC
 
-  describe 'should allow setting memory limits', :needs_root => true do
+  describe 'should allow setting memory limits' do
     include_context :warden_server
     include_context :warden_client
 
@@ -153,6 +153,13 @@ describe "server implementing LXC" do
         client.call("run", handle, "ls")
       end.to raise_error(/unknown handle/)
     end
+
+    it 'should return "disk_usage_B" as an entry returned from "stats"' do
+      handle = client.call("create")
+      stats = client.call("stats", handle)
+      stats = stats.inject({}) {|h, s| h[s[0]] = s[1]; h }
+      stats['disk_usage_B'].should > 0
+    end
   end
 
   describe "ip filtering", :netfilter => true do
@@ -194,6 +201,18 @@ describe "server implementing LXC" do
       reply = client.call("run", @handle, "ping -q -W 1 -c 1 8.8.8.8")
       reply[0].should == 0
       File.read(reply[1]).should match(/\b1 received\b/i)
+    end
+  end
+
+  describe "cgroup" do
+
+    include_context :server_lxc
+
+    it 'should return "mem_usage_B" as an entry returned from "stats"' do
+      handle = client.call("create")
+      stats = client.call("stats", handle)
+      stats = stats.inject({}) {|h, s| h[s[0]] = s[1]; h }
+      stats["mem_usage_B"].should > 0
     end
   end
 end
