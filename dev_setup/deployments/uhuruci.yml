@@ -11,3 +11,4 @@ jobs:
     - ccdb
     - router
     - mssql_gateway
+    - mysql_gateway
