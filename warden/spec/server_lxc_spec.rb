@@ -53,6 +53,21 @@ describe "server implementing LXC" do
       raw_lim = File.read(File.join("/dev/cgroup/", "instance-#{handle}", "memory.limit_in_bytes"))
       raw_lim.to_i.should == hund_mb
     end
+
+    it 'destroys containers in which an oom event occurs' do
+      one_mb = 1024 * 1024
+      handle = client.call("create")
+      usage = File.read(File.join("/dev/cgroup/", "instance-#{handle}", "memory.usage_in_bytes"))
+      mem_limit = usage.to_i + 2 * one_mb
+      client.call("limit", handle, "mem", mem_limit)
+      # Allocate 20MB, this should OOM and cause the container to be torn down
+      cmd = 'perl -e \'for ($i = 0; $i < 20; $i++ ) { $foo .= "A" x (1024 * 1024); }\''
+      res = client.call("run", handle, cmd)
+      res[0].should be_nil
+      expect do
+        client.call("run", handle, "ls")
+      end.to raise_error(/unknown handle/)
+    end
   end
 
   describe 'when configured with quota support', :needs_quota_config => true do
