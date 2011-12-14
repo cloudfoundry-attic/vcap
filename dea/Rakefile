@@ -30,10 +30,10 @@ end
 
 namespace "test" do
   task "spec" do |t|
-    sh("cd spec && rake spec")
+    sh("cd spec && bundle exec rake spec")
   end
 
  task "spec:rcov" do |t|
-    sh("cd spec && rake spec:rcov")
+    sh("cd spec && bundle exec rake spec:rcov")
   end
 end
