@@ -48,6 +48,8 @@ describe 'DEA Agent' do
     }
     @nats_server = NatsComponent.new(@nats_cfg)
 
+    @free_port = VCAP.grab_ephemeral_port
+
     # DEA
     @dea_cfg = {
       'base_dir'     => @run_dir,
@@ -69,6 +71,7 @@ describe 'DEA Agent' do
         }
       },
       'disable_dir_cleanup' => true,
+      'port_range' => Range.new(@free_port, @free_port).to_s,
     }
     @dea_config_file = File.join(@run_dir, 'dea.config')
     File.open(@dea_config_file, 'w') {|f| YAML.dump(@dea_cfg, f) }
@@ -145,6 +148,16 @@ describe 'DEA Agent' do
       droplet_info["tags"].should == {"framework"=>"sinatra", "runtime"=>"ruby18"}
       droplet_info["uris"].should == ["test_app.vcap.me"]
     end
+
+    it 'should start a droplet on a particular port, when there is a singleton port range specified' do
+      droplet_info = start_droplet(@nats_server.uri, @droplet)
+      droplet_info.should_not be_nil
+      wait_for { port_open?(droplet_info['port']) }.should be_true
+      droplet_info["tags"].should == {"framework"=>"sinatra", "runtime"=>"ruby18"}
+      droplet_info["uris"].should == ["test_app.vcap.me"]
+      droplet_info['port'].should == @free_port
+    end
+
 
     it 'should heartbeat a running droplet' do
       droplet_info = start_droplet(@nats_server.uri, @droplet)
