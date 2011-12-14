@@ -39,8 +39,8 @@ class ForkedComponent
     fork do
       fn = File.join(@output_basedir, "#{@name}.#{Process.pid}.out")
       outfile = File.new(fn, 'w+')
-      $stderr.reopen(outfile)
-      $stdout.reopen(outfile)
+      #$stderr.reopen(outfile)
+      #$stdout.reopen(outfile)
       exec(@cmd)
     end
     wait_for { File.exists? @pid_filename }

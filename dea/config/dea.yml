@@ -11,8 +11,12 @@ local_route: 127.0.0.1
 # Port for accessing the files of running applications
 filer_port: 12345
 
+# Port range for running applications
+# port_range: 34600..45000
+
 # NATS message bus URI
 mbus: nats://localhost:4222/
+
 intervals:
   # Time interval between heartbeats sent to the Health Manager
   heartbeat: 10
