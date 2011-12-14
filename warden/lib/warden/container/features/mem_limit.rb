@@ -58,8 +58,8 @@ module Warden
 
           def unregister
             debug "Unregistering OOM Notifier for container '#{self.container.handle}'"
-            @io.close rescue nil
             detach
+            @io.close rescue nil
           end
         end # OomNotifier
 

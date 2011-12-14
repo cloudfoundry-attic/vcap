@@ -82,6 +82,7 @@ module Warden
     end
 
     def self.run!
+      ::EM.epoll
       ::EM.run {
         f = Fiber.new do
           container_klass.setup(self.config)
