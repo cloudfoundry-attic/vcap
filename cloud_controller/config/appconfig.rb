@@ -230,3 +230,5 @@ unless AppConfig.has_key?(:allow_registration)
   $stderr.puts "Allow registration not set, defaulting to true"
   AppConfig[:allow_registration] = true
 end
+
+AppConfig[:max_droplet_size] ||= 512 * 1024 * 1024

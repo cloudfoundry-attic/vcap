@@ -13,6 +13,7 @@ OPTIONS:
   -c           deployment config
   -d           cloudfoundry home
   -r           cloud foundry repo
+  -b           cloud foundry repo branch/tag/SHA
 EOF
 }
 
@@ -26,7 +27,7 @@ fi
 
 APT_CONFIG="-o Acquire::http::No-Cache=True -o Acquire::BrokenProxy=true -o Acquire::Retries=3"
 
-while getopts "had:p:c:r:" OPTION
+while getopts "had:p:c:r:b:" OPTION
 do
   case $OPTION in
     h)
@@ -45,6 +46,9 @@ do
     r)
       VCAP_REPO=$OPTARG
       ;;
+    b)
+      VCAP_REPO_BRANCH=$OPTARG
+      ;;
     p)
       PROXY=$OPTARG
       export http_proxy=$PROXY
@@ -58,6 +62,10 @@ fi
 
 if [ -z "$VCAP_REPO" ]; then
   VCAP_REPO=https://github.com/cloudfoundry/vcap.git
+fi
+
+if [ -z "$VCAP_REPO_BRANCH" ]; then
+  VCAP_REPO_BRANCH=master
 fi
 
 function run_cmd () {
@@ -101,7 +109,7 @@ fi
 run_cmd apt-get $APT_CONFIG install -qym git-core
 [ -d $CLOUDFOUNDRY_HOME ] || mkdir $CLOUDFOUNDRY_HOME
 if [ ! -d $CLOUDFOUNDRY_HOME/vcap ]; then
-   (cd $CLOUDFOUNDRY_HOME && git clone $VCAP_REPO && cd vcap && git submodule update --init)
+   (cd $CLOUDFOUNDRY_HOME && git clone $VCAP_REPO && cd vcap && git submodule update --init && git checkout $VCAP_REPO_BRANCH)
     if [ $? != 0 ]; then
       echo "Unable to clone cloudfoundry repo."
       exit 1

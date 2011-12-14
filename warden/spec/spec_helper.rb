@@ -1,5 +1,7 @@
 require "rspec"
-require "warden/server"
+require "tempfile"
+
+Dir["./spec/support/**/*.rb"].each { |f| require f }
 
 def em(options = {})
   raise "no block given" unless block_given?
@@ -14,6 +16,14 @@ def em(options = {})
   }
 end
 
+def em_fibered(options = {}, &blk)
+  em(options) do
+    Fiber.new do
+      blk.call
+    end.resume
+  end
+end
+
 def done
   raise "reactor not running" if !::EM.reactor_running?
 
@@ -24,58 +34,23 @@ def done
   }
 end
 
-shared_context :warden do
-
-  let(:unix_domain_path) {
-    File.expand_path("../../tmp/warden.sock", __FILE__)
-  }
-
-  let(:warden_container_root) {
-    File.expand_path("../../root", __FILE__)
-  }
-
-  before :each do
-    FileUtils.rm_f(unix_domain_path)
-
-    @pid = fork do
-      Signal.trap("TERM") { exit }
-
-      Warden::Server::Logger.setup_logger \
-        :level => :debug,
-        :file => File.expand_path("../../tmp/warden.log", __FILE__)
-
-      ENV["warden_container_root"] = warden_container_root
-      Warden::Server.unix_domain_path = unix_domain_path
-      Warden::Server.run!
-    end
-
-    # Wait for the socket to come up
-    until File.exist?(unix_domain_path)
-      if Process.waitpid(@pid, Process::WNOHANG)
-        STDERR.puts "Warden process exited before socket was up; aborting spec suite."
-        exit 1
-      end
-
-      sleep 0.01
-    end
+RSpec.configure do |config|
+  if Process.uid != 0
+    config.filter_run_excluding :needs_root => true
   end
 
-  after :each do
-    `kill -9 #{@pid}`
-    Process.waitpid(@pid)
+  unless (Process.uid == 0) && ENV['WARDEN_TEST_QUOTA_FS'] && ENV['WARDEN_TEST_REPORT_QUOTA_PATH']
+    config.filter_run_excluding :needs_quota_config => true
+  end
 
-    # Destroy all artifacts
-    Dir[File.join(warden_container_root, ".instance-*")].each do |path|
-      next if path.match(/-skeleton$/)
-
-      started = File.join(path, "started")
-      if File.exist?(started)
-        stop_script = File.join(path, "stop.sh")
-        system(stop_script) if File.exist?(stop_script)
-      end
-
-      # Container should be stopped and destroyed by now...
-      system("rm -rf #{path}")
-    end
+  config.before(:each) do
+    config = {
+      # Run every logging statement, but discard output
+      :logger => {
+        :level => :debug2,
+        :file  => '/dev/null',
+      },
+    }
+    Warden::Server.setup(config)
   end
 end

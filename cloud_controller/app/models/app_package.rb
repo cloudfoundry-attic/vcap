@@ -22,6 +22,7 @@ class AppPackage
   def to_zip
     tmpdir = Dir.mktmpdir
     dir = path = nil
+    check_package_size
     timed_section(CloudController.logger, 'app_to_zip') do
       dir = unpack_upload
       synchronize_pool_with(dir)
@@ -107,6 +108,52 @@ private
     new_path = File.join(package_dir, sha1)
     FileUtils.mv(path, new_path)
     new_path
+  end
+
+  # Verifies that the recreated droplet size is less than the
+  # maximum allowed by the AppConfig.
+  def check_package_size
+    unless @uploaded_file
+      raise AppPackageError, "Invalid uploaded file"
+    end
+
+    # Avoid stat'ing files in the resource pool if possible
+    total_size = get_unzipped_size
+    unless total_size <= AppConfig[:max_droplet_size]
+      limit_str = VCAP.pp_bytesize(AppConfig[:max_droplet_size])
+      size_str = VCAP.pp_bytesize(total_size)
+      CloudController.logger.warn "Zipped app is #{size_str}, limit is #{limit_str}"
+      raise AppPackageError, "Application exceeds maximum allowed size (#{limit_str})"
+    end
+
+    # Ugh, this stat's all the files that would need to be copied
+    # from the resource pool. Consider caching sizes in resource pool?
+    sizes = CloudController.resource_pool.resource_sizes(@resource_descriptors)
+    total_size += sizes.reduce(0) {|accum, cur| accum + cur[:size] }
+    unless total_size <= AppConfig[:max_droplet_size]
+      limit_str = VCAP.pp_bytesize(AppConfig[:max_droplet_size])
+      size_str = VCAP.pp_bytesize(total_size)
+      CloudController.logger.warn "Zipped app + cached resources is #{size_str}, limit is #{limit_str}"
+      raise AppPackageError, "Application exceeds maximum allowed size (#{limit_str})"
+    end
+  end
+
+  def get_unzipped_size
+    cmd = "unzip -l #{@uploaded_file.path}"
+    f = Fiber.current
+    EM.system(cmd) {|output, status| f.resume({:status => status, :stdout => output}) }
+    result = Fiber.yield
+    unless result[:status].exitstatus == 0
+      raise AppPackageError, "Failed listing application archive"
+    end
+
+    lines = result[:stdout].split(/\n/)
+    matches = lines.last.match(/^\s*(\d+)\s+(\d+) file/)
+    unless matches
+      raise AppPackageError, "Failed parsing application archive listing"
+    end
+
+    Integer(matches[1])
   end
 
   def unpack_upload

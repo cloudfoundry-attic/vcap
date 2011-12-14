@@ -7,7 +7,7 @@ gem 'eventmachine',  '~> 0.12.11.cloudfoundry.2'
 gem "http_parser.rb",  :require => "http/parser"
 gem "yajl-ruby", :require => ["yajl", "yajl/json_gem"]
 
-gem 'vcap_common', :path => '../common'
+gem 'vcap_common'
 gem 'vcap_logging', :require => ['vcap/logging']
 
 group :test do
