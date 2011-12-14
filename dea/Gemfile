@@ -7,11 +7,11 @@ gem 'em-http-request', '~> 1.0.0.beta.3', :require => 'em-http'
 
 gem 'rack', :require => ["rack/utils", "rack/mime"]
 gem 'rake'
-gem 'thin'
+gem 'thin', '~> 1.2.11'
 gem 'yajl-ruby', :require => ['yajl', 'yajl/json_gem']
 gem 'logging', '>= 1.5.0'
 
-gem 'vcap_common', :path => '../common'
+gem 'vcap_common'
 gem 'vcap_logging', :require => ['vcap/logging']
 
 group :test do
