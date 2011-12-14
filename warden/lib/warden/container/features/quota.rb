@@ -82,6 +82,16 @@ module Warden
           "ok"
         end
 
+        def get_stats
+          stats = super
+
+          if self.class.quota_monitor
+            stats['disk_usage_B'] = 1024 * self.class.quota_monitor.usage_for_container(self)
+          end
+
+          stats
+        end
+
         protected
 
         def set_quota(block_limit)
@@ -199,6 +209,16 @@ module Warden
           def unregister(container)
             debug "Unregistering container for uid #{container.uid}"
             @callbacks.delete(container.uid)
+          end
+
+          def usage_for_container(container)
+            unless @callbacks[container.uid]
+              return nil
+            end
+
+            quota_info = get_quota_usage
+
+            quota_info[container.uid][:usage][:block]
           end
 
           private

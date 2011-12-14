@@ -82,6 +82,7 @@ module Warden
     end
 
     def self.run!
+      ::EM.epoll
       ::EM.run {
         f = Fiber.new do
           container_klass.setup(self.config)
@@ -273,6 +274,12 @@ module Warden
         else
           container.get_limit(request[2])
         end
+      end
+
+      def process_stats(request)
+        request.require_arguments { |n| n == 2 }
+        container = find_container(request[1])
+        container.stats
       end
 
       protected
