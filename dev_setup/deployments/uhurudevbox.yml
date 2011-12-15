@@ -1,7 +1,7 @@
 ---
 deployment:
   domain: "uhurucloud.net"
-  name: "uhuruci"
+  name: "uhurudevbox"
 jobs:
   install:
     - nats_server
