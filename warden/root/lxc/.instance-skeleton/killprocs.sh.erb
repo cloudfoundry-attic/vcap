@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# This script is a placeholder until we are no longer using lxc-tools
+# and can safely kill the init process inside the container without
+# destroying the associated cgroup.
+
+for pid in `cat /dev/cgroup/instance-<%= config["id"] %>/tasks`
+do
+  if [ ! -e "/proc/$pid/cmdline" ]
+  then
+    continue
+  fi
+
+  cmdline=`cat /proc/$pid/cmdline`
+  if [ "$cmdline" != "/sbin/init" ]
+  then
+    kill -9 $pid
+  fi
+done
