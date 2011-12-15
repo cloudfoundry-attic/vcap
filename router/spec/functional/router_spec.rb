@@ -1,7 +1,10 @@
 # Copyright (c) 2009-2011 VMware, Inc.
 require File.dirname(__FILE__) + '/spec_helper'
+require "base64"
 
 describe 'Router Functional Tests' do
+  include Functional
+
   before :each do
     @nats_server = NatsServer.new
     @nats_server.start_server
@@ -50,10 +53,7 @@ describe 'Router Functional Tests' do
     healthz_resp = Net::HTTP.new(host, port).start { |http| http.request(healthz_req) }
     healthz_resp.body.should =~ /ok/i
 
-    varz_req = Net::HTTP::Get.new("/varz")
-    varz_req.basic_auth *credentials
-    varz_resp = Net::HTTP.new(host, port).start { |http| http.request(varz_req) }
-    varz = JSON.parse(varz_resp.body, :symbolize_keys => true)
+    varz = get_varz()
     varz[:requests].should be_a_kind_of(Integer)
     varz[:bad_requests].should be_a_kind_of(Integer)
     varz[:client_connections].should be_a_kind_of(Integer)
@@ -65,8 +65,7 @@ describe 'Router Functional Tests' do
     app = TestApp.new('router_test.vcap.me')
     dea = DummyDea.new(@nats_server.uri, '1234')
     dea.register_app(app)
-    app.verify_registered('127.0.0.1', RouterServer.port)
-    app.stop
+    app.verify_registered
   end
 
   it 'should properly unregister an application endpoint' do
@@ -74,91 +73,9 @@ describe 'Router Functional Tests' do
     app = TestApp.new('router_test.vcap.me')
     dea = DummyDea.new(@nats_server.uri, '1234')
     dea.register_app(app)
-    app.verify_registered('127.0.0.1', RouterServer.port)
+    app.verify_registered
     dea.unregister_app(app)
-    # We should be unregistered here..
-    # Send out simple request and check request and response
-    req = simple_http_request('router_test.cap.me', '/')
-    verify_vcap_404(req, '127.0.0.1', RouterServer.port)
-    app.stop
-  end
-
-  it 'should properly distibute messages between multiple backends' do
-    num_apps = 10
-    num_requests = 100
-    dea = DummyDea.new(@nats_server.uri, '1234')
-
-    apps = []
-    for ii in (0...num_apps)
-      app = TestApp.new('lb_test.vcap.me')
-      dea.register_app(app)
-      apps << app
-    end
-
-    req = simple_http_request('lb_test.vcap.me', '/')
-    for ii in (0...num_requests)
-      TCPSocket.open('127.0.0.1', RouterServer.port) {|rs| rs.send(req, 0) }
-    end
-    sleep(0.25) # Wait here for requests to trip accept state
-
-    app_sockets = apps.collect { |a| a.socket }
-    ready = IO.select(app_sockets, nil, nil, 1)
-    ready[0].should have(num_apps).items
-    apps.each {|a| a.stop }
-  end
-
-  it 'should properly do sticky sessions' do
-    num_apps = 10
-    dea = DummyDea.new(@nats_server.uri, '1234')
-
-    apps = []
-    for ii in (0...num_apps)
-      app = TestApp.new('sticky.vcap.me')
-      dea.register_app(app)
-      apps << app
-    end
-
-    vcap_id = app_socket = nil
-    app_sockets = apps.collect { |a| a.socket }
-
-    TCPSocket.open('127.0.0.1', RouterServer.port) do |rs|
-      rs.send(STICKY_REQUEST, 0)
-      ready = IO.select(app_sockets, nil, nil, 1)
-      ready[0].should have(1).items
-      app_socket = ready[0].first
-      ss = app_socket.accept_nonblock
-      req_received = ss.recv(STICKY_REQUEST.bytesize)
-      req_received.should == STICKY_REQUEST
-      # Send a response back.. This will set the sticky session
-      ss.send(STICKY_RESPONSE, 0)
-      response = rs.read(STICKY_RESPONSE.bytesize)
-      # Make sure the __VCAP_ID__ has been set
-      response =~ /Set-Cookie:\s*__VCAP_ID__=([^;]+);/
-      (vcap_id = $1).should be
-    end
-
-    cookie = "__VCAP_ID__=#{vcap_id}"
-    sticky_request = simple_sticky_request('sticky.vcap.me', '/sticky', cookie)
-
-    # Now fire off requests, all should go to same socket as first
-    (0...5).each do
-      TCPSocket.open('127.0.0.1', RouterServer.port) do |rs|
-        rs.send(sticky_request, 0)
-      end
-    end
-
-    ready = IO.select(app_sockets, nil, nil, 1)
-    ready[0].should have(1).items
-    app_socket.should == ready[0].first
-
-    for app in apps
-      dea.unregister_app(app)
-    end
-
-    # Check that is is gone
-    verify_vcap_404(STICKY_REQUEST, '127.0.0.1', RouterServer.port)
-
-    apps.each {|a| a.stop }
+    app.verify_unregistered
   end
 
   it 'should properly exit when NATS fails to reconnect' do
@@ -194,11 +111,20 @@ describe 'Router Functional Tests' do
     reply
   end
 
-  def verify_vcap_404(req, router_host, router_port)
-    TCPSocket.open(router_host, router_port) do |rs|
-      rs.send(req, 0)
-      response = rs.read(VCAP_NOT_FOUND.bytesize)
-      response.should == VCAP_NOT_FOUND
-    end
+  def get_varz
+    reply = json_request(@nats_server.uri, 'vcap.component.discover')
+    reply.should_not be_nil
+
+    credentials = reply[:credentials]
+    credentials.should_not be_nil
+
+    host, port = reply[:host].split(":")
+
+    varz_req = Net::HTTP::Get.new("/varz")
+    varz_req.basic_auth *credentials
+    varz_resp = Net::HTTP.new(host, port).start { |http| http.request(varz_req) }
+    varz = JSON.parse(varz_resp.body, :symbolize_keys => true)
+    varz
   end
+
 end

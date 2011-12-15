@@ -49,7 +49,11 @@ namespace "test" do
     sh("cd spec && rake spec")
   end
 
- task "spec:rcov" do |t|
+  task "test" do |t|
+    sh("cd spec && rake test")
+  end
+
+  task "spec:rcov" do |t|
     sh("cd spec && rake spec:rcov")
   end
 end
