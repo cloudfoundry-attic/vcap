@@ -1,0 +1,21 @@
+#!/usr/bin/env ruby
+ENV['BUNDLE_GEMFILE'] ||= File.expand_path('../../Gemfile', __FILE__)
+
+require 'rubygems'
+require 'bundler/setup'
+
+$LOAD_PATH.unshift(File.expand_path('../../lib', __FILE__))
+
+require 'vcap/common'
+require 'vcap/package_cache'
+
+config_file = VCAP::PackageCache::Config::DEFAULT_CONFIG_PATH
+
+OptionParser.new do |op|
+  op.on('-c', '--config [FILENAME]', 'Config filename') do |val|
+    config_file = val
+  end
+end.parse!
+
+VCAP::PackageCache.init(config_file)
+VCAP::PackageCache.start_server!

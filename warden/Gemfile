@@ -1,0 +1,10 @@
+source "http://rubygems.org"
+
+gemspec
+
+gem 'rake'
+gem "vcap_logging"
+
+group :spec do
+  gem "rspec"
+end
