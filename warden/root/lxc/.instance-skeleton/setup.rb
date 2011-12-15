@@ -18,10 +18,12 @@ Dir.chdir File.expand_path("..", $0)
 # Write control scripts
 write "start.sh", ERB.new(File.read "start.sh.erb").result
 write "stop.sh", ERB.new(File.read "stop.sh.erb").result
+write "killprocs.sh", ERB.new(File.read "killprocs.sh.erb").result
 
 script <<-EOS
 chmod +x start.sh
 chmod +x stop.sh
+chmod +x killprocs.sh
 EOS
 
 # Write LXC configuration
