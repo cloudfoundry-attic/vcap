@@ -8,6 +8,6 @@ name: UAA
 
 database:
   driverClassName: org.postgresql.Driver
-  url: jdbc:postgresql://<% #{node[:uaadb][:host]} %>:<% #{node[:uaadb][:port]} %>/<% #{node[:uaadb][:database]} %>
+  url: <%= "jdbc:postgresql://#{node[:uaadb][:host]}:#{node[:uaadb][:port]}/#{node[:uaadb][:database]}"%>
   username: root
   password: changeme
