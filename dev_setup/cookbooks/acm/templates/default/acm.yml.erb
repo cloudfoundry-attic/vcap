@@ -4,7 +4,7 @@ name: ACM
 port: 9090
 logging:
   level: DEBUG
-  log_file: /tmp/acm.log
+  file: /tmp/acm.log
 db:
   database: <%= "\"postgres://#{node[:acmdb][:user]}:#{node[:acmdb][:password]}@#{node[:acmdb][:host]}:#{node[:acmdb][:port]}/#{node[:acmdb][:database]}\"" %>
   max_connections: 10
