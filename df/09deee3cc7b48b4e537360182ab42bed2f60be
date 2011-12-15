@@ -1,0 +1,7 @@
+Code-Review+2: Matt Page <mpage@vmware.com>
+Verified+1: Patrick Bozeman <pbozeman@vmware.com>
+Submitted-by: Patrick Bozeman <pbozeman@vmware.com>
+Submitted-at: Thu, 15 Dec 2011 23:57:58 +0000
+Reviewed-on: http://cloudfoundry-codereview.qa.mozycloud.com/gerrit/2465
+Project: vcap
+Branch: refs/heads/resource_relative_path_fix
