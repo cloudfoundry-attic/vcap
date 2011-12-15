@@ -9,6 +9,12 @@ module Warden
 
   module Container
 
+    module State
+      class Born;      end
+      class Active;    end
+      class Destroyed; end
+    end
+
     class Base
 
       include EventEmitter
@@ -87,8 +93,7 @@ module Warden
         @resources = resources
         @connections = ::Set.new
         @jobs = {}
-        @created = false
-        @destroyed = false
+        @state = State::Born
 
         on(:after_create) {
           # Clients should be able to look this container up
@@ -154,11 +159,9 @@ module Warden
       end
 
       def create
-        if @created
-          raise WardenError.new("container is already created")
-        end
+        check_state_in(State::Born)
 
-        @created = true
+        self.state = State::Active
 
         emit(:before_create)
         do_create
@@ -172,15 +175,9 @@ module Warden
       end
 
       def destroy
-        unless @created
-          raise WardenError.new("container is not yet created")
-        end
+        check_state_in(State::Active)
 
-        if @destroyed
-          raise WardenError.new("container is already destroyed")
-        end
-
-        @destroyed = true
+        self.state = State::Destroyed
 
         emit(:before_destroy)
         do_destroy
@@ -195,13 +192,7 @@ module Warden
       end
 
       def spawn(script)
-        unless @created
-          raise WardenError.new("container is not yet created")
-        end
-
-        if @destroyed
-          raise WardenError.new("container is already destroyed")
-        end
+        check_state_in(State::Active)
 
         job = create_job(script)
         jobs[job.job_id.to_s] = job
@@ -211,13 +202,7 @@ module Warden
       end
 
       def link(job_id)
-        unless @created
-          raise WardenError.new("container is not yet created")
-        end
-
-        if @destroyed
-          raise WardenError.new("container is already destroyed")
-        end
+        check_state_in(State::Active)
 
         job = jobs[job_id.to_s]
         unless job
@@ -232,30 +217,20 @@ module Warden
       end
 
       def net_in
-        unless @created
-          raise WardenError.new("container is not yet created")
-        end
-
-        if @destroyed
-          raise WardenError.new("container is already destroyed")
-        end
+        check_state_in(State::Active)
 
         do_net_in
       end
 
       def net_out(spec)
-        unless @created
-          raise WardenError.new("container is not yet created")
-        end
-
-        if @destroyed
-          raise WardenError.new("container is already destroyed")
-        end
+        check_state_in(State::Active)
 
         do_net_out(spec)
       end
 
       def get_limit(limit_name)
+        check_state_in(State::Active)
+
         getter = "get_limit_#{limit_name}"
         if respond_to?(getter)
           self.send(getter)
@@ -265,6 +240,8 @@ module Warden
       end
 
       def set_limit(limit_name, args)
+        check_state_in(State::Active)
+
         setter = "set_limit_#{limit_name}"
         if respond_to?(setter)
           self.send(setter, args)
@@ -274,13 +251,7 @@ module Warden
       end
 
       def stats
-        unless @created
-          raise WardenError.new("container is not yet created")
-        end
-
-        if @destroyed
-          raise WardenError.new("container is already destroyed")
-        end
+        check_state_in(State::Active)
 
         get_stats.to_a
       end
@@ -290,6 +261,21 @@ module Warden
       end
 
       protected
+
+      def state
+        @state
+      end
+
+      def state=(state)
+        @state = state
+      end
+
+      def check_state_in(*states)
+        unless states.include?(self.state)
+          states_str = states.map {|s| s.to_s }.join(', ')
+          raise WardenError.new("Container state must be one of '#{states_str}', current state is '#{self.state}'")
+        end
+      end
 
       class Job
 
