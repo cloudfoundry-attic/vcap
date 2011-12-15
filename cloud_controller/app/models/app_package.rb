@@ -126,12 +126,13 @@ class AppPackage
     working_dir
   end
 
-  #enforce property that any file in resource list must be located in the
-  #apps directory e.g. '../../foo' or a symlink pointing outside working_dir
-  #should raise an exception.
+  # enforce property that any file in resource list must be located in the
+  # apps directory e.g. '../../foo' or a symlink pointing outside working_dir
+  # should raise an exception.
   def resolve_path(working_dir, tainted_path)
-    expanded_path = File.realdirpath(tainted_path, working_dir)
-    pattern = "#{working_dir}/*"
+    expanded_dir  = File.realdirpath(working_dir)
+    expanded_path = File.realdirpath(tainted_path, expanded_dir)
+    pattern = "#{expanded_dir}/*"
     unless File.fnmatch?(pattern, expanded_path)
       raise ArgumentError, "Resource path sanity check failed #{pattern}:#{expanded_path}!!!!"
     end
