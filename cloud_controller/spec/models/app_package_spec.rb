@@ -20,7 +20,7 @@ describe AppPackage do
     it 'should succeed if the given path points to a file in the apps directory' do
       testpath = File.join(@tmpdir,'testfile')
       File.new(testpath, 'w+')
-      @app_package.resolve_path(@tmpdir, 'testfile').should == testpath
+      @app_package.resolve_path(@tmpdir, 'testfile').should == File.realdirpath(testpath)
     end
 
     it 'should fail if the given path does not resolve to a file in the applications directory' do
