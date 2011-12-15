@@ -1,4 +1,4 @@
 #!/usr/bin/env ruby
 # Copyright (c) 2009-2011 VMware, Inc.
 
-exec(File.expand_path("../../bin/acm", __FILE__), *ARGV)
+exec(File.expand_path("../../acm/bin/acm", __FILE__), *ARGV)
