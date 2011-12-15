@@ -1,3 +1,5 @@
+# Copyright (c) 2009-2011 VMware, Inc.
+# Copyright (c) 2011 Uhuru Software, Inc., All Rights Reserved
 class DotNetPlugin < StagingPlugin
   require "json"
 
