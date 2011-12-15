@@ -146,7 +146,7 @@ class Component
         # should help for now.
         if is_cloud_controller?
           cc_dir = File.expand_path(File.join(DIR, '..', 'cloud_controller'))
-          Dir.chdir(cc_dir) { `rake db:migrate` }
+          Dir.chdir(cc_dir) { `bundle exec rake db:migrate` }
         end
         exec("#{component_start_path}")
       end
@@ -299,7 +299,7 @@ module Run
     end
 
     cc_dir = File.expand_path(File.join(DIR, '..', 'cloud_controller'))
-    run_command("Resetting the CloudController database", "cd #{cc_dir} 2>&1 && rake db:drop 2>&1")
+    run_command("Resetting the CloudController database", "cd #{cc_dir} 2>&1 && bundle exec rake db:drop 2>&1")
     puts
 
     cc_log_dir = File.join(cc_dir, 'log')
