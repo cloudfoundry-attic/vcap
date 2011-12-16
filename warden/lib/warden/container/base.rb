@@ -10,8 +10,18 @@ module Warden
   module Container
 
     module State
+      # Container object created, but setup not performed
       class Born;      end
+
+      # Container setup completed
       class Active;    end
+
+      # Triggered by an error condition in the container (OOM, Quota violation)
+      # or explicitly by the user.  All processes have been killed but the
+      # container exists for introspection.  No new commands may be run.
+      class Stopped;    end
+
+      # All state associated with the container has been destroyed.
       class Destroyed; end
     end
 
@@ -88,12 +98,14 @@ module Warden
       attr_reader :resources
       attr_reader :connections
       attr_reader :jobs
+      attr_reader :events
 
       def initialize(resources)
         @resources = resources
         @connections = ::Set.new
         @jobs = {}
         @state = State::Born
+        @events = Set.new
 
         on(:after_create) {
           # Clients should be able to look this container up
@@ -174,8 +186,28 @@ module Warden
         raise WardenError.new("not implemented")
       end
 
-      def destroy
+      def stop
         check_state_in(State::Active)
+
+        self.state = State::Stopped
+
+        emit(:before_stop)
+        do_stop
+        emit(:after_stop)
+
+        "ok"
+      end
+
+      def do_stop
+        raise WardenError.new("not implemented")
+      end
+
+      def destroy
+        check_state_in(State::Active, State::Stopped)
+
+        unless self.state == State::Stopped
+          self.stop
+        end
 
         self.state = State::Destroyed
 
@@ -202,7 +234,7 @@ module Warden
       end
 
       def link(job_id)
-        check_state_in(State::Active)
+        check_state_in(State::Active, State::Stopped)
 
         job = jobs[job_id.to_s]
         unless job
@@ -229,7 +261,7 @@ module Warden
       end
 
       def get_limit(limit_name)
-        check_state_in(State::Active)
+        check_state_in(State::Active, State::Stopped)
 
         getter = "get_limit_#{limit_name}"
         if respond_to?(getter)
@@ -251,13 +283,13 @@ module Warden
       end
 
       def stats
-        check_state_in(State::Active)
+        check_state_in(State::Active, State::Stopped)
 
         get_stats.to_a
       end
 
       def get_stats
-        {}
+        {'events' => self.events.to_a}
       end
 
       protected

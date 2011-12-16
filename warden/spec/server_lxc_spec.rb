@@ -54,7 +54,7 @@ describe "server implementing LXC", :needs_root => true do
       raw_lim.to_i.should == hund_mb
     end
 
-    it 'destroys containers in which an oom event occurs' do
+    it 'stops containers in which an oom event occurs' do
       one_mb = 1024 * 1024
       handle = client.call("create")
       usage = File.read(File.join("/dev/cgroup/", "instance-#{handle}", "memory.usage_in_bytes"))
@@ -63,10 +63,26 @@ describe "server implementing LXC", :needs_root => true do
       # Allocate 20MB, this should OOM and cause the container to be torn down
       cmd = 'perl -e \'for ($i = 0; $i < 20; $i++ ) { $foo .= "A" x (1024 * 1024); }\''
       res = client.call("run", handle, cmd)
-      res[0].should be_nil
+      res[0].should_not == 0
       expect do
         client.call("run", handle, "ls")
-      end.to raise_error(/unknown handle/)
+      end.to raise_error(/state/)
+    end
+
+    it 'should set the "oom" event for containers in which an oom event occurs' do
+      one_mb = 1024 * 1024
+      handle = client.call("create")
+      usage = File.read(File.join("/dev/cgroup/", "instance-#{handle}", "memory.usage_in_bytes"))
+      mem_limit = usage.to_i + 2 * one_mb
+      client.call("limit", handle, "mem", mem_limit)
+      # Allocate 20MB, this should OOM and cause the container to be torn down
+      cmd = 'perl -e \'for ($i = 0; $i < 20; $i++ ) { $foo .= "A" x (1024 * 1024); }\''
+      res = client.call("run", handle, cmd)
+
+
+      stats = client.call("stats", handle)
+      stats = stats.inject({}) {|h, s| h[s[0]] = s[1]; h }
+      stats["events"].include?("oom").should be_true
     end
   end
 
@@ -136,7 +152,7 @@ describe "server implementing LXC", :needs_root => true do
       end.to raise_error(/invalid number of arguments/i)
     end
 
-    it 'should destroy containers that exceed their quotas' do
+    it 'should stop containers that exceed their quotas' do
       handle = client.call("create")
       # Quota limits are in number of 1k blocks
       one_mb = 2048
@@ -147,11 +163,27 @@ describe "server implementing LXC", :needs_root => true do
       File.read(res[2]).should match(/quota exceeded/)
 
       # Give the quota monitor a chance to run
-      sleep(1)
+      sleep(0.5)
 
       expect do
         client.call("run", handle, "ls")
-      end.to raise_error(/unknown handle/)
+      end.to raise_error(/state/)
+    end
+
+    it 'should set the "quota_exceeded" event for containers that exceed their disk quotas' do
+      handle = client.call("create")
+      # Quota limits are in number of 1k blocks
+      one_mb = 2048
+      client.call("limit", handle, "disk", one_mb)
+      client.call("limit", handle, "disk").should == one_mb
+      res = client.call("run", handle, "dd if=/dev/zero of=/tmp/test bs=4MB count=1")
+
+      # Give the quota monitor a chance to run
+      sleep(0.5)
+
+      stats = client.call("stats", handle)
+      stats = stats.inject({}) {|h, s| h[s[0]] = s[1]; h }
+      stats["events"].include?("quota_exceeded").should be_true
     end
 
     it 'should return "disk_usage_B" as an entry returned from "stats"' do

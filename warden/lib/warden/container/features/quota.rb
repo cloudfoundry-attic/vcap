@@ -25,16 +25,16 @@ module Warden
             set_quota(0)
 
             self.class.quota_monitor.register(self) do
-              self.warn "Disk quota (#{self.disk_quota}) exceeded, destroying"
+              self.warn "Disk quota (#{self.disk_quota}) exceeded, stopping"
+              self.events << 'quota_exceeded'
               self.class.quota_monitor.unregister(self)
-              # TODO - Change this to stop() once available
-              self.destroy
+              if self.state == State::Active
+                self.stop
+              end
             end
           end
 
-          on(:after_destroy) {
-            # Release uid used for this container (if any). Only do so if the container
-            # was successfully destroyed.
+          on(:after_stop) {
             if self.class.quota_monitor
               self.class.quota_monitor.unregister(self)
               set_quota(0)
@@ -72,7 +72,7 @@ module Warden
           end
 
           begin
-            block_limit = args[0].to_i
+            block_limit = Integer(args[0])
           rescue
             raise WardenError.new("Invalid limit")
           end
@@ -212,13 +212,12 @@ module Warden
           end
 
           def usage_for_container(container)
-            unless @callbacks[container.uid]
-              return nil
+            quota_info = get_quota_usage([container.uid])
+            if quota_info[container.uid]
+              quota_info[container.uid][:usage][:block]
+            else
+              nil
             end
-
-            quota_info = get_quota_usage
-
-            quota_info[container.uid][:usage][:block]
           end
 
           private
@@ -229,7 +228,7 @@ module Warden
             begin
               # RepQuota#run will raise an error if the repquota command fails,
               # so we are safe to ignore the status code here.
-              quota_info = get_quota_usage
+              quota_info = get_quota_usage(@callbacks.keys)
             rescue WardenError => we
               # This is non-fatal. Assuming the quota was set correctly, this
               # only means that the container won't be torn down in the event of
@@ -254,14 +253,12 @@ module Warden
             debug "Done checking quotas"
           end
 
-          def get_quota_usage
-            if @callbacks.keys.empty?
-              return {}
-            end
+          def get_quota_usage(uids)
+            return {} if uids.empty?
 
             cmd = [@report_quota_path]
             cmd << @filesystem
-            cmd << @callbacks.keys
+            cmd << uids
             cmd = cmd.flatten.join(' ')
 
             debug "Running #{cmd}"

@@ -65,9 +65,9 @@ module Warden
 
               err = WardenError.new("command exited with failure")
               set_deferred_failure(err)
+            else
+              set_deferred_success(p.out)
             end
-
-            set_deferred_success(p.out)
           }
 
           p.errback { |err|

@@ -225,6 +225,12 @@ module Warden
         container.create
       end
 
+      def process_stop(request)
+        request.require_arguments { |n| n == 2 }
+        container = find_container(request[1])
+        container.stop
+      end
+
       def process_destroy(request)
         request.require_arguments { |n| n == 2 }
         container = find_container(request[1])
