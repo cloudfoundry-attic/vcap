@@ -28,11 +28,14 @@ end
 logger.info("Launching tomcat from PID=#{Process.pid}")
 
 maven_opts = "-DPID=$$"
-if config["jvm_args"] then maven_opts += " " + config["jvm_args"] end
+config["jvm_args"] && maven_opts += " " + config["jvm_args"]
+config["spring_profiles"] && maven_opts += " -Dspring.profiles.active=" + config["spring_profiles"]
+logger.info("Tomcat JVM args: #{maven_opts}")
 
-# This is very sensitive.  We need the PID for logging so we nee dto
-# use exec to stay in the same process...
-pid = spawn("export MAVEN_OPTS=#{maven_opts} && exec mvn tomcat:run -P vcap", {:chdir=>root})
+# The form of this next bit is very sensitive.  We need the PID for
+# logging so we need to exec from the shell to stay in the same
+# process...
+pid = spawn("export MAVEN_OPTS=\"#{maven_opts}\" && exec mvn tomcat:run -P vcap", {:chdir=>root})
 Process.detach(pid)
 
 logger.info("Tomcat PID = #{pid}")

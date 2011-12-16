@@ -7,9 +7,7 @@ mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] 
 name: UAA
 
 database:
-  driverClassName: org.postgresql.Driver
   url: jdbc:postgresql://<%= node[:uaadb][:host] %>:<%= node[:uaadb][:port] %>/<%= node[:uaadb][:database] %>
-  username: root
-  password: changeme
 
 jvm_args: -Xmx512m
+spring_profiles: jdbc,postgresql,private
