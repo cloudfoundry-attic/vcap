@@ -235,4 +235,44 @@ shared_examples "a warden server" do |container_klass|
     end
   end
 
+  describe "when stopped" do
+    before :each do
+      @handle = client.call("create")
+    end
+
+    it "should kill all running processes" do
+      job = client.call("spawn", @handle, "sleep 5")
+      # Give the insecure container a chance to write out the pid
+      sleep 0.2
+      client.call("stop", @handle).should == "ok"
+      result = client.call("link", @handle, job)
+      # Command should not have exited cleanly
+      result[0].should_not == 0
+    end
+
+    it "should prevent new commands from being run or spawned" do
+      client.call("stop", @handle).should == "ok"
+      expect do
+        client.call("run", @handle, "echo test")
+      end.to raise_error(/state/)
+      expect do
+        client.call("spawn", @handle, "echo test")
+      end.to raise_error(/state/)
+    end
+
+    it "should allow stats to be queried" do
+      client.call("stop", @handle).should == "ok"
+      stats = client.call("stats", @handle)
+      stats.kind_of?(Array).should be_true
+    end
+
+    it "should allow the container to be destroyed" do
+      client.call("stop", @handle).should == "ok"
+      client.call("destroy", @handle).should == "ok"
+      expect do
+        client.call("stats", @handle)
+      end.to raise_error(/unknown handle/)
+    end
+  end
+
 end

@@ -11,9 +11,6 @@ module Warden
       module MemLimit
 
         class OomNotifier < EM::Connection
-
-          include Logger
-
           class << self
             def for_container(container)
               cgroup_root = container.cgroup_root_path
@@ -42,8 +39,6 @@ module Warden
           # We don't care about the data written to us. Its only purpose is to
           # notify us that a process inside the container OOMed
           def receive_data(_)
-            info "OOM condition occurred inside container #{self.container.handle}"
-
             # We rely on container destruction to unregister ourselves from
             # the event loop and close our event fd (by calling #unregister).
             #
@@ -51,17 +46,25 @@ module Warden
             #     doing a detach inside the read callback.
             EM.next_tick do
               Fiber.new do
-                self.container.destroy
+                self.container.oomed
               end.resume
             end
           end
 
           def unregister
-            debug "Unregistering OOM Notifier for container '#{self.container.handle}'"
             detach
             @io.close rescue nil
           end
         end # OomNotifier
+
+        def oomed
+          self.warn "OOM condition occurred inside container #{self.handle}"
+
+          self.events << 'oom'
+          if self.state == State::Active
+            self.stop
+          end
+        end
 
         def mem_limit
           @mem_limit ||= 0
@@ -98,9 +101,12 @@ module Warden
 
           unless @oom_notifier
             @oom_notifier = OomNotifier.for_container(self)
-            on(:before_destroy) do
-              @oom_notifier.unregister
-              @oom_notifier = nil
+            on(:after_stop) do
+              if @oom_notifier
+                self.debug "Unregistering OOM Notifier for container '#{self.handle}'"
+                @oom_notifier.unregister
+                @oom_notifier = nil
+              end
             end
           end
 
