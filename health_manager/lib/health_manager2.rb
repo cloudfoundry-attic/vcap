@@ -55,8 +55,8 @@ module HealthManager2
     def initialize(config={})
       @config = config
 
-      @known_state_provider = AppStateProvider.new(config)
-      @expected_state_provider = AppStateProvider.new(config)
+      @known_state_provider = AppStateProvider.get_known_state_provider(config)
+      @expected_state_provider = AppStateProvider.get_expected_state_provider(config)
       @scheduler = Scheduler.new(config)
       @harmonizer = Harmonizer.new(config)
       @nudger = Nudger.new(config)
@@ -75,7 +75,6 @@ module HealthManager2
 
       at_interval :droplet_analysis do
 
-
       end
 
     end
@@ -92,7 +91,6 @@ module HealthManager2
 
       quantize_task do
 
-        puts 'QUANTUM: expected state update'
         if droplet = @expected_state_provider.next_droplet
           droplet.update
         else
@@ -102,8 +100,8 @@ module HealthManager2
       end
     end
 
-    def quantize_task
-      immediately(yield) unless yield
+    def quantize_task &block
+      immediately { quantize_task &block } if yield
     end
 
     def mark_task_started(task)
