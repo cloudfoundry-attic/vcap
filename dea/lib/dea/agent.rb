@@ -569,25 +569,33 @@ module DEA
         instance[:secure_user] = user[:user]
       end
 
-      start_operation = proc do
+      start_operation = lambda do
         @logger.debug('Completed download')
 
-        port = VCAP.grab_ephemeral_port
-        instance[:port] = port
-
-        starting = "Starting up instance #{instance[:log_id]} on port:#{port}"
-
-        if debug
-          debug_port = VCAP.grab_ephemeral_port
-          instance[:debug_ip] = VCAP.local_ip
-          instance[:debug_port] = debug_port
-          instance[:debug_mode] = debug
-
-          @logger.info("#{starting} with debugger:#{debug_port}")
+        port = grab_port
+        if port
+          instance[:port] = port
         else
-          @logger.info(starting)
+          @logger.warn("Unable to allocate port for instance#{instance[:log_id]}")
+          stop_droplet(instance)
+          return
         end
 
+        if debug
+          debug_port = grab_port
+          if debug_port
+            instance[:debug_ip] = VCAP.local_ip
+            instance[:debug_port] = debug_port
+            instance[:debug_mode] = debug
+          else
+            @logger.warn("Unable to allocate debug port for instance#{instance[:log_id]}")
+            stop_droplet(instance)
+            return
+          end
+        end
+
+        @logger.info("Starting up instance #{instance[:log_id]} on port:#{instance[:port]} " +
+                     "#{"debuger:" if instance[:debug_port]}#{instance[:debug_port]}")
         @logger.debug("Clients: #{@num_clients}")
         @logger.debug("Reserved Memory Usage: #{@reserved_mem} MB of #{@max_memory} MB TOTAL")
 
@@ -644,7 +652,7 @@ module DEA
             process.send_data("umask 077\n")
           end
           app_env.each { |env| process.send_data("export #{env}\n") }
-          process.send_data("./startup -p #{port}\n")
+          process.send_data("./startup -p #{instance[:port]}\n")
           process.send_data("exit\n")
         end
 
@@ -843,6 +851,10 @@ module DEA
 
     def instance_mem_usage_in_mb(instance)
       (instance[:mem_quota] / (1024*1024)).to_i
+    end
+
+    def grab_port
+      VCAP.grab_ephemeral_port
     end
 
     def detect_app_ready(instance, manifest, &block)
