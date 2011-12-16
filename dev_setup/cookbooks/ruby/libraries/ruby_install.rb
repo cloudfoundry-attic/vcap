@@ -22,7 +22,7 @@ module RubyInstall
       action :create
     end
 
-    bash "Install Ruby" do
+    bash "Install Ruby #{ruby_path}" do
       cwd File.join("", "tmp")
       user node[:deployment][:user]
       code <<-EOH
@@ -43,7 +43,7 @@ module RubyInstall
       not_if { ::File.exists?(File.join("", "tmp", "rubygems-#{rubygems_version}.tgz")) }
     end
 
-    bash "Install RubyGems" do
+    bash "Install RubyGems #{ruby_path}" do
       cwd File.join("", "tmp")
       user node[:deployment][:user]
       code <<-EOH
