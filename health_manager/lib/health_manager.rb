@@ -39,6 +39,7 @@ module CloudController
     require 'vcap/component'
     require 'vcap/logging'
     require 'vcap/rolling_metric'
+    require 'vcap/priority_queue'
     all_models.each {|fn| require(fn)}
 
     # This is needed for comparisons between the last_updated time of an app and the current time
@@ -94,9 +95,11 @@ class HealthManager
     @restart_timeout = config['intervals']['restart_timeout']
     @stable_state = config['intervals']['stable_state']
     @nats_ping = config['intervals']['nats_ping'] || 10
+    @request_queue_interval = config['intervals']['request_queue'] || 0.02
     @database_environment = config['database_environment']
 
     @droplets = {}
+    @request_queue = VCAP::PrioritySet.new
 
     configure_database
 
@@ -426,15 +429,19 @@ class HealthManager
         }
       end
     end
+
+    droplet_entry # return the droplet that we changed. This allows the spec tests to ensure the behaviour is correct.
   end
 
   def process_heartbeat_message(message)
     VCAP::Component.varz[:heartbeat_msgs_received] += 1
+    result = []
     parse_json(message)['droplets'].each do |heartbeat|
       droplet_id = heartbeat['droplet']
       instance = heartbeat['instance']
       droplet_entry = @droplets[droplet_id]
       if droplet_entry
+        result << droplet_entry
         state = heartbeat['state']
         if RUNNING_STATES.include?(state)
           version_entry = droplet_entry[:versions][heartbeat['version']]
@@ -472,6 +479,8 @@ class HealthManager
         end
       end
     end
+
+    result # return the droplets that we changed. This allows the spec tests to ensure the behaviour is correct.
   end
 
   def process_health_message(message, reply)
@@ -606,13 +615,10 @@ class HealthManager
   def update_droplet(droplet)
     return true unless droplet
 
-    @logger.info "Updating droplet #{droplet.name}"
-
     droplet_entry = @droplets[droplet.id]
     unless droplet_entry
       droplet_entry = create_droplet_entry
       @droplets[droplet.id] = droplet_entry
-      @logger.debug "droplet_entry added.  #{@droplets.size} droplet entries present now"
     end
     entry_updated = droplet_entry[:last_updated] != droplet.last_updated
 
@@ -635,10 +641,29 @@ class HealthManager
       :version => droplet_entry[:live_version],
       :indices => indices
     }
-    start_message = encode_json(start_message)
-    NATS.publish('cloudcontrollers.hm.requests', start_message)
-    @logger.info("Requesting the start of missing instances: #{start_message}")
+
+    if queue_requests?
+      queue_request(start_message)
+    else
+      #old behavior: send the message immediately
+      NATS.publish('cloudcontrollers.hm.requests', start_message.to_json)
+      @logger.info("Requesting the start of extra instances: #{start_message}")
+    end
+
+
   end
+
+  def queue_request message
+    #the priority is higher for older items, to de-prioritize flapping items
+    priority = Time.now.to_i - message[:last_updated]
+    priority = 0 if priority < 0 #avoid timezone drama
+
+    key = message.clone
+    key.delete :last_updated
+    @logger.info("Queueing priority '#{priority}' request: #{message}, using key: #{key}.  Queue size: #{@request_queue.size}")
+    @request_queue.insert(message, priority, key)
+  end
+
 
   def stop_instances(droplet_id, instances)
     droplet_entry = @droplets[droplet_id]
@@ -681,13 +706,28 @@ class HealthManager
       NATS.publish('healthmanager.nats.ping', "#{Time.now.to_f}")
     end
 
+    if queue_requests?
+      EM.add_periodic_timer(@request_queue_interval) do
+        unless @request_queue.empty?
+          #TODO: if STOP requests are also queued, refactor this to be generic, particularly the log message
+          start_message = encode_json(@request_queue.remove)
+          NATS.publish('cloudcontrollers.hm.requests', start_message)
+          @logger.info("Requesting the start of missing instances: #{start_message}")
+          VCAP::Component.varz[:queue_length] = @request_queue.size
+        end
+      end
+    end
   end
 
   def register_as_component
+    status_config = @config['status'] || {}
     VCAP::Component.register(:type => 'HealthManager',
                              :host => VCAP.local_ip(@config['local_route']),
                              :index => @config['index'],
-                             :config => @config)
+                             :config => @config,
+                             :port => status_config['port'],
+                             :user => status_config['user'],
+                             :password => status_config['password'])
 
     # Initialize VCAP component varzs..
     VCAP::Component.varz[:total_apps] = 0
@@ -697,7 +737,10 @@ class HealthManager
     # These will get processed after a small delay..
     VCAP::Component.varz[:running_instances] = -1
     VCAP::Component.varz[:crashed_instances] = -1
+
     VCAP::Component.varz[:down_instances]    = -1
+
+    VCAP::Component.varz[:queue_length] = 0
 
     VCAP::Component.varz[:total] = {
       :frameworks => {},
@@ -754,6 +797,10 @@ class HealthManager
     end
 
     NATS.publish('healthmanager.start')
+  end
+
+  def queue_requests?
+    @request_queue_interval != 0
   end
 end
 

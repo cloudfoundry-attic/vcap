@@ -4,7 +4,7 @@ class Router
   VERSION = 0.98
 
   class << self
-    attr_reader   :log, :notfound_redirect, :session_key, :trace_key
+    attr_reader   :log, :notfound_redirect, :session_key, :trace_key, :client_inactivity_timeout
     attr_accessor :server, :local_server, :timestamp, :shutting_down
     attr_accessor :client_connection_count, :app_connection_count, :outstanding_request_count
     attr_accessor :inet, :port
@@ -27,6 +27,8 @@ class Router
 
       @session_key = config['session_key'] || '14fbc303b76bacd1e0a3ab641c11d11400341c5d'
       @trace_key = config['trace_key'] || '22'
+      @client_inactivity_timeout = config['client_inactivity_timeout'] || 60
+      @expose_all_apps = config['status']['expose_all_apps'] if config['status']
     end
 
     def setup_listeners
@@ -87,8 +89,9 @@ class Router
         end
       end
 
-      top_10 = apps.sort { |a,b| b[:rps]<=>a[:rps] } [0,9]
-      VCAP::Component.varz[:top_app_requests] = top_10
+      top = apps.sort { |a,b| b[:rps]<=>a[:rps] }
+      VCAP::Component.varz[:top_app_requests]  = top if @expose_all_apps
+      VCAP::Component.varz[:top10_app_requests]  = top[0,9]
       #log.debug "Calculated all request rates in  #{Time.now - now} secs."
     end
 

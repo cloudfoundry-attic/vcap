@@ -7,8 +7,7 @@ class Service < ActiveRecord::Base
   validates_presence_of :label, :url, :token
   validates_uniqueness_of :label
 
-  # TODO(mjp): Do we require that all service gateways register with https?
-  validates_format_of :url, :with => URI::regexp(['http'])
+  validates_format_of :url, :with => URI::regexp(%w(http https))
   validates_format_of :info_url, :with => URI::regexp(%w(http https)), :allow_nil => true
   validates_format_of :label, :with => LABEL_REGEX
 

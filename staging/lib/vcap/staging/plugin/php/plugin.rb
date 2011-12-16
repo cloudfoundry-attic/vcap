@@ -16,6 +16,7 @@ class PhpPlugin < StagingPlugin
       system "cp -a #{File.join(resource_dir, "conf.d", "*")} apache/php"
       copy_source_files
       create_startup_script
+      create_stop_script
     end
   end
 
@@ -28,6 +29,16 @@ class PhpPlugin < StagingPlugin
     "bash ./start.sh"
   end
 
+  def stop_command
+    cmds = []
+    cmds << "CHILDPIDS=$(pgrep -P ${1} -d ' ')"
+    cmds << "kill -9 ${1}"
+    cmds << "for CPID in ${CHILDPIDS};do"
+    cmds << "  kill -9 ${CPID}"
+    cmds << "done"
+    cmds.join("\n")
+  end
+
   private
 
   def startup_script
@@ -38,6 +49,11 @@ env > env.log
 ruby resources/generate_apache_conf $VCAP_APP_PORT $HOME $VCAP_SERVICES #{application_memory}m
       PHPEOF
     end
+  end
+
+  def stop_script
+    vars = environment_hash
+    generate_stop_script(vars)
   end
 
   def apache_server_root

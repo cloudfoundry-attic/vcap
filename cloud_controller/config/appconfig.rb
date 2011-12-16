@@ -34,7 +34,6 @@ required = { :external_uri => 'api.vcap.me',
              :support_address => 'http://support.cloudfoundry.com',
              :rails_environment => 'development',
              :local_route  => '127.0.0.1',
-             :local_register_only => true,
              :allow_external_app_uris => false,
              :staging => { :max_concurrent_stagers => 10,
                            :max_staging_runtime => 60 },
@@ -187,3 +186,49 @@ if (AppConfig[:staging][:new_stager_percent] || AppConfig[:staging][:new_stager_
   $stderr.puts "You must supply a redis config to use the new stager"
   exit 1
 end
+
+if AppConfig[:bootstrap_users]
+  unless AppConfig[:bootstrap_users].kind_of?(Array)
+    $stderr.puts "List of bootstrap users must be an array"
+    exit 1
+  end
+
+  for user in AppConfig[:bootstrap_users]
+    unless user.kind_of?(Hash)
+      $stderr.puts "List elements of bootstrap users must be a hash"
+      exit 1
+    end
+
+    unless user.has_key?('email')
+      $stderr.puts "#{user.inspect} is missing an email address"
+      exit 1
+    end
+
+    unless user['email'].kind_of?(String)
+      $stderr.puts "Email for #{user.inspect} must be a string"
+      exit 1
+    end
+
+    unless user.has_key?('password')
+      $stderr.puts "#{user.inspect} is missing a password"
+      exit 1
+    end
+
+    unless user['password'].kind_of?(String)
+      $stderr.puts "Password for #{user.inspect} must be a string"
+      exit 1
+    end
+
+    if user['is_admin'] && !(user['is_admin'].kind_of?(TrueClass) || user['password'].kind_of?(FalseClass))
+      $stderr.puts "#{user.inspect} should have a bool for is_admin"
+      exit 1
+    end
+  end
+end
+
+unless AppConfig.has_key?(:allow_registration)
+  $stderr.puts "Allow registration not set, defaulting to true"
+  AppConfig[:allow_registration] = true
+end
+
+AppConfig[:max_droplet_size] ||= 512 * 1024 * 1024

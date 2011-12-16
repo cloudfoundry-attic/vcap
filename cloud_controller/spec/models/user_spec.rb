@@ -127,6 +127,33 @@ describe User do
     end
   end
 
+  describe '#create_bootstrap_user' do
+    before :each do
+      @email = 'foo@bar.com'
+      @pass  = 'test'
+    end
+
+    it 'should create users if they do not exist' do
+      User.find_by_email(@email).should be_nil
+      User.create_bootstrap_user(@email, @pass).should_not be_nil
+      User.find_by_email(@email).should_not be_nil
+    end
+
+    it 'should update existing users' do
+      oldpass = 'test1'
+      newpass = 'test2'
+      create_user(@email, oldpass)
+      User.create_bootstrap_user(@email, newpass).should_not be_nil
+      User.valid_login?(@email, newpass).should be_true
+    end
+
+    it 'should update User.admins if the user is an admin' do
+      User.admins.include?(@email).should_not be_true
+      User.create_bootstrap_user(@email, @pass, true)
+      User.admins.include?(@email).should be_true
+    end
+  end
+
   def create_user(email, pw)
     u = User.new(:email => email)
     u.set_and_encrypt_password(pw)

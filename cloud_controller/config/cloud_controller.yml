@@ -10,8 +10,8 @@ support_address: http://support.cloudfoundry.com
 # value of nil, should work in most cases.
 local_route: 127.0.0.1
 
-# Specifies if new users can register only from the host that is running the cloud controller
-local_register_only: false
+# Specifies if new users are allowed to register via VMC
+allow_registration: true
 
 # Allow applications to register URIs that are outside your domain.
 # Legacy (FIXME REMOVE)
@@ -133,6 +133,8 @@ builtin_services:
     token: "0xdeadbeef"
   mvstore:
     token: "0xdeadbeef"
+  atmos:
+    token: "0xdeadbeef"
 
 # Service broker
 service_broker:
@@ -162,3 +164,10 @@ runtimes:
   python26:
     version: 2.6.5
 
+# Used for /healthz and /vars endpoints. If not provided random
+# values will be generated on component start. Uncomment to use
+# static values.
+#status:
+#  port: 34500
+#  user: thin
+#  password: thin

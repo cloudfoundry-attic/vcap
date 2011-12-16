@@ -49,9 +49,12 @@ module VCAP
     elsif RUBY_PLATFORM =~ /freebsd|netbsd/
       `sysctl hw.ncpu`.strip.to_i
     else
-      # FIXME: wouldn't it be logical to assume there is at least 1 core!?
-      return -1 # unknown..
+      return 1 # unknown..
     end
+  rescue
+    # hwprefs doesn't always exist, and so the block above can fail.
+    # In any case, let's always assume that there is 1 core
+    1
   end
 
   def self.defer(*args, &blk)
