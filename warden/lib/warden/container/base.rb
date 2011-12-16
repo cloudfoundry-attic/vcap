@@ -125,19 +125,19 @@ module Warden
       end
 
       def network
-        resources[:network]
+        @network ||= resources[:network]
       end
 
       def handle
-        network.to_hex
+        @handle ||= network.to_hex
       end
 
       def gateway_ip
-        network + 1
+        @gateway_ip ||= network + 1
       end
 
       def container_ip
-        network + 2
+        @container_ip ||= network + 2
       end
 
       def register_connection(conn)

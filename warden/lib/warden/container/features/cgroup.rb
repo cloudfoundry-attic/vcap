@@ -27,7 +27,7 @@ module Warden
 
             if cgroup_mounts.empty?
               sh "mkdir -p #{cgroup_path}"
-              sh "mount -t cgroup none #{cgroup_path}"
+              sh "mount -t cgroup -o blkio,devices,memory,cpuacct,cpu,cpuset none #{cgroup_path}"
             end
           end
         end
