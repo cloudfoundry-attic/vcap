@@ -28,7 +28,7 @@ end
 logger.info("Launching tomcat from PID=#{Process.pid}")
 
 maven_opts = "-DPID=$$"
-if config["jvm_args"] then maven_opts += " " + config["jvm_args"]
+if config["jvm_args"] then maven_opts += " " + config["jvm_args"] end
 
 # This is very sensitive.  We need the PID for logging so we nee dto
 # use exec to stay in the same process...
