@@ -80,9 +80,9 @@ describe "server implementing LXC", :needs_root => true do
       res = client.call("run", handle, cmd)
 
 
-      stats = client.call("stats", handle)
-      stats = stats.inject({}) {|h, s| h[s[0]] = s[1]; h }
-      stats["events"].include?("oom").should be_true
+      info = client.call("info", handle)
+      info = info.inject({}) {|h, s| h[s[0]] = s[1]; h }
+      info["events"].include?("oom").should be_true
     end
   end
 
@@ -181,16 +181,16 @@ describe "server implementing LXC", :needs_root => true do
       # Give the quota monitor a chance to run
       sleep(0.5)
 
-      stats = client.call("stats", handle)
-      stats = stats.inject({}) {|h, s| h[s[0]] = s[1]; h }
-      stats["events"].include?("quota_exceeded").should be_true
+      info = client.call("info", handle)
+      info = info.inject({}) {|h, s| h[s[0]] = s[1]; h }
+      info["events"].include?("quota_exceeded").should be_true
     end
 
-    it 'should return "disk_usage_B" as an entry returned from "stats"' do
+    it 'should return "disk_usage_B" as an entry in "stats" returned from "info"' do
       handle = client.call("create")
-      stats = client.call("stats", handle)
-      stats = stats.inject({}) {|h, s| h[s[0]] = s[1]; h }
-      stats['disk_usage_B'].should > 0
+      info = client.call("info", handle)
+      info = info.inject({}) {|h, s| h[s[0]] = s[1]; h }
+      info['stats']['disk_usage_B'].should > 0
     end
   end
 
@@ -240,11 +240,11 @@ describe "server implementing LXC", :needs_root => true do
 
     include_context :server_lxc
 
-    it 'should return "mem_usage_B" as an entry returned from "stats"' do
+    it 'should return "mem_usage_B" as an entry in "stats" returned from "info"' do
       handle = client.call("create")
-      stats = client.call("stats", handle)
-      stats = stats.inject({}) {|h, s| h[s[0]] = s[1]; h }
-      stats["mem_usage_B"].should > 0
+      info = client.call("info", handle)
+      info = info.inject({}) {|h, s| h[s[0]] = s[1]; h }
+      info["stats"]["mem_usage_B"].should > 0
     end
   end
 end

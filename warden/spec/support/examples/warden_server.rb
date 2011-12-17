@@ -227,11 +227,20 @@ shared_examples "a warden server" do |container_klass|
     end
   end
 
-  describe "container statistics" do
-    it 'should respond to the "stats" command' do
-      handle = client.call("create")
-      result = client.call("stats", handle)
+  describe "container info" do
+    before :each do
+      @handle = client.call("create")
+    end
+
+    it 'should respond to the "info" command' do
+      result = client.call("info", @handle)
       result.kind_of?(Array).should be_true
+    end
+
+    it 'should return the container state as part of "info"' do
+      result = client.call("info", @handle)
+      info = info.inject({}) {|h, s| h[s[0]] = s[1]; h }
+      info["state"].should == "active"
     end
   end
 
@@ -260,17 +269,17 @@ shared_examples "a warden server" do |container_klass|
       end.to raise_error(/state/)
     end
 
-    it "should allow stats to be queried" do
+    it "should allow info to be queried" do
       client.call("stop", @handle).should == "ok"
-      stats = client.call("stats", @handle)
-      stats.kind_of?(Array).should be_true
+      info = client.call("info", @handle)
+      info.kind_of?(Array).should be_true
     end
 
     it "should allow the container to be destroyed" do
       client.call("stop", @handle).should == "ok"
       client.call("destroy", @handle).should == "ok"
       expect do
-        client.call("stats", @handle)
+        client.call("info", @handle)
       end.to raise_error(/unknown handle/)
     end
   end
