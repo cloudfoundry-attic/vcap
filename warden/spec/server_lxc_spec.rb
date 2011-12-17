@@ -37,51 +37,49 @@ describe "server implementing LXC", :needs_root => true do
       create_client
     }
 
+    before :each do
+      @handle = client.call("create")
+    end
+
     it 'raises an error if the user supplies an invalid limit' do
-      handle = client.call("create")
       expect do
-        client.call("limit", handle, "mem", "abcdefg")
+        client.call("limit", @handle, "mem", "abcdefg")
       end.to raise_error(/Invalid limit/)
     end
 
     it 'sets "memory.limit_in_bytes" in the correct cgroup' do
-      handle = client.call("create")
-      client.call("limit", handle, "mem").should == 0
+      client.call("limit", @handle, "mem").should == 0
       hund_mb = 100 * 1024 * 1024
-      client.call("limit", handle, "mem", hund_mb).should == "ok"
-      client.call("limit", handle, "mem").should == hund_mb
-      raw_lim = File.read(File.join("/dev/cgroup/", "instance-#{handle}", "memory.limit_in_bytes"))
+      client.call("limit", @handle, "mem", hund_mb).should == "ok"
+      client.call("limit", @handle, "mem").should == hund_mb
+      raw_lim = File.read(File.join("/dev/cgroup/", "instance-#{@handle}", "memory.limit_in_bytes"))
       raw_lim.to_i.should == hund_mb
     end
 
     it 'stops containers in which an oom event occurs' do
       one_mb = 1024 * 1024
-      handle = client.call("create")
-      usage = File.read(File.join("/dev/cgroup/", "instance-#{handle}", "memory.usage_in_bytes"))
+      usage = File.read(File.join("/dev/cgroup/", "instance-#{@handle}", "memory.usage_in_bytes"))
       mem_limit = usage.to_i + 2 * one_mb
-      client.call("limit", handle, "mem", mem_limit)
+      client.call("limit", @handle, "mem", mem_limit)
       # Allocate 20MB, this should OOM and cause the container to be torn down
       cmd = 'perl -e \'for ($i = 0; $i < 20; $i++ ) { $foo .= "A" x (1024 * 1024); }\''
-      res = client.call("run", handle, cmd)
+      res = client.call("run", @handle, cmd)
       res[0].should_not == 0
       expect do
-        client.call("run", handle, "ls")
+        client.call("run", @handle, "ls")
       end.to raise_error(/state/)
     end
 
     it 'should set the "oom" event for containers in which an oom event occurs' do
       one_mb = 1024 * 1024
-      handle = client.call("create")
-      usage = File.read(File.join("/dev/cgroup/", "instance-#{handle}", "memory.usage_in_bytes"))
+      usage = File.read(File.join("/dev/cgroup/", "instance-#{@handle}", "memory.usage_in_bytes"))
       mem_limit = usage.to_i + 2 * one_mb
-      client.call("limit", handle, "mem", mem_limit)
+      client.call("limit", @handle, "mem", mem_limit)
       # Allocate 20MB, this should OOM and cause the container to be torn down
       cmd = 'perl -e \'for ($i = 0; $i < 20; $i++ ) { $foo .= "A" x (1024 * 1024); }\''
-      res = client.call("run", handle, cmd)
+      res = client.call("run", @handle, cmd)
 
-
-      stats = client.call("stats", handle)
-      stats = stats.inject({}) {|h, s| h[s[0]] = s[1]; h }
+      stats = get_stats_hash(client, @handle)
       stats["events"].include?("oom").should be_true
     end
   end
@@ -101,9 +99,12 @@ describe "server implementing LXC", :needs_root => true do
       }
     }
 
+    before :each do
+      @handle = client.call("create")
+    end
+
     it 'allocates a user per container' do
-      handle = client.call("create")
-      reply  = client.call("run", handle, "id -u")
+      reply  = client.call("run", @handle, "id -u")
       reply[0].should == 0
       uid = File.read(reply[1]).chomp.to_i
       pool = Warden::Container::UidPool.acquire(quota_config[:uidpool][:name],
@@ -112,53 +113,46 @@ describe "server implementing LXC", :needs_root => true do
     end
 
     it 'should fail creating containers if no users are available' do
-      handle = client.call("create")
       expect do
         client.call("create")
       end.to raise_error(/no uid available/)
     end
 
     it 'should succeed creating containers when the pool refills after being empty' do
-      handle = client.call("create")
-      handle.should match(/^[0-9a-f]{8}$/i)
       expect do
         client.call("create")
       end.to raise_error(/no uid available/)
-      reply = client.call("destroy", handle)
+      reply = client.call("destroy", @handle)
       reply.should == "ok"
       handle = client.call("create")
       handle.should match(/^[0-9a-f]{8}$/i)
     end
 
     it 'should allow the disk quota to be changed' do
-      handle = client.call("create")
-      client.call("limit", handle, "disk", 12345).should == "ok"
-      client.call("limit", handle, "disk").should == 12345
+      client.call("limit", @handle, "disk", 12345).should == "ok"
+      client.call("limit", @handle, "disk").should == 12345
     end
 
     it 'should set the block quota to 0 on creation' do
-      handle = client.call("create")
-      client.call("limit", handle, "disk", 12345).should == "ok"
-      client.call("limit", handle, "disk").should == 12345
-      client.call("destroy", handle)
+      client.call("limit", @handle, "disk", 12345).should == "ok"
+      client.call("limit", @handle, "disk").should == 12345
+      client.call("destroy", @handle)
       handle = client.call("create")
       client.call("limit", handle, "disk").should == 0
     end
 
     it 'should raise an error if > 1 argument is supplied when setting the disk quota' do
-      handle = client.call("create")
       expect do
-        client.call("limit", handle, "disk", 1234, 5678)
+        client.call("limit", @handle, "disk", 1234, 5678)
       end.to raise_error(/invalid number of arguments/i)
     end
 
     it 'should stop containers that exceed their quotas' do
-      handle = client.call("create")
       # Quota limits are in number of 1k blocks
       one_mb = 2048
-      client.call("limit", handle, "disk", one_mb)
-      client.call("limit", handle, "disk").should == one_mb
-      res = client.call("run", handle, "dd if=/dev/zero of=/tmp/test bs=4MB count=1")
+      client.call("limit", @handle, "disk", one_mb)
+      client.call("limit", @handle, "disk").should == one_mb
+      res = client.call("run", @handle, "dd if=/dev/zero of=/tmp/test bs=4MB count=1")
       res[0].should == 1
       File.read(res[2]).should match(/quota exceeded/)
 
@@ -166,30 +160,26 @@ describe "server implementing LXC", :needs_root => true do
       sleep(0.5)
 
       expect do
-        client.call("run", handle, "ls")
+        client.call("run", @handle, "ls")
       end.to raise_error(/state/)
     end
 
     it 'should set the "quota_exceeded" event for containers that exceed their disk quotas' do
-      handle = client.call("create")
       # Quota limits are in number of 1k blocks
       one_mb = 2048
-      client.call("limit", handle, "disk", one_mb)
-      client.call("limit", handle, "disk").should == one_mb
-      res = client.call("run", handle, "dd if=/dev/zero of=/tmp/test bs=4MB count=1")
+      client.call("limit", @handle, "disk", one_mb)
+      client.call("limit", @handle, "disk").should == one_mb
+      res = client.call("run", @handle, "dd if=/dev/zero of=/tmp/test bs=4MB count=1")
 
       # Give the quota monitor a chance to run
       sleep(0.5)
 
-      stats = client.call("stats", handle)
-      stats = stats.inject({}) {|h, s| h[s[0]] = s[1]; h }
+      stats = get_stats_hash(client, @handle)
       stats["events"].include?("quota_exceeded").should be_true
     end
 
     it 'should return "disk_usage_B" as an entry returned from "stats"' do
-      handle = client.call("create")
-      stats = client.call("stats", handle)
-      stats = stats.inject({}) {|h, s| h[s[0]] = s[1]; h }
+      stats = get_stats_hash(client, @handle)
       stats['disk_usage_B'].should > 0
     end
   end
@@ -246,5 +236,11 @@ describe "server implementing LXC", :needs_root => true do
       stats = stats.inject({}) {|h, s| h[s[0]] = s[1]; h }
       stats["mem_usage_B"].should > 0
     end
+  end
+
+  def get_stats_hash(client, handle)
+    stats = client.call("stats", handle)
+    stats = stats.inject({}) {|h, s| h[s[0]] = s[1]; h }
+    stats
   end
 end
