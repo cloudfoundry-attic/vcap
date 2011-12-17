@@ -215,6 +215,28 @@ if [[ $DEA == true || $ALL == true ]]; then
         echo -e "\033[31mFIXME: Implement for MacOSX \033[0m"
     fi
 
+    # Java
+    if [[ $PLATFORM == 'Linux' ]]; then
+        JAVA=`dpkg --get-selections | grep sun-java6`
+        echo $JAVA
+    elif [[ $PLATFORM == 'MacOSX' ]]; then
+        JAVA=`java -version | grep 'build 1.6.0_22'`
+    fi
+
+    if [[ $JAVA == '' ]]; then
+        echo "Installing Sun Java 1.6"
+        if [[ $PLATFORM == 'Linux' ]]; then
+            apt-get install -qqy python-software-properties
+            add-apt-repository "deb http://archive.canonical.com/ lucid partner"
+            apt-get -qqy update
+            echo sun-java6-jdk shared/accepted-sun-dlj-v1-1 boolean true | debconf-set-selections
+            echo sun-java6-jre shared/accepted-sun-dlj-v1-1 boolean true | debconf-set-selections
+            apt-get install -qqy curl sun-java6-bin sun-java6-jre sun-java6-jdk
+        elif [[ $PLATFORM == 'MacOSX' ]]; then
+            echo -e "\033[31mFIXME: Implement for MacOSX \033[0m"
+        fi
+    fi
+
     # JRuby
     JRUBY_VERSION=1.6.5
     JRUBY_TARBALL=jruby-bin-$JRUBY_VERSION.tar.gz
@@ -239,28 +261,6 @@ if [[ $DEA == true || $ALL == true ]]; then
       jruby19 -S gem install $JRUBY_DEFAULT_INSTALL_GEMS
       echo -e "\033[31mFIXME: Gem installation is deffered for MRI. \033[0m"
       echo -e "\033[31mMaybe JRuby should do the same? \033[0m"
-    fi
-
-    # Java
-    if [[ $PLATFORM == 'Linux' ]]; then
-        JAVA=`dpkg --get-selections | grep sun-java6`
-        echo $JAVA
-    elif [[ $PLATFORM == 'MacOSX' ]]; then
-        JAVA=`java -version | grep 'build 1.6.0_22'`
-    fi
-
-    if [[ $JAVA == '' ]]; then
-        echo "Installing Sun Java 1.6"
-        if [[ $PLATFORM == 'Linux' ]]; then
-            apt-get install -qqy python-software-properties
-            add-apt-repository "deb http://archive.canonical.com/ lucid partner"
-            apt-get -qqy update
-            echo sun-java6-jdk shared/accepted-sun-dlj-v1-1 boolean true | debconf-set-selections
-            echo sun-java6-jre shared/accepted-sun-dlj-v1-1 boolean true | debconf-set-selections
-            apt-get install -qqy curl sun-java6-bin sun-java6-jre sun-java6-jdk
-        elif [[ $PLATFORM == 'MacOSX' ]]; then
-            echo -e "\033[31mFIXME: Implement for MacOSX \033[0m"
-        fi
     fi
 
     # Python support
