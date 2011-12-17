@@ -66,16 +66,9 @@ module Warden
           end
         end
 
-        def mem_limit
-          @mem_limit ||= 0
-        end
-
-        def mem_limit=(v)
-          @mem_limit = v
-        end
-
         def get_limit_mem
-          self.mem_limit
+          self.limits['mem'] ||= 0
+          self.limits['mem']
         end
 
         def set_limit_mem(args)
@@ -109,7 +102,7 @@ module Warden
             File.open(mem_limit_path, 'w') do |f|
               f.write(mem_limit.to_s)
             end
-            self.mem_limit = mem_limit
+            self.limits['mem'] = mem_limit
           rescue => e
             raise WardenError.new("Failed setting memory limit: #{e}")
           end

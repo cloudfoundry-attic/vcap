@@ -65,6 +65,10 @@ describe "server implementing LXC", :needs_root => true do
       cmd = 'perl -e \'for ($i = 0; $i < 20; $i++ ) { $foo .= "A" x (1024 * 1024); }\''
       res = client.run(@handle, cmd)
       res[0].should_not == 0
+
+      info = client.info(@handle)
+      info["state"].should == "stopped"
+
       expect do
         client.run(@handle, "ls")
       end.to raise_error(/state/)
@@ -79,8 +83,8 @@ describe "server implementing LXC", :needs_root => true do
       cmd = 'perl -e \'for ($i = 0; $i < 20; $i++ ) { $foo .= "A" x (1024 * 1024); }\''
       res = client.run(@handle, cmd)
 
-      stats = get_stats_hash(client, @handle)
-      stats["events"].include?("oom").should be_true
+      info = client.info(@handle)
+      info["events"].include?("oom").should be_true
     end
   end
 
@@ -174,13 +178,13 @@ describe "server implementing LXC", :needs_root => true do
       # Give the quota monitor a chance to run
       sleep(0.5)
 
-      stats = get_stats_hash(client, @handle)
-      stats["events"].include?("quota_exceeded").should be_true
+      info = client.info(@handle)
+      info["events"].include?("quota_exceeded").should be_true
     end
 
-    it 'should return "disk_usage_B" as an entry returned from "stats"' do
-      stats = get_stats_hash(client, @handle)
-      stats['disk_usage_B'].should > 0
+    it 'should return "disk_usage_B" as an entry in "stats" return from "info"' do
+      info = client.info(@handle)
+      info['stats']['disk_usage_B'].should > 0
     end
   end
 
@@ -230,17 +234,10 @@ describe "server implementing LXC", :needs_root => true do
 
     include_context :server_lxc
 
-    it 'should return "mem_usage_B" as an entry returned from "stats"' do
+    it 'should return "mem_usage_B" as an entry in "stats" returned from "info"' do
       handle = client.create
-      stats = client.stats(handle)
-      stats = stats.inject({}) {|h, s| h[s[0]] = s[1]; h }
-      stats["mem_usage_B"].should > 0
+      info = client.info(handle)
+      info["stats"]["mem_usage_B"].should > 0
     end
-  end
-
-  def get_stats_hash(client, handle)
-    stats = client.stats(handle)
-    stats = stats.inject({}) {|h, s| h[s[0]] = s[1]; h }
-    stats
   end
 end
