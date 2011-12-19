@@ -90,6 +90,21 @@ module Warden
           end
 
           begin
+
+            # Need to set up the oom notifier before we set the memory limit to
+            # avoid a race between when the limit is set and when the oom
+            # notifier is registered.
+            unless @oom_notifier
+              @oom_notifier = OomNotifier.for_container(self)
+              on(:after_stop) do
+                if @oom_notifier
+                  self.debug "Unregistering OOM Notifier for container '#{self.handle}'"
+                  @oom_notifier.unregister
+                  @oom_notifier = nil
+                end
+              end
+            end
+
             mem_limit_path = File.join(self.cgroup_root_path, "memory.limit_in_bytes")
             File.open(mem_limit_path, 'w') do |f|
               f.write(mem_limit.to_s)
@@ -97,17 +112,6 @@ module Warden
             self.mem_limit = mem_limit
           rescue => e
             raise WardenError.new("Failed setting memory limit: #{e}")
-          end
-
-          unless @oom_notifier
-            @oom_notifier = OomNotifier.for_container(self)
-            on(:after_stop) do
-              if @oom_notifier
-                self.debug "Unregistering OOM Notifier for container '#{self.handle}'"
-                @oom_notifier.unregister
-                @oom_notifier = nil
-              end
-            end
           end
 
           "ok"
