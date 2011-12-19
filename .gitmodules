@@ -3,7 +3,7 @@
 	url = git@github.com:vmware-ac/vcap-services.git
 [submodule "tests"]
 	path = tests
-	url = git@github.com:vmware-ac/vcap-tests.git
+	url = git@github.com:dsyer/vcap-tests.git
 [submodule "java"]
 	path = java
 	url = git@github.com:vmware-ac/vcap-java.git
