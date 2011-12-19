@@ -1,0 +1,7 @@
+Verified+1: cftestbuild <cftestbuild@gmail.com>
+Code-Review+2: Joel D'sa <jdsa@vmware.com>
+Submitted-by: Dave Syer <dsyer@vmware.com>
+Submitted-at: Mon, 19 Dec 2011 18:09:46 +0000
+Reviewed-on: http://cloudfoundry-codereview.qa.mozycloud.com/gerrit/2505
+Project: vcap
+Branch: refs/heads/auth_deployment
