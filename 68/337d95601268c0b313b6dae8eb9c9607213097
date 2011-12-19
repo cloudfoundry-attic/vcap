@@ -1,0 +1,7 @@
+Code-Review+2: Joel D'sa <jdsa@vmware.com>
+Verified+1: Dave Syer <dsyer@vmware.com>
+Submitted-by: Dave Syer <dsyer@vmware.com>
+Submitted-at: Mon, 19 Dec 2011 17:53:49 +0000
+Reviewed-on: http://cloudfoundry-codereview.qa.mozycloud.com/gerrit/2484
+Project: vcap
+Branch: refs/heads/auth_deployment
