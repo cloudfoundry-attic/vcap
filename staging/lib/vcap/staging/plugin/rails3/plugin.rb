@@ -11,11 +11,22 @@ class Rails3Plugin < StagingPlugin
   # PWD here is after we change to the 'app' directory.
   def start_command
     if uses_bundler?
-      # Specify Thin if the app bundled it; otherwise let Rails figure it out.
-      server_script = thin? ? "server thin" : "server"
-      "#{local_runtime} #{gem_bin_dir}/bundle exec #{local_runtime} #{gem_bin_dir}/rails #{server_script} $@"
+      if rails_version > 2
+        server_script = thin? ? "server thin" : "server"
+        "#{local_runtime} #{gem_bin_dir}/bundle exec #{local_runtime} #{gem_bin_dir}/rails #{server_script} $@"
+      else
+        "#{local_runtime} #{gem_bin_dir}/bundle exec #{local_runtime} ./script/server $@"
+      end
     else
       "#{local_runtime} -S thin -R config.ru $@ start"
+    end
+  end
+
+  def rails_version
+    ruby_path = "#{ENV['MY_RUBY_HOME']}/bin/ruby"
+    rails_cmd_result = `#{ruby_path} #{ENV['BUNDLE_BIN_PATH']} exec #{ruby_path} #{ENV['GEM_HOME']}/bin/rails -v`
+    if /Rails (.*)/=~ rails_cmd_result
+      $1.to_i
     end
   end
 
