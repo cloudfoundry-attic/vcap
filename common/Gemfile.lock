@@ -1,8 +1,8 @@
 PATH
   remote: .
   specs:
-    vcap_common (1.0.0)
-      eventmachine (~> 0.12.11.cloudfoundry.3)
+    vcap_common (1.0.2)
+      eventmachine
       logging (>= 1.5.0)
       nats (~> 0.4.10)
       posix-spawn (~> 0.3.6)
