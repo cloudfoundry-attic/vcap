@@ -1,6 +1,6 @@
 OPTIMIZATION?=-O0
 DEBUG?=-g -ggdb -rdynamic
-BINS=report_quota runner
+BINS=report_quota runner clone
 
 all: $(BINS)
 
