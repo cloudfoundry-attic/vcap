@@ -10,19 +10,25 @@ module Warden
   module Container
 
     module State
+      class Base
+        def self.to_s
+          self.name.split("::").last.downcase
+        end
+      end
+
       # Container object created, but setup not performed
-      class Born;      end
+      class Born < Base; end
 
       # Container setup completed
-      class Active;    end
+      class Active < Base; end
 
       # Triggered by an error condition in the container (OOM, Quota violation)
       # or explicitly by the user.  All processes have been killed but the
       # container exists for introspection.  No new commands may be run.
-      class Stopped;    end
+      class Stopped < Base; end
 
       # All state associated with the container has been destroyed.
-      class Destroyed; end
+      class Destroyed < Base; end
     end
 
     class Base
@@ -99,13 +105,15 @@ module Warden
       attr_reader :connections
       attr_reader :jobs
       attr_reader :events
+      attr_reader :limits
 
       def initialize(resources)
-        @resources = resources
+        @resources   = resources
         @connections = ::Set.new
-        @jobs = {}
-        @state = State::Born
-        @events = Set.new
+        @jobs        = {}
+        @state       = State::Born
+        @events      = Set.new
+        @limits      = {}
 
         on(:after_create) {
           # Clients should be able to look this container up
@@ -282,14 +290,18 @@ module Warden
         end
       end
 
-      def stats
+      def info
         check_state_in(State::Active, State::Stopped)
 
-        get_stats.to_a
+        get_info
       end
 
-      def get_stats
-        {'events' => self.events.to_a}
+      def get_info
+        { 'state'  => self.state.to_s,
+          'events' => self.events.to_a,
+          'limits' => self.limits,
+          'stats'  => {},
+        }
       end
 
       protected

@@ -227,11 +227,19 @@ shared_examples "a warden server" do |container_klass|
     end
   end
 
-  describe "container statistics" do
-    it 'should respond to the "stats" command' do
-      handle = client.create
-      result = client.stats(handle)
-      result.kind_of?(Array).should be_true
+  describe "container info" do
+    before :each do
+      @handle = client.create
+    end
+
+    it 'should respond to the "info" command' do
+      result = client.info(@handle)
+      result.kind_of?(Hash).should be_true
+    end
+
+    it 'should return the container state as part of "info"' do
+      info = client.info(@handle)
+      info["state"].should == "active"
     end
   end
 
@@ -260,17 +268,17 @@ shared_examples "a warden server" do |container_klass|
       end.to raise_error(/state/)
     end
 
-    it "should allow stats to be queried" do
+    it "should allow info to be queried" do
       client.stop(@handle).should == "ok"
-      stats = client.stats(@handle)
-      stats.kind_of?(Array).should be_true
+      info = client.info(@handle)
+      info.kind_of?(Hash).should be_true
     end
 
     it "should allow the container to be destroyed" do
       client.stop(@handle).should == "ok"
       client.destroy(@handle).should == "ok"
       expect do
-        client.stats(@handle)
+        client.info(@handle)
       end.to raise_error(/unknown handle/)
     end
   end

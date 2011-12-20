@@ -25,7 +25,7 @@ module Warden
             set_quota(0)
 
             self.class.quota_monitor.register(self) do
-              self.warn "Disk quota (#{self.disk_quota}) exceeded, stopping"
+              self.warn "Disk quota (#{self.limits['disk']}) exceeded, stopping"
               self.events << 'quota_exceeded'
               self.class.quota_monitor.unregister(self)
               if self.state == State::Active
@@ -46,20 +46,12 @@ module Warden
           @resources[:uid]
         end
 
-        def disk_quota
-          @disk_quota ||= 0
-        end
-
-        def disk_quota=(v)
-          @disk_quota = v
-        end
-
         def get_limit_disk
           unless self.uid && self.class.quota_filesystem
             raise WardenError.new("Command unsupported")
           end
-
-          self.disk_quota
+          self.limits['disk'] ||= 0
+          self.limits['disk']
         end
 
         def set_limit_disk(args)
@@ -82,14 +74,14 @@ module Warden
           "ok"
         end
 
-        def get_stats
-          stats = super
+        def get_info
+          info = super
 
           if self.class.quota_monitor
-            stats['disk_usage_B'] = 1024 * self.class.quota_monitor.usage_for_container(self)
+            info['stats']['disk_usage_B'] = 1024 * self.class.quota_monitor.usage_for_container(self)
           end
 
-          stats
+          info
         end
 
         protected
@@ -100,7 +92,7 @@ module Warden
           quota_setter.filesystem = self.class.quota_filesystem
           quota_setter.quotas[:block][:hard] = block_limit
           quota_setter.run
-          self.disk_quota = block_limit
+          self.limits['disk'] = block_limit
         end
 
         class SetQuota < VCAP::Quota::SetQuota

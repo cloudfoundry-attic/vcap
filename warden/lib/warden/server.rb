@@ -258,10 +258,10 @@ module Warden
         end
       end
 
-      def process_stats(request)
+      def process_info(request)
         request.require_arguments { |n| n == 2 }
         container = find_container(request[1])
-        container.stats
+        container.info
       end
 
       protected
