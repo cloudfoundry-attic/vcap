@@ -845,15 +845,6 @@ module DEA
       (instance[:mem_quota] / (1024*1024)).to_i
     end
 
-    def grab_ephemeral_port
-      socket = TCPServer.new('0.0.0.0', 0)
-      socket.setsockopt(Socket::SOL_SOCKET, Socket::SO_REUSEADDR, true)
-      Socket.do_not_reverse_lookup = true
-      port = socket.addr[1]
-      socket.close
-      return port
-    end
-
     def detect_app_ready(instance, manifest, &block)
       state_file = manifest['state_file']
       if state_file
