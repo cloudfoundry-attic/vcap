@@ -64,7 +64,7 @@ describe "server implementing LXC", :needs_root => true do
       # Allocate 20MB, this should OOM and cause the container to be torn down
       cmd = 'perl -e \'for ($i = 0; $i < 20; $i++ ) { $foo .= "A" x (1024 * 1024); }\''
       res = client.run(@handle, cmd)
-      res[0].should_not == 0
+      res[0].should be_nil
 
       info = client.info(@handle)
       info["state"].should == "stopped"

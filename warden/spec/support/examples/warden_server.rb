@@ -255,7 +255,7 @@ shared_examples "a warden server" do |container_klass|
       client.stop(@handle).should == "ok"
       result = client.link(@handle, job)
       # Command should not have exited cleanly
-      result[0].should_not == 0
+      result[0].should be_nil
     end
 
     it "should prevent new commands from being run or spawned" do
