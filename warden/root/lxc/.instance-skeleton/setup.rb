@@ -5,14 +5,19 @@ require "erb"
 
 mount_union
 
-config = {
+# Defaults for debugging the setup script
+defaults = {
   "id" => "test",
   "network_gateway_ip" => "10.0.0.1",
   "network_container_ip" => "10.0.0.2",
   "network_netmask" => "255.255.255.252",
-  "copy_root_password" => "0"
-}.merge(ENV)
+  "copy_root_password" => "0",
+}
 
+# Override defaults from environment
+config = defaults.merge(ENV)
+
+# These variables are always synthesized from the instance id
 config["network_iface_host"] = "veth-%s-0" % config["id"]
 config["network_iface_container"] = "veth-%s-1" % config["id"]
 
@@ -30,9 +35,6 @@ chmod +x pre-exec.sh
 chmod +x stop.sh
 chmod +x killprocs.sh
 EOS
-
-# Write LXC configuration
-write "config", ERB.new(File.read "config.erb").result
 
 Dir.chdir "union"
 
@@ -72,7 +74,7 @@ end
 
 # Add vcap user
 useradd_cmd = "useradd -mU vcap"
-useradd_cmd += " -u #{config['vcap_uid']}" if config['vcap_uid']
+useradd_cmd += " -u #{config["vcap_uid"]}" if config["vcap_uid"]
 chroot ".", useradd_cmd
 
 # Fake upstart triggers
