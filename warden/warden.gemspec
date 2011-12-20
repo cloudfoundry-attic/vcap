@@ -19,7 +19,7 @@ Gem::Specification.new do |s|
   s.require_paths = ["lib"]
 
   s.add_runtime_dependency "eventmachine"
-  s.add_runtime_dependency "hiredis", "~> 0.4.0"
+  s.add_runtime_dependency "yajl-ruby"
   s.add_runtime_dependency "em-posix-spawn", '> 0.0.1'
   s.add_runtime_dependency "vcap_common"
   s.add_runtime_dependency "sleepy_penguin"
