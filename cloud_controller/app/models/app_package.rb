@@ -112,7 +112,11 @@ class AppPackage
   # maximum allowed by the AppConfig.
   def check_package_size
     unless @uploaded_file
-      raise AppPackageError, "Invalid uploaded file"
+      # When the entire set of files that make up the application is already
+      # in the resource pool, the client may not send us any additional contents
+      # i.e. the payload is empty.
+      CloudController.logger.debug "No uploaded file for application, contents assumed to be present in resource pool"
+      return
     end
 
     # Avoid stat'ing files in the resource pool if possible
