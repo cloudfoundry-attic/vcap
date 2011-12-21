@@ -9,4 +9,4 @@
 	url = https://github.com/cloudfoundry/vcap-java.git
 [submodule "dotnet"]
 	path = dotnet
-	url = git@github.com:UhuruSoftware/vcap-dotnet.git
+	url = https://github.com/UhuruSoftware/vcap-dotnet.git
