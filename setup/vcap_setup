@@ -239,28 +239,60 @@ if [[ $DEA == true || $ALL == true ]]; then
 
     # JRuby
     JRUBY_VERSION=1.6.5
-    JRUBY_TARBALL=jruby-bin-$JRUBY_VERSION.tar.gz
+    JRUBY_RUNTIME_INSTALL_DIR=/var/vcap/runtimes
+    JRUBY_HOME=$JRUBY_RUNTIME_INSTALL_DIR/jruby-$JRUBY_VERSION
 
-    if [[ ! `jruby -e 'puts JRUBY_VERSION'` == $JRUBY_VERSION ]]; then
+    if [[ ! `$JRUBY_HOME/bin/jruby -e 'puts JRUBY_VERSION'` == $JRUBY_VERSION ]]; then
+
       echo "Installing JRuby $JRUBY_VERSION"
-      wget -O /usr/local/jruby-bin-$JRUBY_VERSION.tar.gz http://jruby.org.s3.amazonaws.com/downloads/1.6.5/$JRUBY_TARBALL
-      tar -C /usr/local -zxf /usr/local/$JRUBY_TARBALL
-      rm -fr /usr/local/$JRUBY_TARBALL /usr/local/jruby
-      mv /usr/local/jruby-$JRUBY_VERSION /usr/local/jruby
-      ln -fs /usr/local/jruby/bin/jruby /usr/local/bin/jruby
+
+      JRUBY_SRC_TARBALL=jruby-src-$JRUBY_VERSION.tar.gz
+
+      wget -O /var/vcap/runtimes/$JRUBY_SRC_TARBALL http://jruby.org.s3.amazonaws.com/downloads/$JRUBY_VERSION/$JRUBY_SRC_TARBALL
+      rm -fr $JRUBY_HOME
+      tar -C $JRUBY_RUNTIME_INSTALL_DIR -zxf $JRUBY_RUNTIME_INSTALL_DIR/$JRUBY_SRC_TARBALL
+
+      ANT_HOME=$JRUBY_RUNTIME_INSTALL_DIR/apache-ant-1.8.2
+      ANT_TARBALL=apache-ant-1.8.2-bin.tar.gz
+
+      # Download Apache Ant for build JRuby from source
+      wget -O $JRUBY_RUNTIME_INSTALL_DIR/$ANT_TARBALL http://archive.apache.org/dist/ant/binaries/$ANT_TARBALL
+      rm -fr $ANT_HOME
+      tar -C $JRUBY_RUNTIME_INSTALL_DIR  -zxf $JRUBY_RUNTIME_INSTALL_DIR/$ANT_TARBALL
+
+      pushd $JRUBY_HOME
+
+      # Disable generate-ri-cache task. see http://jira.codehaus.org/browse/JRUBY-6163
+      cp -p build.xml build.xml.orig
+      sed -e 's/<antcall target="generate-ri-cache"\/>/<!--<antcall target="generate-ri-cache"\/>-->/' build.xml.orig > build.xml
+      rm -f build.xml.orig
+
+      # Build JRuby
+      PATH=$ANT_HOME/bin:$PATH ant clean build-jruby-cext-native
+
+      popd
 
       # Wrapper script for 1.9 support on JRuby
-      sed s/JRUBY_OPTS=\"\"/JRUBY_OPTS=\"--1.9\"/ /usr/local/jruby/bin/jruby > /usr/local/jruby/bin/jruby19
-      chmod +x /usr/local/jruby/bin/jruby19
-      ln -fs /usr/local/jruby/bin/jruby19 /usr/local/bin/jruby19
+      sed s/JRUBY_OPTS=\"\"/JRUBY_OPTS=\"--1.9\"/ $JRUBY_HOME/bin/jruby > $JRUBY_HOME/bin/jruby19
+      chmod +x $JRUBY_HOME/bin/jruby19
 
-      # FIXME: Gem installation is deffered for MRI.
-      # Maybe JRuby should do the same?
-      JRUBY_DEFAULT_INSTALL_GEMS="jruby-openssl bundler json thin trinidad sinatra"
-      jruby -S gem install $JRUBY_DEFAULT_INSTALL_GEMS
-      jruby19 -S gem install $JRUBY_DEFAULT_INSTALL_GEMS
-      echo -e "\033[31mFIXME: Gem installation is deffered for MRI. \033[0m"
-      echo -e "\033[31mMaybe JRuby should do the same? \033[0m"
+      # Install bunlder
+      if [[ ! "$($JRUBY_HOME/bin/jruby -S bundle -v)" =~ "1.0.10" ]]; then
+        echo "Installing bundler 1.0.10"
+        $JRUBY_HOME/bin/jruby -S $JRUBY_HOME/bin/gem install bundler -v 1.0.10 --no-rdoc --no-ri
+      fi
+
+      # Install default gems
+      echo "Installing default gems for JRuby runtime"
+      JRUBY_DEFAULT_INSTALL_GEMS="jruby-openssl json thin sinatra"
+
+      $JRUBY_HOME/bin/jruby -S $JRUBY_HOME/bin/gem install $JRUBY_DEFAULT_INSTALL_GEMS --no-rdoc --no-ri
+
+      rm -fr $JRUBY_RUNTIME_INSTALL_DIR/$JRUBY_SRC_TARBALL \
+             $JRUBY_RUNTIME_INSTALL_DIR/$ANT_TARBALL \
+             $ANT_HOME
+
+      PATH=$JRUBY_HOME/bin:$PATH
     fi
 
     # Python support
@@ -350,13 +382,13 @@ if [[ $DEA == true || $ALL == true ]]; then
     ruby -v
     echo ""
 
+    echo -e "\nJava should now be installed -->"
+    java -version
+
     echo -e "\nJRuby should now be installed -->"
     jruby -v
     jruby19 -v
     echo ""
-
-    echo -e "\nJava should now be installed -->"
-    java -version
 
     echo -e "\nNode should now be installed -->"
     node -v
