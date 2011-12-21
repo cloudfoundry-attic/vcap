@@ -1,0 +1,7 @@
+Code-Review+2: Nicholas Kushmerick <nicholask@vmware.com>
+Verified+1: Max Windisch <mwindisch@videotron.ca>
+Submitted-by: Max Windisch <mwindisch@videotron.ca>
+Submitted-at: Wed, 21 Dec 2011 06:19:44 +0000
+Reviewed-on: http://cloudfoundry-codereview.qa.mozycloud.com/gerrit/2365
+Project: vcap
+Branch: refs/heads/mvstore
