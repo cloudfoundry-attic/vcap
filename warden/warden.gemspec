@@ -18,7 +18,7 @@ Gem::Specification.new do |s|
   s.executables   = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }
   s.require_paths = ["lib"]
 
-  s.add_runtime_dependency "eventmachine", "~> 1.0.0.beta.4"
+  s.add_runtime_dependency "eventmachine", "0.12.11.cloudfoundry.3"
   s.add_runtime_dependency "yajl-ruby"
   s.add_runtime_dependency "em-posix-spawn", '> 0.0.1'
   s.add_runtime_dependency "vcap_common"
