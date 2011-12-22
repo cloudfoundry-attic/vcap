@@ -1,5 +1,5 @@
 require "warden/server"
-require "warden/container/lxc"
+require "warden/container/linux"
 require "warden/network"
 
 require "spec_helper"
@@ -70,22 +70,12 @@ shared_context :warden_server do
     Process.waitpid(@pid)
 
     # Destroy all artifacts
-    Dir[File.join(container_root, "*", ".instance-*")].each do |path|
-      next if path.match(/-skeleton$/)
-
+    Dir[File.join(container_root, "*", "instances", "*")].each do |path|
       stop_script = File.join(path, "stop.sh")
       system(stop_script) if File.exist?(stop_script)
 
-      # Try to remove the underlying directory
-      3.times {
-        system("rm -rf #{path}")
-
-        if $?.exitstatus == 0
-          break
-        else
-          sleep 0.05
-        end
-      }
+      # Container should be stopped and destroyed by now...
+      system("rm -rf #{path}")
     end
   end
 end

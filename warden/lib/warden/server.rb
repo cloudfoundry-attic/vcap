@@ -2,7 +2,7 @@ require "warden/network"
 require "warden/event_emitter"
 require "warden/logger"
 require "warden/errors"
-require "warden/container/lxc"
+require "warden/container/linux"
 require "warden/container/insecure"
 require "warden/pool/network_pool"
 
@@ -36,9 +36,9 @@ module Warden
       @container_root
     end
 
-    # This is hard-coded to LXC; we can be smarter using `uname`, "/etc/issue", etc.
+    # This is hard-coded to Linux; we can be smarter using `uname`, "/etc/issue", etc.
     def self.default_container_klass
-      ::Warden::Container::LXC
+      ::Warden::Container::Linux
     end
 
     def self.container_klass
