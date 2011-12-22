@@ -12,8 +12,8 @@ task :setup do
   Dir.chdir("src") do
     sh "make clean all"
   end
-  Dir.chdir("root/lxc") do
-    sh "rm -rf 0??-*/{rootfs,union}"
+  Dir.chdir("root/linux/base") do
+    sh "rm -rf rootfs union"
     sh "ruby setup.rb"
   end
 end
