@@ -27,6 +27,19 @@ class Tomcat
     webapp_path
   end
 
+  def self.get_namespace_prefix(webapp_config)
+    name_space = webapp_config.root.namespace
+    if name_space
+      if name_space.prefix
+        prefix = name_space.prefix
+      else
+        prefix = "xmlns:"
+      end
+    else
+      prefix = ''
+    end
+  end
+
   # The staging modifications that are common to one or more framework plugins e.g. ['spring' & 'grails'
   # requiring autostaging context_param & autostaging servlet updates and 'spring', 'grails' & 'lift'
   # requiring the copying of the autostaging jar etc] are handled below to avoid duplication.
@@ -49,7 +62,7 @@ class Tomcat
     autostaging_context_param_value_node = autostaging_context_param_node.xpath("param-value").first
     autostaging_context_param_value = autostaging_context_param_value_node.content
 
-    prefix = webapp_config.root.namespace ? "xmlns:" : ''
+    prefix = get_namespace_prefix(webapp_config)
     context_param_nodes =  webapp_config.xpath("//#{prefix}context-param")
     if (context_param_nodes != nil && context_param_nodes.length > 0)
       context_param_node = webapp_config.xpath("//#{prefix}context-param[contains(normalize-space(#{prefix}param-name), normalize-space('#{autostaging_context_param_name}'))]").first
@@ -88,7 +101,7 @@ class Tomcat
     autostaging_init_param_value_node = autostaging_context.xpath("//servlet/init-param/param-value").first
     autostaging_init_param_value = autostaging_init_param_value_node.content
 
-    prefix = webapp_config.root.namespace ? "xmlns:" : ''
+    prefix = get_namespace_prefix(webapp_config)
     dispatcher_servlet_nodes = webapp_config.xpath("//#{prefix}servlet[contains(normalize-space(#{prefix}servlet-class), normalize-space('#{autostaging_servlet_class}'))]")
     if (dispatcher_servlet_nodes != nil && !dispatcher_servlet_nodes.empty?)
       dispatcher_servlet_nodes.each do |dispatcher_servlet_node|
