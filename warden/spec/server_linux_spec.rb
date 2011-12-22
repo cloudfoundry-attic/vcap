@@ -1,12 +1,12 @@
 require "spec_helper"
 
-shared_context :server_lxc do
+shared_context :server_linux do
 
   include_context :warden_server
   include_context :warden_client
 
   let(:container_klass) {
-    Warden::Container::LXC
+    Warden::Container::Linux
   }
 
   let(:quota_config) {
@@ -18,15 +18,15 @@ shared_context :server_lxc do
   }
 end
 
-describe "server implementing LXC", :needs_root => true do
-  it_behaves_like "a warden server", Warden::Container::LXC
+describe "server implementing Linux containers", :needs_root => true do
+  it_behaves_like "a warden server", Warden::Container::Linux
 
   describe 'should allow setting memory limits' do
     include_context :warden_server
     include_context :warden_client
 
     let(:container_klass) {
-      Warden::Container::LXC
+      Warden::Container::Linux
     }
 
     let(:quota_config) {
@@ -90,11 +90,11 @@ describe "server implementing LXC", :needs_root => true do
 
   describe 'when configured with quota support', :needs_quota_config => true do
 
-    include_context :server_lxc
+    include_context :server_linux
 
     let(:quota_config) {
       { :uidpool => {
-          :name => 'warden-lxc-uidpool-server-test',
+          :name => 'warden-linux-uidpool-server-test',
           :count => 1,
         },
         :filesystem => ENV['WARDEN_TEST_QUOTA_FS'],
@@ -190,7 +190,7 @@ describe "server implementing LXC", :needs_root => true do
 
   describe "ip filtering", :netfilter => true do
 
-    include_context :server_lxc
+    include_context :server_linux
 
     before(:each) do
       @handle = client.create
@@ -232,7 +232,7 @@ describe "server implementing LXC", :needs_root => true do
 
   describe "cgroup" do
 
-    include_context :server_lxc
+    include_context :server_linux
 
     it 'should return "mem_usage_B" as an entry in "stats" returned from "info"' do
       handle = client.create

@@ -1,22 +1,24 @@
 #!/bin/bash
 
-# Change to directory that holds this script
+set -o nounset
+set -o errexit
 cd $(dirname $(readlink -f ${0}))
+
+source ./common.sh
+source ./config
 
 if [ -f started ]; then
   echo "Container is already running..."
   exit 1
 fi
 
-<%= mount_union_command(Dir.pwd) %>
+mount_union
 
 export ROOT_PATH=union
 export ASSET_PATH=$(pwd)
-../../../src/clone "./pre-exec.sh"
+../../../../src/clone "./pre-exec.sh"
 
-ifconfig veth-<%= config["id"] %>-0 <%= config["network_gateway_ip"] %> \
-  netmask <%= config["network_netmask"] %>
-
+ifconfig ${network_iface_host} ${network_gateway_ip} netmask ${network_netmask}
 touch started
 
 # Wait for the runner socket to come up
