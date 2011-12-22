@@ -1,5 +1,6 @@
 ENV["BUNDLE_GEMFILE"] = File.expand_path("../../cloud_controller/Gemfile", __FILE__)
 require 'rake'
+require 'ci/reporter/rake/rspec'
 
 desc "Run specs"
 
@@ -16,6 +17,9 @@ task "prepare_test_db" do
     ruby "-S rake RAILS_ENV=test db:migrate >/dev/null 2>/dev/null"
   end
 end
+
+desc "Run specs producing results for CI"
+task "ci" => ["ci:spec"]
 
 desc "Run specs using RCov"
 task "spec:rcov" => ["bundler:install:test", "test:spec:rcov"]
@@ -50,4 +54,8 @@ namespace "test" do
  task "spec:rcov" do |t|
     sh("cd spec && rake spec:rcov")
   end
+end
+
+namespace :ci do
+  task "spec" => ["ci:setup:rspec", "^spec"]
 end
