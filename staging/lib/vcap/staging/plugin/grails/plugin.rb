@@ -25,7 +25,7 @@ class GrailsPlugin < JavaWebPlugin
 
   def vmc_plugin_present grails_config_file
     grails_config = Nokogiri::XML(open(grails_config_file))
-    prefix = grails_config.root.namespace ? "xmlns:" : ''
+    prefix = grails_config.root.namespace && grails_config.root.namespace.prefix || ''
     plugins = grails_config.xpath("//#{prefix}plugins/#{prefix}plugin[contains(normalize-space(), '#{VMC_GRAILS_PLUGIN}')]")
     if (plugins == nil || plugins.empty?)
       return false

@@ -29,7 +29,7 @@ class SpringPlugin < JavaWebPlugin
     autostaging_context_param_value_node = autostaging_context_param_node.xpath("param-value").first
     autostaging_context_param_value = autostaging_context_param_value_node.content
 
-    prefix = webapp_config.root.namespace ? "xmlns:" : ''
+    prefix = webapp_config.root.namespace && webapp_config.root.namespace.prefix || ''
     context_param_node =  webapp_config.xpath("//#{prefix}context-param[#{prefix}param-name='contextInitializerClasses']").first
     if (context_param_node == nil)
       context_param_node = Nokogiri::XML::Node.new 'context-param', webapp_config

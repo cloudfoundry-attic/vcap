@@ -49,7 +49,7 @@ class Tomcat
     autostaging_context_param_value_node = autostaging_context_param_node.xpath("param-value").first
     autostaging_context_param_value = autostaging_context_param_value_node.content
 
-    prefix = webapp_config.root.namespace ? "xmlns:" : ''
+    prefix = webapp_config.root.namespace && webapp_config.root.namespace.prefix || ''
     context_param_nodes =  webapp_config.xpath("//#{prefix}context-param")
     if (context_param_nodes != nil && context_param_nodes.length > 0)
       context_param_node = webapp_config.xpath("//#{prefix}context-param[contains(normalize-space(#{prefix}param-name), normalize-space('#{autostaging_context_param_name}'))]").first
@@ -88,7 +88,7 @@ class Tomcat
     autostaging_init_param_value_node = autostaging_context.xpath("//servlet/init-param/param-value").first
     autostaging_init_param_value = autostaging_init_param_value_node.content
 
-    prefix = webapp_config.root.namespace ? "xmlns:" : ''
+    prefix = webapp_config.root.namespace && webapp_config.root.namespace.prefix || ''
     dispatcher_servlet_nodes = webapp_config.xpath("//#{prefix}servlet[contains(normalize-space(#{prefix}servlet-class), normalize-space('#{autostaging_servlet_class}'))]")
     if (dispatcher_servlet_nodes != nil && !dispatcher_servlet_nodes.empty?)
       dispatcher_servlet_nodes.each do |dispatcher_servlet_node|
