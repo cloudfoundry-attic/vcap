@@ -248,6 +248,7 @@ if [[ $DEA == true || $ALL == true ]]; then
 
       JRUBY_SRC_TARBALL=jruby-src-$JRUBY_VERSION.tar.gz
 
+      mkdir -p $JRUBY_RUNTIME_INSTALL_DIR
       wget -O /var/vcap/runtimes/$JRUBY_SRC_TARBALL http://jruby.org.s3.amazonaws.com/downloads/$JRUBY_VERSION/$JRUBY_SRC_TARBALL
       rm -fr $JRUBY_HOME
       tar -C $JRUBY_RUNTIME_INSTALL_DIR -zxf $JRUBY_RUNTIME_INSTALL_DIR/$JRUBY_SRC_TARBALL
