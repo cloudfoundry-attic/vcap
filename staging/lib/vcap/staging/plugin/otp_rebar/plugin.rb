@@ -57,7 +57,7 @@ class OtpRebarPlugin < StagingPlugin
   def rewrite_libs
     runtime_version = runtime['version']
     runtime_info = runtime_info_for(runtime_version)
-    runtime_dir = "/var/vcap/runtimes/erlang-#{runtime_version}"
+    runtime_dir = File.expand_path('../..', runtime['executable'])
 
     # Ensure that our runtime matches the one that the libraries were packaged for
     start_erl_data = File.read('app/releases/start_erl.data')
