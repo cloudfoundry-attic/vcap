@@ -136,7 +136,7 @@ class Component
         # Make sure db is setup, this is slow and we should make it faster, but
         # should help for now.
         if is_cloud_controller?
-          Dir.chdir("#{File.dirname(__FILE__)}/../cloud_controller") { `bundle exec rake db:migrate CLOUD_CONTROLLER_CONFIG=#{@configuration_path}` }
+          Dir.chdir("#{File.dirname(__FILE__)}/../cloud_controller") { `bundle exec rake db:migrate` }
         end
         exec("#{component_start_path}")
       end
