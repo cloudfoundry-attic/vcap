@@ -192,7 +192,6 @@ when "ubuntu"
 
   template "nginx.conf" do
     path File.join(nginx_path, "conf", "nginx.conf")
-    path File.join("", "etc", "nginx", "nginx.conf")
     source "ubuntu-nginx.conf.erb"
     owner node[:deployment][:user]
     mode 0644

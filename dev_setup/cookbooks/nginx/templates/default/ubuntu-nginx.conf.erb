@@ -58,7 +58,6 @@ http {
       # Given there are some exceptions to clear some headers,
       # we just leave them as is.
 
-      proxy_set_header Connection "Keep-alive";
       proxy_pass http://unix:/tmp/router.sock:/;
     }
 

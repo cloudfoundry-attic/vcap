@@ -96,7 +96,7 @@ class RouterServer
     server = File.expand_path(File.join(__FILE__, '../../../bin/router'))
     nats_timeout = File.expand_path(File.join(File.dirname(__FILE__), 'nats_timeout'))
     #pid = Process.fork { %x[#{server} -c #{CONFIG_FILE} 2> /dev/null] }
-    pid = Process.fork { %x[ruby -r#{nats_timeout} #{server} -c #{CONFIG_FILE} 2> /dev/null] }
+    pid = Process.fork { %x[ruby -r#{nats_timeout} #{server} -c #{CONFIG_FILE}] }
     Process.detach(pid)
 
     wait_for_server
