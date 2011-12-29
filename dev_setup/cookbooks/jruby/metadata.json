@@ -4,11 +4,11 @@
   },
   "providing": {
   },
-  "maintainer": "VMware",
+  "maintainer": "Satoru Chinen",
   "replacing": {
   },
   "license": "N/A",
-  "maintainer_email": "ac-eng@vmware.com",
+  "maintainer_email": "satoru.chinen@gmail.com",
   "long_description": "= DESCRIPTION:\n\n= REQUIREMENTS:\n\n= ATTRIBUTES:\n\n= USAGE:\n\n",
   "groupings": {
   },
