@@ -56,7 +56,6 @@ describe 'Router Functional Tests' do
     varz = get_varz()
     varz[:requests].should be_a_kind_of(Integer)
     varz[:bad_requests].should be_a_kind_of(Integer)
-    varz[:client_connections].should be_a_kind_of(Integer)
     varz[:type].should =~ /router/i
   end
 

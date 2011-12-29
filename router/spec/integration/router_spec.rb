@@ -126,7 +126,6 @@ describe 'Router Integration Tests (require nginx running)' do
 
     varz = get_varz()
     varz[:requests].should be_a_kind_of(Integer)
-    varz[:client_connections].should be_a_kind_of(Integer)
     varz[:type].should =~ /router/i
 
     # Requests are collected exactly the same number as we received

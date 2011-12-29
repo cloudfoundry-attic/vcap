@@ -146,13 +146,6 @@ def trace_request(trace_key)
   "GET /trace HTTP/1.1\r\nHost: trace.vcap.me\r\nConnection: keep-alive\r\nX-Vcap-Trace: #{trace_key}\r\nAccept: application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5\r\nUser-Agent: Mozilla/5.0 (X11; U; Linux i686; en-US) AppleWebKit/534.10 (KHTML, like Gecko) Chrome/8.0.552.237 Safari/534.10\r\nAccept-Encoding: gzip,deflate,sdch\r\nAccept-Language: en-US,en;q=0.8\r\nAccept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.3\r\n\r\n"
 end
 
-def new_app_socket
-  app_socket = TCPServer.new('127.0.0.1', 0)
-  app_socket.setsockopt(Socket::SOL_SOCKET, Socket::SO_REUSEADDR, true)
-  Socket.do_not_reverse_lookup = true
-  app_port = app_socket.addr[1]
-  [app_socket, app_port]
-end
 
 
 def send_requests_to_apps(ip, port, req, num_requests, app_sockets, resp)
@@ -209,6 +202,14 @@ module Integration
       sock, port = new_app_socket
       @socket = sock
       @port = port
+    end
+
+    def new_app_socket
+      app_socket = TCPServer.new('127.0.0.1', 0)
+      app_socket.setsockopt(Socket::SOL_SOCKET, Socket::SO_REUSEADDR, true)
+      Socket.do_not_reverse_lookup = true
+      app_port = app_socket.addr[1]
+      [app_socket, app_port]
     end
 
     def stop

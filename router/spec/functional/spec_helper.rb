@@ -26,44 +26,53 @@ module Functional
 
     def verify_registered
       for uri in @uris
-        droplet.host_port.should == query_uls(uri)
+        status, body = query_uls(uri)
+        status.should == 200
+        Yajl::Parser.parse(body)["backend_addr"].should == droplet.host_port
       end
     end
 
     def verify_unregistered
       for uri in @uris
-        query_should_fail(uri)
+        status, body = query_uls(uri)
+        status.should == 404
       end
     end
 
     private
 
-    def query_should_fail(uri)
-      req = simple_uls_request(uri)
-      res = nil
-      UNIXSocket.open(RouterServer.sock) do |socket|
-        socket.send(req, 0)
-        buf = socket.read
-        buf.should == ERROR_404_RESPONSE
-      end
-    end
-
     def query_uls(uri)
-      req = simple_uls_request(uri)
-      res = nil
+      parser, body = nil, nil
       UNIXSocket.open(RouterServer.sock) do |socket|
-        socket.send(req, 0)
+        socket.send(simple_uls_request(uri), 0)
+        socket.close_write
         buf = socket.read
-        body = buf.split("\r\n\r\n")[1]
-        res = Yajl::Parser.parse(body)["backend_addr"]
+        parser, body = parse_http_msg(buf)
         socket.close
       end
-      res
+      return parser.status_code, body
     end
 
     def simple_uls_request(host)
       body = { :host => host }.to_json
       "GET / HTTP/1.0\r\nConnection: Keep-alive\r\nHost: localhost\r\nContent-Length: #{body.length}\r\nContent-Type: application/json\r\nX-Vcap-Service-Token: changemysqltoken\r\nUser-Agent: EventMachine HttpClient\r\n\r\n#{body}"
+    end
+
+    def parse_http_msg(buf)
+      parser = Http::Parser.new
+      body = ''
+
+      parser.on_body = proc do |chunk|
+        body << chunk
+      end
+
+      parser.on_message_complete = proc do
+        :stop
+      end
+
+      parser << buf
+
+      return parser, body
     end
 
   end
