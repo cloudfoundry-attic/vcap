@@ -149,9 +149,9 @@ runtimes:
   ruby19:
     version: 1.9.2
   jruby18:
-    version: 1.6.5
+    version: 1.6.5.1
   jruby19:
-    version: 1.6.5
+    version: 1.6.5.1
   node:
     version: 0.4.[2-9]
   java:

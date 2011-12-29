@@ -238,7 +238,7 @@ if [[ $DEA == true || $ALL == true ]]; then
     fi
 
     # JRuby
-    JRUBY_VERSION=1.6.5
+    JRUBY_VERSION=1.6.5.1
     JRUBY_RUNTIME_INSTALL_DIR=/var/vcap/runtimes
     JRUBY_HOME=$JRUBY_RUNTIME_INSTALL_DIR/jruby-$JRUBY_VERSION
 

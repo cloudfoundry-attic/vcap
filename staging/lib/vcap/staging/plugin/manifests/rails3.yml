@@ -24,8 +24,8 @@ runtimes:
        rack_env: "production"
   - "jruby18":
       version: "1.8.7p330"
-      description: "JRuby 1.6.5"
-      executable: "/var/vcap/runtimes/jruby-1.6.5/bin/jruby"
+      description: "JRuby 1.6.5.1"
+      executable: "/var/vcap/runtimes/jruby-1.6.5.1/bin/jruby"
       ruby_engine: "jruby"
       library_version: "1.8"
       environment:
@@ -34,8 +34,8 @@ runtimes:
        rack_env: "production"
   - "jruby19":
       version: "1.9.2p136"
-      description: "JRuby 1.6.5 (Ruby 1.9 mode)"
-      executable: "/var/vcap/runtimes/jruby-1.6.5/bin/jruby19"
+      description: "JRuby 1.6.5.1 (Ruby 1.9 mode)"
+      executable: "/var/vcap/runtimes/jruby-1.6.5.1/bin/jruby19"
       ruby_engine: "jruby"
       library_version: "1.9"
       environment:

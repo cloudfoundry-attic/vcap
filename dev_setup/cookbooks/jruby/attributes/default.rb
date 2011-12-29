@@ -1,5 +1,5 @@
 include_attribute "deployment"
-default[:jruby][:version] = "1.6.5"
+default[:jruby][:version] = "1.6.5.1"
 default[:jruby][:ruby_version] = "1.8.7p330"
 default[:jruby][:source_archive]  = "jruby-src-#{node[:jruby][:version]}.tar.gz"
 default[:jruby][:source_url]  = "http://jruby.org.s3.amazonaws.com/downloads/#{node[:jruby][:version]}/#{node[:jruby][:source_archive]}"
