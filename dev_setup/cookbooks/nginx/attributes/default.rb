@@ -24,8 +24,8 @@ default[:nginx][:worker_connections] = 2048
 default[:nginx][:uls_ip] = "localhost"
 default[:nginx][:uls_port] = 8081
 default[:nginx][:log_home] = File.join(node[:deployment][:home], "log")
-default[:nginx][:status_user] = "asldkhliuahsPVjZM"
-default[:nginx][:status_passwd] = "ahsdoi4hash5DIu"
+default[:nginx][:status_user] = "admin"
+default[:nginx][:status_passwd] = "password"
 
 default[:router][:session_key]    = "14fbc303b76bacd1e0a3ab641c11d11400341c5d"
 default[:router][:trace_key]    = "222"

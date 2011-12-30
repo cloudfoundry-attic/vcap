@@ -56,9 +56,9 @@ class RouterServer
   LOG_FILE    = '/tmp/router-test.log'
   UNIX_SOCK   = '/tmp/router.sock' # unix socket between nginx and uls
   PORT        = 80                 # nginx listening port
-  STATUS_PORT = 8081               # must be consistent with nginx config
-  STATUS_USER = "admin"
-  STATUS_PASSWD = "password"
+  STATUS_PORT = 8081               # must be consistent with nginx config in dev_setup
+  STATUS_USER = "admin"            # must be consistent with nginx config in dev_setup
+  STATUS_PASSWD = "password"       # must be consistent with nginx config in dev_setup
 
   # We verify functionalities for the whole "router" (i.e. nginx + uls).
   # In all tests, when a client like to send a request to an test app,

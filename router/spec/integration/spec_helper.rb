@@ -126,7 +126,7 @@ def get_healthz
 
   rbody = nil
   TCPSocket.open("127.0.0.1", RouterServer.port) {|rs|
-    rs.send(healthz_request(Base64.encode64(credentials*':').strip), 0)
+    rs.send(healthz_request, 0)
 
     resp, rbody = parse_http_msg_from_socket(rs)
     resp.status_code.should == 200
@@ -138,8 +138,8 @@ def simple_sticky_request(host, path, cookie, http_version='1.1')
   "GET #{path} HTTP/#{http_version}\r\nHost: #{host}\r\nConnection: keep-alive\r\nAccept: application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5\r\nUser-Agent: Mozilla/5.0 (X11; U; Linux i686; en-US) AppleWebKit/534.10 (KHTML, like Gecko) Chrome/8.0.552.237 Safari/534.10\r\nAccept-Encoding: gzip,deflate,sdch\r\nAccept-Language: en-US,en;q=0.8\r\nAccept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.3\r\nCookie: #{cookie}\r\n\r\n"
 end
 
-def healthz_request(auth)
-  "GET / HTTP/1.0\r\nAuthorization: Basic #{auth}\r\nUser-Agent: HTTP-Monitor/1.1\r\n\r\n"
+def healthz_request
+  "GET / HTTP/1.0\r\nUser-Agent: HTTP-Monitor/1.1\r\n\r\n"
 end
 
 def trace_request(trace_key)

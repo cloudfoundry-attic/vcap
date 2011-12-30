@@ -104,7 +104,7 @@ http {
           )
         ';
 
-        # more_set_input_headers "Authorization: Basic <%= Base64.encode64("#{node[:nginx][:status_user]}:#{node[:nginx][:status_passwd]}").strip %>";
+        more_set_input_headers "Authorization: Basic <%= Base64.encode64("#{node[:nginx][:status_user]}:#{node[:nginx][:status_passwd]}").strip %>";
         rewrite ^.*$ /healthz break;
         proxy_pass                 http://router_status;
       }
