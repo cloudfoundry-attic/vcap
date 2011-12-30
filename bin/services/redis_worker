@@ -1,0 +1,3 @@
+#!/usr/bin/env ruby
+
+exec(File.expand_path("../../../services/redis/bin/redis_worker", __FILE__), *ARGV)
