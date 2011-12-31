@@ -65,8 +65,7 @@ http {
       access_log   <%= node[:nginx][:log_home] %>/nginx_access.log main;
       proxy_buffering             off;
       proxy_set_header            Host $host;
-      proxy_set_header            X-Real_IP $remote_addr;
-      proxy_set_header            X-Forwarded_For $proxy_add_x_forwarded_for;
+      proxy_set_header            X-Forwarded-For $proxy_add_x_forwarded_for;
       proxy_redirect              off;
       proxy_connect_timeout       10;
       proxy_send_timeout          30;
@@ -118,6 +117,7 @@ http {
         set $backend_addr '';
         # Request tags returned from uls for this request to catalog statistics
         set $uls_req_tags '';
+        set $router_ip '';
         set $timestamp 0;
         set $trace '';
 
@@ -163,8 +163,10 @@ http {
             ngx.exit(ngx.HTTP_NOT_FOUND)
           end
 
-          ngx.var.backend_addr = cjson.decode(res.body)[uls.ULS_BACKEND_ADDR]
-          ngx.var.uls_req_tags = cjson.decode(res.body)[uls.ULS_REQEST_TAGS]
+          local msg = cjson.decode(res.body)
+          ngx.var.backend_addr = msg[uls.ULS_BACKEND_ADDR]
+          ngx.var.uls_req_tags = msg[uls.ULS_REQEST_TAGS]
+          ngx.var.router_ip    = msg[uls.ULS_ROUTER_IP]
           ngx.log(ngx.DEBUG, "route request with host header:"..
                               ngx.var.http_host.." to:"..ngx.var.backend_addr)
         ';
@@ -184,6 +186,7 @@ http {
 
           if ngx.var.trace == "Y" then
             ngx.header[uls.VCAP_BACKEND_HEADER] = ngx.var.backend_addr
+            ngx.header[uls.VCAP_ROUTER_HEADER] = ngx.var.router_ip
           end
 
           local cookies = ngx.header.set_cookie

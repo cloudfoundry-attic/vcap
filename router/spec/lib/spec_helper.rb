@@ -77,6 +77,10 @@ class RouterServer
     UNIX_SOCK
   end
 
+  def self.host
+    '127.0.0.1'
+  end
+
   def server_pid
     File.read(PID_FILE).chomp.to_i
   end

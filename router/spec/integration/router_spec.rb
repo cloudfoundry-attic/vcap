@@ -227,9 +227,13 @@ describe 'Router Integration Tests (require nginx running)' do
     dea.register_app(app, {"component" => "trace", "runtime" => "ruby"})
 
     resp = app.get_trace_header("127.0.0.1", RouterServer.port)
+
     resp.headers["X-Vcap-Backend"].should_not be_nil
     h, p = resp.headers["X-Vcap-Backend"].split(":")
     p.to_i.should == app.port.to_i
+
+    resp.headers["X-Vcap-Router"].should_not be_nil
+    resp.headers["X-Vcap-Router"].should == RouterServer.host
 
     dea.unregister_app(app)
 
