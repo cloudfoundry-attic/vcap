@@ -49,6 +49,12 @@ class LegacyServicesController < ApplicationController
     req = LegacyVmcMessages::ProvisionRequest.decode(request_body)
     @event_args = [req.vendor, req.name]
 
+    begin
+      URI.parse(req.name)
+    rescue URI::InvalidURIError
+      raise CloudError.new(CloudError::URI_INVALID, req.name)
+    end
+
     label = req.vendor + "-" + req.version
     svc = ::Service.find_by_label(label)
     # Legacy api fell back to matching by vendor if no version matched
