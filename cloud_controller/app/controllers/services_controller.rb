@@ -154,6 +154,12 @@ class ServicesController < ApplicationController
   def provision
     req = VCAP::Services::Api::CloudControllerProvisionRequest.decode(request_body)
 
+    begin
+      URI.parse(req.name)
+    rescue URI::InvalidURIError
+      raise CloudError.new(CloudError::URI_INVALID, req.name)
+    end
+
     svc = Service.find_by_label(req.label)
     raise CloudError.new(CloudError::SERVICE_NOT_FOUND) unless svc && svc.visible_to_user?(user)
 
