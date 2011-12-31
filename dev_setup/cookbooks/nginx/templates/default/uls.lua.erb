@@ -33,6 +33,7 @@ ULS_STATS_CODES        = "response_codes"
 -- When ULS_BACKEND_ADDR sent from nginx to uls, it means sticky address
 ULS_BACKEND_ADDR       = "backend_addr"
 ULS_REQEST_TAGS        = "request_tags"
+ULS_ROUTER_IP          = "router_ip"
 
 SESSION_KEY            = "<%= node[:router][:session_key] %>"
 TRACE_KEY              = "<%= node[:router][:trace_key] %>"
@@ -69,7 +70,8 @@ TRACE_KEY              = "<%= node[:router][:trace_key] %>"
   nginx <- uls
   {
     "backend_addr": xxx,
-    "request_tags": xxx
+    "request_tags": xxx,
+    "router_ip": xxx
   }
 --]]
 
