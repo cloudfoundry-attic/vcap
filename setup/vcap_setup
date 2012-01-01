@@ -270,7 +270,7 @@ if [[ $DEA == true || $ALL == true ]]; then
         `perl -Mlocal::lib`
         cpanm ExtUtils::MakeMaker
         cpanm Module::Build
-        cpanm Plack
+        cpanm Task::Plack
     fi
 
 
