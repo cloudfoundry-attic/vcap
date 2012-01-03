@@ -3,18 +3,18 @@ source 'http://rubygems.org'
 # Rails itself
 gem 'rails', '~> 3.0.5'
 # Message bus
-gem 'nats', '>= 0.4.10', :require => 'nats/client'
+gem 'nats', :require => 'nats/client'
 
 gem 'logging', '>= 1.5.0'
 
 # VCAP common components
-gem 'vcap_common', '~> 1.0.1', :require => ['vcap/common', 'vcap/component']
+gem 'vcap_common', :require => ['vcap/common', 'vcap/component']
 gem 'vcap_logging', :require => ['vcap/logging']
-gem 'vcap_staging', '~> 0.1.30'
+gem 'vcap_staging'
 
 # For queuing staging tasks
 gem 'em-hiredis'
-gem 'vcap_stager', '~> 0.1.6'
+gem 'vcap_stager', '~> 0.1.7'
 
 # Databases
 gem 'sqlite3'
@@ -34,8 +34,8 @@ group :production do
 end
 
 # EventMachine and async support
-gem 'eventmachine',  '~> 0.12.11.cloudfoundry.2'
-gem 'thin', '~> 1.2.11'
+gem 'eventmachine'
+gem 'thin'
 gem 'em-http-request', '~> 1.0.0.beta.3', :require => 'em-http'
 gem 'em-redis', '~> 0.3.0', :require => nil
 gem 'rack-fiber_pool', '~> 0.9.1', :require => nil
