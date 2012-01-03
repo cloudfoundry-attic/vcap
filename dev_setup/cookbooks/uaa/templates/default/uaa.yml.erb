@@ -10,4 +10,22 @@ database:
   url: jdbc:postgresql://<%= node[:uaadb][:host] %>:<%= node[:uaadb][:port] %>/<%= node[:uaadb][:database] %>
 
 jvm_args: -Xmx512m
-spring_profiles: jdbc,postgresql,private
+spring_profiles: jdbc,postgresql,private,!legacy
+
+varz:
+  client:
+    secret: <%= node[:uaa][:varz][:secret] %>
+    username: varz
+    password: <%= node[:uaa][:varz][:password] %>
+
+app:
+  client:
+    secret: <%= node[:uaa][:app][:secret] %>
+
+my:
+  client:
+    secret: <%= node[:uaa][:my][:secret] %>
+
+scim:
+  client:
+    secret: <%= node[:uaa][:scim][:secret] %>
