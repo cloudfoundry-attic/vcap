@@ -6,3 +6,4 @@ default[:ruby][:path]    = File.join(node[:deployment][:home], "deploy", "rubies
 default[:rubygems][:version] = "1.8.7"
 default[:rubygems][:bundler][:version] = "1.0.18"
 default[:rubygems][:rake][:version] = "0.8.7"
+default[:rubygems][:pg][:version] = "0.12.0"

@@ -4,6 +4,7 @@ ruby_path = node[:ruby][:path]
 rubygems_version = node[:rubygems][:version]
 bundler_version = node[:rubygems][:bundler][:version]
 rake_version = node[:rubygems][:rake][:version]
+pg_version = node[:rubygems][:pg][:version]
 
 %w[ build-essential libssl-dev zlib1g-dev libreadline5-dev libxml2-dev libpq-dev].each do |pkg|
   package pkg
@@ -78,6 +79,6 @@ end
 end
 
 gem_package "pg" do
-  version "0.12.0"
+  version pg_version
   gem_binary File.join(ruby_path, "bin", "gem")
 end
