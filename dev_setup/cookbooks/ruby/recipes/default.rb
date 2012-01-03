@@ -71,8 +71,12 @@ end
 # The default chef installed with Ubuntu 10.04 does not support the "retries" option
 # for gem_package. It may be a good idea to add/use that option once the ubuntu
 # chef package gets updated.
-%w[ rack eventmachine thin sinatra mysql pg vmc ].each do |gem|
+%w[ rack eventmachine thin sinatra mysql vmc ].each do |gem|
   gem_package gem do
     gem_binary File.join(ruby_path, "bin", "gem")
   end
+end
+
+gem_package "pg" do
+  version "0.12.0"
 end
