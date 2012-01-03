@@ -79,4 +79,5 @@ end
 
 gem_package "pg" do
   version "0.12.0"
+  gem_binary File.join(ruby_path, "bin", "gem")
 end
