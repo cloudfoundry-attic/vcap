@@ -23,7 +23,7 @@ directory ruby_path do
   action :create
 end
 
-bash "Install Ruby" do
+bash "Install Ruby #{ruby_version} in #{ruby_path}" do
   cwd File.join("", "tmp")
   user node[:deployment][:user]
   code <<-EOH
@@ -44,7 +44,7 @@ remote_file File.join("", "tmp", "rubygems-#{rubygems_version}.tgz") do
   not_if { ::File.exists?(File.join("", "tmp", "rubygems-#{rubygems_version}.tgz")) }
 end
 
-bash "Install RubyGems" do
+bash "Install RubyGems #{rubygems_version} for #{ruby_path}" do
   cwd File.join("", "tmp")
   user node[:deployment][:user]
   code <<-EOH
