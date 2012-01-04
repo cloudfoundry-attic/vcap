@@ -1,23 +1,12 @@
 *cleanup and remove XXX's
 
-*add size limits for resource lists, ensure that limits are in place
-for stuff going into the resource pool.
-  -size limits: max app size post sync.
-
 *add unit tests to app_packer to exercise pool sync.
+
+*unit testing of more error cases.
 
 *add end-2-end test that uses resource pool.
 
-*add error/exception handling to server.
-
-*zip bomb protection.
-  quotas/user pools.
-  -size limits for uploaded blobs
-
-*nginx support.
-
 *write real README
-
 
 *client
   -write client lib.
@@ -25,4 +14,3 @@ for stuff going into the resource pool.
 
 *testing.
   -write load tester.
-

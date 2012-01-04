@@ -55,7 +55,6 @@ module VCAP
             listen_port = config[:nginx][:listen_port]
             thin_args = ['0.0.0.0', listen_port]
           else
-            #XXX add config check to make sure one of these is present.
             listen_socket = config[:nginx][:listen_socket]
             thin_args = [listen_socket]
           end

@@ -4,11 +4,11 @@ require 'filesystem_pool'
 require 'app_packer'
 require 'package_store'
 require 'yajl'
+require 'limits'
 
 module VCAP module UploadManager end end
 
 class VCAP::UploadManager::UploadManagerServer < Sinatra::Base
-  RESOURCE_LIST_MAX = 1024
 
   def initialize(server_params)
     super
@@ -36,7 +36,9 @@ class VCAP::UploadManager::UploadManagerServer < Sinatra::Base
   def parse_resource_list(message)
     result = Yajl::Parser.parse(message, :symbolize_keys => true) || []
     raise "invalid type" unless Array === result
-    raise "resource list exceeds max size" if result.size > RESOURCE_LIST_MAX
+    if result.size > VCAP::UploadManager::Limits::RESOURCE_LIST_MAX
+      raise "resource list exceeds max size"
+    end
     result
   end
 
@@ -66,24 +68,32 @@ class VCAP::UploadManager::UploadManagerServer < Sinatra::Base
       status(200)
     ensure
       packer.cleanup!
-      FileUtils.rm_f upload_path
     end
   end
 
   post '/upload/:storageid' do |storageid|
-    #XXX add some error handling to make sure these fields are present
+    #XXX add some error handling to make sure upload_path and resource_list
+    #XXX are present and test to ensure we can deal with absence of either.
     #if needed -- need to think about this, could support empty
     #upload file and resource list, or one or the other or both,
     #need to make sure to test this end-2-end.
-    #XXX add a check for file uploaded file size.
-    #XXX add some error handling.
-    if @use_nginx
-      upload_path = params[:application_path]
-    else
-      upload_path = params[:application][:tempfile]
+    begin
+      if @use_nginx
+        upload_path = params[:application_path]
+      else
+        upload_path = params[:application][:tempfile]
+      end
+      resource_list = parse_resource_list(params[:resources])
+      store_upload(storageid, upload_path, resource_list)
+    rescue => e
+      @logger.error("upload request failed for id #{storageid}")
+      @logger.error e.message
+      @logger.error e.backtrace.join("\n")
+      body Yajl::Encoder.encode(e.to_s)
+      status(500)
+    ensure
+      FileUtils.rm_f upload_path
     end
-    resource_list = parse_resource_list(params[:resources])
-    store_upload(storageid, upload_path, resource_list)
   end
 
   get '/download/:storageid' do |storageid|
