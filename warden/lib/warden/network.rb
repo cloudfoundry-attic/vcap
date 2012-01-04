@@ -24,6 +24,8 @@ module Warden
         if args.empty?
           if v.kind_of?(Fixnum)
             @v = v
+          elsif v.kind_of?(Octets)
+            @v = v.v
           elsif v.kind_of?(String)
             if m = v.match(/[0-9a-f]{8}/)
               @v = v.to_i(16)

@@ -97,8 +97,6 @@ class AppPackage
     end
   end
 
-private
-
   def package_dir
     self.class.package_dir
   end
@@ -114,7 +112,11 @@ private
   # maximum allowed by the AppConfig.
   def check_package_size
     unless @uploaded_file
-      raise AppPackageError, "Invalid uploaded file"
+      # When the entire set of files that make up the application is already
+      # in the resource pool, the client may not send us any additional contents
+      # i.e. the payload is empty.
+      CloudController.logger.debug "No uploaded file for application, contents assumed to be present in resource pool"
+      return
     end
 
     # Avoid stat'ing files in the resource pool if possible
@@ -175,6 +177,19 @@ private
     working_dir
   end
 
+  # enforce property that any file in resource list must be located in the
+  # apps directory e.g. '../../foo' or a symlink pointing outside working_dir
+  # should raise an exception.
+  def resolve_path(working_dir, tainted_path)
+    expanded_dir  = File.realdirpath(working_dir)
+    expanded_path = File.realdirpath(tainted_path, expanded_dir)
+    pattern = "#{expanded_dir}/*"
+    unless File.fnmatch?(pattern, expanded_path)
+      raise ArgumentError, "Resource path sanity check failed #{pattern}:#{expanded_path}!!!!"
+    end
+    expanded_path
+  end
+
   # Do resource pool synch, needs to be called with a Fiber context
   def synchronize_pool_with(working_dir)
     timed_section(CloudController.logger, 'process_app_resources') do
@@ -182,8 +197,8 @@ private
         pool = CloudController.resource_pool
         pool.add_directory(working_dir)
         @resource_descriptors.each do |descriptor|
-          target = File.join(working_dir, descriptor[:fn])
-          pool.copy(descriptor, target)
+          path = resolve_path(working_dir, descriptor[:fn])
+          pool.copy(descriptor, path)
         end
       end
     end

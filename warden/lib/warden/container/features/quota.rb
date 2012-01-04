@@ -25,16 +25,16 @@ module Warden
             set_quota(0)
 
             self.class.quota_monitor.register(self) do
-              self.warn "Disk quota (#{self.disk_quota}) exceeded, destroying"
+              self.warn "Disk quota (#{self.limits['disk']}) exceeded, stopping"
+              self.events << 'quota_exceeded'
               self.class.quota_monitor.unregister(self)
-              # TODO - Change this to stop() once available
-              self.destroy
+              if self.state == State::Active
+                self.stop
+              end
             end
           end
 
-          on(:after_destroy) {
-            # Release uid used for this container (if any). Only do so if the container
-            # was successfully destroyed.
+          on(:after_stop) {
             if self.class.quota_monitor
               self.class.quota_monitor.unregister(self)
               set_quota(0)
@@ -46,20 +46,12 @@ module Warden
           @resources[:uid]
         end
 
-        def disk_quota
-          @disk_quota ||= 0
-        end
-
-        def disk_quota=(v)
-          @disk_quota = v
-        end
-
         def get_limit_disk
           unless self.uid && self.class.quota_filesystem
             raise WardenError.new("Command unsupported")
           end
-
-          self.disk_quota
+          self.limits['disk'] ||= 0
+          self.limits['disk']
         end
 
         def set_limit_disk(args)
@@ -72,7 +64,7 @@ module Warden
           end
 
           begin
-            block_limit = args[0].to_i
+            block_limit = Integer(args[0])
           rescue
             raise WardenError.new("Invalid limit")
           end
@@ -80,6 +72,16 @@ module Warden
           set_quota(block_limit)
 
           "ok"
+        end
+
+        def get_info
+          info = super
+
+          if self.class.quota_monitor
+            info['stats']['disk_usage_B'] = 1024 * self.class.quota_monitor.usage_for_container(self)
+          end
+
+          info
         end
 
         protected
@@ -90,7 +92,7 @@ module Warden
           quota_setter.filesystem = self.class.quota_filesystem
           quota_setter.quotas[:block][:hard] = block_limit
           quota_setter.run
-          self.disk_quota = block_limit
+          self.limits['disk'] = block_limit
         end
 
         class SetQuota < VCAP::Quota::SetQuota
@@ -201,6 +203,15 @@ module Warden
             @callbacks.delete(container.uid)
           end
 
+          def usage_for_container(container)
+            quota_info = get_quota_usage([container.uid])
+            if quota_info[container.uid]
+              quota_info[container.uid][:usage][:block]
+            else
+              nil
+            end
+          end
+
           private
 
           def check_quotas
@@ -209,7 +220,7 @@ module Warden
             begin
               # RepQuota#run will raise an error if the repquota command fails,
               # so we are safe to ignore the status code here.
-              quota_info = get_quota_usage
+              quota_info = get_quota_usage(@callbacks.keys)
             rescue WardenError => we
               # This is non-fatal. Assuming the quota was set correctly, this
               # only means that the container won't be torn down in the event of
@@ -234,14 +245,12 @@ module Warden
             debug "Done checking quotas"
           end
 
-          def get_quota_usage
-            if @callbacks.keys.empty?
-              return {}
-            end
+          def get_quota_usage(uids)
+            return {} if uids.empty?
 
             cmd = [@report_quota_path]
             cmd << @filesystem
-            cmd << @callbacks.keys
+            cmd << uids
             cmd = cmd.flatten.join(' ')
 
             debug "Running #{cmd}"

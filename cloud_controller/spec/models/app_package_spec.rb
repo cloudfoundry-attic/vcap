@@ -1,9 +1,44 @@
 require 'spec_helper'
+require 'tmpdir'
 
 describe AppPackage do
   before :all do
     EM.instance_variable_set(:@next_tick_queue, [])
   end
+
+  describe '#resolve_path' do
+    before(:all) do
+      @tmpdir = Dir.mktmpdir
+      @dummy_zip = Tempfile.new('app_package_test')
+      @app_package = AppPackage.new(nil, @dummy_zip)
+    end
+
+    after(:all) do
+      FileUtils.rm_rf @tmpdir
+    end
+
+    it 'should succeed if the given path points to a file in the apps directory' do
+      testpath = File.join(@tmpdir,'testfile')
+      File.new(testpath, 'w+')
+      @app_package.resolve_path(@tmpdir, 'testfile').should == File.realdirpath(testpath)
+    end
+
+    it 'should fail if the given path does not resolve to a file in the applications directory' do
+      expect do
+       @app_package.resolve_path(@tmpdir, '../foo')
+      end.to raise_error(ArgumentError)
+    end
+
+    it 'should fail if the given path contains a symlink that points outside of the applications directory' do
+      Dir.chdir(@tmpdir) {
+        File.symlink('/etc', 'foo')
+      }
+      expect do
+       @app_package.resolve_path(@tmpdir, 'foo/bar')
+      end.to raise_error(ArgumentError)
+    end
+  end
+
 
   describe '#unpack_upload' do
     it 'should raise an instance of AppPackageError if unzip exits with a nonzero status code' do

@@ -2,8 +2,6 @@
 #define _BSD_SOURCE
 /* Needed for waitpid(2) */
 #define _XOPEN_SOURCE
-/* Needed for dprintf(3) */
-#define _GNU_SOURCE
 
 #include <sys/types.h>
 #include <sys/socket.h>

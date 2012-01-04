@@ -58,9 +58,15 @@ module Warden
         debug "container started"
       end
 
+      def do_stop
+        # Kill all processes in the container
+        sh "#{container_path}/killprocs.sh"
+      end
+
       def do_destroy
         # Stop container
         sh "#{container_path}/stop.sh"
+
         debug "container stopped"
 
         # Destroy container
