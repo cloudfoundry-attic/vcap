@@ -9,6 +9,12 @@ class VCAP::UploadManager::Config < VCAP::Config
   define_schema do
     {
       :listen_port         => Integer,    # tcp port to listen on.
+      :nginx => {
+        :use_nginx          => String,
+        optional(:listen_socket)      => String,
+        optional(:listen_port)        => Integer,
+      },
+
       :logging => {
         :level              => String,      # debug, info, etc.
         optional(:file)     => String,      # Log file to use
@@ -46,6 +52,9 @@ class VCAP::UploadManager::Config < VCAP::Config
 
       log_level = config[:logging][:level]
       raise "invalid log level #{log_level}." if not %w[debug info warn error debug fatal].include?(log_level)
+
+      #XXX sanity check nginx config parameters.
+      config[:nginx][:use_nginx] = to_boolean(:use_nginx.to_s, config[:nginx][:use_nginx])
 
       config[:purge_resource_pool_on_startup] = to_boolean(:purge_resource_pool_on_startup.to_s, config[:purge_resource_pool_on_startup])
     end

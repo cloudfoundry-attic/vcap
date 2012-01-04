@@ -44,7 +44,7 @@ describe VCAP::UploadManager::UploadManagerServer do
   end
 
   it "should upload a test zip file" do
-    post "/uploads/#{@upload_id}/application",
+    post "/upload/#{@upload_id}",
         {"application" => Rack::Test::UploadedFile.new(@test_upload_zip, 'application/zip'), 
          "resources" => nil}
     last_response.status.should == 200
@@ -53,13 +53,13 @@ describe VCAP::UploadManager::UploadManagerServer do
   it "query resource pool for test uploaded file" do
     desc = @file_pool.file_to_descriptor(@test_upload_file)
     resource_list = Yajl::Encoder.encode([desc])
-    get '/uploads/resources', { :content => resource_list}
+    get '/resources', { :content => resource_list}
     last_response.status.should == 200
     last_response.body.should == resource_list
   end
 
   it "download an application" do
-    get "/uploads/#{@upload_id}/application"
+    get "/download/#{@upload_id}"
     last_response.status.should == 200
   end
 

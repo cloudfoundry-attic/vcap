@@ -1,7 +1,5 @@
 *cleanup and remove XXX's
 
-*create nginx directory with nginx conf and test scripts.
-
 *add size limits for resource lists, ensure that limits are in place
 for stuff going into the resource pool.
   -size limits: max app size post sync.

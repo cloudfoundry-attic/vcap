@@ -45,14 +45,29 @@ module VCAP
         purge_directory!(@directories['resource_pool']) if @config[:purge_resource_pool_on_startup]
         at_exit { clean_directories } #prevent storage leaks.
         setup_pidfile
+
+        #non-nginx defaults.
         listen_port = config[:listen_port]
+        thin_args = ['0.0.0.0', listen_port]
+
+        if config[:nginx][:use_nginx]
+          if config[:nginx][:listen_port]
+            listen_port = config[:nginx][:listen_port]
+            thin_args = ['0.0.0.0', listen_port]
+          else
+            #XXX add config check to make sure one of these is present.
+            listen_socket = config[:nginx][:listen_socket]
+            thin_args = [listen_socket]
+          end
+        end
+
         server_params = { :config => @config,
                           :directories => @directories,
                           :logger => @logger}
 
         # XXX should get thin to use our logger.
         # Thin::Logging.silent = true
-        server = Thin::Server.new('0.0.0.0', listen_port) do
+        server = Thin::Server.new(*thin_args) do
            use Rack::CommonLogger
            map "/" do
              run VCAP::UploadManager::UploadManagerServer.new(server_params)
