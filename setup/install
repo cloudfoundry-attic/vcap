@@ -122,8 +122,9 @@ cd ~/cloudfoundry/vcap
 gem install bundler --no-rdoc --no-ri
 rake bundler:install
 
-# don't start up vcap in this shell
-# its best to exit the shell and then
-# come back in so that the .rvmrc in cloudfoundry/vcap activates correctly
-
+echo
+echo "don't start up vcap in this shell"
+echo "its best to exit the shell and then"
+echo "come back in so that the .rvmrc activates correctly"
+echo
 echo 'Success!'

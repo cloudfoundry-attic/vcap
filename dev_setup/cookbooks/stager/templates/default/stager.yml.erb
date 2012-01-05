@@ -1,0 +1,9 @@
+---
+logging:
+  level: debug2
+pid_filename: /var/vcap/sys/run/stager.pid
+nats_uri: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
+max_staging_duration: 120
+max_active_tasks: 10
+queues: ['staging']
+secure: false
