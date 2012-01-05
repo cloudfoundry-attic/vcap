@@ -1,6 +1,6 @@
 # warden
 
-`warden` is a daemon that is responsible for managing throw-away Linux
+`warden` is a daemon that manages throw-away Linux
 containers. The containers can be used as scratch-spaces to run arbitrary
 scripts as unpriviledged user, not only jailing the file system, but also
 jailing the process table and networking interface. The network interface for
@@ -27,14 +27,11 @@ containers can share the same, read only, base file systems.
 The directory structure in place to build these scratch spaces is located in
 the `root/` directory of this repository. Its contents looks like this:
 
-    root
-    ├── .instance-skeleton
-    ├── .lib
+    root/lxc
     ├── 000-base
     ├── 001-apt
-    ├── ....
-    ├── create.sh
-    └── setup.rb
+    ├── ...
+    └── 0??-xxx
 
 The read only file systems are sorted aphabetically when layering one over the
 order, so the root of all unions becomes `000-base`, next in line is `001-apt`
@@ -69,29 +66,63 @@ cannot be changed later.
 
 # Talking with `warden`
 
-`warden` runs on EventMachine. It uses the Redis protocol to communicate with
+`warden` runs on EventMachine. It uses a line-based JSON protocol to communicate with
 the outside world, and does so over a Unix socket, which is located at
 `/tmp/warden.sock` by default. The daemon can respond to a number of verbs,
 that either create new containers, modify container state, or run scripts
-inside of a container.  The verbs that `warden` responds to are:
+inside of a container. The verbs that `warden` responds to are:
 
 * `create`: This creates a new container. In the future this verb may accept an
   optional configuration parameter. This command returns handle (or name) of
   the container which is used to identify it. The handle is equal to the
   hexadecimal representation of its IP address, as acquired from the pool of
   unused network addresses in the configured subnet.
-* `run <handle> <script>`: This command runs the specified script in the
-  container identified by the specified handle. It returns a 3-element tuple
-  containing the exit status, the path to the file containing STDOUT, and the
-  path to the file containing STDERR of the script. **Note**: because `warden`
-  captures the output of scripts and only returns after the script has
-  completed, long running tasks should be backgrounded.
-* `destroy <handle>`: This command destroys the container identified by the
-  specified handle. It first stops the container when it is still running,
-  thereby terminating any running scripts, before destroying the container and
-  its associated directories. Because everything related to the container is
-  destroyed, artifacts from running an earlier script should be copied out
-  before calling `destroy`.
+
+* `spawn <handle> <script>`: Run the Bash script `<script>` in the context of the
+  container identified by `<handle>`. This command returns a job
+  identifier that can be used to reap its exit status at some point in the
+  future. Also, the connection that issued the command may go away and
+  reconnect later while still being able to reap the job.
+
+* `link <handle> <job_id>`: Try to reap the script identified by `<job_id>`
+  running in the container identified by `<handle>`. When the script is still
+  being executed, this command blocks the connection. When the script finishes,
+  or has already finished, this command returns a 3-element tuple. This tuple
+  contains, in order, the integer exit status, path to the captured STDOUT, and
+  the path to the captured STDERR. These elements may be nil when they cannot
+  be determined.
+
+* `limit <handle> (mem|disk) [<value>]`: Set or get resource limits for the
+  container identified by `<handle>`. The following resources can be limited:
+
+    * The memory limit is specified in number of bytes. It is enforced using
+      the control group associated with the container. When a container exceeds
+      this limit, one or more of its processes will be killed by the kernel.
+      Additionally, the warden will be notified that an OOM happened and it
+      subsequently tears down the container.
+    * The disk space limit is specified in the number of blocks. It is enforced
+      by means of a disk space quota for the user associated with the
+      container. When a container exceeds this limit, the warden will be
+      notified and it subsequently tears down the container.
+
+* `net <handle> in`: Forward a port on the external interface of the host to
+  the container identified by `<handle>`. The port number is the same on the
+  outside as it is on the inside of the container. This command returns the
+  mapped port number.
+
+* `net <handle> out <address[/mask][:port]>`: Allow traffic from the container
+  identified by `<handle>` to the network address specified by `<address>`. The
+  address may optionally contain a mask to allow a network of addresses, and a
+  port to only allow traffic to that specific port.
+
+* `stop <handle>`: Stop processes running inside the container identified by
+  the specified handle. Because all processes are taken down, unfinished
+  scripts will likely terminate without an exit status being available.
+
+* `destroy <handle>`: Stop processes and destroy all resources associated with
+  the container identified by the specified handle. Because everything related
+  to the container is destroyed, artifacts from running an earlier script
+  should be copied out before calling `destroy`.
 
 ## Lifecycle management
 
@@ -107,9 +138,15 @@ difference between a container being manually or automatically destroyed.
 
 ## Networking
 
-An unused subnet is allocated whenever a container is created. The pool where
-subnets are allocated from is configured in `lib/warden/server.rb` right now,
-and will be made configurable in the future (**TODO**).
+Every container is assigned an individual `/30` subnet. Containers use a
+virtual ethernet pair for networking. The host side of the pair is assigned the
+`<network>+1` IP address, where the container side is assigned the
+`<network>+2` IP address. The subnets are allocated from a pool of available
+subnets, which can be configured by the `pool_start_address` and `pool_size`
+configuration parameters under the `network` key. The pool consist of
+`pool_size` subnets starting with the subnet of `pool_start_address`.
+
+A frequently unused private range of IP addresses is the `172.16.0.0/12` range.
 
 # System prerequisites
 
@@ -119,20 +156,20 @@ packages need to be installed:
 
 * linux-image-server-lts-backport-natty
 * debootstrap
-* lxc-tools
 
-Before containers can be started, the `cgroup` file system should be mounted.
-This is done when `warden` is started, unless it is already mounted.
+Make sure that no `cgroup` type file system is mounted. The warden mounts this
+file system with a specific set of options.
+
+Other dependencies can be compiled and installed by running `rake setup`.
 
 # Hacking
 
 The packaged tests create and destroy actual containers, so require system
-prerequisites to be in place. They need to be run as root (or any other user
-than can work with lxc-tools).
+prerequisites to be in place. They need to be run as root.
 
-Setting up the base system is done by running `setup.rb` in the `root/`
+Setting up the base system is done by running `setup.rb` in the `root/lxc/`
 directory. This script loops over the subdirectories not starting with a `.`
 alphabetically and runs their `setup.rb`.
 
 Quickly creating a container to see if the (changed) configuration works can be
-done using the `create.sh` script in the `root/` directory.
+done using the `create.sh` script in the `root/lxc/` directory.

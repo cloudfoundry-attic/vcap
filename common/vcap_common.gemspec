@@ -9,7 +9,7 @@ spec = Gem::Specification.new do |s|
   s.authors = ["Derek Collison"]
   s.email = ["derek.collison@gmail.com"]
 
-  s.add_dependency('eventmachine', '~> 0.12.11.cloudfoundry.3')
+  s.add_dependency('eventmachine')
   s.add_dependency('thin', '~> 1.2.11')
   s.add_dependency('yajl-ruby', '~> 0.8.3')
   s.add_dependency('nats', '~> 0.4.10')

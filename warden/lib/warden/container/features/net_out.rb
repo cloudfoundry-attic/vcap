@@ -30,11 +30,19 @@ module Warden
           }
         end
 
+        def network_iface_host
+          @network_iface_host ||= "veth-%s-0" % handle
+        end
+
+        def network_iface_container
+          @network_iface_container ||= "veth-%s-1" % handle
+        end
+
         def do_net_out(spec)
           address, port = spec.split(":")
 
           rule = []
-          rule << %{--in-interface veth-#{handle}}
+          rule << %{--in-interface #{network_iface_host}}
           rule << %{--destination "#{address}"}
           rule << %{--destination-port "#{port}"} if port
           rule << %{--jump RETURN}

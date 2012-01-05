@@ -144,6 +144,7 @@ class HealthManager
       @logger.error "Eventmachine problem, #{e}"
       @logger.error("#{e.backtrace.join("\n")}")
       @logger.error(e)
+      exit!
     end
 
     NATS.start(:uri => @config['mbus']) do

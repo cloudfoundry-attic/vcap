@@ -1,8 +1,7 @@
 #!/usr/bin/env ruby
 
-require "socket"
 require "shellwords"
-require "hiredis"
+require "warden/client"
 
 include Shellwords
 
@@ -12,8 +11,8 @@ def prompt(str)
   STDIN.gets
 end
 
-connection = Hiredis::Connection.new
-connection.connect_unix("/tmp/warden.sock")
+client = Warden::Client.new("/tmp/warden.sock")
+client.connect
 
 loop do
   line = prompt("warden")
@@ -23,6 +22,6 @@ loop do
   next if words.empty?
 
   # Issue command
-  connection.write(words)
-  STDOUT.puts connection.read.inspect
+  client.write(words)
+  STDOUT.puts client.read.inspect
 end
