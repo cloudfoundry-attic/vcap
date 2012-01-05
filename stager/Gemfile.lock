@@ -35,7 +35,7 @@ GEM
       eventmachine (>= 0.12.6)
       rack (>= 1.0.0)
     tilt (1.3.2)
-    vcap_common (1.0.3)
+    vcap_common (1.0.4)
       eventmachine (~> 0.12.11.cloudfoundry.3)
       logging (>= 1.5.0)
       nats (~> 0.4.22.beta.4)
@@ -64,7 +64,7 @@ DEPENDENCIES
   rake
   rspec
   sinatra
-  vcap_common (~> 1.0.3)
+  vcap_common (~> 1.0.4)
   vcap_logging (>= 0.1.3)
   vcap_staging (~> 0.1.31)
   webmock
