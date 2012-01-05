@@ -59,9 +59,10 @@ describe HealthManager do
         'flapping_death' => 3,
         'flapping_timeout' => 5,
         'restart_timeout' => 2,
-        'stable_state' => 1,
-        'request_queue' => 0
-      },
+        'stable_state' => -1,
+
+                              },
+      'dequeueing_rate' => 0,
       'rails_environment' => 'test',
       'database_environment' => {
         'test' => {
@@ -140,7 +141,7 @@ describe HealthManager do
   it "should detect instances that are down and send a START request" do
     stats = { :frameworks => {}, :runtimes => {}, :down => 0 }
     should_publish_to_nats "cloudcontrollers.hm.requests", {
-          'droplet' => 1,
+          'droplet' => @app.id,
           'op' => 'START',
           'last_updated' => @app.last_updated.to_i,
           'version' => "#{@app.staged_package_hash}-#{@app.run_count}",
@@ -164,7 +165,7 @@ describe HealthManager do
         3 => { :state => 'RUNNING', :timestamp => timestamp, :last_action => @app.last_updated, :instance => '3' }
     }}
     should_publish_to_nats "cloudcontrollers.hm.requests", {
-          'droplet' => 1,
+          'droplet' => @app.id,
           'op' => 'STOP',
           'last_updated' => @app.last_updated.to_i,
           'instances' => [ version_entry[:indices][3][:instance] ]
@@ -193,7 +194,7 @@ describe HealthManager do
 
   it "should restart an instance that exits unexpectedly" do
     should_publish_to_nats "cloudcontrollers.hm.requests", {
-          'droplet' => 1,
+          'droplet' => @app.id,
           'op' => 'START',
           'last_updated' => @app.last_updated.to_i,
           'version' => "#{@app.staged_package_hash}-#{@app.run_count}",
@@ -202,7 +203,7 @@ describe HealthManager do
 
     @hm.process_heartbeat_message(make_heartbeat_message([0], "RUNNING"))
     droplet_entry = @hm.process_exited_message({
-                                                     'droplet' => 1,
+                                                     'droplet' => @app.id,
                                                      'version' => "#{@app.staged_package_hash}-#{@app.run_count}",
                                                      'index' => 0,
                                                      'instance' => 0,
