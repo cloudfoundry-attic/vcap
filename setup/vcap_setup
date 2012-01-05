@@ -113,6 +113,7 @@ if [ ! -d '/var/vcap' ]; then
     mkdir /var/vcap
     mkdir /var/vcap/sys
     mkdir /var/vcap/sys/log
+    mkdir /var/vcap/sys/run
     mkdir /var/vcap/shared
     mkdir /var/vcap/services
     chmod -R 777 /var/vcap
@@ -232,6 +233,7 @@ if [[ $DEA == true || $ALL == true ]]; then
             echo sun-java6-jdk shared/accepted-sun-dlj-v1-1 boolean true | debconf-set-selections
             echo sun-java6-jre shared/accepted-sun-dlj-v1-1 boolean true | debconf-set-selections
             apt-get install -qqy curl sun-java6-bin sun-java6-jre sun-java6-jdk
+			apt-get install -qqy maven2
         elif [[ $PLATFORM == 'MacOSX' ]]; then
             echo -e "\033[31mFIXME: Implement for MacOSX \033[0m"
         fi

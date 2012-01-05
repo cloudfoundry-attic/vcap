@@ -6,12 +6,17 @@
 #
 #
 
-gem_package "bcrypt-ruby"
+bcrypt = gem_package "bcrypt-ruby" do
+  action :nothing
+end
+
+bcrypt.run_action(:install)
+Gem.clear_paths
+require 'bcrypt'
 
 ruby_block "hash secrets" do
 
   block do
-    require 'bcrypt'
     node[:uaa][:varz][:secret] = BCrypt::Password.create(node[:uaa][:varz][:password], :cost=>8)
     node[:uaa][:app][:secret] = BCrypt::Password.create(node[:uaa][:app][:password], :cost=>8)
     node[:uaa][:my][:secret] = BCrypt::Password.create(node[:uaa][:my][:password], :cost=>8)
