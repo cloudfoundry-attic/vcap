@@ -183,10 +183,6 @@ when "ubuntu"
       make
       make install
 
-      # Copy lua library to nginx directory
-      # cp #{lua_path}/lib/lua/5.1/* #{nginx_path}/sbin
-      sudo cp --backup #{nginx_path}/sbin/nginx /usr/sbin
-
       EOH
   end
 
@@ -209,6 +205,13 @@ when "ubuntu"
     source "tablesave.lua"
     owner node[:deployment][:user]
     mode 0644
+  end
+
+  template "nginx" do
+    path File.join("", "etc", "init.d", "nginx")
+    source "nginx.erb"
+    owner node[:deployment][:user]
+    mode 0755
   end
 
   bash "Stop running nginx" do
