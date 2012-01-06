@@ -5,8 +5,8 @@ require "warden/version"
 Gem::Specification.new do |s|
   s.name        = "warden"
   s.version     = Warden::VERSION
-  s.authors     = ["Pieter Noordhuis"]
-  s.email       = ["pcnoordhuis@gmail.com"]
+  s.authors     = ["Pieter Noordhuis", "Matt Page"]
+  s.email       = ["pcnoordhuis@gmail.com", "mpage@vmware.com"]
   s.homepage    = ""
   s.summary     = %q{TODO: Write a gem summary}
   s.description = %q{TODO: Write a gem description}
@@ -18,8 +18,9 @@ Gem::Specification.new do |s|
   s.executables   = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }
   s.require_paths = ["lib"]
 
-  s.add_runtime_dependency "eventmachine"
-  s.add_runtime_dependency "hiredis", "~> 0.4.0"
-  s.add_runtime_dependency "em-posix-spawn"
+  s.add_runtime_dependency "eventmachine", "0.12.11.cloudfoundry.3"
+  s.add_runtime_dependency "yajl-ruby"
+  s.add_runtime_dependency "em-posix-spawn", '> 0.0.1'
   s.add_runtime_dependency "vcap_common"
+  s.add_runtime_dependency "sleepy_penguin"
 end

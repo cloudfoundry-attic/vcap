@@ -1,13 +1,6 @@
-orig_version = node[:ruby][:version]
-orig_source = node[:ruby][:source]
-orig_path = node[:ruby][:path]
+# convenience variables
+ruby_version = node[:ruby18][:version]
+ruby_source = node[:ruby18][:source]
+ruby_path = node[:ruby18][:path]
 
-node[:ruby][:version] = node[:ruby18][:version]
-node[:ruby][:source] = node[:ruby18][:source]
-node[:ruby][:path] = node[:ruby18][:path]
-
-include_recipe "ruby::default"
-
-node[:ruby][:version] = orig_version
-node[:ruby][:source] = orig_source
-node[:ruby][:path] = orig_path
+cf_ruby_install(ruby_version, ruby_source, ruby_path)

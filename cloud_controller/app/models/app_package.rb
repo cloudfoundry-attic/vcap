@@ -22,6 +22,7 @@ class AppPackage
   def to_zip
     tmpdir = Dir.mktmpdir
     dir = path = nil
+    check_package_size
     timed_section(CloudController.logger, 'app_to_zip') do
       dir = unpack_upload
       synchronize_pool_with(dir)
@@ -96,8 +97,6 @@ class AppPackage
     end
   end
 
-private
-
   def package_dir
     self.class.package_dir
   end
@@ -107,6 +106,56 @@ private
     new_path = File.join(package_dir, sha1)
     FileUtils.mv(path, new_path)
     new_path
+  end
+
+  # Verifies that the recreated droplet size is less than the
+  # maximum allowed by the AppConfig.
+  def check_package_size
+    unless @uploaded_file
+      # When the entire set of files that make up the application is already
+      # in the resource pool, the client may not send us any additional contents
+      # i.e. the payload is empty.
+      CloudController.logger.debug "No uploaded file for application, contents assumed to be present in resource pool"
+      return
+    end
+
+    # Avoid stat'ing files in the resource pool if possible
+    total_size = get_unzipped_size
+    unless total_size <= AppConfig[:max_droplet_size]
+      limit_str = VCAP.pp_bytesize(AppConfig[:max_droplet_size])
+      size_str = VCAP.pp_bytesize(total_size)
+      CloudController.logger.warn "Zipped app is #{size_str}, limit is #{limit_str}"
+      raise AppPackageError, "Application exceeds maximum allowed size (#{limit_str})"
+    end
+
+    # Ugh, this stat's all the files that would need to be copied
+    # from the resource pool. Consider caching sizes in resource pool?
+    sizes = CloudController.resource_pool.resource_sizes(@resource_descriptors)
+    total_size += sizes.reduce(0) {|accum, cur| accum + cur[:size] }
+    unless total_size <= AppConfig[:max_droplet_size]
+      limit_str = VCAP.pp_bytesize(AppConfig[:max_droplet_size])
+      size_str = VCAP.pp_bytesize(total_size)
+      CloudController.logger.warn "Zipped app + cached resources is #{size_str}, limit is #{limit_str}"
+      raise AppPackageError, "Application exceeds maximum allowed size (#{limit_str})"
+    end
+  end
+
+  def get_unzipped_size
+    cmd = "unzip -l #{@uploaded_file.path}"
+    f = Fiber.current
+    EM.system(cmd) {|output, status| f.resume({:status => status, :stdout => output}) }
+    result = Fiber.yield
+    unless result[:status].exitstatus == 0
+      raise AppPackageError, "Failed listing application archive"
+    end
+
+    lines = result[:stdout].split(/\n/)
+    matches = lines.last.match(/^\s*(\d+)\s+(\d+) file/)
+    unless matches
+      raise AppPackageError, "Failed parsing application archive listing"
+    end
+
+    Integer(matches[1])
   end
 
   def unpack_upload
@@ -128,6 +177,19 @@ private
     working_dir
   end
 
+  # enforce property that any file in resource list must be located in the
+  # apps directory e.g. '../../foo' or a symlink pointing outside working_dir
+  # should raise an exception.
+  def resolve_path(working_dir, tainted_path)
+    expanded_dir  = File.realdirpath(working_dir)
+    expanded_path = File.realdirpath(tainted_path, expanded_dir)
+    pattern = "#{expanded_dir}/*"
+    unless File.fnmatch?(pattern, expanded_path)
+      raise ArgumentError, "Resource path sanity check failed #{pattern}:#{expanded_path}!!!!"
+    end
+    expanded_path
+  end
+
   # Do resource pool synch, needs to be called with a Fiber context
   def synchronize_pool_with(working_dir)
     timed_section(CloudController.logger, 'process_app_resources') do
@@ -135,8 +197,8 @@ private
         pool = CloudController.resource_pool
         pool.add_directory(working_dir)
         @resource_descriptors.each do |descriptor|
-          target = File.join(working_dir, descriptor[:fn])
-          pool.copy(descriptor, target)
+          path = resolve_path(working_dir, descriptor[:fn])
+          pool.copy(descriptor, path)
         end
       end
     end

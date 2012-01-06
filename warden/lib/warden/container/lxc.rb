@@ -4,6 +4,7 @@ require "warden/container/features/quota"
 require "warden/container/features/cgroup"
 require "warden/container/features/net_out"
 require "warden/container/features/net_in"
+require "warden/container/features/mem_limit"
 
 module Warden
 
@@ -15,6 +16,7 @@ module Warden
       include Features::Cgroup
       include Features::NetIn
       include Features::NetOut
+      include Features::MemLimit
 
       class << self
 
@@ -56,9 +58,15 @@ module Warden
         debug "container started"
       end
 
+      def do_stop
+        # Kill all processes in the container
+        sh "#{container_path}/killprocs.sh"
+      end
+
       def do_destroy
         # Stop container
         sh "#{container_path}/stop.sh"
+
         debug "container stopped"
 
         # Destroy container

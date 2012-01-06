@@ -44,10 +44,9 @@ http {
     server <%= node[:nginx][:uls_ip] %>:<%= node[:nginx][:uls_port] %>;
   }
 
-
   server {
     listen       80;
-    server_name  <%= node[:deployment][:domain] %>;
+    server_name  _;
     server_name_in_redirect off;
 
     #TODO: how to make this internal location totally transparent to outside
@@ -83,9 +82,9 @@ http {
         # if we have multiple workers, there will be still few stats not synced for
         # the workers which don't get this monitor request.
         access_by_lua '
-	  -- add package.path and package.cpath
-	  package.path = package.path..";<%= node[:lua][:module_path] %>/?.lua"
-	  package.cpath = package.cpath..";<%= node[:lua][:module_path] %>/?.so"
+          -- add package.path and package.cpath
+          package.path = package.path..";<%= node[:lua][:module_path] %>/?.lua"
+          package.cpath = package.cpath..";<%= node[:lua][:module_path] %>/?.so"
 
           local uls = require ("uls")
           local cjson = require("cjson")
@@ -122,9 +121,9 @@ http {
         set $trace '';
 
         access_by_lua '
-	  -- add package.path and package.cpath
-	  package.path = package.path..";<%= node[:lua][:module_path] %>/?.lua"
-	  package.cpath = package.cpath..";<%= node[:lua][:module_path] %>/?.so"
+          -- add package.path and package.cpath
+          package.path = package.path..";<%= node[:lua][:module_path] %>/?.lua"
+          package.cpath = package.cpath..";<%= node[:lua][:module_path] %>/?.so"
 
           local uls = require ("uls")
           local cjson = require("cjson")
@@ -175,9 +174,9 @@ http {
 
         # Handling response from backend servers
         header_filter_by_lua '
-	  -- add package.path and package.cpath
-	  package.path = package.path..";<%= node[:lua][:module_path] %>/?.lua"
-	  package.cpath = package.cpath..";<%= node[:lua][:module_path] %>/?.so"
+          -- add package.path and package.cpath
+          package.path = package.path..";<%= node[:lua][:module_path] %>/?.lua"
+          package.cpath = package.cpath..";<%= node[:lua][:module_path] %>/?.so"
 
           local uls = require ("uls")
 

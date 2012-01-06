@@ -1,117 +1,66 @@
-require "warden/event_emitter"
-
-require "eventmachine"
-require "hiredis/reader"
+require "socket"
+require "yajl"
 
 module Warden
 
   class Client
 
-    include EventEmitter
+    attr_reader :path
 
     def initialize(path)
-      @deferrables = []
-      @connection = ::EM.connect_unix_domain(path, ServerConnection)
-
-      @connection.on(:reply) { |reply|
-        deferrable = @deferrables.shift
-        next unless deferrable
-
-        if RuntimeError === reply
-          deferrable.set_deferred_failure(reply)
-        else
-          deferrable.set_deferred_success(reply)
-        end
-      }
-
-      @connection.on(:connected) {
-        emit(:connected)
-      }
-
-      @connection.on(:closed) {
-        emit(:closed)
-      }
+      @path = path
     end
 
-    def create
-      send_command ["create"]
+    def connected?
+      !@sock.nil?
     end
 
-    def destroy(handle)
-      send_command ["destroy", handle]
+    def connect
+      raise "already connected" if connected?
+      @sock = ::UNIXSocket.new(path)
     end
 
-    def run(handle, script)
-      send_command ["run", handle, script]
+    def disconnect
+      raise "not connected" unless connected?
+      @sock.close rescue nil
+      @sock = nil
     end
 
-    def call(*args)
-      send_command args
+    def reconnect
+      disconnect if connected?
+      connect
     end
 
-    protected
+    def read
+      line = @sock.gets
+      if line.nil?
+        disconnect
+        raise ::EOFError
+      end
 
-    def send_command(args)
-      @connection.send_command(args)
-      @deferrables << ::EM::DefaultDeferrable.new
-      @deferrables.last
+      object = ::Yajl::Parser.parse(line)
+      payload = object["payload"]
+
+      # Raise error replies
+      if object["type"] == "error"
+        raise ::StandardError.new(payload)
+      end
+
+      payload
     end
 
-    class ServerConnection < ::EM::Connection
+    def write(args)
+      json = ::Yajl::Encoder.encode(args, :pretty => false)
+      @sock.write(json + "\n")
+    end
 
-      include EventEmitter
+    def call(args)
+      write(args)
+      read
+    end
 
-      def post_init
-        @reader = ::Hiredis::Reader.new
-      end
-
-      def connection_completed
-        emit(:connected)
-      end
-
-      def receive_data(data)
-        @reader.feed(data) if data
-        while (reply = @reader.gets) != false
-          emit(:reply, reply)
-        end
-      end
-
-      def unbind
-        emit(:closed)
-      end
-
-      def send_command(args)
-        send_data build_command(args)
-      end
-
-      protected
-
-      COMMAND_DELIMITER = "\r\n"
-
-      def build_command(args)
-        command = []
-        command << "*#{args.size}"
-
-        args.each do |arg|
-          arg = arg.to_s
-          command << "$#{string_size arg}"
-          command << arg
-        end
-
-        # Trailing delimiter
-        command << ""
-        command.join(COMMAND_DELIMITER)
-      end
-
-      if "".respond_to?(:bytesize)
-        def string_size(string)
-          string.to_s.bytesize
-        end
-      else
-        def string_size(string)
-          string.to_s.size
-        end
-      end
+    def method_missing(sym, *args, &blk)
+      call([sym, *args])
     end
   end
 end
