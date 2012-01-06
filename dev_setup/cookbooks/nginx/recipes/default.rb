@@ -214,7 +214,7 @@ when "ubuntu"
   bash "Stop running nginx" do
     code <<-EOH
       pid=`ps -ef | grep nginx | grep -v grep | awk '{print $2}'`
-      [ ! -z "$pid" ] && sudo kill $pid
+      [ ! -z "$pid" ] && sudo kill $pid || true
     EOH
   end
 
