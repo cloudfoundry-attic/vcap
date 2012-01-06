@@ -23,8 +23,12 @@ class App < ActiveRecord::Base
 
   AppStates = %w[STOPPED STARTED]
   PackageStates = %w[PENDING STAGED FAILED]
-  Runtimes = %w[ruby18 ruby19 java node php erlangR14B02 python26]
-  Frameworks = %w[sinatra rails3 java_web spring grails node php otp_rebar lift wsgi django unknown]
+
+  # Defined at cloud_controller.yml
+  Runtimes = AppConfig[:runtimes].keys.map {|k| k.to_s}
+
+  # Supported frameworks that have a manifest file
+  Frameworks = StagingPlugin.manifests_info.keys.map {|k| k.to_s} << 'unknown'
 
   validates_presence_of :name, :framework, :runtime
 
