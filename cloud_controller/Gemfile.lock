@@ -177,6 +177,6 @@ DEPENDENCIES
   uuidtools (~> 2.1.2)
   vcap_common
   vcap_logging
-  vcap_stager (~> 0.1.7)
+  vcap_stager (~> 0.1.8)
   vcap_staging
   yajl-ruby (~> 0.8.3)
