@@ -40,7 +40,7 @@ TEMPLATE = <<-ERB
 
   <Service name="Catalina">
 
-    <Connector port="<%= tomcat_port %>" protocol="HTTP/1.1"
+    <Connector port="<%= tomcat_port %>" protocol="HTTP/1.1" URIEncoding="UTF-8"
                connectionTimeout="20000" />
 
     <Engine name="Catalina" defaultHost="localhost">
