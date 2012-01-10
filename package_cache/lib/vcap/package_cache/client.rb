@@ -29,16 +29,16 @@ class VCAP::PackageCache::Client
     @cache_client = VCAP::PackageCache::CacheClient.new(cache_dir, @logger)
   end
 
-  def add_package(location, type, id)
+  def add_package(location, type, id, runtime)
     begin
       if location == :remote
         name = id
-        response = RestClient.put "#{@cache_addr}/load/remote/#{type}/#{name}",''
+        response = RestClient.put "#{@cache_addr}/load/remote/#{type}/#{name}/#{runtime}",''
       elsif location == :local
         path = id
         raise "invalid path" if not File.exist?(path)
         entry_name = @inbox.add_entry(path)
-        response = RestClient.put "#{@cache_addr}/load/local/#{type}/#{entry_name}",''
+        response = RestClient.put "#{@cache_addr}/load/local/#{type}/#{entry_name}/#{runtime}",''
       else
         raise VCAP::PackageCache::ClientError.new("invalid location")
       end
@@ -54,15 +54,15 @@ class VCAP::PackageCache::Client
 
   #XXX seems like file_to_entry_name should be renamed to reflect its
   #XXX function more clearly.
-  def get_package_path(gem_path, type)
-    if type == :remote
+  def get_package_path(gem_path, location, runtime)
+    if location == :remote
       gem_name = File.basename(gem_path)
-    elsif type == :local
+    elsif location == :local
        gem_name = @inbox.file_to_entry_name(gem_path)
     else
-      raise "invalid package type"
+      raise "invalid package location"
     end
-    package_name = PkgUtil.to_package(gem_name)
+    package_name = PkgUtil.to_package(gem_name, runtime)
     @cache_client.get_package_path(package_name)
   end
 end

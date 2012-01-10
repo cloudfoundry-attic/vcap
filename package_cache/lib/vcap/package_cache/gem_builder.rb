@@ -1,16 +1,13 @@
 require 'tmpdir'
 
-require 'vcap/em_run'
-
 require 'pkg_util'
 require 'builder'
 
 module VCAP module PackageCache end end
 
 class VCAP::PackageCache::GemBuilder < VCAP::PackageCache::Builder
-  def initialize(user, build_root, logger = nil)
-    super(user, build_root, logger)
-    VCAP::EMRun.init(@logger)
+  def initialize(user, build_root, runtimes, logger = nil)
+    super(user, build_root, runtimes, logger)
     @logger.debug("new gem_builder with uid: #{@user[:uid]} build_root #{build_root}")
   end
 
@@ -33,9 +30,19 @@ class VCAP::PackageCache::GemBuilder < VCAP::PackageCache::Builder
     end
   end
 
-  def build_local(gem_name, gem_path)
-    output, status = VCAP::EMRun.run_restricted(@build_dir, @user,
-        "gem install #{gem_path} --local --no-rdoc --no-ri -E -w -f --ignore-dependencies --install-dir #{@install_dir}")
+  def run_restricted(run_dir, user, cmd)
+    run_cmd = "cd #{run_dir} ; sudo -u #{user[:user_name]} #{cmd} 2>&1"
+    stdout = `#{run_cmd}`
+    status = $?
+    return stdout, status
+  end
+
+  def build_local(gem_name, gem_path, ruby_path)
+    gem_cmd_path = `which gem`.chop
+    build_cmd = "#{ruby_path} #{gem_cmd_path} install #{gem_path}"
+    build_opts = "--local --no-rdoc --no-ri -E -w -f --ignore-dependencies --install-dir"
+    output, status = run_restricted(@build_dir, @user,
+                                    "#{build_cmd} #{build_opts} #{@install_dir}")
     report_build_status(gem_name, status, output)
     verify_install(gem_path)
   end
@@ -48,7 +55,7 @@ class VCAP::PackageCache::GemBuilder < VCAP::PackageCache::Builder
     url = gem_to_url(gem_name)
     @logger.debug("fetching #{gem_name}")
     download_cmd = "wget --quiet --retry-connrefused --connect-timeout=5 --no-check-certificate #{url}"
-    output, status = VCAP::EMRun.run_restricted(@build_dir, @user, download_cmd)
+    output, status = run_restricted(@build_dir, @user, download_cmd)
     if status != 0
       @logger.error "Download failed with status #{status}"
       @logger.error output
@@ -56,9 +63,9 @@ class VCAP::PackageCache::GemBuilder < VCAP::PackageCache::Builder
     raise "Download failed" if not File.exists?(File.join(@build_dir, gem_name))
   end
 
-  def package_gem(gem_name)
-    package_file = PkgUtil.to_package(gem_name)
-    output, status = VCAP::EMRun.run_restricted(@install_dir, @user,
+  def package_gem(gem_name, runtime)
+    package_file = PkgUtil.to_package(gem_name, runtime)
+    output, status = run_restricted(@install_dir, @user,
                                            "tar czf #{package_file} gems")
     if status != 0
       raise "tar czf #{package_file} failed> exist status: #{status}, output: #{output}"
@@ -68,17 +75,18 @@ class VCAP::PackageCache::GemBuilder < VCAP::PackageCache::Builder
     package_path
   end
 
-  def build(location, name, path = nil)
-    @logger.info("building #{location.to_s} package #{name}")
+  def build(location, name, path, runtime)
+    @logger.info("building #{location} package #{name} for runtime #{runtime}")
+    ruby_path = @runtimes[runtime]
     setup_build
     if location == :local
       import_package_src(path)
-      build_local(@src_name, @src_path)
+      build_local(@src_name, @src_path, ruby_path)
     else
       fetch_remote_gem(name)
-      build_local(name, File.join('.', name))
+      build_local(name, File.join('.', name), ruby_path)
     end
-    @package_path = package_gem(name)
+    @package_path = package_gem(name, runtime)
     @logger.debug("created package #{@package_path}.")
   end
 

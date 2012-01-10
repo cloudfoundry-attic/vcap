@@ -4,9 +4,6 @@ require 'rubygems'
 require 'fileutils'
 require 'rspec/core'
 require 'rspec/expectations'
-require 'eventmachine'
-require 'fiber'
-require 'em_fiber_wrap'
 
 def create_test_file(path)
   test_string = "I am a test file"
