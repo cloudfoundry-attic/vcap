@@ -41,12 +41,12 @@ class Component
     if core?
       @path = File.join(DIR, name)
       # Sane default for location of configuration file
-      @configuration_path ||= File.join(DIR, "..", name, "config", "#{name}.yml")
+      @configuration_path ||= File.expand_path(File.join(DIR, "..", name, "config", "#{name}.yml"))
     else
       @path = File.join(SERVICE_DIR, name)
       # Sane default for location of service configuration file
       pre = name.sub(/_node|_gateway/,'')
-      @configuration_path ||= File.join(DIR, "../services", pre, "config", "#{name}.yml")
+      @configuration_path ||= File.expand_path(File.join(DIR, "../services", pre, "config", "#{name}.yml"))
     end
   end
 

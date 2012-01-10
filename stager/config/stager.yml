@@ -1,1 +1,9 @@
-dev.yml
+---
+logging:
+  level: debug2
+pid_filename: /var/vcap/sys/run/stager.pid
+nats_uri: nats://127.0.0.1:4222
+max_staging_duration: 120
+max_active_tasks: 10
+queues: ['staging']
+secure: false

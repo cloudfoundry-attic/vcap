@@ -1,14 +1,14 @@
 #!/usr/bin/env ruby
 
-PATH = File.expand_path("..", __FILE__)
-Dir.chdir(PATH)
-require "../.lib/global"
+require File.expand_path("../../.lib/global", $0)
 
-Dir.chdir("union")
+mount_union
+
+Dir.chdir File.expand_path("../union", $0)
 
 write "etc/apt/sources.list", <<-EOS
-deb http://us.archive.ubuntu.com/ubuntu/ lucid main universe
-deb http://us.archive.ubuntu.com/ubuntu/ lucid-updates main universe
+deb http://apt-mirror.cso.vmware.com/ubuntu/ lucid main universe
+deb http://apt-mirror.cso.vmware.com/ubuntu/ lucid-updates main universe
 EOS
 
 # Never show a dialog from dpkg

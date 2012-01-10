@@ -8,20 +8,13 @@ if [ -f started ]; then
   exit 1
 fi
 
-<%= union_mount_command %>
+<%= mount_union_command(Dir.pwd) %>
 
-lxc-create \
-  --name "instance-<%= config["id"] %>" \
-  --config config
+export ROOT_PATH=union
+export ASSET_PATH=$(pwd)
+../../../src/clone "./pre-exec.sh"
 
-./close_fds lxc-start \
-  --name "instance-<%= config["id"] %>" \
-  --daemon \
-  --console "console.log" \
-  --logfile "lxc.log" \
-  --logpriority INFO
-
-ifconfig veth-<%= config["id"] %> <%= config["network_gateway_ip"] %> \
+ifconfig veth-<%= config["id"] %>-0 <%= config["network_gateway_ip"] %> \
   netmask <%= config["network_netmask"] %>
 
 touch started

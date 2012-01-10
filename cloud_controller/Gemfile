@@ -3,18 +3,18 @@ source 'http://rubygems.org'
 # Rails itself
 gem 'rails', '~> 3.0.5'
 # Message bus
-gem 'nats', '>= 0.4.10', :require => 'nats/client'
+gem 'nats', :require => 'nats/client'
 
 gem 'logging', '>= 1.5.0'
 
 # VCAP common components
-gem 'vcap_common', :require => ['vcap/common', 'vcap/component'], :path => '../common'
+gem 'vcap_common', :require => ['vcap/common', 'vcap/component']
 gem 'vcap_logging', :require => ['vcap/logging']
-gem 'vcap_staging', '= 0.1.25'
+gem 'vcap_staging'
 
 # For queuing staging tasks
 gem 'em-hiredis'
-gem 'vcap_stager', '= 0.1.3'
+gem 'vcap_stager', '~> 0.1.8'
 
 # Databases
 gem 'sqlite3'
@@ -34,20 +34,20 @@ group :production do
 end
 
 # EventMachine and async support
-gem 'eventmachine',  '~> 0.12.11.cloudfoundry.2'
-gem 'thin', '> 1.2'
+gem 'eventmachine'
+gem 'thin'
 gem 'em-http-request', '~> 1.0.0.beta.3', :require => 'em-http'
-gem 'em-redis', :require => nil
-gem 'rack-fiber_pool', :require => nil
+gem 'em-redis', '~> 0.3.0', :require => nil
+gem 'rack-fiber_pool', '~> 0.9.1', :require => nil
 
 # Support libraries
-gem 'yajl-ruby', '>= 0.7.9'
-gem 'nokogiri', '>= 1.4.4'
-gem 'bcrypt-ruby', '>= 2.1.4'
-gem 'ruby-hmac', :require => 'hmac-sha1'
-gem 'SystemTimer', :platforms => :mri_18
-gem 'uuidtools'
-gem 'rest-client', '= 1.6.7'
+gem 'yajl-ruby', '~> 0.8.3'
+gem 'nokogiri', '~> 1.4.4'
+gem 'bcrypt-ruby', '~> 2.1.4'
+gem 'ruby-hmac', '~> 0.4.0', :require => 'hmac-sha1'
+gem 'SystemTimer', '~> 1.2', :platforms => :mri_18
+gem 'uuidtools', '~> 2.1.2'
+gem 'rest-client', '~> 1.6.7'
 
 # rspec-rails is outside the 'test' group in order to consistently provide Rake tasks.
 gem 'rspec-rails', '>= 2.4.1'

@@ -1,6 +1,6 @@
-OPTIMIZATION?=-O2
+OPTIMIZATION?=-O0
 DEBUG?=-g -ggdb -rdynamic
-BINS=report_quota runner
+BINS=report_quota runner clone
 
 all: $(BINS)
 
@@ -15,5 +15,8 @@ report_quota: report_quota.o
 runner: runner.o
 		$(CC) -o $@ $^
 
+clone: clone.o
+		$(CC) -o $@ -lutil $^
+
 %.o: %.c
-		$(CC) -c -Wall $(OPTIMIZATION) $(DEBUG) $(CFLAGS) $<
+		$(CC) -c -Wall -D_GNU_SOURCE $(OPTIMIZATION) $(DEBUG) $(CFLAGS) $<
