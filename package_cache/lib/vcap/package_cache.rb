@@ -51,8 +51,17 @@ module VCAP
         at_exit { clean_directories } #prevent storage leaks.
         setup_pidfile
         listen_port = config[:listen_port]
-        cache_server = VCAP::PackageCache::PackageCacheServer.new(@logger)
-        Thin::Server.start('127.0.0.1', listen_port , cache_server)
+
+        server_params = {:logger => @logger}
+
+        server = Thin::Server.new('127.0.0.1', listen_port) do
+           use Rack::CommonLogger
+           map "/" do
+             run VCAP::PackageCache::PackageCacheServer.new(server_params)
+           end
+        end
+        server.threaded = true
+        server.start!
       end
 
       private

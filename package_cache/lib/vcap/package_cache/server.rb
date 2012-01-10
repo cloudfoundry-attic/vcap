@@ -8,7 +8,6 @@ require 'inbox'
 require 'cache'
 require 'gem_builder'
 require 'pkg_util'
-require 'em_fiber_wrap'
 require 'vcap/user_pools/user_pool'
 
 require 'yajl'
@@ -16,15 +15,13 @@ require 'yajl'
 module VCAP module PackageCache end end
 
 class VCAP::PackageCache::PackageCacheServer < Sinatra::Base
-  register Sinatra::Async
-  use Rack::FiberPool
 
-  def initialize(logger)
+  def initialize(server_params)
     super
-    @logger = logger
+    @logger = server_params[:logger]
     @logger.info("Bringing up package cache...")
     begin
-      em_fiber_wrap{ setup_components }
+      setup_components
     rescue => e
       @logger.error("startup up failed with exception.")
       @logger.error e.to_s

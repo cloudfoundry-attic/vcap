@@ -1,7 +1,5 @@
 require 'tmpdir'
 
-require 'vcap/em_run'
-
 require 'pkg_util'
 require 'builder'
 
@@ -10,7 +8,6 @@ module VCAP module PackageCache end end
 class VCAP::PackageCache::GemBuilder < VCAP::PackageCache::Builder
   def initialize(user, build_root, logger = nil)
     super(user, build_root, logger)
-    VCAP::EMRun.init(@logger)
     @logger.debug("new gem_builder with uid: #{@user[:uid]} build_root #{build_root}")
   end
 
@@ -33,8 +30,15 @@ class VCAP::PackageCache::GemBuilder < VCAP::PackageCache::Builder
     end
   end
 
+  def run_restricted(run_dir, user, cmd)
+    run_cmd = "cd #{run_dir} ; sudo -u #{user[:user_name]} #{cmd} 2>&1"
+    stdout = `#{run_cmd}`
+    status = $?
+    return stdout, status
+  end
+
   def build_local(gem_name, gem_path)
-    output, status = VCAP::EMRun.run_restricted(@build_dir, @user,
+    output, status = run_restricted(@build_dir, @user,
         "gem install #{gem_path} --local --no-rdoc --no-ri -E -w -f --ignore-dependencies --install-dir #{@install_dir}")
     report_build_status(gem_name, status, output)
     verify_install(gem_path)
@@ -48,7 +52,7 @@ class VCAP::PackageCache::GemBuilder < VCAP::PackageCache::Builder
     url = gem_to_url(gem_name)
     @logger.debug("fetching #{gem_name}")
     download_cmd = "wget --quiet --retry-connrefused --connect-timeout=5 --no-check-certificate #{url}"
-    output, status = VCAP::EMRun.run_restricted(@build_dir, @user, download_cmd)
+    output, status = run_restricted(@build_dir, @user, download_cmd)
     if status != 0
       @logger.error "Download failed with status #{status}"
       @logger.error output
@@ -58,7 +62,7 @@ class VCAP::PackageCache::GemBuilder < VCAP::PackageCache::Builder
 
   def package_gem(gem_name)
     package_file = PkgUtil.to_package(gem_name)
-    output, status = VCAP::EMRun.run_restricted(@install_dir, @user,
+    output, status = run_restricted(@install_dir, @user,
                                            "tar czf #{package_file} gems")
     if status != 0
       raise "tar czf #{package_file} failed> exist status: #{status}, output: #{output}"
