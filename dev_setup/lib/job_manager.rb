@@ -16,7 +16,7 @@ class JobManager
   HM = "health_manager"
   DEA = "dea"
 
-  SERVICES = ["redis", "mysql", "mongodb", "neo4j"]
+  SERVICES = ["redis", "mysql", "mongodb", "neo4j", "sqlfire"]
   SERVICES_NODE = SERVICES.map do |service|
     "#{service}_node"
   end

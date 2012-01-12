@@ -10,5 +10,6 @@ ci-artifacts-dir
 ci-working-dir
 *.rbc
 *.swp
+*.swo
 .rvmrc
 *.pid
