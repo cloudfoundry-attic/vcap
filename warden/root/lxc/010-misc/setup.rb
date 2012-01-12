@@ -1,10 +1,10 @@
 #!/usr/bin/env ruby
 
-PATH = File.expand_path("..", __FILE__)
-Dir.chdir(PATH)
-require "../.lib/global"
+require File.expand_path("../../.lib/global", $0)
 
-Dir.chdir("union")
+mount_union
+
+Dir.chdir File.expand_path("../union", $0)
 
 write "lib/init/fstab", <<-EOS
 # nothing
@@ -30,3 +30,23 @@ sh "rm -f etc/network/if-up.d/ntpdate"
 
 # Don't run cpu frequency scaling
 sh "rm -f etc/rc*.d/S*ondemand"
+
+# Disable selinux
+write "selinux/enforce", 0
+
+# Remove console related upstart scripts
+sh "rm -f etc/init/tty*"
+sh "rm -f etc/init/console-setup.conf"
+
+dev_entries = [
+  %w{console},
+  %w{fd stdin stdout stderr},
+  %w{random urandom},
+  %w{null zero} ].flatten
+
+# Remove everything from /dev unless whitelisted
+Dir["dev/*"].each { |e|
+  unless dev_entries.include? File.basename(e)
+    sh "rm -rf #{e}"
+  end
+}

@@ -1,13 +1,15 @@
 #!/usr/bin/env ruby
 
-PATH = File.expand_path("..", __FILE__)
-Dir.chdir(PATH)
-require "../.lib/global"
+require File.expand_path("../../.lib/global", $0)
+
+mount_union
+
+Dir.chdir File.expand_path("..", $0)
 
 packages = %w(ubuntu-minimal).join(",")
 suite = "lucid"
 target = "union"
-mirror = "http://ftp.cs.stanford.edu/mirrors/ubuntu/"
+mirror = "http://apt-mirror.cso.vmware.com/ubuntu/"
 
 args = ["/usr/sbin/debootstrap"] +
   ["--verbose"] +

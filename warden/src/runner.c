@@ -2,8 +2,6 @@
 #define _BSD_SOURCE
 /* Needed for waitpid(2) */
 #define _XOPEN_SOURCE
-/* Needed for dprintf(3) */
-#define _GNU_SOURCE
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -18,7 +16,10 @@
 #include <assert.h>
 
 static int server_fd = -1;
-const char *tmp_path = NULL;
+
+/* Configuration parameters (set through the environment) */
+const char *artifact_path = NULL;
+uid_t run_as_uid = -1;
 
 int create_socket(void) {
   int fd = socket(AF_LOCAL, SOCK_STREAM, 0);
@@ -90,7 +91,7 @@ void handle_client(int client_fd) {
   size_t len;
 
   /* Get directory where we can put this client's artifacts */
-  len = snprintf(template, sizeof(template), "%s/runner-XXXXXX", tmp_path);
+  len = snprintf(template, sizeof(template), "%s/runner-XXXXXX", artifact_path);
   assert(len < sizeof(template));
 
   char *temp = mkdtemp(template);
@@ -144,7 +145,13 @@ void handle_client(int client_fd) {
       dup2(stderr_fd, STDERR_FILENO);
       close(exit_status_fd);
 
-      /* todo: setuid */
+      if (run_as_uid > 0) {
+        if (setuid(run_as_uid) == -1) {
+          perror("setuid");
+          exit(1);
+        }
+      }
+
       char *env = { NULL };
       execle("/bin/bash", "bash", NULL, env);
       perror("execle");
@@ -232,20 +239,29 @@ int main(int argc, char **argv) {
     usage(argc, argv);
   }
 
-  tmp_path = getenv("TMP_PATH");
-  if (tmp_path == NULL) {
-    tmp_path = "/tmp";
+  artifact_path = getenv("ARTIFACT_PATH");
+  if (artifact_path == NULL) {
+    artifact_path = "/tmp";
   }
 
   struct stat st;
-  if (stat(tmp_path, &st) == -1) {
+  if (stat(artifact_path, &st) == -1) {
     perror("stat");
     exit(1);
   }
 
   if (!S_ISDIR(st.st_mode)) {
-    fprintf(stderr, "TMP_PATH is not a directory\n");
+    fprintf(stderr, "ARTIFACT_PATH is not a directory\n");
     exit(1);
+  }
+
+  char *env_run_as_uid = getenv("RUN_AS_UID");
+  if (env_run_as_uid != NULL) {
+    run_as_uid = atoi(env_run_as_uid);
+    if (run_as_uid <= 0) {
+      fprintf(stderr, "SETUID must be > 0\n");
+      exit(1);
+    }
   }
 
   if (strcmp(argv[1], "connect") == 0) {
