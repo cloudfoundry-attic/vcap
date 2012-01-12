@@ -65,6 +65,11 @@ class GemfileTask
     dependencies.assoc('rack')
   end
 
+  # The application includes some version of Rack in its bundle.
+  def bundles_rails?
+    dependencies.assoc('rails')
+  end
+
   private
 
   # Each dependency is a gem [name, version] pair;

@@ -15,6 +15,7 @@ module GemfileSupport
   def compile_gems
     @rack = true
     @thin = true
+    @rails = true
 
     return unless uses_bundler?
     return if packaged_with_bundler_in_deployment_mode?
@@ -37,6 +38,7 @@ module GemfileSupport
 
     @rack = task.bundles_rack?
     @thin = task.bundles_thin?
+    @rails = task.bundles_rails?
 
     write_bundle_config
   end
@@ -61,6 +63,10 @@ module GemfileSupport
 
   def packaged_with_bundler_in_deployment_mode?
     File.directory?(File.join(source_directory, 'vendor', 'bundle', library_version))
+  end
+
+  def rails_version
+    @rails[1]
   end
 
   # This sets a relative path to the bundle directory, so nothing is confused
