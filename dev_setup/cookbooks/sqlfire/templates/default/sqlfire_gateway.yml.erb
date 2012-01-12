@@ -1,0 +1,27 @@
+---
+cloud_controller_uri: <%= node[:cloud_controller][:service_api_uri] %>
+service:
+  name: sqlfire
+  version: "1.0"
+  description: 'Sqlfire Distributed Database (Beta)'
+  plans: ['free', 'bronze', 'silver', 'gold']
+  # Number of nodes to provision for each service instance.
+  plan_mapping:
+    free: 1
+    bronze: 2
+    silver: 3
+    gold: 4
+  tags: ['sqlfire', 'sqlfire-1.0', 'database']
+  timeout: 40
+
+host: localhost
+index: 0
+token: <%= node[:sqlfire_node][:token] %>
+mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
+pid: /var/vcap/sys/run/sqlfire_service.pid
+logging:
+  level: debug
+# allow_over_provisioning: false
+
+# Timeout for actual provisioning of the service
+node_timeout: 40

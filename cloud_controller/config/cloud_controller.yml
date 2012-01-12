@@ -135,6 +135,8 @@ builtin_services:
     token: "0xdeadbeef"
   filesystem:
     token: "0xdeadbeef"
+  sqlfire:
+    token: "0xdeadbeef"
 
 # Service broker
 service_broker:

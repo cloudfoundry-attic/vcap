@@ -20,6 +20,8 @@
 # - mysql
 # - mongo
 # - neo4j
+# - sqlfire
+#
 
 require 'yaml'
 require 'fileutils'
@@ -443,7 +445,7 @@ module Run
   end
 
   def self.services
-    %w(redis mysql mongodb neo4j)
+    %w(redis mysql mongodb neo4j sqlfire)
   end
 
   def self.alias_args(args)
@@ -470,6 +472,8 @@ module Run
     new_args = []
     args.each do |arg|
       if Run.core.include? arg
+        new_args << arg
+      elsif arg =~ /_node|_gateway|_backup/
         new_args << arg
       else # This is a service, expand in place here..
         new_args << "#{arg}_gateway"

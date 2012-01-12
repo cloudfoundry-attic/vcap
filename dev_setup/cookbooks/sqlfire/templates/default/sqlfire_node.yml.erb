@@ -1,0 +1,16 @@
+---
+local_db: sqlite3:/var/vcap/services/sqlfire/sqlfire_node.db
+mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
+index: <%= node[:sqlfire_node][:index] %>
+base_dir: /var/vcap/services/sqlfire/instances
+pid: /var/vcap/sys/run/sqlfire_node.pid
+available_memory: <%= node[:sqlfire_node][:available_memory] %>
+max_memory: <%= node[:sqlfire_node][:max_memory] %>
+node_id: <%= "sqlfire_node_#{node[:sqlfire_node][:index]}" %>
+sqlfire_home: <%= node[:sqlfire][:path] %>
+java_home:  /usr/lib/jvm/java-6-sun
+port_range:
+  first: 25001
+  last: 45000
+logging:
+  level: debug

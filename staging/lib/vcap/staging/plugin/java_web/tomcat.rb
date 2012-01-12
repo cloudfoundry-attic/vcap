@@ -2,12 +2,13 @@ require 'nokogiri'
 require 'fileutils'
 
 class Tomcat
-  AUTOSTAGING_JAR = 'auto-reconfiguration-0.6.2.jar'
+  AUTOSTAGING_JAR = 'auto-reconfiguration-0.6.3.BUILD-SNAPSHOT.jar'
   DEFAULT_APP_CONTEXT = "/WEB-INF/applicationContext.xml"
   DEFAULT_SERVLET_CONTEXT_SUFFIX = "-servlet.xml"
   SERVICE_DRIVER_HASH = {
       "mysql-5.1" => 'mysql-connector-java-5.1.12-bin.jar',
-      "postgresql-9.0" => 'postgresql-9.0-801.jdbc4.jar'
+      "postgresql-9.0" => 'postgresql-9.0-801.jdbc4.jar',
+      "sqlfire-1.0" => 'sqlfireclient-1.0.jar'
   }
 
   def self.resource_dir
