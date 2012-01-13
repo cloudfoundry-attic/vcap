@@ -7,15 +7,20 @@ Gem::Specification.new do |s|
   s.version     = Warden::VERSION
   s.authors     = ["Pieter Noordhuis", "Matt Page"]
   s.email       = ["pcnoordhuis@gmail.com", "mpage@vmware.com"]
-  s.homepage    = ""
-  s.summary     = %q{TODO: Write a gem summary}
-  s.description = %q{TODO: Write a gem description}
+  s.homepage    = "http://www.cloudfoundry.com"
+  s.summary     = "A tool for managing ephemeral containers."
+  s.description = <<-EOT
+The warden provides an API for creating and managing containers.
+The specific kind of container provided by the warden may be chosen
+at runtime. Currently it supports an insecure container (mainly for
+development) and one that uses Linux cgroup functionality.
+EOT
 
   s.rubyforge_project = "warden"
 
-  s.files         = `git ls-files`.split("\n")
-  s.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
-  s.executables   = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }
+  s.files         = Dir.glob("**/*")
+  s.test_files    = Dir.glob("spec/**/*")
+  s.executables   = ["warden-repl"]
   s.require_paths = ["lib"]
 
   s.add_runtime_dependency "eventmachine", "0.12.11.cloudfoundry.3"
