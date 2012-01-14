@@ -40,10 +40,10 @@ class AppPackage
   def self.repack_app_in(dir, tmpdir, format)
     if format == :zip
       target_path = File.join(tmpdir, 'app.zip')
-      cmd = "cd #{dir}; zip -q -y #{target_path} -r * 2>&1"
+      cmd = "cd #{dir}; zip -q -y #{target_path} -r . 2>&1"
     else
       target_path = File.join(tmpdir, 'app.tgz')
-      cmd = "cd #{dir}; COPYFILE_DISABLE=true tar -czf #{target_path} * 2>&1"
+      cmd = "cd #{dir}; COPYFILE_DISABLE=true tar -czf #{target_path} . 2>&1"
     end
 
     timed_section(CloudController.logger, 'repack_app') do
