@@ -509,7 +509,7 @@ echo "$STARTED" >> ../run.pid
 
   def copy_source_files(dest = nil)
     dest ||= File.join(destination_directory, 'app')
-    system "cp -a #{File.join(source_directory, "*")} #{dest}"
+    system "cp -a #{File.join(source_directory, ".")} #{dest}"
   end
 
   def detection_rules
