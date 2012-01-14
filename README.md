@@ -61,6 +61,11 @@ To install ssh:
 
     sudo apt-get install openssh-server
 
+If Ubuntu doesn't list the openssh-server package as available, you may need to
+run an update to insure the latest package lists are available:
+
+    sudo apt-get update
+    
 #### Step 2: run the automated setup process
 Run the install script. It'll ask for your sudo password at the
 beginning and towards the end. The entire process takes ~1 hour, so just
