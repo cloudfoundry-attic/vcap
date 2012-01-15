@@ -91,6 +91,11 @@ the following steps
 #### Step 3: start the system
 
     cd ~/cloudfoundry/vcap
+
+When navigating into this folder, you will be prompted by RVM (Ruby Version Manager) to
+set the folder to a Ruby Version and environment. Type "yes" to confirm and set the version,
+then continue with the following commands.
+
     bin/vcap start
     bin/vcap tail  # see aggregate logs
 
