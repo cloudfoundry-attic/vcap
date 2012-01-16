@@ -61,6 +61,11 @@ To install ssh:
 
     sudo apt-get install openssh-server
 
+If Ubuntu doesn't list the openssh-server package as available, you may need to
+run an update to insure the latest package lists are available:
+
+    sudo apt-get update
+    
 #### Step 2: run the automated setup process
 Run the install script. It'll ask for your sudo password at the
 beginning and towards the end. The entire process takes ~1 hour, so just
@@ -84,6 +89,10 @@ done with the setup, exit your current shell, restart a new shell and continue
 the following steps
 
 #### Step 3: start the system
+
+When navigating into this folder, you will be prompted by RVM (Ruby Version Manager) to
+set the folder to a Ruby Version and environment. Type "yes" to confirm and set the version,
+then continue with the following commands.
 
     cd ~/cloudfoundry/vcap
     bin/vcap start
