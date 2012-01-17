@@ -1,9 +1,9 @@
 require 'spec_helper'
 
-describe VCAP::PriorityQueue do
+describe VCAP::PriorityQueueFIFO do
   before :each do
     @q.should be_nil
-    @q = VCAP::PrioritySet.new
+    @q = VCAP::PriorityQueueFIFO.new
   end
 
   describe '.new' do
@@ -41,13 +41,36 @@ describe VCAP::PriorityQueue do
       n  = 100_000
       n.times { val = rand ; @q.insert val,val }
       prev = @q.remove
-      until @q.empty? do
-        val = @q.remove
-        val.should be < prev
-        prev = val
-        n-=1
-      end
+
+      expect do
+        until @q.empty? do
+          val = @q.remove
+          val.should be < prev
+          prev = val
+          n-=1
+        end
+      end.to take_less_than(5).seconds
+
       n.should == 1
+    end
+  end
+
+  describe 'high volume FIFO' do
+    it 'should have decent FIFO perfomance for same-priority values' do
+
+      n = 100_000
+      n.times { |i| @q.insert i }
+
+      prev = @q.remove
+      expect do
+        until @q.empty? do
+          val = @q.remove
+          val.should == prev + 1
+          prev = val
+        end
+      end.to take_less_than(1).seconds
+
+        prev.should == n - 1
     end
   end
 end
@@ -125,6 +148,38 @@ describe VCAP::PrioritySet do
       @qs.insert "another_rare", 10
 
       @qs.size.should == 5
+    end
+  end
+
+  describe 'equal priorities' do
+    describe 'FIFO behavior' do
+      it 'should FIFO for simplest case' do
+        @qs.insert 'first', 1
+        @qs.insert 'second', 1
+        @qs.insert 'third', 1
+
+        @qs.remove.should == 'first'
+        @qs.remove.should == 'second'
+        @qs.remove.should == 'third'
+      end
+
+      it 'should retain FIFO ordering when higher priority items are interspersed' do
+        @qs.insert 1
+        @qs.insert 2
+        @qs.insert 'high', 2
+        @qs.insert 3
+        @qs.insert 4
+        @qs.remove.should == 'high'
+        @qs.insert 5
+        @qs.insert 6
+        @qs.remove.should == 1
+        @qs.remove.should == 2
+        @qs.remove.should == 3
+        @qs.remove.should == 4
+        @qs.remove.should == 5
+        @qs.remove.should == 6
+
+      end
     end
   end
 end
