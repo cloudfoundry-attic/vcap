@@ -12,5 +12,5 @@ jobs:
     - router
     - mssql_gateway
     - mysql_gateway
-	- mongodb_gateway
-	- redis_gateway
+    - mongodb_gateway
+    - redis_gateway
