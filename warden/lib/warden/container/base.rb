@@ -175,7 +175,7 @@ module Warden
       end
 
       def container_path
-        File.join(root_path, ".instance-#{handle}")
+        File.join(root_path, "instances", handle)
       end
 
       def create

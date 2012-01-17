@@ -18,4 +18,5 @@ if [ -d ${target} ]; then
 fi
 
 cp -r skeleton "${target}"
+"${target}"/setup.sh
 echo ${target}

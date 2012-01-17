@@ -10,7 +10,7 @@ module Warden
 
   module Container
 
-    class LXC < Base
+    class Linux < Base
 
       include Features::Quota
       include Features::Cgroup
@@ -22,7 +22,7 @@ module Warden
 
         def setup(config = {})
           unless Process.uid == 0
-            raise WardenError.new("lxc requires root privileges")
+            raise WardenError.new("linux containers require root privileges")
           end
 
           super(config)

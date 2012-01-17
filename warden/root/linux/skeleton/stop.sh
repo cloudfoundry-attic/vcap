@@ -1,7 +1,11 @@
 #!/bin/bash
 
-# Change to directory that holds this script
+set -o nounset
+set -o errexit
 cd $(dirname $(readlink -f ${0}))
+
+source ./common.sh
+source ./config
 
 if [ ! -f started ]; then
   echo "Container is not running..."
@@ -9,5 +13,5 @@ if [ ! -f started ]; then
 fi
 
 ./killprocs.sh
-umount union
-rm started
+umount_union
+rm -f started
