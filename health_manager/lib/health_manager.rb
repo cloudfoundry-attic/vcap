@@ -16,10 +16,6 @@ module CloudController
     root.join('lib')
   end
 
-  def self.common_lib_dir
-    File.expand_path('../../../lib', __FILE__)
-  end
-
   # NOTE - Any models that rely on appconfig.yml settings must likewise
   # be initialized by the Health Manager before they are used.
   def self.all_models
@@ -28,7 +24,6 @@ module CloudController
 
   def self.setup
     $:.unshift(lib_dir.to_s) unless $:.include?(lib_dir.to_s)
-    $:.unshift(common_lib_dir) unless $:.include?(common_lib_dir)
     require root.join('config', 'boot')
     require 'active_record'
     require 'active_support/core_ext'

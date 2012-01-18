@@ -7,7 +7,7 @@ gem 'async_sinatra'
 gem 'em-http-request', :require => 'em-http'
 gem 'rack-fiber_pool'
 
-gem 'vcap_common', '~> 1.0.3'
+gem 'vcap_common', '~> 1.0.4'
 gem 'vcap_logging', '>= 0.1.1'
 
 group :test do
