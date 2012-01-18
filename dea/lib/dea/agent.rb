@@ -263,7 +263,7 @@ module DEA
 
     def send_heartbeat
       return if @droplets.empty? || @shutting_down
-      heartbeat = {:droplets => []}
+      heartbeat = {:droplets => [], :dea => VCAP::Component.uuid }
       @droplets.each_value do |instances|
         instances.each_value do |instance|
           heartbeat[:droplets] << generate_heartbeat(instance)
@@ -273,7 +273,7 @@ module DEA
     end
 
     def send_single_heartbeat(instance)
-      heartbeat = {:droplets => [generate_heartbeat(instance)]}
+      heartbeat = {:droplets => [generate_heartbeat(instance)], :dea => VCAP::Component.uuid }
       NATS.publish('dea.heartbeat', heartbeat.to_json)
     end
 
