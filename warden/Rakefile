@@ -7,14 +7,15 @@ RSpec::Core::RakeTask.new(:spec) do |t|
 end
 
 desc "Run (or re-run) steps to setup warden"
-task :setup do
+task :setup, :base_dir do |t, args|
+  default_base_dir = File.join(File.dirname(__FILE__), "root/linux/base")
+  args.with_defaults(:base_dir => default_base_dir)
+
   Dir.chdir("src") do
     sh "make clean all"
   end
-  Dir.chdir("root/linux/base") do
-    sh "rm -rf rootfs union"
-    sh "ruby setup.rb"
-  end
+
+  sh "sudo -E root/linux/base/setup.sh #{args[:base_dir]}"
 end
 
 namespace :warden do
