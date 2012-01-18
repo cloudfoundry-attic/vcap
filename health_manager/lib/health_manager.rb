@@ -30,6 +30,7 @@ module CloudController
     $:.unshift(lib_dir.to_s) unless $:.include?(lib_dir.to_s)
     $:.unshift(common_lib_dir) unless $:.include?(common_lib_dir)
     require root.join('config', 'boot')
+    require root.join('config', 'initializers', 'staging')
     require 'active_record'
     require 'active_support/core_ext'
     require 'yajl'
