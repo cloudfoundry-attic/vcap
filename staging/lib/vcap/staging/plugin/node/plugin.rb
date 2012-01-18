@@ -14,9 +14,21 @@ class NodePlugin < StagingPlugin
     end
   end
 
+  # detect start script from package.json
+  def package_json_start
+    package = File.join(destination_directory, 'app', 'package.json')
+    if File.exists? package
+      json = Yajl::Parser.parse(File.new(package, 'r'))
+      if scripts = json["scripts"] and start = scripts["start"]
+        start.sub(/^\s*node\s+/, "")
+      end
+    end
+  end
+
   # Let DEA fill in as needed..
   def start_command
-    "%VCAP_LOCAL_RUNTIME% #{detect_main_file} $@"
+    command = package_json_start || detect_main_file
+    "%VCAP_LOCAL_RUNTIME% #{command} $@"
   end
 
   private
@@ -35,7 +47,8 @@ class NodePlugin < StagingPlugin
   # going to be limited to Sinatra and Node.js. If not, it probably deserves
   # a place in the sinatra.yml manifest.
   def detect_main_file
-    file, js_files = nil, app_files_matching_patterns
+    file = nil
+    js_files = app_files_matching_patterns
 
     if js_files.length == 1
       file = js_files.first
