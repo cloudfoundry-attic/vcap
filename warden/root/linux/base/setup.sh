@@ -10,7 +10,12 @@ chroot_bin=$(which chroot)
 packages="ubuntu-minimal"
 suite="lucid"
 target="rootfs"
-mirror="http://apt-mirror.cso.vmware.com/ubuntu/"
+mirror=$(grep "^deb" /etc/apt/sources.list | head -n1 | cut -d" " -f2)
+
+# Fallback to default Ubuntu mirror when mirror could not be determined
+if [ -z "${mirror}" ]; then
+  mirror="http://archive.ubuntu.com/ubuntu/"
+fi
 
 function debootstrap() {
   if [ -d ${target} ]; then
