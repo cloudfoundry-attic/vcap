@@ -61,30 +61,22 @@ describe "server implementing Linux containers", :needs_root => true do
       usage = File.read(File.join("/dev/cgroup/", "instance-#{@handle}", "memory.usage_in_bytes"))
       mem_limit = usage.to_i + 2 * one_mb
       client.limit(@handle, "mem", mem_limit)
+
       # Allocate 20MB, this should OOM and cause the container to be torn down
       cmd = 'perl -e \'for ($i = 0; $i < 20; $i++ ) { $foo .= "A" x (1024 * 1024); }\''
       res = client.run(@handle, cmd)
-      res[0].should be_nil
+      res[0].should == 137 # SIGKILL
+
+      # Wait a bit for the warden to be notified of the OOM
+      sleep 0.01
 
       info = client.info(@handle)
       info["state"].should == "stopped"
+      info["events"].should include("oom")
 
       expect do
         client.run(@handle, "ls")
       end.to raise_error(/state/)
-    end
-
-    it 'should set the "oom" event for containers in which an oom event occurs' do
-      one_mb = 1024 * 1024
-      usage = File.read(File.join("/dev/cgroup/", "instance-#{@handle}", "memory.usage_in_bytes"))
-      mem_limit = usage.to_i + 2 * one_mb
-      client.limit(@handle, "mem", mem_limit)
-      # Allocate 20MB, this should OOM and cause the container to be torn down
-      cmd = 'perl -e \'for ($i = 0; $i < 20; $i++ ) { $foo .= "A" x (1024 * 1024); }\''
-      res = client.run(@handle, cmd)
-
-      info = client.info(@handle)
-      info["events"].include?("oom").should be_true
     end
   end
 
