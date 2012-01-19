@@ -17,7 +17,7 @@ class VCAP::PackageCache::Config < VCAP::Config
       },
 
       :base_dir              => String,     # where all package cache stuff lives.
-      :pid_file              => String,     # where our pid file lives.
+      :pid_filename          => String,     # where our pid file lives.
       :purge_cache_on_startup => VCAP::JsonSchema::BoolSchema.new,     # true/false, blow away cache or not.
       :runtimes => {
         :gem => {

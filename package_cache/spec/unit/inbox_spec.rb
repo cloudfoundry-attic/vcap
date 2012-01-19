@@ -2,6 +2,7 @@ $:.unshift(File.dirname(__FILE__))
 require 'spec_helper'
 require 'fileutils'
 require 'inbox'
+require 'vcap/package_cache-client/inbox_client'
 
 describe VCAP::PackageCache::Inbox do
   before(:all) do
@@ -11,8 +12,9 @@ describe VCAP::PackageCache::Inbox do
 
     test_module = 'fake.gem'
     create_test_file(test_module)
-    @ib = VCAP::PackageCache::Inbox.new(@inbox_dir, :server)
-    @entry_name = @ib.add_entry(test_module)
+    @ib = VCAP::PackageCache::Inbox.new(@inbox_dir)
+    @client = VCAP::PackageCacheClient::InboxClient.new(@inbox_dir)
+    @entry_name = @client.add_entry(test_module)
   end
 
   after(:all) do
@@ -22,7 +24,7 @@ describe VCAP::PackageCache::Inbox do
 
 
   it "should add new inbox entries" do
-    @ib.public_contains?(@entry_name).should == true
+    @client.public_contains?(@entry_name).should == true
   end
 
   it "it should import a new entry" do

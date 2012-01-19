@@ -1,8 +1,8 @@
 require 'fileutils'
 
-module VCAP module PackageCache end end
+module VCAP module PackageCacheClient end end
 
-class VCAP::PackageCache::CacheClient
+class VCAP::PackageCacheClient::CacheClient
   def initialize(cache_dir, logger = nil)
     @logger = logger ||  Logger.new(STDOUT)
     @cache_dir = cache_dir
