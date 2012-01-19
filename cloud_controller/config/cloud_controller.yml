@@ -133,10 +133,16 @@ builtin_services:
     token: "0xdeadbeef"
   atmos:
     token: "0xdeadbeef"
+  filesystem:
+    token: "0xdeadbeef"
 
 # Service broker
 service_broker:
     token: "0xdeadbeef"
+
+# lifecycle
+service_lifecycle:
+  max_upload_size: 1 # in MB
 
 # Enable/disable starting apps in debug modes.
 allow_debug: true
