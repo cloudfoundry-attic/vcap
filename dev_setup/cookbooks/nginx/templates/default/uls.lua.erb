@@ -86,23 +86,25 @@ request_num = 0
 
 -- Encode session cookie based on input ip:port pair
 function encode_session_cookie(addr)
-  local c = openssl.get_cipher("blowfish")
-  local t = {addr}
+  local cipher = openssl.get_cipher("blowfish")
+  local addr_table = table.save({addr})
 
-  local cc = c:init(true, SESSION_KEY, '')
-  local e = cc:update(table.save(t))
-  local ee = e..cc:final()
-  return base64.encode(ee)
+  local c = cipher:init(true, SESSION_KEY, '')
+  local encoded = c:update(addr_table)
+  local final = c:final()
+  if final then encoded = encoded..final end
+  return base64.encode(encoded)
 end
 
 -- Decode ip:port pair from session cookie
 function decode_session_cookie(cookie)
-  local d = openssl.get_cipher("blowfish")
-  local dc = d:init(false, SESSION_KEY, '')
-  local p = dc:update(base64.decode(cookie))
-  local pp = p..dc:final()
-  local t = table.load(pp)
-  return t[1]
+  local decipher = openssl.get_cipher("blowfish")
+  local d = decipher:init(false, SESSION_KEY, '')
+  local decoded = d:update(base64.decode(cookie))
+  local final = d:final()
+  if final then decoded = decoded..final end
+  local table = table.load(decoded)
+  return table[1]
 end
 
 -- Retrieve ip:port if the input cookies have vcap cookie

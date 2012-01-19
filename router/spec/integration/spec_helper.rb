@@ -146,7 +146,17 @@ def trace_request(trace_key)
   "GET /trace HTTP/1.1\r\nHost: trace.vcap.me\r\nConnection: keep-alive\r\nX-Vcap-Trace: #{trace_key}\r\nAccept: application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5\r\nUser-Agent: Mozilla/5.0 (X11; U; Linux i686; en-US) AppleWebKit/534.10 (KHTML, like Gecko) Chrome/8.0.552.237 Safari/534.10\r\nAccept-Encoding: gzip,deflate,sdch\r\nAccept-Language: en-US,en;q=0.8\r\nAccept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.3\r\n\r\n"
 end
 
-
+def send_http_request(ip, port, req)
+  status, body = nil, nil
+  TCPSocket.open(ip, port) do |rs|
+    rs.send(req, 0)
+    rs.close_write
+    result = rs.read
+    parser, body = parse_http_msg_from_buf(result)
+    status = parser.status_code
+  end
+  [ status, body ]
+end
 
 def send_requests_to_apps(ip, port, req, num_requests, app_sockets, resp)
   results = []
