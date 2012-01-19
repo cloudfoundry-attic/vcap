@@ -342,8 +342,11 @@ module Warden
           stdout_path = File.join(path, "stdout")
           stderr_path = File.join(path, "stderr")
 
-          exit_status = File.read(exit_status_path) if File.exist?(exit_status_path)
-          exit_status = exit_status.to_i if exit_status && !exit_status.empty?
+          # Return integer exit status iff the exit status file is non-empty
+          aux = File.read(exit_status_path) if File.exist?(exit_status_path)
+          exit_status = aux.to_i if aux && !aux.empty?
+
+          # Return paths to stdout/stderr iff the files exist
           stdout_path = nil unless File.exist?(stdout_path)
           stderr_path = nil unless File.exist?(stderr_path)
 
