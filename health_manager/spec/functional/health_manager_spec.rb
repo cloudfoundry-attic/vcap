@@ -45,14 +45,14 @@ describe 'Health Manager' do
       'mbus'         => @nats_uri,
       'local_route' => '127.0.0.1',
       'intervals'    => {
-        'database_scan' => 2, #60
+        'database_scan' => 1, #60
         'droplet_lost' => 4, #30
-        'droplet_analysis' => 4, #10
+        'droplet_analysis' => 1, #10
         'flapping_death' => 4, #3
         'flapping_timeout' => 9, #180
         'restart_timeout' => 15, #20
         'request_queue' => 0.02,
-        'stable_state' => 5, #60
+        'stable_state' => -1, #ensures all apps are "quiescent" for the purpose of testing
         'nats_ping' => 1,
       },
       'logging'      => {'level' => 'debug'},
@@ -187,7 +187,7 @@ describe 'Health Manager' do
     Yajl::Parser.parse(str)
   end
 
-  def receive_message(subj, prompting_msg='foo', timeout=10)
+  def receive_message(subj, prompting_msg='foo')
     ret = nil
     em_run_with_timeout do
       NATS.start :uri => @nats_server.uri do
