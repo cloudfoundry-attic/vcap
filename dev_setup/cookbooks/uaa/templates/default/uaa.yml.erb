@@ -10,7 +10,18 @@ database:
   url: jdbc:postgresql://<%= node[:uaadb][:host] %>:<%= node[:uaadb][:port] %>/<%= node[:uaadb][:database] %>
 
 jvm_args: -Xmx512m
-spring_profiles: jdbc,postgresql,private,!legacy
+spring_profiles: jdbc,postgresql,legacy
+
+bootstrap:
+  admin:
+    username: marissa
+    password: $2a$10$ikFXo9IFG6zbMbhGcssySOhjDsGPpqzKwsdVOeCvJ7JoWjSQxyfs6
+    given_name: Marissa
+    familay_name: Bloggs
+    email: mariss@test.org
+
+cloud_controller:
+  login_url: http://api.vcap.me/users/{username}/tokens
 
 varz:
   client:

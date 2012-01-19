@@ -17,10 +17,10 @@ require 'bcrypt'
 ruby_block "hash secrets" do
 
   block do
-    node[:uaa][:varz][:secret] = BCrypt::Password.create(node[:uaa][:varz][:password], :cost=>8)
-    node[:uaa][:app][:secret] = BCrypt::Password.create(node[:uaa][:app][:password], :cost=>8)
-    node[:uaa][:my][:secret] = BCrypt::Password.create(node[:uaa][:my][:password], :cost=>8)
-    node[:uaa][:scim][:secret] = BCrypt::Password.create(node[:uaa][:scim][:password], :cost=>8)
+    node[:uaa][:varz][:secret] = BCrypt::Password.create(node[:uaa][:varz][:password])
+    node[:uaa][:app][:secret] = BCrypt::Password.create(node[:uaa][:app][:password])
+    node[:uaa][:my][:secret] = BCrypt::Password.create(node[:uaa][:my][:password])
+    node[:uaa][:scim][:secret] = BCrypt::Password.create(node[:uaa][:scim][:password])
   end
 
 end
