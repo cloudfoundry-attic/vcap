@@ -1,18 +1,35 @@
 #Worklist
 ---------
 
+-break client out into seperate directory.
+
+-package for deployment
+
+p0
+
 -finish depriviliging package cache
+
+-create debug formatter based on matt's stuff and transition to his logger.
 
 -add package cache to vcap startup script.
 
 
+
+p1
+
+-add container support
+
+-add npm support
+
+-add rack helper unit test for server.rb.
+
+
 -----
+
 
 -clean out TODO list.
 
 -add storage quota support
-
--add container support
 
 -look at removing the copy into the public inbox.
 
@@ -43,7 +60,6 @@ fixed interval (say 2 minutes) might also be a good measure.
 ---------
 
 -add functional test for error handling.
-
 
 
 #SHOULD HAVE

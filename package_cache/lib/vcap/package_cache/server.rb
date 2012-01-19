@@ -35,7 +35,7 @@ class VCAP::PackageCache::PackageCacheServer < Sinatra::Base
     @user_pool = VCAP::UserPool.new('package_cache', @logger)
 
     inbox_dir = @directories['inbox']
-    @inbox = VCAP::PackageCache::Inbox.new(inbox_dir, :server, @logger)
+    @inbox = VCAP::PackageCache::Inbox.new(inbox_dir, @logger)
 
     cache_dir = @directories['cache']
     @cache = VCAP::PackageCache::Cache.new(cache_dir, @logger)

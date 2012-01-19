@@ -1,14 +1,10 @@
 source :rubygems
 
 gem 'rake'
-gem 'thin'
 gem 'rest-client', '1.6.3'
-gem 'sinatra'
 
 gem 'vcap_common', '~> 1.0.3'
 gem 'vcap_logging', '>= 0.1.1'
-
-gem 'vcap_package_cache-client'
 
 group :test do
   gem 'rspec'

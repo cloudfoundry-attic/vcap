@@ -5,17 +5,10 @@ require 'digest/sha1'
 module VCAP module PackageCache end end
 
 class VCAP::PackageCache::Inbox
-  def initialize(inbox_root, type, logger = nil)
+  def initialize(inbox_root, logger = nil)
     @logger = logger || Logger.new(STDOUT)
     raise "Invalid inbox root #{inbox_root}" if not Dir.exists? inbox_root
-    if type == :server
-      setup_inbox_dirs(inbox_root)
-    elsif type == :client
-      @inbox_public = File.join(inbox_root, 'public')
-      raise "Invalid public inbox" unless Dir.exists? @inbox_public
-    else
-      raise "Invalid inbox type #{type.to_s}"
-    end
+    setup_inbox_dirs(inbox_root)
   end
 
   def setup_inbox_dirs(inbox_root)
@@ -74,28 +67,6 @@ class VCAP::PackageCache::Inbox
   def purge!
     @logger.info("purging inbox directory #{@inbox_root}")
     FileUtils.rm_f Dir.glob("#{@inbox_root}/*/*")
-  end
-
-  #client interface
-
-  def public_contains?(name)
-    File.exists?(File.join(@inbox_public, name))
-  end
-
-  def file_to_entry_name(path)
-    content_hash = Digest::SHA1.file(path).hexdigest
-    extension = File.extname(path)
-    entry_name = "#{content_hash}#{extension}"
-  end
-
-  def add_entry(src_path)
-    entry_name = file_to_entry_name(src_path)
-    if public_contains?(entry_name)
-      raise "file named #{entry_name} already in inbox"
-    end
-    @logger.debug("adding #{src_path} to inbox as #{entry_name}")
-    FileUtils.cp src_path, File.join(@inbox_public, entry_name)
-    entry_name
   end
 
   private
