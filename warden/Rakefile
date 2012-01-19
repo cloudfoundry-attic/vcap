@@ -1,5 +1,7 @@
 require "rspec/core/rake_task"
 require "rspec/core/version"
+require "vcap/common"
+require "yaml"
 
 desc "Run all examples"
 RSpec::Core::RakeTask.new(:spec) do |t|
@@ -20,9 +22,16 @@ end
 
 namespace :warden do
   desc "Run Warden server"
-  task :start do
+  task :start, :config_path do |t, args|
     require "warden/server"
-    Warden::Server.setup(:logging => {:level => :debug2})
+
+    if args[:config_path]
+      config = VCAP.symbolize_keys(YAML.load_file(args[:config_path]))
+    else
+      config = {:logging => {:level => :debug2}}
+    end
+
+    Warden::Server.setup(config)
     Warden::Server.run!
   end
 end
