@@ -1,6 +1,13 @@
 #Worklist
 ---------
 
+-finish depriviliging package cache
+
+-add package cache to vcap startup script.
+
+
+-----
+
 -clean out TODO list.
 
 -add storage quota support
@@ -14,6 +21,8 @@
 -deal with XXX's
 
 -load testing for local gems.
+
+-put in protection from massive gems being downloaded -- look at params to wget.
 
 #BUGS
 ----
@@ -34,20 +43,12 @@ fixed interval (say 2 minutes) might also be a good measure.
 ---------
 
 -add functional test for error handling.
--audit inbox permission stuff.
 
-#CLEANUP
--------
-
--incorporate matt's logger.
 
 
 #SHOULD HAVE
 #-----------
 
--put in protection from massive gems being downloaded, have
- limit set in config file, enforced in async fetch.
--ulimits from dea for run_restricted.
 -watch dog timer for run_restricted.
 
 -add back pressure when we hit a limit on number of outstanding requests, stager

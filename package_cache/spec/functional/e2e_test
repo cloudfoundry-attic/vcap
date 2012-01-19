@@ -7,10 +7,11 @@ require 'fileutils'
 TEST_LOCAL_GEM = 'yajl-ruby-0.8.2.gem'
 TEST_REMOTE_GEM = 'webmock-1.5.0.gem'
 TEST_REMOTE_PIP = 'fluentxml-0.1.1.pip'
+TEST_RUNTIME = :ruby18
 
 def check_pkg_in_cache(client, name, type)
   puts "checking for #{name} in cache"
-  path = client.get_package_path(name, type)
+  path = client.get_package_path(name, type, TEST_RUNTIME)
   if path
     puts "found it! =), at #{path}"
   else
@@ -30,11 +31,11 @@ begin
   client = VCAP::PackageCache::Client.new
 
   puts "adding local gem #{local_gem_path} to cache"
-  client.add_package(:local, :gem, local_gem_path)
+  client.add_package(:local, :gem, local_gem_path, TEST_RUNTIME)
   check_pkg_in_cache(client, local_gem_path, :local)
 
   puts "adding remote gem #{TEST_REMOTE_GEM} to cache"
-  client.add_package(:remote, :gem, TEST_REMOTE_GEM)
+  client.add_package(:remote, :gem, TEST_REMOTE_GEM, TEST_RUNTIME)
   check_pkg_in_cache(client, TEST_REMOTE_GEM, :remote)
 ensure
   exit_test_root

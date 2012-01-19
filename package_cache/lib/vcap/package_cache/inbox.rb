@@ -1,7 +1,6 @@
 require 'fileutils'
 require 'logger'
 require 'digest/sha1'
-require 'vcap/em_run'
 
 module VCAP module PackageCache end end
 

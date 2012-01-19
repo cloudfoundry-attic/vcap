@@ -1,12 +1,14 @@
 require 'tmpdir'
+require 'logger'
 
 module VCAP module PackageCache end end
 
 class VCAP::PackageCache::Builder
-  def initialize(user, build_root, logger = nil)
+  def initialize(user, build_root, runtimes, logger = nil)
     raise "invalid build_root" if not Dir.exists?(build_root)
     @logger = logger || Logger.new(STDOUT)
     @user = user
+    @runtimes = runtimes
     @build_dir = Dir.mktmpdir(nil, build_root)
     grant_ownership(@build_dir)
     @package_path = nil

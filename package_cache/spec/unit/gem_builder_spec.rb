@@ -1,15 +1,12 @@
-
 $:.unshift(File.dirname(__FILE__))
 require 'spec_helper'
 
 require 'rubygems'
 require 'eventmachine'
 require 'fileutils'
-require 'fiber'
 
 require 'gem_builder'
-
-
+require 'config'
 
 def uid_to_name(uid)
   Etc.getpwuid(uid).name
@@ -23,8 +20,12 @@ describe VCAP::PackageCache::GemBuilder, :needs_root => true do
     user = {:user_name => uid_to_name(Process.uid), :uid => Process.uid, :gid => Process.gid}
     @test_gem = 'yajl-ruby-0.8.2.gem'
     FileUtils.cp(File.join('../fixtures', @test_gem), @test_gem)
-    @gbl = VCAP::PackageCache::GemBuilder.new(user, @build_dir)
-    @gbr = VCAP::PackageCache::GemBuilder.new(user, @build_dir)
+    config_file = VCAP::PackageCache::Config::DEFAULT_CONFIG_PATH
+    config = VCAP::PackageCache::Config.from_file(config_file)
+    runtimes = config[:runtimes][:gem]
+
+    @gbl = VCAP::PackageCache::GemBuilder.new(user, @build_dir, runtimes)
+    @gbr = VCAP::PackageCache::GemBuilder.new(user, @build_dir, runtimes)
   end
 
   after(:all) do
@@ -33,13 +34,13 @@ describe VCAP::PackageCache::GemBuilder, :needs_root => true do
   end
 
   it "should build a local gem" do
-    em_fiber_wrap { @gbl.build(:local, @test_gem, @test_gem) }
+    @gbl.build(:local, @test_gem, @test_gem, :ruby18)
     package_path = @gbl.get_package
     File.exists?(package_path).should == true
   end
 
   it "should build a remote gem" do
-    em_fiber_wrap { @gbr.build(:remote, @test_gem) }
+    @gbr.build(:remote, @test_gem, nil, :ruby18)
     package_path = @gbr.get_package
     File.exists?(package_path).should == true
   end
