@@ -1,0 +1,8 @@
+Verified+1: Andrew Liu <aliu@vmware.com>
+Code-Review+2: Nicholas Kushmerick <nicholask@vmware.com>
+Verified+1: cftestbuild <cftestbuild@gmail.com>
+Submitted-by: Andrew Liu <aliu@vmware.com>
+Submitted-at: Thu, 19 Jan 2012 02:21:13 +0000
+Reviewed-on: http://cloudfoundry-codereview.qa.mozycloud.com/gerrit/2871
+Project: vcap
+Branch: refs/heads/services-r8
