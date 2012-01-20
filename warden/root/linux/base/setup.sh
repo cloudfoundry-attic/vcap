@@ -3,9 +3,11 @@
 set -o nounset
 set -o errexit
 
-cd $(dirname $(readlink -f ${0}))
-
-debootstrap_bin=$(which debootstrap)
+if [ -z "${SKIP_DEBOOTSTRAP+1}" ]; then
+  debootstrap_bin=$(which debootstrap)
+else
+  debootstrap_bin=""
+fi
 chroot_bin=$(which chroot)
 packages="ubuntu-minimal"
 suite="lucid"
@@ -42,16 +44,28 @@ function chroot() {
   ${chroot_bin} ${target} env -i /bin/bash
 }
 
-# Do debootstrap when specified
-if [ "$#" -gt 0 ] && [ "$1" == "debootstrap" ]; then
+if [ ${EUID} -ne 0 ]; then
+  echo "Sorry, you need to be root."
+  exit 1
+fi
+
+if [ "${#}" -ne 1 ]; then
+  echo "Usage: setup.sh [base_dir]"
+  exit 1
+fi
+
+if [ ! -d ${1} ]; then
+  echo "Looks like ${1} doesn't exist or isn't a directory"
+  exit 1
+fi
+
+cd ${1}
+
+if [ -z "${SKIP_DEBOOTSTRAP+1}" ]; then
   debootstrap
 fi
 
-# Do debootstrap when target directory does not yet exist
-if [ ! -d ${target} ]; then
-  debootstrap
-fi
-
+if [ -z "${SKIP_APT+1}" ]; then
 write "etc/apt/sources.list" <<-EOS
 deb ${mirror} lucid main universe
 deb ${mirror} lucid-updates main universe
@@ -60,7 +74,7 @@ EOS
 # Disable interactive dpkg
 chroot <<-EOS
 echo debconf debconf/frontend select noninteractive |
-  debconf-set-selections
+ debconf-set-selections
 EOS
 
 # Install packages
@@ -75,6 +89,7 @@ rm -f /var/cache/apt/archives/*.deb
 rm -f /var/cache/apt/*cache.bin
 rm -f /var/lib/apt/lists/*_Packages
 EOS
+fi
 
 write "lib/init/fstab" <<-EOS
 # nothing
