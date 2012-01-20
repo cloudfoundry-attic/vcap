@@ -99,3 +99,10 @@ runtimes:
     version_flag: '-vn'
     environment:
 <% end %>
+<% if node[:dea][:runtimes].include?("python") %>
+  python26:
+    executable: python
+    version: 2.6.[5-7]
+    version_flag: '--version'
+    environment:
+<% end %>
