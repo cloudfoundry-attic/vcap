@@ -63,6 +63,6 @@ module CloudSpecHelpers
   # Only 'hard-code' names in the specs that are meaningful.
   # If the name doesn't matter in real life, use a random one to indicate that.
   def random_name(length = 7)
-    Digest::SHA1.hexdigest("#{Time.now}-#{rand(1_000)}").slice(0,length)
+    Digest::SHA1.hexdigest("#{Time.now.nsec}-#{rand(1_000_000)}").slice(0,length)
   end
 end
