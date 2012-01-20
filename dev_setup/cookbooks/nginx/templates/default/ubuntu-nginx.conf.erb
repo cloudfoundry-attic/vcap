@@ -119,6 +119,7 @@ http {
         set $router_ip '';
         set $timestamp 0;
         set $trace '';
+        set $sticky '';
 
         access_by_lua '
           -- add package.path and package.cpath
@@ -137,11 +138,11 @@ http {
           local uls_req_spec = {}
           uls_req_spec[uls.ULS_HOST_QUERY] = ngx.var.http_host
 
-          local uls_sticky_addr = uls.retrieve_vcap_sticky_addr(
+          local uls_sticky_session = uls.retrieve_vcap_sticky_session(
                                   ngx.req.get_headers()[uls.COOKIE_HEADER])
-          if uls_sticky_addr then
-            uls_req_spec[uls.ULS_BACKEND_ADDR] = uls_sticky_addr
-            ngx.log(ngx.DEBUG, "req sticks to backend addr:"..uls_sticky_addr)
+          if uls_sticky_session then
+            uls_req_spec[uls.ULS_STICKY_SESSION] = uls_sticky_session
+            ngx.log(ngx.DEBUG, "req sticks to backend session:"..uls_sticky_session)
           end
 
           if ngx.req.get_headers()[uls.VCAP_TRACE_HEADER] then
@@ -166,6 +167,7 @@ http {
           ngx.var.backend_addr = msg[uls.ULS_BACKEND_ADDR]
           ngx.var.uls_req_tags = msg[uls.ULS_REQEST_TAGS]
           ngx.var.router_ip    = msg[uls.ULS_ROUTER_IP]
+          ngx.var.sticky       = msg[uls.ULS_STICKY_SESSION]
           ngx.log(ngx.DEBUG, "route request with host header:"..
                               ngx.var.http_host.." to:"..ngx.var.backend_addr)
         ';
@@ -202,8 +204,8 @@ http {
           end
           if not sticky then return end
 
-          local vcap_cookie = uls.VCAP_SESSION_ID.."="..
-                              uls.encode_session_cookie(ngx.var.backend_addr)
+          local vcap_cookie = uls.VCAP_SESSION_ID.."="..ngx.var.sticky
+
           ngx.log(ngx.DEBUG, "generate cookie:"..vcap_cookie.." for resp from:"..
                   ngx.var.backend_addr)
           table.insert(cookies, vcap_cookie)

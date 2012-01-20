@@ -18,6 +18,7 @@ ULS_RESPONSE_SAMPLES   = :"response_samples"
 ULS_RESPONSE_LATENCY   = :"response_latency"
 ULS_BACKEND_ADDR       = :"backend_addr"
 ULS_ROUTER_IP          = :"router_ip"
+ULS_STICKY_SESSION     = :"sticky_session"
 
 # Max Connections to Pool
 MAX_POOL = 32

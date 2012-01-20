@@ -4,7 +4,7 @@ class Router
   VERSION = 0.98
 
   class << self
-    attr_reader   :log, :notfound_redirect, :client_inactivity_timeout
+    attr_reader   :log, :notfound_redirect, :session_key, :trace_key, :client_inactivity_timeout
     attr_accessor :server, :local_server, :timestamp, :shutting_down
     attr_accessor :client_connection_count
     attr_accessor :inet, :port
@@ -25,6 +25,8 @@ class Router
         log.info "Registered 404 redirect at #{config['404_redirect']}"
       end
 
+      @session_key = config['session_key'] || '14fbc303b76bacd1e0a3ab641c11d11400341c5d'
+      @trace_key = config['trace_key'] || '22'
       @client_inactivity_timeout = config['client_inactivity_timeout'] || 60
       @expose_all_apps = config['status']['expose_all_apps'] if config['status']
     end
@@ -126,6 +128,34 @@ class Router
       tc = EM.connection_count
       cc = Router.client_connection_count
       log.info connection_stats
+    end
+
+    def generate_session_cookie(droplet)
+      token = [ droplet[:url], droplet[:host], droplet[:port] ]
+      c = OpenSSL::Cipher::Cipher.new('blowfish')
+      c.encrypt
+      c.key = @session_key
+      e = c.update(Marshal.dump(token))
+      e << c.final
+      session = [e].pack('m0').gsub("\n",'')
+      droplet[:session] = session
+      session
+    end
+
+    def decrypt_session_cookie(key)
+      e = key.unpack('m*')[0]
+      d = OpenSSL::Cipher::Cipher.new('blowfish')
+      d.decrypt
+      d.key = @session_key
+      p = d.update(e)
+      p << d.final
+      Marshal.load(p)
+    rescue
+      nil
+    end
+
+    def get_session_cookie(droplet)
+      droplet[:session] || generate_session_cookie(droplet)
     end
 
     def lookup_droplet(url)
