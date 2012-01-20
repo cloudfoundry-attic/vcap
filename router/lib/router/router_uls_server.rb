@@ -20,6 +20,7 @@ class RouterULSServer < Sinatra::Base
     uls_req = JSON.parse(body, :symbolize_keys => true)
     raise ParserError if uls_req.nil? || !uls_req.is_a?(Hash)
     stats, url = uls_req[ULS_STATS_UPDATE], uls_req[ULS_HOST_QUERY]
+    sticky = uls_req[ULS_STICKY_SESSION]
 
     if stats then
       update_uls_stats(stats)
@@ -33,18 +34,25 @@ class RouterULSServer < Sinatra::Base
       end
 
       # Pick a droplet based on original backend addr or pick a droplet randomly
-      droplet = check_original_droplet(droplets, uls_req[ULS_BACKEND_ADDR])
-      droplet = droplets[rand*droplets.size] unless droplet
+      if sticky
+        _, host, port = Router.decrypt_session_cookie(sticky)
+        droplet = check_original_droplet(droplets, host, port)
+      end
+      droplet ||= droplets[rand*droplets.size]
       Router.log.debug "Routing #{droplet[:url]} to #{droplet[:host]}:#{droplet[:port]}"
 
       # Update droplet stats
       update_droplet_stats(droplet)
 
+      # Get session cookie for droplet
+      new_sticky = Router.get_session_cookie(droplet)
+
       uls_req_tags = Base64.encode64(Marshal.dump(droplet[:tags])).strip if droplet[:tags]
       uls_response = {
-        ULS_BACKEND_ADDR => "#{droplet[:host]}:#{droplet[:port]}",
-        ULS_REQUEST_TAGS => "#{uls_req_tags}",
-        ULS_ROUTER_IP    => "#{Router.inet}"
+        ULS_STICKY_SESSION => new_sticky,
+        ULS_BACKEND_ADDR   => "#{droplet[:host]}:#{droplet[:port]}",
+        ULS_REQUEST_TAGS   => uls_req_tags,
+        ULS_ROUTER_IP      => Router.inet
       }
     end
 
@@ -74,10 +82,9 @@ class RouterULSServer < Sinatra::Base
 
   protected
 
-  def check_original_droplet(droplets, backend_addr)
+  def check_original_droplet(droplets, host, port)
     droplet = nil
-    if backend_addr
-      host, port = backend_addr.split(":")
+    if host and port
       Router.log.debug "request has __VCAP_ID__ cookie for #{host}:#{port}"
       # Check host?
       droplets.each do |d|

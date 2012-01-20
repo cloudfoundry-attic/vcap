@@ -3,7 +3,11 @@ require File.dirname(__FILE__) + '/spec_helper'
 require "base64"
 
 describe 'Router Functional Tests' do
+
   include Functional
+
+  ROUTER_V1_DROPLET = { :url => 'router_test.vcap.me', :host => '127.0.0.1', :port => 12345 }
+  ROUTER_V1_SESSION = "zXiJv9VIyWW7kqrcqYUkzj+UEkC4UUHGaYX9fCpDMm2szLfOpt+aeRZMK7kfkpET+PDhvfKRP/M="
 
   before :each do
     @nats_server = NatsServer.new
@@ -75,6 +79,20 @@ describe 'Router Functional Tests' do
     app.verify_registered
     dea.unregister_app(app)
     app.verify_unregistered
+  end
+
+  it 'should generate the same token as router v1 did' do
+    Router.config({})
+    token = Router.generate_session_cookie(ROUTER_V1_DROPLET)
+    token.should == ROUTER_V1_SESSION
+  end
+
+  it 'should decrypt router v1 session' do
+    Router.config({})
+    url, host, port = Router.decrypt_session_cookie(ROUTER_V1_SESSION)
+    url.should  == ROUTER_V1_DROPLET[:url]
+    host.should == ROUTER_V1_DROPLET[:host]
+    port.should == ROUTER_V1_DROPLET[:port]
   end
 
   it 'should properly exit when NATS fails to reconnect' do

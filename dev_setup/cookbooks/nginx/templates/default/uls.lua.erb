@@ -29,6 +29,7 @@ ULS_STATS_UPDATE       = "stats"
 ULS_STATS_LATENCY      = "response_latency"
 ULS_STATS_SAMPLES      = "response_samples"
 ULS_STATS_CODES        = "response_codes"
+ULS_STICKY_SESSION     = "sticky_session"
 -- For both diretion
 -- When ULS_BACKEND_ADDR sent from nginx to uls, it means sticky address
 ULS_BACKEND_ADDR       = "backend_addr"
@@ -84,31 +85,8 @@ request_num = 0
 -- Utilities
 --------------------------------------------------------------------------------
 
--- Encode session cookie based on input ip:port pair
-function encode_session_cookie(addr)
-  local cipher = openssl.get_cipher("blowfish")
-  local addr_table = table.save({addr})
-
-  local c = cipher:init(true, SESSION_KEY, '')
-  local encoded = c:update(addr_table)
-  local final = c:final()
-  if final then encoded = encoded..final end
-  return base64.encode(encoded)
-end
-
--- Decode ip:port pair from session cookie
-function decode_session_cookie(cookie)
-  local decipher = openssl.get_cipher("blowfish")
-  local d = decipher:init(false, SESSION_KEY, '')
-  local decoded = d:update(base64.decode(cookie))
-  local final = d:final()
-  if final then decoded = decoded..final end
-  local table = table.load(decoded)
-  return table[1]
-end
-
 -- Retrieve ip:port if the input cookies have vcap cookie
-function retrieve_vcap_sticky_addr(cookies)
+function retrieve_vcap_sticky_session(cookies)
   if not cookies then return nil end
   if type(cookies) ~= "table" then cookies = {cookies} end
 
@@ -116,9 +94,8 @@ function retrieve_vcap_sticky_addr(cookies)
     local i, j = string.find(val, VCAP_COOKIE)
     if i then
       assert(i + string.len(VCAP_SESSION_ID) + 1 < j)
-      local addr = decode_session_cookie(
-        string.sub(val, i + string.len(VCAP_SESSION_ID) + 1, j))
-      return addr
+      local sticky = string.sub(val, i + string.len(VCAP_SESSION_ID) + 1, j)
+      return sticky
     end
   end
   return nil

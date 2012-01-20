@@ -10,6 +10,7 @@ require 'net/http'
 require 'uri'
 require "http/parser"
 require "router/const"
+require "router/router"
 
 require 'pp'
 

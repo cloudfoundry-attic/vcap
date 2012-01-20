@@ -193,6 +193,24 @@ def send_requests_to_apps(ip, port, req, num_requests, app_sockets, resp)
   results
 end
 
+def verify_results_by_request(results, num_requests)
+  recv_requests = 0
+  results.each { |entry|
+    recv_requests += entry[:counter]
+  }
+  recv_requests.should == num_requests
+end
+
+def verify_results_by_socket(results, app_socket)
+  results.should have(1).items
+  results[0][:app_socket].should == app_socket
+end
+
+def verify_results(results, app_socket, num_requests)
+  verify_results_by_request(results, num_requests)
+  verify_results_by_socket(results, app_socket)
+end
+
 module Integration
 
   class TestApp
