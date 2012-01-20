@@ -94,7 +94,7 @@ describe "server implementing Linux containers", :needs_root => true do
 
     let(:quota_config) {
       { :uidpool => {
-          :name => 'warden-linux-uidpool-server-test',
+          :name => 'warden-quota-test',
           :count => 1,
         },
         :filesystem => ENV['WARDEN_TEST_QUOTA_FS'],
