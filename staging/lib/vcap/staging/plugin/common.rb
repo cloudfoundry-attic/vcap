@@ -122,6 +122,7 @@ class StagingPlugin
         runtime.each_pair do |runtime_name, runtime_info|
           runtimes <<  {
             :name => runtime_name,
+            :default => runtime_info['default'],
             :version => runtime_info['version'],
             :description => runtime_info['description'] }
         end
