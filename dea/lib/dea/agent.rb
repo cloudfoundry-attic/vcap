@@ -408,7 +408,9 @@ module DEA
               :credentials => @file_auth,
               :staged => instance[:staged],
               :debug_ip => instance[:debug_ip],
-              :debug_port => instance[:debug_port]
+              :debug_port => instance[:debug_port],
+              :console_ip => instance[:console_ip],
+              :console_port => instance[:console_port]
             }
             if include_stats && instance[:state] == :RUNNING
               response[:stats] = {
@@ -504,6 +506,7 @@ module DEA
       runtime = message_json['runtime']
       framework = message_json['framework']
       debug = message_json['debug']
+      console = message_json['console']
 
       # Limits processing
       mem     = DEFAULT_APP_MEM
@@ -594,8 +597,21 @@ module DEA
           end
         end
 
+        if console
+          console_port = grab_port
+          if console_port
+            instance[:console_ip] = VCAP.local_ip
+            instance[:console_port] = console_port
+          else
+            @logger.warn("Unable to allocate console port for instance#{instance[:log_id]}")
+            stop_droplet(instance)
+            return
+          end
+        end
+
         @logger.info("Starting up instance #{instance[:log_id]} on port:#{instance[:port]} " +
-                     "#{"debuger:" if instance[:debug_port]}#{instance[:debug_port]}")
+                     "#{"debuger:" if instance[:debug_port]}#{instance[:debug_port]}" +
+                     "#{"console:" if instance[:console_port]}#{instance[:console_port]}")
         @logger.debug("Clients: #{@num_clients}")
         @logger.debug("Reserved Memory Usage: #{@reserved_mem} MB of #{@max_memory} MB TOTAL")
 
@@ -1088,6 +1104,8 @@ module DEA
       env << "VCAP_APP_PORT='#{instance[:port]}'"
       env << "VCAP_DEBUG_IP='#{instance[:debug_ip]}'"
       env << "VCAP_DEBUG_PORT='#{instance[:debug_port]}'"
+      env << "VCAP_CONSOLE_IP='#{instance[:console_ip]}'"
+      env << "VCAP_CONSOLE_PORT='#{instance[:console_port]}'"
 
       if vars = debug_env(instance)
         @logger.info("Debugger environment variables: #{vars.inspect}")
