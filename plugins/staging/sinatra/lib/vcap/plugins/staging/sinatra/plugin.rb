@@ -38,12 +38,12 @@ class VCAP::Plugins::Staging::Sinatra
   def stage(app_root, actions, app_props)
     sinatra_main = find_main_file(app_root)
     unless sinatra_main
-      actions.abort_staging("Could not find main file in application root.")
+      raise "Could not find main file in application root."
     end
 
     ruby_path = @ruby_paths[app_props['runtime']]
     unless ruby_path
-      actions.abort_staging("No ruby executable for runtime #{app_props['runtime']}")
+      raise "No ruby executable for runtime #{app_props['runtime']}"
     end
 
     actions.environment['RUBYOPT'] = '"-I$PWD/ruby -rstdsync"'

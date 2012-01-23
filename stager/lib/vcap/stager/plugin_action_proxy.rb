@@ -59,13 +59,6 @@ class VCAP::Stager::PluginActionProxy
     @droplet.base_dir
   end
 
-  # Aborts staging for the supplied reason.
-  #
-  # @param  reason  String  Why staging is being aborted
-  def abort_staging(reason)
-    raise VCAP::Stager::StagingAbortedError.new(reason)
-  end
-
   private
 
   def create_script(path)

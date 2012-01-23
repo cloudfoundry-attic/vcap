@@ -38,7 +38,7 @@ class VCAP::Plugins::Staging::Node
   def stage(app_root, actions, app_props)
     main_file = find_main_file(app_root)
     unless main_file
-      actions.abort_staging("Could not find main file in application root.")
+      raise "Could not find main file in application root."
     end
     app_dir = File.basename(app_root)
     write_start_script(actions.start_script, app_dir, main_file, @node_executable)

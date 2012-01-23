@@ -59,8 +59,9 @@ describe VCAP::Plugins::Staging::Node do
     it 'should call abort_staging if the main file cannot be found' do
       plugin = VCAP::Plugins::Staging::Node.new
       actions = make_stub_actions(@tmpdir)
-      actions.should_receive(:abort_staging)
-      plugin.stage(@app_dir, actions, nil)
+      expect do
+        plugin.stage(@app_dir, actions, nil)
+      end.to raise_error(/Could not find/)
     end
 
     it 'should create start and stop scripts in the droplet root' do

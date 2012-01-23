@@ -59,23 +59,21 @@ describe VCAP::Plugins::Staging::Sinatra do
       FileUtils.rm_rf(@tmpdir)
     end
 
-    it 'should call abort_staging if it cannot find the main file' do
+    it 'should raise an error if it cannot find the main file' do
       plugin = VCAP::Plugins::Staging::Sinatra.new
       actions = mock()
-      actions.should_receive(:abort_staging).with(any_args()).and_raise(RuntimeError.new)
       expect do
         plugin.stage(@tmpdir, actions, {'runtime' => 'ruby18'})
-      end.to raise_error
+      end.to raise_error(/Could not find main file/)
     end
 
     it 'should call abort_staging if it cannot find an executable for the supplied runtime' do
       copy_test_asset('sinatra_single_quotes.rb', @tmpdir)
       plugin = VCAP::Plugins::Staging::Sinatra.new
       actions = mock()
-      actions.should_receive(:abort_staging).with(any_args()).and_raise(RuntimeError.new)
       expect do
         plugin.stage(@tmpdir, actions, {'runtime' => 'invalid'})
-      end.to raise_error
+      end.to raise_error(/No ruby executable/)
     end
   end
 
