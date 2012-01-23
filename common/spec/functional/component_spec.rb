@@ -121,6 +121,7 @@ describe VCAP::Component do
   describe "http endpoint" do
     let(:host) { VCAP::Component.varz[:host] }
     let(:http) { ::EM::HttpRequest.new("http://#{host}/varz") }
+    let(:http2) { ::EM::HttpRequest.new("http://#{host}/varz") }
     let(:authorization) { { :head => { "authorization" => VCAP::Component.varz[:credentials] } } }
 
     it "should let you specify the port" do
@@ -140,7 +141,56 @@ describe VCAP::Component do
       end
     end
 
-   it "should let you specify the auth" do
+    it "should not truncate varz on second request" do
+      em do
+        options = default_options
+
+        VCAP::Component.register(options)
+
+        request = http.get authorization.merge(:path => "/varz")
+        request.callback do
+          request.response_header.status.should == 200
+          content_length = request.response_header['CONTENT_LENGTH'].to_i
+
+          VCAP::Component.varz[:var] = 'var'
+
+          request2 = http2.get authorization.merge(:path => "/varz")
+          request2.callback do
+            request2.response_header.status.should == 200
+            content_length2 = request2.response_header['CONTENT_LENGTH'].to_i
+            content_length2.should == request2.response.length
+            content_length2.should > content_length
+            done
+          end
+        end
+      end
+    end
+
+    it "should not truncate healthz on second request" do
+      em do
+        options = default_options
+
+        VCAP::Component.register(options)
+
+        request = http.get authorization.merge(:path => "/healthz")
+        request.callback do
+          request.response_header.status.should == 200
+
+          VCAP::Component.healthz = 'healthz'
+
+          request2 = http2.get authorization.merge(:path => "/healthz")
+          request2.callback do
+            request2.response_header.status.should == 200
+            content_length2 = request2.response_header['CONTENT_LENGTH'].to_i
+            content_length2.should == request2.response.length
+            content_length2.should == 'healthz'.length
+            done
+          end
+        end
+      end
+    end
+
+    it "should let you specify the auth" do
       em do
         options = default_options
         options[:user] = "foo"

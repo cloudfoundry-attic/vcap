@@ -52,9 +52,9 @@ server VM.
 
 * setup a VM with a pristine Ubuntu 10.04.2 server 64bit image,
   [download here](http://www.ubuntu.com/download/ubuntu/download)
-* you may wish to snapshot your VM now in case things go pear shaped.
 * setup your VM with 1G or more of memory
-* great snapshot spots are here and after step 4
+* you may wish to snapshot your VM now in case things go pear shaped
+  (great snapshot spots are here and after step 4)
 * to enable remote access (more fun than using the console), install ssh.
 
 To install ssh:
@@ -69,6 +69,16 @@ keep a loose eye on it.
      sudo apt-get install curl
      bash < <(curl -s -k -B https://raw.github.com/cloudfoundry/vcap/master/setup/install)
 
+_**Experimental**_ Or, instead of the above steps, try the new Chef based
+installation.  Note: the Chef based setup will eventually replace the
+vcap_setup based install above.  The Chef recipies don't cover all frameworks
+and runtimes supported by the traditional installation method, e.g. Erlang
+isn't supported yet, but it will soon.  At that point, the vcap_setup based
+installer will be removed from the source tree.
+
+     sudo apt-get install curl
+     bash < <(curl -s -k -B https://raw.github.com/cloudfoundry/vcap/master/dev_setup/bin/vcap_dev_setup)
+
 NOTE: The automated setup does not auto-start the system. Once you are
 done with the setup, exit your current shell, restart a new shell and continue
 the following steps
@@ -78,6 +88,11 @@ the following steps
     cd ~/cloudfoundry/vcap
     bin/vcap start
     bin/vcap tail  # see aggregate logs
+
+_**Experimental**_ if you used the new Chef based installer in step 2:
+
+    cd ~/cloudfoundry/vcap
+    dev_setup/bin/vcap_dev start
 
 #### Step 4: *Optional, mac/linux users only*, create a local ssh tunnel
 

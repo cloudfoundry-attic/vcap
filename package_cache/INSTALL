@@ -1,0 +1,9 @@
+1. run pool_tool in vcap/common/bin/pool_tool to create a user pool
+called package cache with the appropriate number of users.
+
+e.g. ./pool_tool -c package_cache,50
+
+the number of users will limit the number of maximum concurrent requests
+the package cache can process as each request needs a temporary user.
+
+2. configure config/dev.yml to point to appropriate ruby runtimes.

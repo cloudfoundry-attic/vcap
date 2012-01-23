@@ -15,12 +15,14 @@ require File.expand_path('job_manager', File.dirname(__FILE__))
 
 script_dir = File.expand_path(File.dirname(__FILE__))
 cloudfoundry_home = Deployment.get_cloudfoundry_home
+cloudfoundry_domain = Deployment.get_cloudfoundry_domain
 deployment_spec = File.expand_path(File.join(script_dir, "..", DEPLOYMENT_DEFAULT_SPEC))
 
 args = ARGV.dup
 opts_parser = OptionParser.new do |opts|
   opts.on('--config CONFIG_FILE', '-c CONFIG_FILE') { |file| deployment_spec = File.expand_path(file.to_s) }
   opts.on('--dir CLOUDFOUNDRY_HOME', '-d CLOUDFOUNDRY_HOME') { |dir| cloudfoundry_home = File.expand_path(dir.to_s) }
+  opts.on('--domain CLOUDFOUNDRY_DOMAIN', '-D CLOUDFOUNDRY_DOMAIN') { |domain| cloudfoundry_domain = domain }
 end
 args = opts_parser.parse!(args)
 
@@ -37,6 +39,7 @@ spec["deployment"] ||= {}
 spec["deployment"]["name"] ||= DEPLOYMENT_DEFAULT_NAME
 spec["deployment"]["user"] ||= ENV["USER"]
 spec["deployment"]["group"] ||= `id -g`.strip
+spec["deployment"]["domain"] ||= cloudfoundry_domain
 spec["cloudfoundry"] ||= {}
 spec["cloudfoundry"]["home"] ||= cloudfoundry_home
 spec["cloudfoundry"]["home"] = File.expand_path(spec["cloudfoundry"]["home"])
@@ -128,18 +131,19 @@ Dir.mktmpdir do |tmpdir|
   # save the deployment target for later use
   Deployment.save_deployment_target(deployment_name, cloudfoundry_home)
 
-  puts "---------------"
-  puts "Deployment info"
-  puts "---------------"
-  puts "Status: successful"
+  puts "\nDeployment Info".green
+  puts "***************".green
+  puts "* Status:" + " Success".green
 
   vcap_dev_path = File.expand_path(File.join(script_dir, "..", "bin", "vcap_dev"))
-  puts "Config files: #{deployment_config_path}"
-  puts "Deployment name: #{deployment_name}"
-  puts "NOTE: If you want to run ruby/vmc please source the profile #{Deployment.get_deployment_profile_file}"
+  puts "* Config files:" + " #{deployment_config_path}"
+  puts "* Deployment name:" + " #{deployment_name}"
+  puts "*" + " Note:".red
+  puts "  * If you want to run ruby/vmc please source the profile #{Deployment.get_deployment_profile_file}"
+  puts "  * If you want to run cloudfoundry components by hand please source the profile #{Deployment.get_local_deployment_run_profile}"
   args = ""
   args << (deployment_name != DEPLOYMENT_DEFAULT_NAME ? " -n #{deployment_name}" : "")
   args << (cloudfoundry_home != Deployment.get_cloudfoundry_home ? " -d #{cloudfoundry_home}" : "")
   args << " start"
-  puts "Command to run cloudfoundry: #{vcap_dev_path} #{args.strip}"
+  puts "* Command to run cloudfoundry:" + " #{vcap_dev_path} #{args.strip}".green
 end

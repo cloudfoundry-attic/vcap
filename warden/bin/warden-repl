@@ -1,0 +1,27 @@
+#!/usr/bin/env ruby
+
+require "shellwords"
+require "warden/client"
+
+include Shellwords
+
+def prompt(str)
+  STDOUT.print "%s> " % str
+  STDOUT.flush
+  STDIN.gets
+end
+
+client = Warden::Client.new("/tmp/warden.sock")
+client.connect
+
+loop do
+  line = prompt("warden")
+  break unless line
+
+  words = shellwords(line)
+  next if words.empty?
+
+  # Issue command
+  client.write(words)
+  STDOUT.puts client.read.inspect
+end

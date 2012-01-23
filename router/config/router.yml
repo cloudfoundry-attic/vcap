@@ -8,3 +8,14 @@ mbus: nats://localhost:4222
 logging:
   level: info
 pid: /var/vcap/sys/run/router.pid
+
+# Used for /healthz and /vars endpoints. If not provided random
+# values will be generated on component start. Uncomment to use
+# static values.
+#status:
+#  port: 34503
+#  user: thin
+#  password: thin
+
+#  Uncomment and set true to show requests-per-second stats for all aps not only top 10. If not specified or set false only 10 apps are shown
+#  expose_all_apps: true

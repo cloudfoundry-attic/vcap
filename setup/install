@@ -31,7 +31,7 @@ read -p "Enter the password you want to use for root postgresql user: " POSTGRES
 echo "Installing dependencies"
 if [[ $PLATFORM == 'Linux' ]]; then
   sudo apt-get update
-  sudo apt-get -y install coreutils autoconf curl git-core ruby bison build-essential zlib1g-dev libssl-dev libreadline5-dev
+  sudo apt-get -qqy install coreutils autoconf libtool curl git-core ruby bison build-essential zlib1g-dev libssl-dev libreadline5-dev
 else
   echo "Sorry, we can't install dependencies for your system yet."
 fi
@@ -65,8 +65,7 @@ bash /tmp/install_rvm
 rm /tmp/install_rvm
 
 echo "Activate rvm"
-if (( UID > 0 ))
-then
+if [ "$(id -u)" != "0" ]; then
   rvm_path="$HOME/.rvm"
 else
   rvm_path="/usr/local/rvm"

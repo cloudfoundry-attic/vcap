@@ -115,6 +115,7 @@ describe Service do
 
   describe "#is_builtin?" do
     it "should correctly check against AppConfig" do
+      AppConfig[:builtin_services].delete(:foo)
       svc = Service.new(:label => "foo-bar", :url => "http://www.google.com", :token => "foo")
       AppConfig[:builtin_services].delete(:foo)
       svc.is_builtin?.should be_false

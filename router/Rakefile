@@ -1,4 +1,5 @@
 require 'rake'
+require 'ci/reporter/rake/rspec'
 
 desc "Run specs"
 task "spec" => ["bundler:install:test", "test:spec"]
@@ -13,6 +14,9 @@ task "ci" do
     sh("BUNDLE_PATH=$HOME/.vcap_router_gems bundle exec rake spec")
   end
 end
+
+desc "Run specs producing results for CI"
+task "ci-report" => ["ci:spec"]
 
 desc "Run specs using RCov"
 task "spec:rcov" => ["bundler:install:test", "test:spec:rcov"]
@@ -52,4 +56,8 @@ namespace "test" do
  task "spec:rcov" do |t|
     sh("cd spec && rake spec:rcov")
   end
+end
+
+namespace :ci do
+  task "spec" => ["ci:setup:rspec", "^spec"]
 end

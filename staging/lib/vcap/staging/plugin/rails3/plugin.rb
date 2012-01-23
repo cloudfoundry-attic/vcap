@@ -40,6 +40,7 @@ class Rails3Plugin < StagingPlugin
       configure_database # TODO - Fail if we just configured a database that the user did not bundle a driver for.
       create_asset_plugin if disables_static_assets?
       create_startup_script
+      create_stop_script
     end
   end
 
@@ -63,6 +64,11 @@ fi
       end
   end
 
+  def stop_script
+    vars = environment_hash
+    generate_stop_script(vars)
+  end
+
   # Rails applications often disable asset serving in production mode, and delegate that to
   # nginx or similar. We re-enable it with a plugin as needed.
   def disables_static_assets?
@@ -77,9 +83,7 @@ fi
   # Generates a trivial Rails plugin that re-enables static asset serving at boot.
   def create_asset_plugin
     init_code = <<-BODY
-Rails::Application.configure do
-  config.serve_static_assets = true
-end
+Rails.application.config.serve_static_assets = true
     BODY
     plugin_dir = File.join(destination_directory, 'app', 'vendor', 'plugins', 'serve_static_assets')
     FileUtils.mkdir_p(plugin_dir)

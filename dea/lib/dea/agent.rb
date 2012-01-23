@@ -222,7 +222,14 @@ module DEA
       NATS.start(:uri => @nats_uri) do
 
         # Register ourselves with the system
-        VCAP::Component.register(:type => 'DEA', :host => @local_ip, :config => @config, :index => @config['index'])
+        status_config = @config['status'] || {}
+        VCAP::Component.register(:type => 'DEA',
+                           :host => @local_ip,
+                           :index => @config['index'],
+                           :config => @config,
+                           :port => status_config['port'],
+                           :user => status_config['user'],
+                           :password => status_config['password'])
 
         uuid = VCAP::Component.uuid
 
@@ -256,7 +263,7 @@ module DEA
 
     def send_heartbeat
       return if @droplets.empty? || @shutting_down
-      heartbeat = {:droplets => []}
+      heartbeat = {:droplets => [], :dea => VCAP::Component.uuid }
       @droplets.each_value do |instances|
         instances.each_value do |instance|
           heartbeat[:droplets] << generate_heartbeat(instance)
@@ -266,7 +273,7 @@ module DEA
     end
 
     def send_single_heartbeat(instance)
-      heartbeat = {:droplets => [generate_heartbeat(instance)]}
+      heartbeat = {:droplets => [generate_heartbeat(instance)], :dea => VCAP::Component.uuid }
       NATS.publish('dea.heartbeat', heartbeat.to_json)
     end
 
@@ -562,25 +569,33 @@ module DEA
         instance[:secure_user] = user[:user]
       end
 
-      start_operation = proc do
+      start_operation = lambda do
         @logger.debug('Completed download')
 
-        port = VCAP.grab_ephemeral_port
-        instance[:port] = port
-
-        starting = "Starting up instance #{instance[:log_id]} on port:#{port}"
-
-        if debug
-          debug_port = VCAP.grab_ephemeral_port
-          instance[:debug_ip] = VCAP.local_ip
-          instance[:debug_port] = debug_port
-          instance[:debug_mode] = debug
-
-          @logger.info("#{starting} with debugger:#{debug_port}")
+        port = grab_port
+        if port
+          instance[:port] = port
         else
-          @logger.info(starting)
+          @logger.warn("Unable to allocate port for instance#{instance[:log_id]}")
+          stop_droplet(instance)
+          return
         end
 
+        if debug
+          debug_port = grab_port
+          if debug_port
+            instance[:debug_ip] = VCAP.local_ip
+            instance[:debug_port] = debug_port
+            instance[:debug_mode] = debug
+          else
+            @logger.warn("Unable to allocate debug port for instance#{instance[:log_id]}")
+            stop_droplet(instance)
+            return
+          end
+        end
+
+        @logger.info("Starting up instance #{instance[:log_id]} on port:#{instance[:port]} " +
+                     "#{"debuger:" if instance[:debug_port]}#{instance[:debug_port]}")
         @logger.debug("Clients: #{@num_clients}")
         @logger.debug("Reserved Memory Usage: #{@reserved_mem} MB of #{@max_memory} MB TOTAL")
 
@@ -637,7 +652,7 @@ module DEA
             process.send_data("umask 077\n")
           end
           app_env.each { |env| process.send_data("export #{env}\n") }
-          process.send_data("./startup -p #{port}\n")
+          process.send_data("./startup -p #{instance[:port]}\n")
           process.send_data("exit\n")
         end
 
@@ -838,13 +853,8 @@ module DEA
       (instance[:mem_quota] / (1024*1024)).to_i
     end
 
-    def grab_ephemeral_port
-      socket = TCPServer.new('0.0.0.0', 0)
-      socket.setsockopt(Socket::SOL_SOCKET, Socket::SO_REUSEADDR, true)
-      Socket.do_not_reverse_lookup = true
-      port = socket.addr[1]
-      socket.close
-      return port
+    def grab_port
+      VCAP.grab_ephemeral_port
     end
 
     def detect_app_ready(instance, manifest, &block)
@@ -870,7 +880,7 @@ module DEA
         if state && state['state'] == 'RUNNING'
           block.call(true)
           timer.cancel
-        elsif instance[:debug_mode] != "wait"
+        elsif instance[:debug_mode] != "suspend"
           attempts += 1
           if attempts > 600 || instance[:state] != :STARTING # 5 minutes or instance was stopped
             block.call(false)
@@ -1179,12 +1189,13 @@ module DEA
         instance[:state_timestamp] = Time.now.to_i
         stop_cmd = "cd #{instance[:dir]} && ./stop"
         stop_cmd = "su -c #{stop_cmd} #{username}" if @secure
-        stop_cmd = "#{stop_cmd} 2> /dev/null"
+        stop_cmd = "#{stop_cmd} #{instance[:pid]} 2> /dev/null"
 
         unless (RUBY_PLATFORM =~ /darwin/ and @secure)
           @logger.debug("Executing stop script: '#{stop_cmd}'")
           # We can't make 'stop_cmd' into EM.system because of a race with
           # 'cleanup_droplet'
+          @logger.debug("Stopping instance PID:#{instance[:pid]}")
           Bundler.with_clean_env { system(stop_cmd) }
         end
       end

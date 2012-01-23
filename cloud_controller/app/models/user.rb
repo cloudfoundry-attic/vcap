@@ -48,6 +48,16 @@ class User < ActiveRecord::Base
     def all_email_addresses
       connection.select_values "select email from users"
     end
+
+    # Called at startup to seed the database with initial users
+    # if they do not yet exist.
+    def create_bootstrap_user(email, password, is_admin=false)
+      user = User.find_or_create_by_email(email)
+      user.set_and_encrypt_password(password)
+      user.save!
+      admins << email if is_admin
+      user
+    end
   end
 
   def set_and_encrypt_password(val)
@@ -102,7 +112,7 @@ class User < ActiveRecord::Base
   # Returns the actual current count of apps, or nil if there is room.
   def no_more_apps?
     count = apps_owned.count
-    if account_capacity[:apps] < count
+    if account_capacity[:apps] <= count
       count
     end
   end

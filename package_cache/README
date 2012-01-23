@@ -1,0 +1,70 @@
+VCAP Package Cache
+==================
+
+Purpose: The package cache keeps a local pre-built copy of packages (such as
+ruby gems, python packages, etc.) so that they do not need to be repeatedly
+downloaded and built during application staging.
+
+
+Operation:
+----------
+
+-the package cache starts up a stand-alone server that waits for
+requests to load packages, implementing a simple rest interface (see server.rb).
+
+-once a request is recieved, the source package is fetched either by downloading it (if it is
+remote), or copying it from the inbox directory (if it is local).
+
+-once fetched, the source package is built in a sandboxed context, and the resulting built contents are
+ archived and stored in the cache.
+
+-the name of the built package in the cache is a function of where it came from, remote packages
+are stored by their cannonical name plus a .tgz extension e.g. thin (1.2.11)
+would be stored as thin-1.2.11.tgz in the cache.
+
+-local packages are stored by the SHA1 hash of their contents plus a .tgz extension.
+
+Security model:
+---------------
+
+-clients of the cache are assumed to be untrusted.
+
+-clients access the cache directly through the file system.
+ clients can access cache contents, but not list them.
+ consequently - to access a package a client must know either
+ the content of the source package(for local packages) or the
+ cannonical name (for remote packages).
+
+-to hand a local source package to the package_cache, it is copied into the
+inbox directory. the inbox security model is described in detail in (inbox.rb)
+
+*Directory structure
+
+all directories used by the package_cache are relative to a base directory,
+/var/vcap.local/package_cache, by default.
+
+vcap.local/package_cache/cache - is the location of cached package for use.
+vcap.local/package_cache/builds - is the temporary directory where packages are built.
+vcap.local/package_cache/inbox - is the 'inbox' where the client places 'vendored' packages to
+be added to the cache i.e. un-built packages it already has stored locally.
+
+
+Using and testing the cache.
+------------------------------
+
+The package cache must currently be run as root, it can be started using the
+following command.
+
+/vcap/package_cache]rvmsudo ./bin/package_cache
+
+A full working example that exercises all features of the client can
+be found in -- the package cache client is found in client.rb in the
+main source repository.
+
+vcap/package_cache/spec/functional/e2e_test
+
+A simple load tester can be found in.
+
+vcap/package_cache/spec/functional/load_test
+
+invoking it without arguments will display the usage message.

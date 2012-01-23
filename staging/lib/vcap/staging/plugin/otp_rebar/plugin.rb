@@ -18,6 +18,7 @@ class OtpRebarPlugin < StagingPlugin
       create_app_directories
       copy_source_files
       create_startup_script
+      create_stop_script
       rewrite_libs
       update_vm_args
     end
@@ -44,6 +45,7 @@ class OtpRebarPlugin < StagingPlugin
   end
 
   private
+
   def startup_script
     vars = environment_hash
     generate_startup_script(vars)
@@ -55,7 +57,7 @@ class OtpRebarPlugin < StagingPlugin
   def rewrite_libs
     runtime_version = runtime['version']
     runtime_info = runtime_info_for(runtime_version)
-    runtime_dir = "/var/vcap/runtimes/erlang-#{runtime_version}"
+    runtime_dir = File.expand_path('../..', runtime['executable'])
 
     # Ensure that our runtime matches the one that the libraries were packaged for
     start_erl_data = File.read('app/releases/start_erl.data')
@@ -78,6 +80,11 @@ class OtpRebarPlugin < StagingPlugin
         FileUtils.ln_s "#{runtime_dir}/lib/erlang/lib/#{base_lib_name}", lib_name
       end
     end
+  end
+
+  def stop_script
+    vars = environment_hash
+    generate_stop_script(vars)
   end
 
   # We want to alter the VM so that it doesn't want input, and that it doesn't need the double INT to close.
