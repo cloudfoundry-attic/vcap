@@ -128,7 +128,7 @@ describe 'Health Manager' do
     end
 
     #test restart crashed instances
-    it 'should start crashed instances' do
+    pending 'should start crashed instances' do
       app = @helper.make_app_with_owner_and_instance(make_app_def('crasher'), make_user_def)
       crash_msg = {
         'droplet' =>  app.id,
