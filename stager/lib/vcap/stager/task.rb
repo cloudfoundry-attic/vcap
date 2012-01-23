@@ -64,7 +64,7 @@ class VCAP::Stager::Task
     @tmpdir_base          = opts[:tmpdir]
     @user                 = opts[:user]
     @plugin_config_dir    = opts[:plugin_config_dir]
-    @plugins              = VCAP::Stager.config[:enabled_framework_plugins]
+    @plugins              = VCAP::Stager.config[:enabled_framework_plugins].inject({}) {|h, f| h[f] = true; h }
     @download_app_helper_path = option(opts, :download_app_helper_path)
     @upload_droplet_helper_path = option(opts, :upload_droplet_helper_path)
   end
@@ -96,9 +96,7 @@ class VCAP::Stager::Task
 
         task_logger.info("Staging application")
         # Temporary hack until all plugins are converted
-        new_style_plugin = @plugins[@app_props['framework'].to_sym]
-        if new_style_plugin
-          @app_props['plugins'] = {new_style_plugin => {}}
+        if @plugins[@app_props['framework']]
           run_plugins(dirs[:unstaged], dirs[:staged], dirs[:base])
         else
           run_staging_plugin(dirs[:unstaged], dirs[:staged], dirs[:base], task_logger)
@@ -269,6 +267,12 @@ class VCAP::Stager::Task
     @vcap_logger.debug("Executing plugin runner with command #{runner_cmd}")
     res = run_logged(runner_cmd, 0, @max_staging_duration)
 
+    [:stdout, :stderr].each do |stdio|
+      next unless res[stdio]
+      @vcap_logger.info("#{stdio} for plugins")
+      res[stdio].split("\n").each {|line| @vcap_logger.info(line) }
+    end
+
     if res[:timed_out]
       @vcap_logger.error("Plugin runner timed out after #{@max_staging_duration} secs")
       raise VCAP::Stager::StagingTimeoutError
@@ -277,22 +281,18 @@ class VCAP::Stager::Task
       @vcap_logger.error("Failed running staging plugins")
 
       begin
-        err = YAML.load_file(task_opts['error_path'])
+        err = File.read(task_opts['error_path'])
       rescue => e
         @vcap_logger.error("Failed reading error file at #{task_opts['error_path']}")
         @vcap_logger.error(e)
         # We can't communicate the specific reason that staging failed (if any),
         # so just raise a generic error.
-        raise VCAP::Stager::PluginRunnerError
+        raise VCAP::Stager::PluginRunnerError, "Failed reading result"
       end
 
-      @vcap_logger.error(e)
-      if err.kind_of?(VCAP::Stager::TaskError)
-        raise err
-      else
-        # Unhandled exception, raise a generic error
-        raise VCAP::Stager::PluginRunnerError
-      end
+      # Unhandled exception, raise a generic error
+      @vcap_logger.error("Plugin runner aborted with error: #{err}")
+      raise VCAP::Stager::PluginRunnerError, err
     end
   end
 

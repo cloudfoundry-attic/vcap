@@ -14,7 +14,7 @@ gem 'vcap_stager_ipc', '= 0.0.2'
 gem 'vcap_cloud_controller_ipc'
 
 # Plugins
-gem 'vcap_node_staging_plugin', :require => 'vcap/plugins/staging/node/export'
+gem 'vcap_node_staging_plugin', :require => 'vcap/plugins/staging/node/export', :path => '../plugins/staging/node'
 
 group :test do
   gem 'rspec'

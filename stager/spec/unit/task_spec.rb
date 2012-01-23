@@ -119,20 +119,9 @@ describe VCAP::Stager::Task do
       end.to raise_error(VCAP::Stager::StagingTimeoutError)
     end
 
-    it 'should raise the serialized error if it is a VCAP::Stager::TaskError' do
+    it 'should raise an instance of VCAP::Stager::PluginRunnerError if the error file exists' do
       error_file = File.join(@tmp_dir, 'plugin_runner_error')
-      error = VCAP::Stager::InternalError.new
-      File.open(error_file, 'w+') {|f| YAML.dump(error, f) }
-      @task.stub(:run_logged).and_return({:success => false, :timed_out => false})
-      expect do
-        @task.send(:run_plugins, @tmp_dir, @tmp_dir, @tmp_dir)
-      end.to raise_error(VCAP::Stager::InternalError)
-    end
-
-    it 'should raise an instance of VCAP::Stager::PluginRunnerError if the serialized error is not an instance of VCAP::Stager::TaskError' do
-      error_file = File.join(@tmp_dir, 'plugin_runner_error')
-      error = StandardError.new
-      File.open(error_file, 'w+') {|f| YAML.dump(error, f) }
+      File.open(error_file, 'w+') {|f| f.write("hi") }
       @task.stub(:run_logged).and_return({:success => false, :timed_out => false})
       expect do
         @task.send(:run_plugins, @tmp_dir, @tmp_dir, @tmp_dir)

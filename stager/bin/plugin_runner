@@ -36,7 +36,7 @@ begin
 rescue => e
   if task['opts']['error_path']
     File.open(task['opts']['error_path'], 'w+') do |f|
-      YAML.dump(e, f)
+        f.write(e.to_s)
     end
   end
   raise e

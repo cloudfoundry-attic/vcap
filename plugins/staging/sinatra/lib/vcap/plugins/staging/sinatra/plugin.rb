@@ -16,11 +16,9 @@ class VCAP::Plugins::Staging::Sinatra
   DEFAULT_CONFIG_PATH     = File.join(ASSET_DIR, 'config.yml')
   SINATRA_DETECTION_REGEX = /require 'sinatra'|require "sinatra"/
 
-  attr_reader :framework
   attr_reader :name
 
   def initialize(config_path=DEFAULT_CONFIG_PATH)
-    @framework = 'sinatra'
     @name = 'vcap_sinatra_staging_plugin'
     @ruby_paths = {}
     @start_template = ERB.new(File.read(START_TEMPLATE_PATH))
@@ -33,6 +31,14 @@ class VCAP::Plugins::Staging::Sinatra
     unless @ruby_paths
       raise "ruby_paths missing from config at #{config_path}"
     end
+  end
+
+  def framework_plugin?
+    true
+  end
+
+  def should_stage?(app_props)
+    app_props['framework'] == 'sinatra'
   end
 
   def stage(app_root, actions, app_props)

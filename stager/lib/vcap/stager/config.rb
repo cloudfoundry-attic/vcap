@@ -29,7 +29,7 @@ class VCAP::Stager::Config < VCAP::Config
         optional(:plugin_configs) => String, # Where the staging plugin configs live.
       },
 
-      optional(:enabled_framework_plugins) => Hash, # Optional map of framework => new style staging plugin
+      optional(:enabled_framework_plugins) => [String], # Optional list of frameworks to use new-style plugins for
 
       :secure                => VCAP::JsonSchema::BoolSchema.new,
 
@@ -43,7 +43,7 @@ class VCAP::Stager::Config < VCAP::Config
   def self.from_file(*args)
     config = super(*args)
 
-    config[:enabled_framework_plugins] ||= {}
+    config[:enabled_framework_plugins] ||= []
     config[:dirs] ||= {}
     config[:dirs][:manifests] ||= StagingPlugin::DEFAULT_MANIFEST_ROOT
     config[:run_plugin_path]  ||= File.expand_path('../../../../bin/run_plugin', __FILE__)

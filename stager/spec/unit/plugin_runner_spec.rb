@@ -34,14 +34,6 @@ describe VCAP::Stager::PluginRunner do
       FileUtils.rm_rf(@dst_dir)
     end
 
-    it 'should raise an error for unknown plugins' do
-      @app_props['plugins']['unknown'] = {}
-      runner = VCAP::Stager::PluginRunner.new
-      expect do
-        runner.run_plugins(@src_dir, @dst_dir, @app_props, @cc_info)
-      end.to raise_error(VCAP::Stager::UnsupportedPluginError)
-    end
-
     it 'should raise an error if no framework plugin is supplied' do
       runner = VCAP::Stager::PluginRunner.new
       expect do
@@ -81,7 +73,8 @@ describe VCAP::Stager::PluginRunner do
   def create_mock_plugin(name, framework=nil)
     ret = mock()
     ret.stub(:name).and_return(name)
-    ret.stub(:framework).and_return(framework) if framework
+    ret.stub(:framework_plugin?).and_return(framework != nil)
+    ret.stub(:should_stage?).and_return(true)
     ret
   end
 end

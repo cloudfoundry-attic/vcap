@@ -70,7 +70,7 @@ class VCAP::Stager::PluginRunner
     droplet         = VCAP::Stager::Droplet.new(dest_dir)
     logger = VCAP::Logging.logger('vcap.stager.plugin_runner')
 
-    framework_plugin, feature_plugins = collect_plugins(app_props['framework'], app_props['plugins'].keys)
+    framework_plugin, feature_plugins = collect_plugins(app_props)
 
     logger.info("Setting up base droplet structure")
     droplet.create_skeleton(source_dir)
@@ -97,22 +97,19 @@ class VCAP::Stager::PluginRunner
 
   # Returns the plugins that will be executed, in order.
   #
-  # @param  framework  String         Framework of the application being staged
-  # @param  plugins    Array[String]  List of plugin names
+  # @param  [Hash]  app_props  Application properties
   #
-  # @return Array                     [framework_plugin, *feature_plugins]
-  def collect_plugins(framework, plugins)
+  # @return [Array]            [framework_plugin, *feature_plugins]
+  def collect_plugins(app_props)
     feature_plugins  = []
     framework_plugin = nil
 
-    for name in plugins
-      plugin = @plugins[name]
-      unless plugin || plugin.respond_to?(:stage)
-        raise VCAP::Stager::UnsupportedPluginError, name
-      end
+    for name, plugin in @plugins
 
-      if plugin.respond_to?(:framework)
-        if plugin.framework != framework
+      next unless plugin.respond_to?(:should_stage?) && plugin.should_stage?(app_props)
+
+      if plugin.framework_plugin?
+        if framework_plugin
           raise VCAP::Stager::DuplicateFrameworkPluginError, plugin.name
         else
           framework_plugin = plugin

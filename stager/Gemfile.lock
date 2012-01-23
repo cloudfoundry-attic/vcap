@@ -1,3 +1,9 @@
+PATH
+  remote: ../plugins/staging/node
+  specs:
+    vcap_node_staging_plugin (0.0.1)
+      rake
+
 GEM
   remote: http://rubygems.org/
   specs:
@@ -50,8 +56,6 @@ GEM
       vcap_logging
       yajl-ruby
     vcap_logging (0.1.1)
-    vcap_node_staging_plugin (0.0.1)
-      rake
     vcap_stager_ipc (0.0.2)
       eventmachine
       rake
@@ -83,7 +87,7 @@ DEPENDENCIES
   vcap_cloud_controller_ipc
   vcap_common (>= 1.0.0)
   vcap_logging (>= 0.1.1)
-  vcap_node_staging_plugin
+  vcap_node_staging_plugin!
   vcap_stager_ipc (= 0.0.2)
   vcap_staging (>= 0.1.11)
   webmock

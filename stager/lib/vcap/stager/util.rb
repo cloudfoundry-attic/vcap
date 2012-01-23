@@ -2,6 +2,7 @@ require 'fileutils'
 require 'rest_client'
 require 'uri'
 
+require 'vcap/common'
 require 'vcap/stager/errors'
 
 

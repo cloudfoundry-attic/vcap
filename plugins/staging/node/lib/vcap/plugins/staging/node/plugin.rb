@@ -16,11 +16,9 @@ class VCAP::Plugins::Staging::Node
   STOP_SCRIPT_PATH      = File.join(ASSET_DIR, 'stop')
   MAIN_FILES            = Set.new(['server.js', 'app.js', 'index.js', 'main.js', 'application.js'])
 
-  attr_reader :framework
   attr_reader :name
 
   def initialize(config_path=DEFAULT_CONFIG_PATH)
-    @framework = 'node'
     @name = 'vcap_node_staging_plugin'
     @node_path = nil
     @startup_template = ERB.new(File.read(STARTUP_TEMPLATE_PATH))
@@ -35,9 +33,16 @@ class VCAP::Plugins::Staging::Node
     end
   end
 
+  def framework_plugin?
+    true
+  end
+
+  def should_stage?(app_props)
+    app_props['framework'] == 'node'
+  end
+
   def stage(app_root, actions, app_props)
-    main_file = find_main_file(app_root)
-    unless main_file
+    unless main_file = find_main_file(app_root)
       raise "Could not find main file in application root."
     end
     app_dir = File.basename(app_root)

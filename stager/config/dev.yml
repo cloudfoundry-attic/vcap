@@ -8,4 +8,4 @@ max_active_tasks: 10
 queues: ['vcap.staging.linux']
 secure: false
 enabled_framework_plugins:
-  node: vcap_node_staging_plugin
+  - node
