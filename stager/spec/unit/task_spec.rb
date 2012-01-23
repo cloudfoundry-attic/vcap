@@ -3,6 +3,10 @@ require File.join(File.dirname(__FILE__), 'spec_helper')
 require 'tmpdir'
 
 describe VCAP::Stager::Task do
+  before :all do
+    VCAP::Stager.config = {:enabled_framework_plugins => {}}
+  end
+
   describe '#creating_staging_dirs' do
     it 'should create the basic directory structure needed for staging' do
       task = VCAP::Stager::Task.new(nil, nil, nil, nil, nil, nil)

@@ -25,13 +25,12 @@ class VCAP::Stager::PluginActionProxy
   #     string '$USER'?
   attr_accessor :environment
 
-  def initialize(start_script_path, stop_script_path, droplet, services_client, env)
+  def initialize(start_script_path, stop_script_path, droplet, env)
     @start_script_path = start_script_path
     @start_script      = nil
     @stop_script_path  = stop_script_path
     @stop_script       = nil
     @droplet           = droplet
-    @services_client   = services_client
     @environment       = env
   end
 

@@ -68,9 +68,6 @@ class VCAP::Stager::PluginRunner
   def run_plugins(source_dir, dest_dir, app_props, cc_info)
     environment     = {}
     droplet         = VCAP::Stager::Droplet.new(dest_dir)
-    services_client = VCAP::CloudController::Ipc::ServiceConsumerV1Client.new(cc_info['host'],
-                                                                              cc_info['port'],
-                                                                              :staging_task_id => cc_info['task_id'])
     logger = VCAP::Logging.logger('vcap.stager.plugin_runner')
 
     framework_plugin, feature_plugins = collect_plugins(app_props['framework'], app_props['plugins'].keys)
@@ -81,7 +78,6 @@ class VCAP::Stager::PluginRunner
     actions = VCAP::Stager::PluginActionProxy.new(droplet.framework_start_path,
                                                   droplet.framework_stop_path,
                                                   droplet,
-                                                  services_client,
                                                   environment)
     logger.info("Running framework plugin: #{framework_plugin.name}")
     framework_plugin.stage(droplet.app_source_dir, actions, app_props)
@@ -91,7 +87,6 @@ class VCAP::Stager::PluginRunner
       actions = VCAP::Stager::PluginActionProxy.new(droplet.feature_start_path(pname),
                                                     droplet.feature_stop_path(pname),
                                                     droplet,
-                                                    services_client,
                                                     environment)
       logger.info("Running feature plugin: #{feature_plugin.name}")
       feature_plugin.stage(framework_plugin, droplet.app_source_dir, actions, app_props)

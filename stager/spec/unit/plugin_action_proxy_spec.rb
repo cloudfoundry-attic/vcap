@@ -8,7 +8,7 @@ describe VCAP::Stager::PluginActionProxy do
     @tmpdir = Dir.mktmpdir
     start_path = File.join(@tmpdir, 'start')
     stop_path = File.join(@tmpdir, 'stop')
-    @proxy = VCAP::Stager::PluginActionProxy.new(start_path, stop_path, nil, nil, nil)
+    @proxy = VCAP::Stager::PluginActionProxy.new(start_path, stop_path, nil, nil)
   end
 
   after :each do
