@@ -93,7 +93,7 @@ class HealthManager
     @logger = VCAP::Logging.logger('hm')
     @database_scan = config['intervals']['database_scan']
     @droplet_lost = config['intervals']['droplet_lost']
-    @droplets_analysis = config['intervals']['droplets_analysis']
+    @droplets_analysis = config['intervals']['droplets_analysis'] || 10
     @flapping_death = config['intervals']['flapping_death']
     @flapping_timeout = config['intervals']['flapping_timeout']
     @restart_timeout = config['intervals']['restart_timeout']
