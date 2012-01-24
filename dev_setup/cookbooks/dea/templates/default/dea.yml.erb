@@ -92,3 +92,10 @@ runtimes:
     version_flag: '-vn'
     environment:
 <% end %>
+<% if node[:dea][:runtimes].include?("perl") %>
+  perl:
+    executable: <%= File.join(node[:perl][:path], "bin", "perl") %>
+    version: 5.14.[0-2]
+    version_flag: '-v'
+    environment:
+<% end %>

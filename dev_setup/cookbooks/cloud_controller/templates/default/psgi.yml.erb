@@ -1,0 +1,16 @@
+name: "psgi"
+runtimes:
+  - "perl":
+      version: "5.14.2"
+      description: "Perl 5.14.2"
+      executable: perl
+      default: true
+app_servers:
+  - "plack":
+      description: "Plack"
+      executable: "false"
+      default: true
+detection:
+  - "*.pm": '.'
+  - "*.pl": '.'
+staged_services:
