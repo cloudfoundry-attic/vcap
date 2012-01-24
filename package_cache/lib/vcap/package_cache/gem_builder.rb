@@ -56,7 +56,7 @@ class VCAP::PackageCache::GemBuilder < VCAP::PackageCache::Builder
     package_file = PkgUtil.to_package(gem_name, runtime)
     output, status = run(@install_dir, "tar czf #{package_file} gems")
     if status != 0
-      raise "tar czf #{package_file} failed> exist status: #{status}, output: #{output}"
+      raise "tar cf #{package_file} failed> exist status: #{status}, output: #{output}"
     end
     package_path = File.join(@install_dir, package_file)
     raise "package build failed!" if not File.exist? package_path
