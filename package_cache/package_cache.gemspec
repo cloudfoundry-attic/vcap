@@ -17,4 +17,12 @@ Gem::Specification.new do |s|
   s.bindir       = 'bin'
   s.require_path = 'lib'
   s.files        = Dir.glob("**/*")
+
+  s.add_dependency('rake', '0.9.2.2')
+  s.add_dependency('thin', '1.3.1')
+  s.add_dependency('sinatra', '1.3.2')
+  s.add_dependency('vcap_common', '~> 1.0.3')
+  s.add_dependency('vcap_logging', '>= 0.1.1')
+  s.add_dependency('vcap_package_cache-client', '0.1.8')
+
 end
