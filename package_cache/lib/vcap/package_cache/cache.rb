@@ -56,8 +56,8 @@ class VCAP::PackageCache::Cache
 
   #clients should be able read packages
   def set_package_permissions(path)
-    File.chown(Process.uid, Process.gid, path)
-    File.chmod(0744, path)
+    `sudo chown +#{Process.uid}:+#{Process.gid} #{path}`
+    `sudo chmod 0744 #{path}`
   end
 
   def package_name_to_path(package_name)

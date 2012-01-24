@@ -34,10 +34,6 @@ module VCAP
       end
 
       def start_server!
-        if Process.uid != 0
-          puts "Package cache must be run as root."
-          exit 1
-        end
         #XXX matt's logging stuff, disabled till' I figure out how to setup a new
         #formatter for debugging.
         #VCAP::Logging.setup_from_config(@config[:logging])

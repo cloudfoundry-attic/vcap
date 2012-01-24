@@ -11,10 +11,6 @@ class VCAP::PackageCache::GemBuilder < VCAP::PackageCache::Builder
     @logger.debug("new gem_builder with uid: #{@user[:uid]} build_root #{build_root}")
   end
 
-  def setup_build
-    @install_dir = Dir.mktmpdir(nil, @build_dir)
-    grant_ownership(@install_dir)
-  end
 
   def verify_install(target)
     raise "gem install failed!" if not File.exist? File.join(@install_dir, 'gems')
@@ -28,13 +24,6 @@ class VCAP::PackageCache::GemBuilder < VCAP::PackageCache::Builder
     else
       @logger.debug("gem install #{target} command succeeded.")
     end
-  end
-
-  def run_restricted(run_dir, user, cmd)
-    run_cmd = "cd #{run_dir} ; sudo -u #{user[:user_name]} #{cmd} 2>&1"
-    stdout = `#{run_cmd}`
-    status = $?
-    return stdout, status
   end
 
   def build_local(gem_name, gem_path, ruby_path)
@@ -55,7 +44,7 @@ class VCAP::PackageCache::GemBuilder < VCAP::PackageCache::Builder
     url = gem_to_url(gem_name)
     @logger.debug("fetching #{gem_name}")
     download_cmd = "wget --quiet --retry-connrefused --connect-timeout=5 --no-check-certificate #{url}"
-    output, status = run_restricted(@build_dir, @user, download_cmd)
+    output, status = run(@build_dir, download_cmd)
     if status != 0
       @logger.error "Download failed with status #{status}"
       @logger.error output
@@ -65,8 +54,7 @@ class VCAP::PackageCache::GemBuilder < VCAP::PackageCache::Builder
 
   def package_gem(gem_name, runtime)
     package_file = PkgUtil.to_package(gem_name, runtime)
-    output, status = run_restricted(@install_dir, @user,
-                                           "tar czf #{package_file} gems")
+    output, status = run(@install_dir, "tar czf #{package_file} gems")
     if status != 0
       raise "tar czf #{package_file} failed> exist status: #{status}, output: #{output}"
     end
@@ -77,8 +65,8 @@ class VCAP::PackageCache::GemBuilder < VCAP::PackageCache::Builder
 
   def build(location, name, path, runtime)
     @logger.info("building #{location} package #{name} for runtime #{runtime}")
+    @install_dir = Dir.mktmpdir(nil, @build_dir)
     ruby_path = @runtimes[runtime]
-    setup_build
     if location == :local
       import_package_src(path)
       build_local(@src_name, @src_path, ruby_path)

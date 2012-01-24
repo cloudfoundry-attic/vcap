@@ -55,8 +55,12 @@ class VCAP::PackageCache::Inbox
     raise "no file #{name} in public inbox" unless File.exists? src_path
 
     #copy source to tmp file and verify its legit.
-    FileUtils.mv src_path, tmp_path
-    raise "File hash invalid." if not verify_file_hash(name, tmp_path)
+    `sudo mv #{src_path} #{tmp_path}`
+    `sudo chown +#{Process.uid}:+#{Process.gid} #{tmp_path}`
+    if not verify_file_hash(name, tmp_path)
+      FileUtils.rm_f tmp_path
+      raise "File hash invalid."
+    end
     File.rename(tmp_path, dst_path)
   end
 

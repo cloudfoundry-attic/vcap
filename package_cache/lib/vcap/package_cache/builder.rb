@@ -10,13 +10,35 @@ class VCAP::PackageCache::Builder
     @user = user
     @runtimes = runtimes
     @build_dir = Dir.mktmpdir(nil, build_root)
-    grant_ownership(@build_dir)
     @package_path = nil
   end
 
-  def grant_ownership(path)
-    File.chown(@user[:uid], @user[:gid], path)
-    File.chmod(0700, path)
+  def transfer_ownership(path)
+    `sudo chown -R +#{@user[:uid]}:+#{@user[:gid]} #{path}`
+  end
+
+  def recover_ownership(path)
+    `sudo chown -R +#{Process.uid}:+#{Process.gid} #{path}`
+  end
+
+  def run_restricted(run_dir, user, cmd)
+    Dir.chdir(run_dir) {
+      run_cmd = "sudo -u #{user[:user_name]} #{cmd} 2>&1"
+      transfer_ownership(run_dir)
+      stdout = `#{run_cmd}`
+      recover_ownership(run_dir)
+      status = $?
+      return stdout, status
+    }
+  end
+
+  def run(run_dir, cmd)
+    Dir.chdir(run_dir) {
+      run_cmd = "#{cmd} 2>&1"
+      stdout = `#{run_cmd}`
+      status = $?
+      return stdout, status
+    }
   end
 
   def import_package_src(package_src)
@@ -24,7 +46,6 @@ class VCAP::PackageCache::Builder
     @src_name = File.basename(package_src)
     @src_path = File.join(@build_dir, @src_name)
     File.rename(package_src, @src_path)
-    grant_ownership(@src_path)
     @logger.debug("successfully imported #{@src_name}")
   end
 
