@@ -1,5 +1,6 @@
 require 'fileutils'
 require 'logger'
+require 'run'
 
 module VCAP module PackageCache end end
 
@@ -56,8 +57,8 @@ class VCAP::PackageCache::Cache
 
   #clients should be able read packages
   def set_package_permissions(path)
-    `sudo chown +#{Process.uid}:+#{Process.gid} #{path}`
-    `sudo chmod 0744 #{path}`
+    Run.run_cmd("sudo chown +#{Process.uid}:+#{Process.gid} #{path}")
+    Run.run_cmd("sudo chmod 0744 #{path}")
   end
 
   def package_name_to_path(package_name)

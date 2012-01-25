@@ -1,5 +1,6 @@
 require 'tmpdir'
 require 'logger'
+require 'run'
 
 module VCAP module PackageCache end end
 
@@ -14,11 +15,11 @@ class VCAP::PackageCache::Builder
   end
 
   def transfer_ownership(path)
-    `sudo chown -R +#{@user[:uid]}:+#{@user[:gid]} #{path}`
+    Run.run_cmd("sudo chown -R +#{@user[:uid]}:+#{@user[:gid]} #{path}")
   end
 
   def recover_ownership(path)
-    `sudo chown -R +#{Process.uid}:+#{Process.gid} #{path}`
+    Run.run_cmd("sudo chown -R +#{Process.uid}:+#{Process.gid} #{path}")
   end
 
   def run_restricted(run_dir, user, cmd)
@@ -27,15 +28,6 @@ class VCAP::PackageCache::Builder
       transfer_ownership(run_dir)
       stdout = `#{run_cmd}`
       recover_ownership(run_dir)
-      status = $?
-      return stdout, status
-    }
-  end
-
-  def run(run_dir, cmd)
-    Dir.chdir(run_dir) {
-      run_cmd = "#{cmd} 2>&1"
-      stdout = `#{run_cmd}`
       status = $?
       return stdout, status
     }

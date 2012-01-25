@@ -34,6 +34,11 @@ module VCAP
       end
 
       def start_server!
+        if `sudo whoami`.chop != 'root'
+          puts "Package cache require sudo privileges."
+          exit 1
+        end
+
         #XXX matt's logging stuff, disabled till' I figure out how to setup a new
         #formatter for debugging.
         #VCAP::Logging.setup_from_config(@config[:logging])

@@ -7,9 +7,6 @@ p0
 
 -create debug formatter based on matt's stuff and transition to his logger.
 
--add package cache to vcap startup script.
-
-
 p1
 
 -add container support

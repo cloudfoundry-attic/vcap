@@ -1,6 +1,7 @@
 require 'fileutils'
 require 'logger'
 require 'digest/sha1'
+require 'run'
 
 module VCAP module PackageCache end end
 
@@ -55,8 +56,8 @@ class VCAP::PackageCache::Inbox
     raise "no file #{name} in public inbox" unless File.exists? src_path
 
     #copy source to tmp file and verify its legit.
-    `sudo mv #{src_path} #{tmp_path}`
-    `sudo chown +#{Process.uid}:+#{Process.gid} #{tmp_path}`
+    Run.run_cmd("sudo mv #{src_path} #{tmp_path}")
+    Run.run_cmd("sudo chown +#{Process.uid}:+#{Process.gid} #{tmp_path}")
     if not verify_file_hash(name, tmp_path)
       FileUtils.rm_f tmp_path
       raise "File hash invalid."

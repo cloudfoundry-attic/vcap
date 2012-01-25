@@ -2,6 +2,7 @@ require 'tmpdir'
 
 require 'pkg_util'
 require 'builder'
+require 'run'
 
 module VCAP module PackageCache end end
 
@@ -44,7 +45,7 @@ class VCAP::PackageCache::GemBuilder < VCAP::PackageCache::Builder
     url = gem_to_url(gem_name)
     @logger.debug("fetching #{gem_name}")
     download_cmd = "wget --quiet --retry-connrefused --connect-timeout=5 --no-check-certificate #{url}"
-    output, status = run(@build_dir, download_cmd)
+    output, status = Run.run_cmd("cd #{@build_dir}; #{download_cmd}")
     if status != 0
       @logger.error "Download failed with status #{status}"
       @logger.error output
@@ -54,7 +55,7 @@ class VCAP::PackageCache::GemBuilder < VCAP::PackageCache::Builder
 
   def package_gem(gem_name, runtime)
     package_file = PkgUtil.to_package(gem_name, runtime)
-    output, status = run(@install_dir, "tar czf #{package_file} gems")
+    output, status = Run.run_cmd("cd #{@install_dir} ; tar czf #{package_file} gems")
     if status != 0
       raise "tar cf #{package_file} failed> exist status: #{status}, output: #{output}"
     end
