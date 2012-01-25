@@ -9,6 +9,8 @@
 # - router
 # - cloud_controller
 # - health_manager
+# - stager
+# - package_cache
 # - dea
 #
 # services
@@ -435,7 +437,7 @@ module Run
   private
 
   def self.core
-    %w(router cloud_controller dea health_manager stager)
+    %w(router cloud_controller dea health_manager stager package_cache)
   end
 
   def self.services

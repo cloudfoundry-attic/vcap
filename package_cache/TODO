@@ -1,18 +1,24 @@
 #Worklist
 ---------
 
--finish depriviliging package cache
+-package for deployment
 
--add package cache to vcap startup script.
+p0
+
+-create debug formatter based on matt's stuff and transition to his logger.
+
+p1
+
+-add container support
+
+-add npm support
+
+-add rack helper unit test for server.rb.
 
 
 -----
 
--clean out TODO list.
 
--add storage quota support
-
--add container support
 
 -look at removing the copy into the public inbox.
 
@@ -22,7 +28,10 @@
 
 -load testing for local gems.
 
--put in protection from massive gems being downloaded -- look at params to wget.
+-put in protection from massive gems being downloaded -- look at params to wget --
+consider replacing with handrolled em-based altentive to enforce quota.
+
+-watch dog timer for run_restricted. >> do something smart with move to containers around this.
 
 #BUGS
 ----
@@ -45,11 +54,9 @@ fixed interval (say 2 minutes) might also be a good measure.
 -add functional test for error handling.
 
 
-
 #SHOULD HAVE
 #-----------
 
--watch dog timer for run_restricted.
 
 -add back pressure when we hit a limit on number of outstanding requests, stager
 can back off and retry.

@@ -32,10 +32,15 @@ class VCAP::PackageCache::PackageCacheServer < Sinatra::Base
   end
 
   def setup_components
-    @user_pool = VCAP::UserPool.new('package_cache', @logger)
+    begin
+      @user_pool = VCAP::UserPool.new('package_cache', @logger)
+    rescue ArgumentError
+      @logger.warn $!
+      @logger.warn "see the package_cache/INSTALL file for directions on setting up a user pool."
+    end
 
     inbox_dir = @directories['inbox']
-    @inbox = VCAP::PackageCache::Inbox.new(inbox_dir, :server, @logger)
+    @inbox = VCAP::PackageCache::Inbox.new(inbox_dir, @logger)
 
     cache_dir = @directories['cache']
     @cache = VCAP::PackageCache::Cache.new(cache_dir, @logger)

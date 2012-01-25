@@ -1,32 +1,32 @@
+$:.unshift(File.dirname(__FILE__))
 require 'rest-client'
 require 'logger'
 
-$:.unshift(File.join(File.dirname(__FILE__), '..'))
-require 'package_cache'
-
-require 'inbox'
+require 'inbox_client'
 require 'cache_client'
+require 'config'
 require 'errors'
+require 'pkg_util'
 
-module VCAP module PackageCache end end
+module VCAP module PackageCacheClient end end
 
-class VCAP::PackageCache::Client
+class VCAP::PackageCacheClient::Client
   def initialize(logger = nil)
     @logger = logger || Logger.new(STDOUT)
-    config_file = VCAP::PackageCache::Config::DEFAULT_CONFIG_PATH
-    VCAP::PackageCache.init(config_file)
-    config = VCAP::PackageCache.config
+    config_file = VCAP::PackageCacheClient::Config::DEFAULT_CONFIG_PATH
+    config = VCAP::PackageCacheClient::Config.from_file(config_file)
     setup_client(config)
   end
 
   def setup_client(config)
     #XXX validate that end-point exists and we can connect to it.
     @cache_addr = "127.0.0.1:#{config[:listen_port]}"
-    cache_dir = VCAP::PackageCache.directories['cache']
-    inbox_dir  = VCAP::PackageCache.directories['inbox']
-    @inbox = VCAP::PackageCache::Inbox.new(inbox_dir, :client, @logger)
+    base_dir =  config[:base_dir]
+    cache_dir = File.join base_dir,'cache'
+    inbox_dir = File.join base_dir,'inbox'
+    @inbox = VCAP::PackageCacheClient::InboxClient.new(inbox_dir, @logger)
+    @cache_client = VCAP::PackageCacheClient::CacheClient.new(cache_dir, @logger)
     @logger.info("setup package cache client on #{@cache_addr}: #{inbox_dir}")
-    @cache_client = VCAP::PackageCache::CacheClient.new(cache_dir, @logger)
   end
 
   def add_package(location, type, id, runtime)
@@ -40,12 +40,12 @@ class VCAP::PackageCache::Client
         entry_name = @inbox.add_entry(path)
         response = RestClient.put "#{@cache_addr}/load/local/#{type}/#{entry_name}/#{runtime}",''
       else
-        raise VCAP::PackageCache::ClientError.new("invalid location")
+        raise VCAP::PackageCacheClient::ClientError.new("invalid location")
       end
     rescue => e
-      @logger.error "PackageCache Error."
+      @logger.error "PackageCacheClient Error."
       if e.respond_to?('response')
-        raise VCAP::PackageCache::ServerError.new(e.response)
+        raise VCAP::PackageCacheClient::ServerError.new(e.response)
       end
       @logger.error e.message
       @logger.error e.backtrace.join("\n")
