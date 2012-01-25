@@ -97,11 +97,6 @@ describe 'Health Manager' do
     #TODO: test wait for droplet to be stable
     #TODO: test that droplets have a chance to restart
 
-    it 'should receive healthmanager.nats.ping message' do
-      msg = receive_message 'healthmanager.nats.ping'
-      msg.should_not be_nil
-    end
-
     #test start missing instances
     it 'should start missing instances' do
       app = nil
