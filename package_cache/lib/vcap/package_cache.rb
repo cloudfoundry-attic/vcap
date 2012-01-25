@@ -95,10 +95,10 @@ module VCAP
 
       def setup_pidfile
         begin
-          pid_file = VCAP::PidFile.new(@config[:pid_file])
+          pid_file = VCAP::PidFile.new(@config[:pid_filename])
           pid_file.unlink_at_exit
         rescue => e
-          puts "ERROR: Can't create package_cache pid file #{config[:pid_file]}"
+          puts "ERROR: Can't create package_cache pid file #{config[:pid_filename]}"
           exit 1
         end
       end
