@@ -5,13 +5,15 @@ require 'rubygems'
 require 'optparse'
 require 'logger'
 
-require 'client'
+require 'vcap/package_cache_client/client'
+
+TEST_RUNTIME = :ruby18
 
 class RemoteLoadTester
   attr_accessor :gem_list
   def initialize
     @logger = Logger.new(STDOUT)
-    @client = VCAP::PackageCache::Client.new
+    @client = VCAP::PackageCacheClient::Client.new
   end
 
   def load_gem_list(path)
@@ -39,7 +41,7 @@ class RemoteLoadTester
         Thread.current['start_time'] = Time.now
         puts "adding #{gem_name}"
         begin
-        @client.add_package(:remote, :gem, gem_name)
+        @client.add_package(:remote, :gem, gem_name, TEST_RUNTIME)
         rescue => e
           puts e.to_s
         end

@@ -2,7 +2,7 @@ $:.unshift(File.dirname(__FILE__))
 require 'spec_helper'
 require 'fileutils'
 require 'inbox'
-require 'vcap/package_cache-client/inbox_client'
+require 'vcap/package_cache_client/inbox_client'
 
 describe VCAP::PackageCache::Inbox do
   before(:all) do
