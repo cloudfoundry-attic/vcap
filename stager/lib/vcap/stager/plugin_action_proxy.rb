@@ -1,3 +1,5 @@
+require 'logger'
+
 require 'vcap/stager/errors'
 
 module VCAP
@@ -25,13 +27,16 @@ class VCAP::Stager::PluginActionProxy
   #     string '$USER'?
   attr_accessor :environment
 
-  def initialize(start_script_path, stop_script_path, droplet, env)
+  attr_accessor :log
+
+  def initialize(start_script_path, stop_script_path, droplet, env, log)
     @start_script_path = start_script_path
     @start_script      = nil
     @stop_script_path  = stop_script_path
     @stop_script       = nil
     @droplet           = droplet
     @environment       = env
+    @log               = log
   end
 
   # Returns an open file object that the user can write contents of a

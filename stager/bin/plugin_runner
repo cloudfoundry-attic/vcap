@@ -22,16 +22,12 @@ begin
   if task['opts']['config_dir']
     VCAP::PluginRegistry.configure_plugins(task['opts']['config_dir'])
   end
-
-  if task['opts']['log_path']
-    VCAP::Logging.setup_from_config(:log_file => task['opts']['log_path'])
-  else
-    # Logs to stdout by default
-    VCAP::Logging.setup_from_config({})
-  end
-
-  plugin_runner = VCAP::Stager::PluginRunner.new(VCAP::PluginRegistry.plugins)
-  plugin_runner.run_plugins(task['source_dir'], task['dest_dir'], task['app_props'], task['cc_info'])
+  plugin_runner = VCAP::Stager::PluginRunner.new(VCAP::PluginRegistry.plugins,
+                                                 :log_path => task['opts']['log_path'])
+  plugin_runner.run_plugins(task['source_dir'],
+                            task['dest_dir'],
+                            task['app_props'],
+                            task['cc_info'])
   exit 0
 rescue => e
   if task['opts']['error_path']

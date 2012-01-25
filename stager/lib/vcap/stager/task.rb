@@ -97,7 +97,7 @@ class VCAP::Stager::Task
         task_logger.info("Staging application")
         # Temporary hack until all plugins are converted
         if @plugins[@app_props['framework']]
-          run_plugins(dirs[:unstaged], dirs[:staged], dirs[:base])
+          run_plugins(dirs[:unstaged], dirs[:staged], dirs[:base], task_logger)
         else
           run_staging_plugin(dirs[:unstaged], dirs[:staged], dirs[:base], task_logger)
         end
@@ -253,7 +253,7 @@ class VCAP::Stager::Task
   # @param  src_dir      String  Location of the unstaged app
   # @param  dst_dir      String  Where to place the staged app
   # @param  base_dir     String  Directory to use to place scratch files (houses {src,dst} dir)
-  def run_plugins(src_dir, dst_dir, base_dir)
+  def run_plugins(src_dir, dst_dir, base_dir, task_logger)
     task_path = File.join(base_dir, 'task')
     task_opts = {
       'config_dir' => @plugin_config_dir,
@@ -267,10 +267,17 @@ class VCAP::Stager::Task
     @vcap_logger.debug("Executing plugin runner with command #{runner_cmd}")
     res = run_logged(runner_cmd, 0, @max_staging_duration)
 
-    [:stdout, :stderr].each do |stdio|
-      next unless res[stdio]
-      @vcap_logger.info("#{stdio} for plugins")
-      res[stdio].split("\n").each {|line| @vcap_logger.info(line) }
+    # Pull in log output from plugins
+    if File.exist?(task_opts['log_path'])
+      File.open(task_opts['log_path'], 'r') do |plf|
+        begin
+          while line = plf.readline
+            line.chomp!
+            task_logger.info(line)
+          end
+        rescue EOFError
+        end
+      end
     end
 
     if res[:timed_out]

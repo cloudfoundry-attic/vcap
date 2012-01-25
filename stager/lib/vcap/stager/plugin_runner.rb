@@ -1,10 +1,7 @@
 require 'erb'
 require 'fileutils'
+require 'thread'
 require 'yaml'
-
-require 'vcap/cloud_controller/ipc'
-require 'vcap/logging'
-require 'vcap/plugin_registry'
 
 require 'vcap/stager/constants'
 require 'vcap/stager/errors'
@@ -19,6 +16,23 @@ end
 # Responsible for orchestrating the execution of all staging plugins selected
 # by the user.
 class VCAP::Stager::PluginRunner
+  class PluginLogger
+    def initialize(plugin_name, io)
+      @log_lock     = Mutex.new
+      @logger       = Logger.new(io)
+      @logger.level = Logger::DEBUG
+      @logger.formatter = proc do |sev, time, progname, msg|
+        "[#{plugin_name}] #{msg}\n"
+      end
+    end
+
+    def method_missing(method, *args, &blk)
+      @log_lock.synchronize do
+        @logger.send(method, *args, &blk)
+      end
+    end
+  end
+
   RUNNER_BIN_PATH = File.join(VCAP::Stager::BIN_DIR, 'plugin_runner')
 
   class << self
@@ -52,8 +66,9 @@ class VCAP::Stager::PluginRunner
 
   # @param plugins  Array    Available plugins
   #                          name => plugin
-  def initialize(plugins={})
-    @plugins = plugins
+  def initialize(plugins, opts={})
+    @plugins  = plugins
+    @log_path = opts[:log_path]
   end
 
   # Runs the appropriate plugins to stage the given application
@@ -66,19 +81,21 @@ class VCAP::Stager::PluginRunner
   #                              'port'
   #                              'task_id'
   def run_plugins(source_dir, dest_dir, app_props, cc_info)
-    environment     = {}
-    droplet         = VCAP::Stager::Droplet.new(dest_dir)
-    logger = VCAP::Logging.logger('vcap.stager.plugin_runner')
+    environment = {}
+    droplet     = VCAP::Stager::Droplet.new(dest_dir)
+    logger      = make_plugin_logger('plugin_runner')
 
     framework_plugin, feature_plugins = collect_plugins(app_props)
 
     logger.info("Setting up base droplet structure")
     droplet.create_skeleton(source_dir)
 
+    pname = framework_plugin.name
     actions = VCAP::Stager::PluginActionProxy.new(droplet.framework_start_path,
                                                   droplet.framework_stop_path,
                                                   droplet,
-                                                  environment)
+                                                  environment,
+                                                  make_plugin_logger(pname))
     logger.info("Running framework plugin: #{framework_plugin.name}")
     framework_plugin.stage(droplet.app_source_dir, actions, app_props)
 
@@ -87,7 +104,8 @@ class VCAP::Stager::PluginRunner
       actions = VCAP::Stager::PluginActionProxy.new(droplet.feature_start_path(pname),
                                                     droplet.feature_stop_path(pname),
                                                     droplet,
-                                                    environment)
+                                                    environment,
+                                                    make_plugin_logger(pname))
       logger.info("Running feature plugin: #{feature_plugin.name}")
       feature_plugin.stage(framework_plugin, droplet.app_source_dir, actions, app_props)
     end
@@ -124,5 +142,14 @@ class VCAP::Stager::PluginRunner
     end
 
     [framework_plugin, feature_plugins]
+  end
+
+  def make_plugin_logger(plugin_name)
+    if @log_path
+      io = File.open(@log_path, 'a+')
+    else
+      io = STDOUT
+    end
+    PluginLogger.new(plugin_name, io)
   end
 end
