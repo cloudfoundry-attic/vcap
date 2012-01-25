@@ -763,8 +763,6 @@ class HealthManager
       :runtimes => {}
     }
 
-    VCAP::Component.varz[:nats_latency] = VCAP::RollingMetric.new(60)
-
     VCAP::Component.varz[:heartbeat_msgs_received] = 0
     VCAP::Component.varz[:droplet_exited_msgs_received] = 0
     VCAP::Component.varz[:droplet_updated_msgs_received] = 0
@@ -804,7 +802,7 @@ class HealthManager
     end
 
     NATS.subscribe('healthmanager.nats.ping') do |message|
-      VCAP::Component.varz[:nats_latency] << ((Time.now.to_f - message.to_f) * 1000).to_i
+      ((Time.now.to_f - message.to_f) * 1000).to_i
     end
 
     NATS.publish('healthmanager.start')
