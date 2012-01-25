@@ -5,7 +5,7 @@ module VCAP module PackageCache end end
 
 # Config template for stager
 class VCAP::PackageCache::Config < VCAP::Config
-  DEFAULT_CONFIG_PATH = File.expand_path('../../../../config/dev.yml', __FILE__)
+  DEFAULT_CONFIG_PATH = File.expand_path('../../../../config/package_cache.yml', __FILE__)
 
   define_schema do
     {
