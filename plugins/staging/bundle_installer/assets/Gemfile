@@ -1,0 +1,4 @@
+source :rubygems
+
+gem 'eventmachine'
+gem 'nats'
