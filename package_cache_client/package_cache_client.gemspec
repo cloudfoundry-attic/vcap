@@ -3,7 +3,7 @@ $:.push File.expand_path("../lib", __FILE__)
 require "vcap/package_cache-client/version"
 
 Gem::Specification.new do |s|
-  s.name         = 'vcap_package_cache-client'
+  s.name         = 'vcap_package_cache_client'
   s.version      = VCAP::PackageCacheClient::VERSION
   s.platform     = Gem::Platform::RUBY
   s.summary      = 'client driver for package_cache'

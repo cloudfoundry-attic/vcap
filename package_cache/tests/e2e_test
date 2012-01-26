@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 $LOAD_PATH.unshift(File.expand_path(File.join(File.dirname(__FILE__), '../lib/vcap/package_cache')))
-require 'vcap/package_cache-client/client'
+require 'vcap/package_cache_client/client'
 require 'fileutils'
 
 LOCAL_GEM_PATH = '../spec/fixtures/yajl-ruby-0.8.2.gem'

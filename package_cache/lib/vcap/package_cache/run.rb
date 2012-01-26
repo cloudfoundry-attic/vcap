@@ -38,10 +38,6 @@ module Run
       run_sudo("chown +#{uid}:+#{gid} #{path}") if @secure_mode
     end
 
-    def chown_r(uid, gid, path)
-      run_sudo("chown -R +#{uid}:+#{gid} #{path}") if @secure_mode
-    end
-
     def run_cmd(cmd, expected_result = 0)
       cmd_str = "#{cmd} 2>&1"
       stdout = `#{cmd_str}`
@@ -52,25 +48,19 @@ module Run
       return stdout, result
     end
 
-    def transfer_ownership(path, user)
-      chown_r(user[:uid], user[:gid], path)
-    end
-
-    def recover_ownership(path)
-      chown_r(Process.uid, Process.gid, path)
-    end
-
     def run_restricted(run_dir, user, cmd)
-      Dir.chdir(run_dir) {
-        transfer_ownership(run_dir, user)
+        #transfer_ownership(run_dir, user)
+        chdir_cmd = "cd #{run_dir}"
+        pass_ownership = "sudo chown -R +#{user[:uid]}:+#{user[:gid]} #{run_dir}"
+        run_as_cmd = "sudo -n -u #{user[:user_name]} #{cmd}"
+        recover_ownership = "sudo -n chown -R +#{Process.uid}:+#{Process.gid} #{run_dir}"
         if @secure_mode
-          stdout, result = run_sudo("-u #{user[:user_name]} #{cmd}")
+          stdout, result = run_cmd(
+            "#{chdir_cmd} ; #{pass_ownership}; #{run_as_cmd}; #{recover_ownership}")
         else
-          stdout, result = run_cmd(cmd)
+          stdout, result = run_cmd("cd #{run_dir}; #{cmd}")
         end
-        recover_ownership(run_dir)
         return stdout, result
-      }
     end
   end
 end

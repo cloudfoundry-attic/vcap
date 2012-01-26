@@ -12,7 +12,7 @@ def uid_to_name(uid)
   Etc.getpwuid(uid).name
 end
 
-describe VCAP::PackageCache::GemBuilder, :needs_sudo => true do
+describe VCAP::PackageCache::GemBuilder do
   before(:all) do
     enter_test_root
     @build_dir =  'build'
