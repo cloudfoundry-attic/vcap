@@ -48,10 +48,6 @@ required = { :external_uri => 'api.vcap.me',
              :keys => { :password => 'da39a3ee5e6b4b0d3255bfef95601890afd80709', :token => 'default_key'},
              :pid => '/var/vcap/sys/run/cloudcontroller.pid',
              :admins => [],
-             :bulk_api => { :auth =>
-               { :user => 'bulk_api',
-                 :password => VCAP.secure_uuid}},
-
              :https_required => false,
              :https_required_for_admins => false,
              :default_account_capacity => { :memory => 2048,
@@ -92,6 +88,14 @@ env_overrides.each do |cfg_key, env_key|
     AppConfig[cfg_key] = ENV[env_key]
   end
 end
+
+#generate bulk api credentials unless they've been explicitly specified (not that they should)
+unless AppConfig.key? :bulk_api
+  AppConfig[:bulk_api] = { :auth =>
+    { :user => 'bulk_api',
+      :password => VCAP.secure_uuid }}
+end
+
 
 # Check on new style app_uris and map old into new style.
 unless AppConfig.key? :app_uris
