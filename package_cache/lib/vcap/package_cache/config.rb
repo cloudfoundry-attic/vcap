@@ -5,7 +5,7 @@ module VCAP module PackageCache end end
 
 # Config template for stager
 class VCAP::PackageCache::Config < VCAP::Config
-  DEFAULT_CONFIG_PATH = File.expand_path('../../../../config/dev.yml', __FILE__)
+  DEFAULT_CONFIG_PATH = File.expand_path('../../../../config/package_cache.yml', __FILE__)
 
   define_schema do
     {
@@ -17,7 +17,7 @@ class VCAP::PackageCache::Config < VCAP::Config
       },
 
       :base_dir              => String,     # where all package cache stuff lives.
-      :pid_file              => String,     # where our pid file lives.
+      :pid_filename          => String,     # where our pid file lives.
       :purge_cache_on_startup => VCAP::JsonSchema::BoolSchema.new,     # true/false, blow away cache or not.
       :runtimes => {
         :gem => {

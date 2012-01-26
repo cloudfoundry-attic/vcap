@@ -60,7 +60,7 @@ runtimes:
     environment:
   node06:
     executable: node
-    version: 0.6.7
+    version: 0.6.8
     version_flag: '-v'
     environment:
   java:

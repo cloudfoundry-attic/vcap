@@ -93,12 +93,11 @@ class HealthManager
     @logger = VCAP::Logging.logger('hm')
     @database_scan = config['intervals']['database_scan']
     @droplet_lost = config['intervals']['droplet_lost']
-    @droplets_analysis = config['intervals']['droplets_analysis']
+    @droplets_analysis = config['intervals']['droplets_analysis'] || 10
     @flapping_death = config['intervals']['flapping_death']
     @flapping_timeout = config['intervals']['flapping_timeout']
     @restart_timeout = config['intervals']['restart_timeout']
     @stable_state = config['intervals']['stable_state']
-    @nats_ping = config['intervals']['nats_ping'] || 10
     @dequeueing_rate = config['dequeueing_rate'] || 50
     @database_environment = config['database_environment']
 
@@ -707,10 +706,6 @@ class HealthManager
       EM.add_periodic_timer(@droplets_analysis) { analyze_all_apps }
     end
 
-    EM.add_periodic_timer(@nats_ping) do
-      NATS.publish('healthmanager.nats.ping', "#{Time.now.to_f}")
-    end
-
     if queue_requests?
       EM.add_periodic_timer(1) do
         deque_a_batch_of_requests(@dequeueing_rate)
@@ -763,8 +758,6 @@ class HealthManager
       :runtimes => {}
     }
 
-    VCAP::Component.varz[:nats_latency] = VCAP::RollingMetric.new(60)
-
     VCAP::Component.varz[:heartbeat_msgs_received] = 0
     VCAP::Component.varz[:droplet_exited_msgs_received] = 0
     VCAP::Component.varz[:droplet_updated_msgs_received] = 0
@@ -801,10 +794,6 @@ class HealthManager
     NATS.subscribe('healthmanager.health') do |message, reply|
       @logger.debug("healthmanager.health: #{message}")
       process_health_message(message, reply)
-    end
-
-    NATS.subscribe('healthmanager.nats.ping') do |message|
-      VCAP::Component.varz[:nats_latency] << ((Time.now.to_f - message.to_f) * 1000).to_i
     end
 
     NATS.publish('healthmanager.start')

@@ -27,6 +27,12 @@ CloudController::Application.routes.draw do
   get    'apps/:name/update'         => 'apps#check_update'
   put    'apps/:name/update'         => 'apps#start_update'
 
+  #bulk APIs for health manager v.2 and billing
+  #retrieving batches of items. An opaque token is returned with every request to resume the retrieval
+  #from where the last request left off.
+  get    'bulk/apps'                 => 'bulk#apps',            :as => :bulk_apps
+  get    'bulk/users'                => 'bulk#users',           :as => :bulk_users
+
   # Stagers interact with the CC via these urls
   post   'staging/droplet/:id' => 'staging#upload_droplet', :as => :upload_droplet
   get    'staging/app/:id'     => 'staging#download_app',   :as => :download_unstaged_app

@@ -44,7 +44,7 @@ shared_context :warden_server do
           :pool_size => 64,
           :allow_networks => "4.2.2.3/32",
           :deny_networks => "4.2.2.0/24" },
-        :logger => {
+        :logging => {
           :level => :debug,
           :file => File.expand_path("../../../tmp/warden.log", __FILE__) }
 

@@ -144,7 +144,13 @@ Testing your setup
 ------------------
 
 Once the system is installed, you can run the following command Basic System
-Validation Tests (BVT) to ensure that major functionality is working.
+Validation Tests (BVT) to ensure that major functionality is working. BVTs
+require additional dependencies of Maven and the JDK, which can be installed
+with:
+
+    sudo apt-get install default-jdk maven2
+
+Now that you have the necessary dependencies, you can run the BVTs:
 
     cd cloudfoundry/vcap
     cd tests && bundle package; bundle install && cd ..
