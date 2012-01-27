@@ -16,17 +16,11 @@ when "ubuntu"
     echo sun-java6-jdk shared/accepted-sun-dlj-v1-1 boolean true | /usr/bin/debconf-set-selections
     echo sun-java6-jre shared/accepted-sun-dlj-v1-1 boolean true | /usr/bin/debconf-set-selections
     EOH
-    not_if do
-      ::File.exists?("/usr/bin/java")
-    end
+    not_if "grep -q '^deb .* lucid partner' /etc/apt/sources.list"
   end
 
-  %w[ curl sun-java6-bin sun-java6-jre sun-java6-jdk].each do |pkg|
-    package pkg do
-      not_if do
-        ::File.exists?("/usr/bin/java")
-      end
-    end
+  %w[ sun-java6-jdk sun-java6-source ].each do |pkg|
+    package pkg
   end
 
 else

@@ -1,0 +1,4 @@
+[gerrit]
+host=cloudfoundry-codereview.qa.mozycloud.com
+port=29418
+project=vcap
