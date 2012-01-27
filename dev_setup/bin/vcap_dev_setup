@@ -146,4 +146,5 @@ if [ -n "$CONFIG_FILE" ]; then
   ARGS="$ARGS -c $CONFIG_FILE"
 fi
 
-$CLOUDFOUNDRY_HOME/vcap/dev_setup/lib/chefsolo_launch.rb $ARGS
+LIBDIR="$(cd "$(dirname "$0")" && pwd)"/../lib
+$LIBDIR/chefsolo_launch.rb $ARGS
