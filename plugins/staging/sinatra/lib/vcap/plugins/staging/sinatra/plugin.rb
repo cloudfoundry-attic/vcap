@@ -54,7 +54,9 @@ class VCAP::Plugins::Staging::Sinatra
 
     actions.environment['RUBYOPT'] = '"-I$PWD/ruby -rstdsync"'
     copy_stdsync(actions.droplet_base_dir)
-    generate_start_script(actions.start_script, File.basename(app_root), sinatra_main, ruby_path)
+    uses_bundler = File.exist?(File.join(app_root, 'Gemfile.lock'))
+    generate_start_script(actions.start_script, File.basename(app_root),
+                          sinatra_main, ruby_path, uses_bundler)
     generate_stop_script(actions.stop_script)
   end
 
@@ -63,6 +65,7 @@ class VCAP::Plugins::Staging::Sinatra
   # @param  app_dir  Path to the root of the application's source directory.
   def find_main_file(app_dir)
     for src_file in Dir.glob(File.join(app_dir, '*'))
+      next if File.directory?(src_file)
       src_contents = File.read(src_file)
       return File.basename(src_file) if src_contents.match(SINATRA_DETECTION_REGEX)
     end
@@ -87,7 +90,8 @@ class VCAP::Plugins::Staging::Sinatra
   # @param  app_dir       String  Basename of app dir relative to droplet root
   # @param  sinatra_main  String  Name of 'main' sinatra file.
   # @param  ruby_path     String  Path to ruby executable that should run the application
-  def generate_start_script(start_script, app_dir, sinatra_main, ruby_path)
+  # @param  uses_bundler  Bool    Need to use 'bundle exec' to start the app
+  def generate_start_script(start_script, app_dir, sinatra_main, ruby_path, uses_bundler)
     contents = @start_template.result(binding())
     start_script.write(contents)
   end
