@@ -1,11 +1,8 @@
-$LOAD_PATH.unshift('/workspace/vcap/package_cache/lib')
-
 require 'bundler/lockfile_parser'
-require 'logger'
 require 'set'
 require 'thread'
 
-require 'vcap/package_cache/client'
+require 'vcap/package_cache_client/client'
 
 module VCAP
   module Plugins
@@ -78,7 +75,7 @@ class VCAP::Plugins::Staging::BundleInstaller
 
     # Parse/install gems
     deps = parse_lockfile(gemfile_lock_path)
-    deps << 'bundler-1.0.21'
+    deps << 'bundler-1.0.10'
     actions.log.info("Parsed Gemfile.lock")
     install_gems(app_root, runtime, deps, actions.log)
 
@@ -92,6 +89,14 @@ class VCAP::Plugins::Staging::BundleInstaller
     bundle_config_dir = File.join(app_root, '.bundle')
     FileUtils.mkdir_p(bundle_config_dir)
     FileUtils.cp(BUNDLE_CONFIG_PATH, File.join(bundle_config_dir, 'config'))
+
+    library_version = LIBRARY_VERSIONS[app_props['runtime']]
+    actions.environment['PATH'] =
+      "\"$PWD/app/rubygems/ruby/#{library_version}/bin:$PATH\""
+    ['GEM_PATH', 'GEM_HOME'].each do |gem_var|
+      actions.environment[gem_var] =
+        "\"$PWD/app/rubygems/ruby/#{library_version}\""
+    end
   end
 
   def parse_lockfile(gemfile_lock_path)
@@ -111,7 +116,7 @@ class VCAP::Plugins::Staging::BundleInstaller
     installer_threads = []
     @num_installer_threads.times do
       t = Thread.new do
-        client = VCAP::PackageCache::Client.new
+        client = VCAP::PackageCacheClient::Client.new
         while (dep = work_queue.pop) != stop_sentinel
           log.info("Installing #{dep}")
           install_gem(app_root, dep, runtime, client)

@@ -13,10 +13,6 @@ Gem::Specification.new do |gem|
   gem.version       = VCAP::Plugins::Staging::BundleInstaller::VERSION
 
   gem.add_development_dependency("rspec")
-  gem.add_dependency("rake")
-
-  # XXX - PACKAGE CACHE DEPS, REMOVE
-  gem.add_dependency('rest-client')
-  gem.add_dependency('vcap_common')
-  gem.add_dependency('sinatra')
+  gem.add_development_dependency("rake")
+  gem.add_dependency("vcap_package_cache_client")
 end

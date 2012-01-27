@@ -15,3 +15,5 @@ spec/reports
 test/tmp
 test/version_tmp
 tmp
+vendor/cache/*
+!vendor/cache/vcap_package_cache_client*
