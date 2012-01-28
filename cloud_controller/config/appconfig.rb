@@ -236,3 +236,13 @@ unless AppConfig.has_key?(:allow_registration)
 end
 
 AppConfig[:max_droplet_size] ||= 512 * 1024 * 1024
+
+
+# Should services be expired?
+AppConfig[:expire_services] ||= false
+
+# Expire services that haven't advertised themselves in the last hour
+AppConfig[:service_expiry_period] ||= 3600
+
+# Upon CC startup, give services a chance to re-register.
+AppConfig[:service_expiry_delay] ||= AppConfig[:service_expiry_period]
