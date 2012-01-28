@@ -19,6 +19,17 @@ class Service < ActiveRecord::Base
 
   attr_accessible :label, :token, :url, :description, :info_url, :tags, :plans, :plan_options, :binding_options, :active, :acls, :timeout
 
+  # Delete services whose last_updated timestamp occured longer than
+  # expiry_period seconds ago. This is potentially expensive, so be careful to
+  # only call it infrequently.
+  def self.expire_services(expiry_period)
+    max_age = Time.now.utc - expiry_period
+    CloudController.logger.info("Expiring services older than #{expiry_period} seconds, #{max_age}")
+    ret = destroy_all(["updated_at < ?", max_age])
+    ret.each {|svc| CloudController.logger.warn("Expired service #{svc.label}, last updated #{svc.updated_at}, max age #{max_age}") }
+    ret
+  end
+
   def self.active_services
     where("active = ?", true)
   end

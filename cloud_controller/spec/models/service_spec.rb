@@ -142,6 +142,17 @@ describe Service do
     end
   end
 
+  describe ".expire_services" do
+    it "should delete services whose updated_at field is older than the supplied period" do
+      svc = Service.create(:label => "foo-bar", :url => "http://www.google.com", :token => 'bar')
+      sleep 2
+      expired_services = Service.expire_services(1)
+      expired_services.size.should == 1
+      expired_services.first.label.should == svc.label
+      Service.find_by_label(svc.label).should == nil
+    end
+  end
+
   def make_service(opts)
     svc = Service.new
     opts.each do |k, v|

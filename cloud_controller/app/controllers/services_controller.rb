@@ -42,6 +42,7 @@ class ServicesController < ApplicationController
       attrs[:timeout] = nil unless attrs.has_key?(:timeout)
 
       svc.update_attributes!(attrs)
+      svc.touch
     else
       # Service doesn't exist yet. This can only happen for builtin services since service providers must
       # register with us to get a token.
