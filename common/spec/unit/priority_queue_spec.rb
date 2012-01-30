@@ -163,6 +163,25 @@ describe VCAP::PrioritySet do
         @qs.remove.should == 'third'
       end
 
+      it 'should FIFO for lower and higher priority items interpersed' do
+
+        50.times {|i|
+          val, pri = 0,0
+          if rand > 0.2
+            val, pri = 1000 - i , 2000000000
+          else
+            val, pri = 100 - i, 100 - i
+          end
+          @qs.insert(val, pri)
+        }
+        prev = @qs.remove
+        until @qs.empty?
+          v = @qs.remove
+          v.should < prev
+          prev = v
+        end
+      end
+
       it 'should retain FIFO ordering when higher priority items are interspersed' do
         @qs.insert 1
         @qs.insert 2
