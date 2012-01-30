@@ -157,7 +157,6 @@ class VCAP::Plugins::Staging::BundleInstaller
     # Copy gem to app
     gem_root_path = self.class.gem_root_path(app_root, runtime)
     FileUtils.mkdir_p(gem_root_path)
-    #unless system("cp -a #{gem_path}/* #{gem_root_path}")
     unless system("cd #{gem_root_path} && tar -zxf #{gem_path}")
       raise "Failed copying installed gem to app"
     end

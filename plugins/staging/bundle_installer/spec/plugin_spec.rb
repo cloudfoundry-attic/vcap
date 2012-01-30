@@ -8,24 +8,30 @@ class FakeGem
   attr_reader :name
   attr_reader :base_dir
   attr_reader :gem_root
+  attr_reader :gem_tgz
 
   def initialize(name)
     @name     = name
     @base_dir = Dir.mktmpdir
-    @gem_root = File.join(base_dir, name)
+    @gem_root = File.join(@base_dir, name)
     FileUtils.mkdir(@gem_root)
     @sentinel_value = "fake_gem_#{Time.now}"
     sentinel_path = File.join(@gem_root, 'sentinel')
     File.open(sentinel_path, 'w+') do |f|
       f.write(@sentinel_value)
     end
+
+    # Setup a fake tgz that is the expected result from the package cache
+    @gem_tgz = File.join(@base_dir, "#{name}.tgz")
+    output = `cd #{@base_dir}; tar -czf #{name}.tgz *`
+    unless $? == 0
+      raise "Couldn't archive gem: #{output}"
+    end
   end
 
   def installed_at?(app_root, runtime)
-    installed_gem_root =
-      VCAP::Plugins::Staging::BundleInstaller.installed_gem_path(app_root,
-                                                                 runtime,
-                                                                 self.name)
+    version = runtime == 'ruby18' ? '1.8' : '1.9.1'
+    installed_gem_root = File.join(app_root, 'rubygems', 'ruby', version, self.name)
     sentinel_path = File.join(installed_gem_root, 'sentinel')
     File.exists?(sentinel_path) && (File.read(sentinel_path) == @sentinel_value)
   end
@@ -67,7 +73,7 @@ describe VCAP::Plugins::Staging::BundleInstaller do
 
       client.should_receive(:get_package_path)
             .with("#{@fake_gem.name}.gem", :remote, runtime)
-            .and_return(@fake_gem.base_dir)
+            .and_return(@fake_gem.gem_tgz)
       @plugin.install_gem(@app_root, @fake_gem.name, runtime, client)
       @fake_gem.installed_at?(@app_root, runtime).should be_true
     end
@@ -83,7 +89,7 @@ describe VCAP::Plugins::Staging::BundleInstaller do
 
       client.should_receive(:get_package_path)
             .with(vendored_gem_path, :local, runtime)
-            .and_return(@fake_gem.base_dir)
+            .and_return(@fake_gem.gem_tgz)
       @plugin.install_gem(@app_root, @fake_gem.name, runtime, client)
       @fake_gem.installed_at?(@app_root, runtime).should be_true
     end
