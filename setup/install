@@ -47,7 +47,7 @@ elif [[ $PLATFORM == 'MacOSX' ]]; then
   POSTGRESQL_PASS="$(md5 -qs "$(date)")"
 fi
 
-echo "Patch around .bash_profile issue with RMV"
+echo "Patch around .bash_profile issue with RVM"
 if [ -f ~/.bashrc ]; then
   if [ ! -f ~/.bash_profile ]; then
     # rvm install is going to write into .bash_profile in this
@@ -60,9 +60,7 @@ if [ -f ~/.bashrc ]; then
 fi
 
 echo "Installing rvm"
-curl -s -k -B https://rvm.beginrescueend.com/install/rvm > /tmp/install_rvm
-bash /tmp/install_rvm
-rm /tmp/install_rvm
+bash -s stable < <(curl -s -k -B https://raw.github.com/wayneeseguin/rvm/master/binscripts/rvm-installer)
 
 echo "Activate rvm"
 if [ "$(id -u)" != "0" ]; then
