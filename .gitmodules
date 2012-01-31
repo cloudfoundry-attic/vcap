@@ -7,3 +7,9 @@
 [submodule "java"]
 	path = java
 	url = git@github.com:vmware-ac/vcap-java.git
+[submodule "uaa"]
+	path = uaa
+	url = git@github.com:vmware-ac/uaa.git
+[submodule "acm"]
+	path = acm
+	url = git@github.com:vmware-ac/acm.git
