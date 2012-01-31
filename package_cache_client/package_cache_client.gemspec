@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 $:.push File.expand_path("../lib", __FILE__)
-require "vcap/package_cache-client/version"
+require "vcap/package_cache_client/version"
 
 Gem::Specification.new do |s|
   s.name         = 'vcap_package_cache_client'
