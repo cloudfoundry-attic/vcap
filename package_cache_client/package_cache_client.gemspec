@@ -20,6 +20,6 @@ Gem::Specification.new do |s|
 
   s.add_dependency('rake', '0.9.2.2')
   s.add_dependency('rest-client', '1.6.3')
-  s.add_dependency('vcap_common', '~> 1.0.3')
+  s.add_dependency('vcap_common', '~> 1.0.6')
   s.add_dependency('vcap_logging', '>= 0.1.1')
 end
