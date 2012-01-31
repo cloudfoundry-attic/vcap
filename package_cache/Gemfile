@@ -2,6 +2,16 @@ source :rubygems
 
 gemspec
 
+gem 'rake'
+gem 'thin'
+gem 'rest-client', '1.6.3'
+gem 'async_sinatra'
+gem 'em-http-request', :require => 'em-http'
+gem 'rack-fiber_pool'
+
+gem 'vcap_common', '~> 1.0.6'
+gem 'vcap_logging', '>= 0.1.1'
+
 group :test do
   gem 'rspec'
 end
