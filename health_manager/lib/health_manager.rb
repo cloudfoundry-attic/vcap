@@ -62,6 +62,7 @@ class HealthManager
 
   attr_reader :database_scan, :droplet_lost, :droplets_analysis, :flapping_death, :flapping_timeout
   attr_reader :restart_timeout, :stable_state, :droplets
+  attr_reader :request_queue
 
   # TODO - Oh these need comments so badly..
   DOWN              = 'DOWN'
@@ -708,12 +709,12 @@ class HealthManager
 
     if queue_requests?
       EM.add_periodic_timer(1) do
-        deque_a_batch_of_requests(@dequeueing_rate)
+        deque_a_batch_of_requests
       end
     end
   end
 
-  def deque_a_batch_of_requests(num_requests)
+  def deque_a_batch_of_requests(num_requests=@dequeueing_rate)
     num_requests.times do
       unless @request_queue.empty?
         #TODO: if STOP requests are also queued, refactor this to be generic, particularly the log message
