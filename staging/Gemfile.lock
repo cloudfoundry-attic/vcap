@@ -5,7 +5,7 @@ PATH
       nokogiri (>= 1.4.4)
       rake
       rspec
-      vcap_common (~> 1.0.3)
+      vcap_common (~> 1.0.5)
       yajl-ruby (>= 0.7.9)
 
 GEM
@@ -39,7 +39,7 @@ GEM
       daemons (>= 1.0.9)
       eventmachine (>= 0.12.6)
       rack (>= 1.0.0)
-    vcap_common (1.0.3)
+    vcap_common (1.0.5)
       eventmachine (~> 0.12.11.cloudfoundry.3)
       logging (>= 1.5.0)
       nats (~> 0.4.22.beta.4)
