@@ -60,7 +60,7 @@ if [ -f ~/.bashrc ]; then
 fi
 
 echo "Installing rvm"
-curl -s -k -B https://rvm.beginrescueend.com/install/rvm > /tmp/install_rvm
+curl -s -k -B https://raw.github.com/wayneeseguin/rvm/master/binscripts/rvm-installer > /tmp/install_rvm
 bash /tmp/install_rvm
 rm /tmp/install_rvm
 
