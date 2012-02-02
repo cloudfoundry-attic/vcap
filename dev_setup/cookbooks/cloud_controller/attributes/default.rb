@@ -20,6 +20,10 @@ default[:cloud_controller][:staging][:php] = "php.yml"
 default[:cloud_controller][:staging][:django] = "django.yml"
 default[:cloud_controller][:staging][:wsgi] = "wsgi.yml"
 
+default[:cloud_controller][:new_stager_percent] = 0
+default[:cloud_controller][:stager][:user] = "EeL0meap"
+default[:cloud_controller][:stager][:password] = "Lo4Shuik"
+
 # Default builtin services
 default[:cloud_controller][:builtin_services] = ["redis", "mongodb", "mysql", "neo4j"]
 

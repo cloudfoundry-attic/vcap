@@ -47,6 +47,12 @@ rails_logging:
   level: debug
 # file:
 
+# TODO: parameterize this
+redis:
+  host: 127.0.0.1
+  port: 5454
+# password:
+
 directories:
   droplets: /var/vcap/shared/droplets
   resources: /var/vcap/shared/resources
@@ -80,6 +86,10 @@ staging:
   max_staging_runtime:    120 # secs
   # Create a secure environment for staging
   secure: false
+  new_stager_percent: <%= node[:cloud_controller][:new_stager_percent] || 0 %>
+  auth:
+    user: <%= node[:cloud_controller][:stager][:user] %>
+    password: <%= node[:cloud_controller][:stager][:password] %>
 
 # admin support
 admins: [ <%= node[:cloud_controller][:admins].join(", ") %> ]
