@@ -34,10 +34,6 @@ module VCAP
       end
 
       def start_server!
-        if Process.uid != 0
-          puts "Package cache must be run as root."
-          exit 1
-        end
         #XXX matt's logging stuff, disabled till' I figure out how to setup a new
         #formatter for debugging.
         #VCAP::Logging.setup_from_config(@config[:logging])
@@ -99,10 +95,10 @@ module VCAP
 
       def setup_pidfile
         begin
-          pid_file = VCAP::PidFile.new(@config[:pid_file])
+          pid_file = VCAP::PidFile.new(@config[:pid_filename])
           pid_file.unlink_at_exit
         rescue => e
-          puts "ERROR: Can't create package_cache pid file #{config[:pid_file]}"
+          puts "ERROR: Can't create package_cache pid file #{config[:pid_filename]}"
           exit 1
         end
       end

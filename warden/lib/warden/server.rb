@@ -77,7 +77,7 @@ module Warden
     def self.setup(config = {})
       @config = config
       setup_server config[:server]
-      setup_logger config[:logger]
+      setup_logger config[:logging]
       setup_network config[:network]
     end
 

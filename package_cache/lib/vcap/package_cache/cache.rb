@@ -1,5 +1,6 @@
 require 'fileutils'
 require 'logger'
+require 'run'
 
 module VCAP module PackageCache end end
 
@@ -8,6 +9,7 @@ class VCAP::PackageCache::Cache
     @logger = logger ||  Logger.new(STDOUT)
     @cache_dir = cache_dir
     set_cache_permissions(@cache_dir)
+    Run.init(@logger)
   end
 
   def add_by_rename!(package_src)
@@ -56,7 +58,7 @@ class VCAP::PackageCache::Cache
 
   #clients should be able read packages
   def set_package_permissions(path)
-    File.chown(Process.uid, Process.gid, path)
+    Run.chown(Process.uid, Process.gid, path)
     File.chmod(0744, path)
   end
 

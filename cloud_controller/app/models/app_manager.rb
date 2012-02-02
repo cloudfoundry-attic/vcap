@@ -192,6 +192,7 @@ class AppManager
         message = start_message.dup
         message[:executableUri] = download_app_uri(message[:executableUri])
         message[:debug] = @app.metadata[:debug]
+        message[:console] = @app.metadata[:console]
         (index...max_to_start).each do |i|
           message[:index] = i
           dea_id = find_dea_for(message)
@@ -366,7 +367,9 @@ class AppManager
             :state => instance_json[:state],
             :since => instance_json[:state_timestamp],
             :debug_ip => instance_json[:debug_ip],
-            :debug_port => instance_json[:debug_port]
+            :debug_port => instance_json[:debug_port],
+            :console_ip => instance_json[:console_ip],
+            :console_port => instance_json[:console_port]
           }
         end
       end

@@ -19,7 +19,7 @@ module NodeInstall
       action :create
     end
 
-    bash "Install Node.js" do
+    bash "Install Node.js version " + node_version do
       cwd File.join("", "tmp")
       user node[:deployment][:user]
       code <<-EOH

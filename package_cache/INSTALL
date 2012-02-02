@@ -1,3 +1,10 @@
+###Configuring runtimes.
+
+1. configure config/package_cache.yml to point to appropriate the ruby runtimes to
+build packages with.
+
+###Supporting up secure mode.
+
 1. run pool_tool in vcap/common/bin/pool_tool to create a user pool
 called package cache with the appropriate number of users.
 
@@ -6,4 +13,6 @@ e.g. ./pool_tool -c package_cache,50
 the number of users will limit the number of maximum concurrent requests
 the package cache can process as each request needs a temporary user.
 
-2. configure config/dev.yml to point to appropriate ruby runtimes.
+2. ensure that the package cache (i.e. the vcap user) has sufficient
+privilege to use sudo to chown files, and to run arbitrary commands
+as a user in the user-pool-package_cache group.
