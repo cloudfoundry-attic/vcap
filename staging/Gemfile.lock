@@ -5,7 +5,7 @@ PATH
       nokogiri (>= 1.4.4)
       rake
       rspec
-      uuidtools (~> 2.1.0)
+      uuidtools (~> 2.1.2)
       vcap_common (~> 1.0.6)
       yajl-ruby (>= 0.7.9)
 
