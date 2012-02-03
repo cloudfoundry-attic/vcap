@@ -115,7 +115,7 @@ describe VCAP::Stager::Task do
     it 'should raise an instance of VCAP::Stager::StagingTimeoutError on plugin runner timeout' do
       @task.stub(:run_logged).and_return({:success => false, :timed_out => true})
       expect do
-        @task.send(:run_plugins, @tmp_dir, @tmp_dir, @tmp_dir)
+        @task.send(:run_plugins, @tmp_dir, @tmp_dir, @tmp_dir, nil)
       end.to raise_error(VCAP::Stager::StagingTimeoutError)
     end
 
@@ -124,14 +124,14 @@ describe VCAP::Stager::Task do
       File.open(error_file, 'w+') {|f| f.write("hi") }
       @task.stub(:run_logged).and_return({:success => false, :timed_out => false})
       expect do
-        @task.send(:run_plugins, @tmp_dir, @tmp_dir, @tmp_dir)
+        @task.send(:run_plugins, @tmp_dir, @tmp_dir, @tmp_dir, nil)
       end.to raise_error(VCAP::Stager::PluginRunnerError)
     end
 
     it 'should raise an instance of VCAP::Stager::PluginRunnerError if it cannot read the error file' do
       @task.stub(:run_logged).and_return({:success => false, :timed_out => false})
       expect do
-        @task.send(:run_plugins, @tmp_dir, @tmp_dir, @tmp_dir)
+        @task.send(:run_plugins, @tmp_dir, @tmp_dir, @tmp_dir, nil)
       end.to raise_error(VCAP::Stager::PluginRunnerError)
     end
   end

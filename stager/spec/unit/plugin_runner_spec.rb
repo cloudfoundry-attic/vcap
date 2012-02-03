@@ -35,7 +35,7 @@ describe VCAP::Stager::PluginRunner do
     end
 
     it 'should raise an error if no framework plugin is supplied' do
-      runner = VCAP::Stager::PluginRunner.new
+      runner = VCAP::Stager::PluginRunner.new({})
       expect do
         runner.run_plugins(@src_dir, @dst_dir, @app_props, @cc_info)
       end.to raise_error(VCAP::Stager::MissingFrameworkPluginError)
@@ -49,7 +49,7 @@ describe VCAP::Stager::PluginRunner do
         @app_props['plugins'][name] = {}
         plugins[name] = create_mock_plugin(name, frameworks[i])
       end
-      runner  = VCAP::Stager::PluginRunner.new(plugins)
+      runner  = VCAP::Stager::PluginRunner.new(plugins, :log_path => '/dev/null')
       expect do
         runner.run_plugins(@src_dir, @dst_dir, @app_props, @cc_info)
       end.to raise_error(VCAP::Stager::DuplicateFrameworkPluginError)
@@ -65,7 +65,7 @@ describe VCAP::Stager::PluginRunner do
         p.should_receive(:stage).with(any_args())
         plugins[name] = p
       end
-      runner = VCAP::Stager::PluginRunner.new(plugins)
+      runner = VCAP::Stager::PluginRunner.new(plugins, :log_path => '/dev/null')
       runner.run_plugins(@src_dir, @dst_dir, @app_props, @cc_info)
     end
   end
