@@ -132,7 +132,7 @@ module AppConnection
     # We buffer them if needed to determine the header/body boundary correctly.
     @buf = @buf ? @buf << data : data
     if hindex = @buf.index(HTTP_HEADERS_END) # all http headers received, figure out where to route to..
-      @parser = Http::Parser.new(self)
+      @parser = Http::Parser.new(self,:strings)
 
       # split headers and rest of body out here.
       @headers = @buf.slice!(0...hindex+HTTP_HEADERS_END_SIZE)
