@@ -9,6 +9,8 @@
 # - router
 # - cloud_controller
 # - health_manager
+# - stager
+# - package_cache
 # - dea
 #
 # services
@@ -41,12 +43,12 @@ class Component
     if core?
       @path = File.join(DIR, name)
       # Sane default for location of configuration file
-      @configuration_path ||= File.join(DIR, "..", name, "config", "#{name}.yml")
+      @configuration_path ||= File.expand_path(File.join(DIR, "..", name, "config", "#{name}.yml"))
     else
       @path = File.join(SERVICE_DIR, name)
       # Sane default for location of service configuration file
       pre = name.sub(/_node|_gateway/,'')
-      @configuration_path ||= File.join(DIR, "../services", pre, "config", "#{name}.yml")
+      @configuration_path ||= File.expand_path(File.join(DIR, "../services", pre, "config", "#{name}.yml"))
     end
   end
 
@@ -435,7 +437,7 @@ module Run
   private
 
   def self.core
-    %w(router cloud_controller dea health_manager stager)
+    %w(router cloud_controller dea health_manager stager package_cache)
   end
 
   def self.services

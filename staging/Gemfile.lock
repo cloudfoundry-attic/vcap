@@ -1,11 +1,12 @@
 PATH
   remote: .
   specs:
-    vcap_staging (0.1.31)
+    vcap_staging (0.1.37)
       nokogiri (>= 1.4.4)
       rake
       rspec
-      vcap_common (~> 1.0.4)
+      uuidtools (~> 2.1.0)
+      vcap_common (~> 1.0.6)
       yajl-ruby (>= 0.7.9)
 
 GEM
@@ -39,7 +40,8 @@ GEM
       daemons (>= 1.0.9)
       eventmachine (>= 0.12.6)
       rack (>= 1.0.0)
-    vcap_common (1.0.4)
+    uuidtools (2.1.2)
+    vcap_common (1.0.6)
       eventmachine (~> 0.12.11.cloudfoundry.3)
       logging (>= 1.5.0)
       nats (~> 0.4.22.beta.4)

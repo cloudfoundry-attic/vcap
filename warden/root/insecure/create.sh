@@ -1,12 +1,21 @@
 #!/bin/bash
 
-if [ -z "$1" ]; then
-  echo "Usage: $0 <instance name>"
+set -o nounset
+set -o errexit
+cd $(dirname $(readlink -f ${0}))
+
+if [ -z "${1}" ]; then
+  echo "Usage: ${0} <name>"
   exit 1
 fi
 
-# Change to directory that holds this script
-self=$(readlink -f ${0})
-cd $(dirname ${self})
+target="instances/${1}"
+mkdir -p instances
 
-cp -r .instance-skeleton .instance-$1
+if [ -d ${target} ]; then
+  echo "\"${target}\" already exists, aborting..."
+  exit 1
+fi
+
+cp -r skeleton "${target}"
+echo ${target}
