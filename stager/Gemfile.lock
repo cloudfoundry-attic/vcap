@@ -35,6 +35,7 @@ GEM
       eventmachine (>= 0.12.6)
       rack (>= 1.0.0)
     tilt (1.3.2)
+    uuidtools (2.1.2)
     vcap_common (1.0.6)
       eventmachine (~> 0.12.11.cloudfoundry.3)
       logging (>= 1.5.0)
@@ -47,6 +48,7 @@ GEM
       nokogiri (>= 1.4.4)
       rake
       rspec
+      uuidtools (~> 2.1.2)
       vcap_common (~> 1.0.6)
       yajl-ruby (>= 0.7.9)
     webmock (1.7.4)

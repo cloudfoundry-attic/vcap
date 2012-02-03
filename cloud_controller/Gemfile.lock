@@ -142,6 +142,7 @@ GEM
       nokogiri (>= 1.4.4)
       rake
       rspec
+      uuidtools (~> 2.1.2)
       vcap_common
       yajl-ruby (>= 0.7.9)
     yajl-ruby (0.8.3)
