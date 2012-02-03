@@ -1,4 +1,9 @@
 #!/bin/bash
 echo $$ > ./run.pid
 cd <%= app_dir %>
+
+<% if uses_bundler %>
+exec <%= ruby_path %> -S bundle exec <%= ruby_path %> <%= sinatra_main %> $@
+<% else %>
 exec <%= ruby_path %> <%= sinatra_main %> $@
+<% end %>
