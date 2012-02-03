@@ -1,0 +1,8 @@
+#!/usr/bin/env rake
+require "bundler/gem_tasks"
+
+task :spec do
+  desc 'Run tests'
+  sh('bundle install')
+  sh('cd spec && rake spec')
+end
