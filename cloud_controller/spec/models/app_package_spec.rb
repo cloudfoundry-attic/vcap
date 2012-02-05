@@ -183,6 +183,37 @@ describe AppPackage do
         end.resume
       end
     end
+
+    it 'should repack files that start with a dot using zip or tar' do
+      app_dir = Dir.mktmpdir
+      tmp_dir = Dir.mktmpdir
+      zip_extract_dir = Dir.mktmpdir
+      tar_extract_dir = Dir.mktmpdir
+
+      git_directory_path = File.join(app_dir, '.git')
+      FileUtils.mkdir(git_directory_path)
+
+      app_files = ['.gitignore', '.htaccess', 'index.php']
+      app_files.each do |filename|
+        FileUtils.touch(File.join(app_dir, filename))
+      end
+
+      em do
+        Fiber.new do
+          packaged_app_path = AppPackage.repack_app_in(app_dir, tmp_dir, :zip)
+          `unzip #{packaged_app_path} -d #{zip_extract_dir}`
+          unpacked_zip_files = Dir.entries(zip_extract_dir)
+          unpacked_zip_files.should include(*app_files, File.basename(git_directory_path))
+
+          packaged_app_path = AppPackage.repack_app_in(app_dir, tmp_dir, :tar)
+          `tar -zxf #{packaged_app_path} -C #{tar_extract_dir}`
+          unpacked_tar_files = Dir.entries(tar_extract_dir)
+          unpacked_tar_files.should include(*app_files, File.basename(git_directory_path))
+
+          EM.stop
+        end.resume
+      end
+    end
   end
 
   def em(timeout=5)
