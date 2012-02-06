@@ -1,0 +1,5 @@
+zvent (0.0.3)
+zync-gen (0.1.0)
+zyps (0.7.6)
+zzdeploy (0.1.6)
+zzf-core (0.0.2)

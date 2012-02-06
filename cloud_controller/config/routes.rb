@@ -27,6 +27,12 @@ CloudController::Application.routes.draw do
   get    'apps/:name/update'         => 'apps#check_update'
   put    'apps/:name/update'         => 'apps#start_update'
 
+  #bulk APIs for health manager v.2 and billing
+  #retrieving batches of items. An opaque token is returned with every request to resume the retrieval
+  #from where the last request left off.
+  get    'bulk/apps'                 => 'bulk#apps',            :as => :bulk_apps
+  get    'bulk/users'                => 'bulk#users',           :as => :bulk_users
+
   # Stagers interact with the CC via these urls
   post   'staging/droplet/:id/:upload_id' => 'staging#upload_droplet', :as => :upload_droplet
   get    'staging/app/:id'                => 'staging#download_app',   :as => :download_unstaged_app
@@ -45,6 +51,17 @@ CloudController::Application.routes.draw do
   delete 'services/v1/binding_tokens/:binding_token' => 'binding_tokens#delete',   :as => :binding_token_delete,   :binding_token => /[^\/]+/
   # Brokered Services
   get    'brokered_services/poc/offerings' => 'services#list_brokered_services',   :as => :service_list_brokered_services
+
+  # Service life cycle apis
+  post   'services/v1/configurations/:id/snapshots'          => 'services#create_snapshot',      :as => :service_create_snapshot,       :id   => /[^\/]+/
+  get    'services/v1/configurations/:id/snapshots'          => 'services#enum_snapshots',       :as => :service_enum_snapshots,        :id   => /[^\/]+/
+  get    'services/v1/configurations/:id/snapshots/:sid'     => 'services#snapshot_details',     :as => :service_snapshot_details,      :id   => /[^\/]+/, :sid => /[^\/]+/
+  put    'services/v1/configurations/:id/snapshots/:sid'     => 'services#rollback_snapshot',    :as => :service_rollback_snapshot,     :id   => /[^\/]+/, :sid => /[^\/]+/
+  get    'services/v1/configurations/:id/serialized/url'     => 'services#serialized_url',       :as => :service_serialized_url,    :id   => /[^\/]+/
+  put    'services/v1/configurations/:id/serialized/url'     => 'services#import_from_url',      :as => :service_import_from_url,       :id   => /[^\/]+/
+  put    'services/v1/configurations/:id/serialized/data'    => 'services#import_from_data',     :as => :service_import_from_data,      :id   => /[^\/]+/
+  get    'services/v1/configurations/:id/jobs/:job_id'       => 'services#job_info',             :as => :service_job_info,              :id   => /[^\/]+/, :job_id => /[^\/]+/
+
 
   # Legacy services implementation (for old vmc)
   get     'services'        => 'legacy_services#list',        :as => :legacy_service_list

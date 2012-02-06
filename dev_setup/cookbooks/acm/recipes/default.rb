@@ -6,12 +6,12 @@
 #
 #
 
-gem_package "pg" do 
+gem_package "pg" do
   ignore_failure true
   gem_binary File.join(node[:ruby][:path], "bin", "gem")
 end
 
-gem_package "postgres" do 
+gem_package "postgres" do
   ignore_failure true
   gem_binary File.join(node[:ruby][:path], "bin", "gem")
 end
@@ -24,4 +24,3 @@ template "acm.yml" do
 end
 
 cf_bundle_install(File.expand_path(File.join(node["cloudfoundry"]["path"], "acm")))
-

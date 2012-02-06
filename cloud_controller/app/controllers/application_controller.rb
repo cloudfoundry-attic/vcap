@@ -61,7 +61,8 @@ class ApplicationController < ActionController::Base
   def json_param(name)
     raw = params[name]
     Yajl::Parser.parse(raw, :symbolize_keys => true)
-  rescue Yajl::ParseError
+  rescue Yajl::ParseError => e
+    CloudController.logger.error("json_param yajl error: #{e.message}")
     raise CloudError.new(CloudError::BAD_REQUEST)
   end
 

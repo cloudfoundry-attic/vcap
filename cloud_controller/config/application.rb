@@ -5,9 +5,6 @@ require "active_record/railtie"
 require "action_controller/railtie"
 require "rails/test_unit/railtie"
 
-common_lib_dir = File.expand_path('../../../lib', __FILE__)
-$LOAD_PATH << common_lib_dir unless $LOAD_PATH.include?(common_lib_dir)
-
 # If you have a Gemfile, require the gems listed there, including any gems
 # you've limited to :test, :development, or :production.
 Bundler.require(:default, Rails.env) if defined?(Bundler)

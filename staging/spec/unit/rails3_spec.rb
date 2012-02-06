@@ -28,6 +28,13 @@ echo "\\$stdout.sync = true" >> ./ruby/stdsync.rb
 if [ -f "$PWD/app/config/database.yml" ] ; then
   cd app && #{executable} ./rubygems/ruby/1.8/bin/bundle exec #{executable} ./rubygems/ruby/1.8/bin/rake db:migrate --trace >>../logs/migration.log 2>> ../logs/migration.log && cd ..;
 fi
+if [ -n "$VCAP_CONSOLE_PORT" ]; then
+  cd app
+  #{executable} ./rubygems/ruby/1.8/bin/bundle exec #{executable} cf-rails-console/rails_console.rb >>../logs/console.log 2>> ../logs/console.log &
+  CONSOLE_STARTED=$!
+  echo "$CONSOLE_STARTED" >> ../console.pid
+  cd ..
+fi
 cd app
 #{executable} ./rubygems/ruby/1.8/bin/bundle exec #{executable} ./rubygems/ruby/1.8/bin/rails server $@ > ../logs/stdout.log 2> ../logs/stderr.log &
 STARTED=$!
@@ -61,6 +68,13 @@ echo "\\$stdout.sync = true" >> ./ruby/stdsync.rb
 if [ -f "$PWD/app/config/database.yml" ] ; then
   cd app && #{executable} ./rubygems/ruby/1.8/bin/bundle exec #{executable} ./rubygems/ruby/1.8/bin/rake db:migrate --trace >>../logs/migration.log 2>> ../logs/migration.log && cd ..;
 fi
+if [ -n "$VCAP_CONSOLE_PORT" ]; then
+  cd app
+  #{executable} ./rubygems/ruby/1.8/bin/bundle exec #{executable} cf-rails-console/rails_console.rb >>../logs/console.log 2>> ../logs/console.log &
+  CONSOLE_STARTED=$!
+  echo "$CONSOLE_STARTED" >> ../console.pid
+  cd ..
+fi
 cd app
 #{executable} ./rubygems/ruby/1.8/bin/bundle exec #{executable} ./rubygems/ruby/1.8/bin/rails server thin $@ > ../logs/stdout.log 2> ../logs/stderr.log &
 STARTED=$!
@@ -75,6 +89,17 @@ wait $STARTED
     stage :rails3 do |staged_dir|
       plugin_dir = staged_dir.join('app', 'vendor', 'plugins', 'serve_static_assets')
       plugin_dir.should_not be_directory
+    end
+  end
+
+  it "receives the rails console" do
+    stage :rails3 do |staged_dir|
+      plugin_dir = staged_dir.join('app', 'cf-rails-console')
+      plugin_dir.should be_directory
+      access_file = staged_dir.join('app', 'cf-rails-console','.consoleaccess')
+      config = YAML.load_file(access_file)
+      config['username'].should_not be_nil
+      config['password'].should_not be_nil
     end
   end
 
