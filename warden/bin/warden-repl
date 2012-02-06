@@ -3,31 +3,78 @@
 require "shellwords"
 require "warden/client"
 require "readline"
+require "yajl"
 
 include Shellwords
 
-#setup client
-client = Warden::Client.new("/tmp/warden.sock")
-client.connect
+module WardenRepl
+  class << self
 
-#auto completion
-COMMAND_LIST = ['ping', 'create', 'stop', 'destroy', 'spawn', 'link', 'run', 'net', 'limit', 'info', 'list']
+    COMMAND_LIST = ['ping', 'create', 'stop', 'destroy', 'spawn', 'link', 'run', 'net', 'limit', 'info', 'list','help']
+    HELP_MESSAGE = ['ping         - ping warden',
+                    'create       - create new container.',
+                    'destroy  <handle> - shutdown container <handle>.',
+                    'stop     <handle> - stop all processes in <handle>.',
+                    'spawn    <handle> cmd    - spawns cmd inside container <handle>, returns #jobid.',
+                    'link     <handle> #jobid - do blocking read on results from #jobid.',
+                    'run <handle>  cmd - short hand for link(spawn(cmd)) i.e. runs cmd, blocks for result.',
+                    'list              - list containers.',
+                    'info <handle>     - show metadata for container <handle>.',
+                    'limit <handle> (mem | disk) [<value>] - set or get resource limit.',
+                    'net <handle> #in - forward port #in on external interface to container <handle>.',
+                    'net <handle> #out <address[/mask][:port]> - allow traffic from the container <handle> to address <address>.',
+                    'help - show help message',
+                    '',
+                    'Please see README.md for more details.'
 
-comp = proc { |s| COMMAND_LIST.grep( /^#{Regexp.escape(s)}/ ) }
+    ]
 
-Readline.completion_append_character = " "
-Readline.completion_proc = comp
+    def setup
+      @client = Warden::Client.new("/tmp/warden.sock")
+      @client.connect
+      @clist = container_list
+      trap('INT') {  exit }
+    end
 
-while line = Readline.readline('warden> ', true)
+    def container_list
+      @client.write(['list'])
+      Yajl::Parser.parse(@client.read.inspect)
+    end
 
-  words = shellwords(line)
-  next if words.empty?
+    def run
+      comp = proc { |s|
+        if s[0] == '0'
+          container_list.grep( /^#{Regexp.escape(s)}/ )
+        else
+          COMMAND_LIST.grep( /^#{Regexp.escape(s)}/ )
+        end
+      }
 
-  # Issue command
-  client.write(words)
-  begin
-    STDOUT.puts client.read.inspect
-  rescue  => e
-    puts e.message
+      Readline.completion_append_character = " "
+      Readline.completion_proc = comp
+
+      while line = Readline.readline('warden> ', true)
+        words = shellwords(line)
+        next if words.empty?
+        if words[0] == 'help'
+          puts HELP_MESSAGE
+          next
+        end
+
+        @client.write(words)
+        begin
+          STDOUT.puts @client.read.inspect
+        rescue  => e
+          if e.message.match('unknown command')
+            puts "#{e.message}, try help for assistance."
+          else
+            puts e.message
+          end
+        end
+      end
+    end
   end
 end
+
+WardenRepl.setup
+WardenRepl.run
