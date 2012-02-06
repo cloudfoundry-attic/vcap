@@ -1,6 +1,6 @@
 spec = Gem::Specification.new do |s|
   s.name = 'vcap_common'
-  s.version = '1.0.7'
+  s.version = '1.0.6'
   s.date = '2011-02-09'
   s.summary = 'vcap common'
   s.homepage = "http://github.com/vmware-ac/core"
@@ -12,7 +12,7 @@ spec = Gem::Specification.new do |s|
   s.add_dependency('eventmachine', '~> 0.12.11.cloudfoundry.3')
   s.add_dependency('thin', '~> 1.3.1')
   s.add_dependency('yajl-ruby', '~> 0.8.3')
-  s.add_dependency('nats', '~> 0.4.22.beta.8')
+  s.add_dependency('nats', '~> 0.4.22.beta.4')
   s.add_dependency('logging', '>= 1.5.0')
   s.add_dependency('posix-spawn', '~> 0.3.6')
   s.add_development_dependency('rake', '~> 0.9.2')
