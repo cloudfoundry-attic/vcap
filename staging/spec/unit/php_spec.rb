@@ -44,4 +44,12 @@ wait $STARTED
       EXPECTED
     end
   end
+
+  it "is packaged without missing dot files like .htaccess" do
+    stage :php do |staged_dir|
+      app_dir = File.join(staged_dir, 'app')
+      app_files = Dir.entries(app_dir)
+      app_files.should include('.htaccess')
+    end
+  end
 end
