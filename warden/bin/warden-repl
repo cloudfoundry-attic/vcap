@@ -2,6 +2,8 @@
 
 require "shellwords"
 require "warden/client"
+require "readline"
+require "yajl"
 
 include Shellwords
 
@@ -11,17 +13,28 @@ def prompt(str)
   STDIN.gets
 end
 
+#setup client
 client = Warden::Client.new("/tmp/warden.sock")
 client.connect
 
-loop do
-  line = prompt("warden")
-  break unless line
+#auto completion
+COMMAND_LIST = ['ping', 'create', 'stop', 'destroy', 'spawn', 'link', 'run', 'net', 'limit', 'info', 'list']
+
+comp = proc { |s| COMMAND_LIST.grep( /^#{Regexp.escape(s)}/ ) }
+
+Readline.completion_append_character = " "
+Readline.completion_proc = comp
+
+while line = Readline.readline('warden> ', true)
 
   words = shellwords(line)
   next if words.empty?
 
   # Issue command
   client.write(words)
+  begin
   STDOUT.puts client.read.inspect
+  rescue  => e
+    puts e.message
+  end
 end
