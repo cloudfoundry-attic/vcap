@@ -262,6 +262,10 @@ module Warden
         container.info
       end
 
+      def process_list(request)
+        Server.container_klass.registry.keys
+      end
+
       protected
 
       def find_container(handle)
