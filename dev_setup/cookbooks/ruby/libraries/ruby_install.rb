@@ -60,11 +60,13 @@ module RubyInstall
     gem_package "bundler" do
       version bundler_version
       gem_binary File.join(ruby_path, "bin", "gem")
+      user node[:deployment][:user]
     end
 
     gem_package "rake" do
       version rake_version
       gem_binary File.join(ruby_path, "bin", "gem")
+      user node[:deployment][:user]
     end
 
     # The default chef installed with Ubuntu 10.04 does not support the "retries" option
@@ -73,6 +75,7 @@ module RubyInstall
     %w[ rack eventmachine thin sinatra mysql pg vmc ].each do |gem|
       gem_package gem do
         gem_binary File.join(ruby_path, "bin", "gem")
+        user node[:deployment][:user]
       end
     end
   end
