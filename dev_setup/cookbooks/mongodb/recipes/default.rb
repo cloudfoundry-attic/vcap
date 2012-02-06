@@ -5,6 +5,9 @@
 # Copyright 2011, VMware
 #
 #
+
+package "mongodb-clients"
+
 remote_file File.join("", "tmp", "mongodb-linux-#{node[:kernel][:machine]}-#{node[:mongodb][:version]}.tgz") do
   owner node[:deployment][:user]
   source node[:mongodb][:source]
