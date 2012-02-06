@@ -89,6 +89,14 @@ env_overrides.each do |cfg_key, env_key|
   end
 end
 
+#generate bulk api credentials unless they've been explicitly specified (not that they should)
+unless AppConfig.key? :bulk_api
+  AppConfig[:bulk_api] = { :auth =>
+    { :user => 'bulk_api',
+      :password => VCAP.secure_uuid }}
+end
+
+
 # Check on new style app_uris and map old into new style.
 unless AppConfig.key? :app_uris
   AppConfig[:app_uris] = {

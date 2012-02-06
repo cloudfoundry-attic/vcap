@@ -133,10 +133,16 @@ builtin_services:
     token: "0xdeadbeef"
   atmos:
     token: "0xdeadbeef"
+  filesystem:
+    token: "0xdeadbeef"
 
 # Service broker
 service_broker:
     token: "0xdeadbeef"
+
+# lifecycle
+service_lifecycle:
+  max_upload_size: 1 # in MB
 
 # Enable/disable starting apps in debug modes.
 allow_debug: true
@@ -150,6 +156,8 @@ runtimes:
     version: 1.9.2
   node:
     version: 0.4.12
+  node06:
+    version: 0.6.8
   java:
     version: 1.6.0
     debug_modes:

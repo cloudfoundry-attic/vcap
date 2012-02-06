@@ -12,6 +12,6 @@
                 "recipe[essentials]",
                 "recipe[postgresql]",
                 "recipe[java]",
-				"recipe[maven]",
-				"recipe[uaa]"]
+                "recipe[maven]",
+                "recipe[uaa]"]
 }

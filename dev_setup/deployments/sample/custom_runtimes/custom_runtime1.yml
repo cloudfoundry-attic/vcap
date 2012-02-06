@@ -7,7 +7,7 @@ dea:
     - ruby18
     - ruby19
     - java
-    - nodejs
+    - node
 jobs:
   install:
     - all

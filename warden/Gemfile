@@ -1,10 +1,14 @@
 source "http://rubygems.org"
 
-gemspec
-
-gem 'rake'
+gem "rake"
 gem "vcap_logging"
+gem "eventmachine", "0.12.11.cloudfoundry.3"
+gem "yajl-ruby"
+gem "em-posix-spawn", '> 0.0.1'
+gem "vcap_common"
+gem "sleepy_penguin"
 
 group :spec do
   gem "rspec"
+  gem "warden-client"
 end

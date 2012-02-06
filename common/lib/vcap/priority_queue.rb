@@ -1,5 +1,8 @@
-#simple priority queue implementation using binary max-heap on top of a ruby array.
-#this implementation is not meant to be high-performance, just decent, with two goals:
+#a priority queue with the added twist of FIFO behavior for elements with equal priorities
+#implementation using binary max-heap on top of a ruby array.
+#the FIFO behavior is implemented by storing a FIFO bucket of same-priority values
+
+#The implementation is not meant to be high-performance, just decent, with two goals:
 #1. clean interface
 #2. proper time/space complexity of a binary heap
 #3. no silly memory leaks (Ah, three weapons of the Spanish Inquisition)
@@ -18,46 +21,80 @@
 #See spec/unit/priority_queue_set for
 #other examples
 
-
-
 require 'set'
+require 'pp'
 
 module VCAP
-  class PriorityQueue
+  class PriorityQueueFIFO
+
+    attr_reader :size
+
     def initialize
       @heap_arr = []
-    end
-
-    def size
-      @heap_arr.size
+      @p2b = {} #hash mapping priorities to buckets
+      @size = 0
     end
 
     def empty?
-      @heap_arr.empty?
+      size == 0
     end
 
     def insert(item, priority = 0)
       raise ArgumentError, "priority can not be negative: #{priority}" if priority < 0
-      @heap_arr.push [item, priority]
-      shift_up
+
+      unless append_to_existing_priority_bucket(item, priority)
+        add_bucket_at_the_end_and_shift_up(item, priority)
+      end
+      @size += 1
     end
 
     def remove
       return nil if empty?
-      elem = @heap_arr[0][0]
-      if size > 1
+      bucket = top_bucket
+      priority = top_priority
+      elem = bucket.shift
+      @size -= 1
+      if empty?
+        @heap_arr.clear
+        @p2b.clear
+      elsif bucket.empty?
         @heap_arr[0] = @heap_arr.pop
+        @p2b.delete(priority)
         shift_down
       else
-        @heap_arr.clear
+        #do nothing, we just shifted a value from a bucket and it still isn't empty, so no rearrangement is needed
       end
       elem
     end
 
     private
+
+    def add_bucket_at_the_end_and_shift_up(item, priority)
+      bucket = [item]
+      @p2b[priority] = bucket
+
+      #normal binary heap operation
+      @heap_arr.push priority
+      shift_up
+    end
+
+    def append_to_existing_priority_bucket(item, priority)
+      return false unless @p2b[priority]
+      @p2b[priority] << item
+      return true
+    end
+
+    def top_bucket
+      @p2b[top_priority]
+    end
+
+    def top_priority
+      priority_at(0)
+    end
+
     def priority_at(index)
       return -1 if index >= @heap_arr.size
-      @heap_arr[index][1]
+      @heap_arr[index]
     end
 
     def parent_index(index)
@@ -108,7 +145,7 @@ module VCAP
   end
 
 
-  class PrioritySet < PriorityQueue
+  class PrioritySet < PriorityQueueFIFO
     def initialize
       super
       @set = Set.new #the set is used to check for duplicates
