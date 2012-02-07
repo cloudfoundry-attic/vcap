@@ -901,6 +901,7 @@ module DEA
       instance[:resources_tracked] = true
       @reserved_mem += instance_mem_usage_in_mb(instance)
       @num_clients += 1
+      send_advertise
     end
 
     def remove_instance_resources(instance)
@@ -908,6 +909,7 @@ module DEA
       instance[:resources_tracked] = false
       @reserved_mem -= instance_mem_usage_in_mb(instance)
       @num_clients -= 1
+      send_advertise
     end
 
     def instance_mem_usage_in_mb(instance)
