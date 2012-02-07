@@ -37,7 +37,6 @@ module WardenRepl
       end
       @client = Warden::Client.new("/tmp/warden.sock")
       @client.connect
-      @clist = container_list
       trap('INT') {  exit }
       @history_path = File.join ENV['HOME'],'.warden-history'
       restore_history
@@ -56,9 +55,10 @@ module WardenRepl
 
     def restore_history
       return unless File.exists? @history_path
-      f = open(@history_path, 'r')
-      history = Yajl::Parser.parse(f.read)
-      history.map {|line| Readline::HISTORY.push line}
+      open(@history_path, 'r') { |file|
+        history = Yajl::Parser.parse(file.read)
+        history.map {|line| Readline::HISTORY.push line}
+      }
     end
 
     def run
@@ -85,7 +85,7 @@ module WardenRepl
           words[0] = 'run'
           @client.write(words)
           result = Yajl::Parser.parse(@client.read.inspect)
-          result[1,2].map {|path| puts open(path).read}
+          result[1,2].map {|path| open(path){|f| puts f.read}}
           puts "exited: #{result[0]}"
           next
         end
