@@ -10,7 +10,7 @@ include Shellwords
 module WardenRepl
   class << self
 
-    COMMAND_LIST = ['ping', 'create', 'stop', 'destroy', 'spawn', 'link', 'run', 'net', 'limit', 'info', 'list','help']
+    COMMAND_LIST = ['ping', 'create', 'stop', 'destroy', 'spawn', 'link', 'run', 'show', 'net', 'limit', 'info', 'list','help']
     HELP_MESSAGE = ['ping         - ping warden',
                     'create       - create new container.',
                     'destroy  <handle> - shutdown container <handle>.',
@@ -31,6 +31,10 @@ module WardenRepl
     ]
 
     def setup
+      unless Process.uid == 0
+        puts "root privilege is required to run."
+        exit 1
+      end
       @client = Warden::Client.new("/tmp/warden.sock")
       @client.connect
       @clist = container_list
