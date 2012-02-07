@@ -1,13 +1,22 @@
 require File.expand_path('../config/application', __FILE__)
+require 'ci/reporter/rake/rspec' if Rails.env != 'production'
+
 CloudController::Application.load_tasks
 
 Rake.application.instance_eval do
   %w[test test:recent test:uncommitted].each {|n| @tasks.delete(n) }
 end
 
+desc "Run specs producing results for CI"
+task "ci" => ["ci:spec"]
+
 task :spec => :install_development_bundle
 task :install_development_bundle do
   Bundler.with_clean_env do
     system "bundle install --local --without production"
   end
+end
+
+namespace :ci do
+  task "spec" => ["ci:setup:rspec", "^spec"]
 end

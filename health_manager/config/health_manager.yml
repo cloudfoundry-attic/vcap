@@ -51,10 +51,10 @@ intervals:
   # Time to wait before analyzing the state of an application that has been
   # started/restarted
   stable_state:         60
-  # Minimum time between sending start requests. This is the rate at which start requests
-  # are dequed.  Default value is 0.02 (20ms)
-  # Set this value to 0 to revert to non-queuing behavior
-  request_queue:        0.02
+
+#number of start requests send each second (subject to EM timer limitations)
+#default value is 50.
+dequeueing_rate: 50
 
 # Used for /healthz and /vars endpoints. If not provided random
 # values will be generated on component start. Uncomment to use

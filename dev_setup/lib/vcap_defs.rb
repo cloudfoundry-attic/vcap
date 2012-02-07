@@ -34,6 +34,7 @@ end
 
 DEPLOYMENT_DEFAULT_SPEC = File.join("deployments", "devbox.yml")
 DEPLOYMENT_DEFAULT_NAME = "devbox"
+DEPLOYMENT_DEFAULT_DOMAIN = "vcap.me"
 DEPLOYMENT_CONFIG_DIR_NAME = "config"
 DEPLOYMENT_CONFIG_FILE_NAME = "deploy.json"
 DEPLOYMENT_VCAP_CONFIG_FILE_NAME = "vcap_components.json"
@@ -46,6 +47,10 @@ class Deployment
   class << self
     def get_cloudfoundry_home
       File.expand_path(File.join(ENV["HOME"], "cloudfoundry"))
+    end
+
+    def get_cloudfoundry_domain
+      DEPLOYMENT_DEFAULT_DOMAIN
     end
 
     def get_config_path(name, cloudfoundry_home=nil)

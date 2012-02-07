@@ -1,12 +1,15 @@
 #!/usr/bin/env ruby
 
-PATH = File.expand_path(File.join("..", ARGV.first), __FILE__)
-unless File.directory?(PATH)
-  STDERR.puts "%s: No such directory" % $0
+require File.expand_path("../.lib/global", $0)
+
+unless ARGV.first
+  STDERR.puts "usage: %s [path to container]" % $0
   exit 1
 end
 
-Dir.chdir(PATH)
-require "../.lib/global"
+path = File.expand_path("../%s" % ARGV.first, $0)
+mount_union(path)
+
+Dir.chdir(path)
 
 chroot "union"

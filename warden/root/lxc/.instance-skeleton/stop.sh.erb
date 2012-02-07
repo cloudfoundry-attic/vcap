@@ -8,7 +8,6 @@ if [ ! -f started ]; then
   exit 1
 fi
 
-lxc-stop -n instance-<%= config["id"] %>
-lxc-destroy -n instance-<%= config["id"] %>
+./killprocs.sh
 umount union
 rm started

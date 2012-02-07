@@ -1,7 +1,5 @@
 require "warden/errors"
 require "warden/container/base"
-require "warden/container/script_handler"
-require "warden/container/remote_script_handler"
 require "tempfile"
 require "socket"
 
@@ -27,6 +25,11 @@ module Warden
         # Start container
         sh "#{container_path}/start.sh"
         debug "container started"
+      end
+
+      def do_stop
+        # Kill all processes in the container
+        sh "#{container_path}/killprocs.sh"
       end
 
       def do_destroy
@@ -58,7 +61,7 @@ module Warden
       # other processes, so it has to share its ip space them. To make it more
       # likely for a process inside the insecure container to bind to this
       # inbound port, we grab and return an ephemeral port.
-      def _net_inbound_port
+      def do_net_in
         socket = TCPServer.new("0.0.0.0", 0)
         socket.setsockopt(Socket::SOL_SOCKET, Socket::SO_REUSEADDR, 1)
         socket.do_not_reverse_lookup = true

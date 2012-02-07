@@ -1,7 +1,16 @@
 require "warden/server"
 require "warden/container/lxc"
+require "warden/network"
 
 require "spec_helper"
+
+def next_class_c
+  $class_c ||= Warden::Network::Address.new("172.16.0.0")
+
+  rv = $class_c
+  $class_c = $class_c + 256
+  rv
+end
 
 shared_context :warden_server do
 
@@ -16,6 +25,9 @@ shared_context :warden_server do
   before :each do
     FileUtils.rm_f(unix_domain_path)
 
+    # Grab new network for every test to avoid resource contention
+    start_address = next_class_c
+
     @pid = fork do
       Process.setsid
       Signal.trap("TERM") { exit }
@@ -27,6 +39,11 @@ shared_context :warden_server do
           :container_klass => container_klass,
           :container_grace_time => 1 },
         :quota => quota_config,
+        :network => {
+          :pool_start_address => start_address,
+          :pool_size => 64,
+          :allow_networks => "4.2.2.3/32",
+          :deny_networks => "4.2.2.0/24" },
         :logger => {
           :level => :debug,
           :file => File.expand_path("../../../tmp/warden.log", __FILE__) }
@@ -56,14 +73,19 @@ shared_context :warden_server do
     Dir[File.join(container_root, "*", ".instance-*")].each do |path|
       next if path.match(/-skeleton$/)
 
-      started = File.join(path, "started")
-      if File.exist?(started)
-        stop_script = File.join(path, "stop.sh")
-        system(stop_script) if File.exist?(stop_script)
-      end
+      stop_script = File.join(path, "stop.sh")
+      system(stop_script) if File.exist?(stop_script)
 
-      # Container should be stopped and destroyed by now...
-      system("rm -rf #{path}")
+      # Try to remove the underlying directory
+      3.times {
+        system("rm -rf #{path}")
+
+        if $?.exitstatus == 0
+          break
+        else
+          sleep 0.05
+        end
+      }
     end
   end
 end
