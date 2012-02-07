@@ -14,7 +14,7 @@ class DEAPool
      def find_dea(app)
        required_mem = app[:limits][:mem]
        required_runtime = app[:runtime]
-       keys = dea_list.keys.sort_by {rand}
+       keys = dea_list.keys.shuffle
        keys.each { |key|
          entry = dea_list[key]
          dea = entry[:msg]
