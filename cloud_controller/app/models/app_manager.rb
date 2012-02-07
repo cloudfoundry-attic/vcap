@@ -197,7 +197,7 @@ class AppManager
         message[:console] = @app.metadata[:console]
         (index...max_to_start).each do |i|
           message[:index] = i
-          dea_id = find_dea_for(message)
+          dea_id = DEAPool.find_dea(message)
           if dea_id
             json = Yajl::Encoder.encode(message)
             CloudController.logger.debug("Sending start message #{json} to DEA #{dea_id}")
@@ -443,6 +443,7 @@ class AppManager
     ['http://', "#{CloudController.bind_address}:#{CloudController.external_port}", path].join
   end
 
+
   # start_instance involves several moving pieces, from sending requests for help to the
   # dea_pool, to sending the actual start messages. In addition, many of these can be
   # triggered by one update call, so we simply queue them for the next go around through
@@ -454,7 +455,7 @@ class AppManager
         message = message.dup
         message[:executableUri] = download_app_uri(message[:executableUri])
         message[:index] = index
-        dea_id = find_dea_for(message)
+        dea_id = DEAPool.find_dea(message)
         if dea_id
           json = Yajl::Encoder.encode(message)
           CloudController.logger.debug("Sending start message #{json} to DEA #{dea_id}")

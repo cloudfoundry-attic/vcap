@@ -142,6 +142,7 @@ module DEA
 
       @nats_uri = config['mbus']
       @heartbeat_interval = config['intervals']['heartbeat']
+      @advertise_interval = config['intervals']['advertise']
 
       # XXX(mjp) - Ugh, this is needed for VCAP::Component.register(). Find a better solution when time permits.
       @config = config.dup()
@@ -262,18 +263,21 @@ module DEA
         NATS.subscribe("dea.#{uuid}.start") { |msg| process_dea_start(msg) }
         NATS.subscribe('router.start') {  |msg| process_router_start(msg) }
         NATS.subscribe('healthmanager.start') { |msg| process_healthmanager_start(msg) }
+        NATS.subscribe('dea.locate') { |msg|  process_dea_locate(msg) }
 
         # Recover existing application state.
         recover_existing_droplets
         delete_untracked_instance_dirs
 
         EM.add_periodic_timer(@heartbeat_interval) { send_heartbeat }
+        EM.add_periodic_timer(@advertise_interval) { send_advertise }
         EM.add_timer(MONITOR_INTERVAL) { monitor_apps }
         EM.add_periodic_timer(CRASHES_REAPER_INTERVAL) { crashes_reaper }
         EM.add_periodic_timer(VARZ_UPDATE_INTERVAL) { snapshot_varz }
         EM.add_periodic_timer(DROPLET_FS_PERCENT_USED_UPDATE_INTERVAL) { update_droplet_fs_usage }
 
         NATS.publish('dea.start', @hello_message_json)
+        send_advertise
       end
     end
 
@@ -287,6 +291,25 @@ module DEA
       end
       NATS.publish('dea.heartbeat', heartbeat.to_json)
     end
+
+    def process_dea_locate(msg)
+      send_advertise
+    end
+
+    def space_available?
+      @num_clients < @max_clients and @reserved_mem < @max_memory
+    end
+
+    def send_advertise
+      return if !space_available? || @shutting_down
+
+      advertise_message = { :id => VCAP::Component.uuid,
+                             :available_memory => @max_memory - @reserved_mem,
+                             :runtimes => @runtimes.keys}
+
+      NATS.publish('dea.advertise', advertise_message.to_json)
+    end
+
 
     def send_single_heartbeat(instance)
       heartbeat = {:droplets => [generate_heartbeat(instance)], :dea => VCAP::Component.uuid }
