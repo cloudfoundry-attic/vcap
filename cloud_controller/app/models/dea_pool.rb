@@ -15,7 +15,7 @@ class DEAPool
        required_mem = app[:limits][:mem]
        required_runtime = app[:runtime]
        keys = dea_list.keys.shuffle
-       keys.each { |key|
+       keys.each do |key|
          entry = dea_list[key]
          dea = entry[:msg]
          last_update = entry[:time]
@@ -25,11 +25,11 @@ class DEAPool
            next
          end
 
-         if dea[:available_memory] >= required_mem and dea[:runtimes].member? required_runtime
+         if dea[:available_memory] >= required_mem && dea[:runtimes].member? required_runtime
            CloudController.logger.debug("Found DEA #{dea[:id]}.")
            return dea[:id]
          end
-       }
+       end
        nil
      end
   end
