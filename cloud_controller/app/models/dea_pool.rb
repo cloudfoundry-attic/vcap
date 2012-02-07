@@ -25,7 +25,7 @@ class DEAPool
            next
          end
 
-         if dea[:available_memory] >= required_mem && dea[:runtimes].member? required_runtime
+         if (dea[:available_memory] >= required_mem) && (dea[:runtimes].member? required_runtime)
            CloudController.logger.debug("Found DEA #{dea[:id]}.")
            return dea[:id]
          end
