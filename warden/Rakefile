@@ -7,6 +7,17 @@ RSpec::Core::RakeTask.new(:spec) do |t|
   t.rspec_opts = %w[--color --format documentation]
 end
 
+desc "Run (or re-run) steps to setup warden"
+task :setup do
+  Dir.chdir("src") do
+    sh "make clean all"
+  end
+  Dir.chdir("root/lxc") do
+    sh "rm -rf 0??-*/{rootfs,union}"
+    sh "ruby setup.rb"
+  end
+end
+
 namespace :warden do
   desc "Run Warden server"
   task :start do

@@ -59,15 +59,15 @@ module Warden
 
           p.callback {
             unless p.success?
-              # Log last line of stderr. Don't use this as message for the raised
-              # error to prevent internal information from leaking to clients.
-              error "stderr: #{p.err.split(/\n/).last.inspect}"
+              # Log stderr. Don't use this as message for the raised error to
+              # prevent internal information from leaking to clients.
+              error "stderr: #{p.err.inspect}"
 
               err = WardenError.new("command exited with failure")
               set_deferred_failure(err)
+            else
+              set_deferred_success(p.out)
             end
-
-            set_deferred_success(p.out)
           }
 
           p.errback { |err|

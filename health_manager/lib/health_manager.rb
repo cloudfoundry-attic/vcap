@@ -77,6 +77,10 @@ class HealthManager
   RUNNING_STATES    = Set.new([STARTING, RUNNING])
   RESTART_REASONS   = Set.new([CRASHED, DEA_SHUTDOWN, DEA_EVACUATION])
 
+
+  INFINITE_PRIORITY = 2_000_000_000
+
+
   def self.start(options)
     health_manager = new(options)
     health_manager.run
@@ -95,7 +99,7 @@ class HealthManager
     @restart_timeout = config['intervals']['restart_timeout']
     @stable_state = config['intervals']['stable_state']
     @nats_ping = config['intervals']['nats_ping'] || 10
-    @request_queue_interval = config['intervals']['request_queue'] || 0.02
+    @dequeueing_rate = config['dequeueing_rate'] || 50
     @database_environment = config['database_environment']
 
     @droplets = {}
@@ -149,6 +153,7 @@ class HealthManager
       @logger.error "Eventmachine problem, #{e}"
       @logger.error("#{e.backtrace.join("\n")}")
       @logger.error(e)
+      exit!
     end
 
     NATS.start(:uri => @config['mbus']) do
@@ -412,8 +417,11 @@ class HealthManager
               index_entry[:state] = DOWN
               index_entry[:state_timestamp] = Time.now.to_i
               index_entry[:last_action] = now
+
+              high_priority = (exit_message['reason'] == DEA_EVACUATION)
+
               @logger.info("Preparing to start instance (app_id=#{droplet_id}, index=#{index}). Reason: Instance exited with reason '#{exit_message['reason']}'.")
-              start_instances(droplet_id, [index])
+              start_instances(droplet_id, [index], high_priority)
             end
           end
         end
@@ -632,7 +640,7 @@ class HealthManager
     entry_updated
   end
 
-  def start_instances(droplet_id, indices)
+  def start_instances(droplet_id, indices, high_priority = false)
     droplet_entry = @droplets[droplet_id]
     start_message = {
       :droplet => droplet_id,
@@ -643,27 +651,24 @@ class HealthManager
     }
 
     if queue_requests?
-      queue_request(start_message)
+      queue_request(start_message, high_priority)
     else
       #old behavior: send the message immediately
       NATS.publish('cloudcontrollers.hm.requests', start_message.to_json)
       @logger.info("Requesting the start of extra instances: #{start_message}")
     end
-
-
   end
 
-  def queue_request message
+  def queue_request(message, high_priority)
     #the priority is higher for older items, to de-prioritize flapping items
     priority = Time.now.to_i - message[:last_updated]
     priority = 0 if priority < 0 #avoid timezone drama
-
+    priority = INFINITE_PRIORITY if high_priority
     key = message.clone
     key.delete :last_updated
     @logger.info("Queueing priority '#{priority}' request: #{message}, using key: #{key}.  Queue size: #{@request_queue.size}")
     @request_queue.insert(message, priority, key)
   end
-
 
   def stop_instances(droplet_id, instances)
     droplet_entry = @droplets[droplet_id]
@@ -707,14 +712,20 @@ class HealthManager
     end
 
     if queue_requests?
-      EM.add_periodic_timer(@request_queue_interval) do
-        unless @request_queue.empty?
-          #TODO: if STOP requests are also queued, refactor this to be generic, particularly the log message
-          start_message = encode_json(@request_queue.remove)
-          NATS.publish('cloudcontrollers.hm.requests', start_message)
-          @logger.info("Requesting the start of missing instances: #{start_message}")
-          VCAP::Component.varz[:queue_length] = @request_queue.size
-        end
+      EM.add_periodic_timer(1) do
+        deque_a_batch_of_requests(@dequeueing_rate)
+      end
+    end
+  end
+
+  def deque_a_batch_of_requests(num_requests)
+    num_requests.times do
+      unless @request_queue.empty?
+        #TODO: if STOP requests are also queued, refactor this to be generic, particularly the log message
+        start_message = encode_json(@request_queue.remove)
+        NATS.publish('cloudcontrollers.hm.requests', start_message)
+        @logger.info("Requesting the start of missing instances: #{start_message}")
+        VCAP::Component.varz[:queue_length] = @request_queue.size
       end
     end
   end
@@ -800,7 +811,7 @@ class HealthManager
   end
 
   def queue_requests?
-    @request_queue_interval != 0
+    @dequeueing_rate != 0
   end
 end
 

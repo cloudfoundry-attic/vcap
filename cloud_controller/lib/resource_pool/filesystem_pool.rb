@@ -38,6 +38,19 @@ class FilesystemPool < ResourcePool
     true
   end
 
+  def resource_sizes(resources)
+    sizes = []
+    resources.each do |descriptor|
+      resource_path = path_from_sha1(descriptor[:sha1])
+      if File.exists?(resource_path)
+        entry = descriptor.dup
+        entry[:size] = File.size(resource_path)
+        sizes << entry
+      end
+    end
+    sizes
+  end
+
   private
 
   def overwrite_destination_with!(descriptor, destination)
