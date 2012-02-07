@@ -77,6 +77,13 @@ module WardenRepl
         words = shellwords(line)
         next if words.empty?
         save_history
+
+        #convert shell commands into a single string
+        if ['run','show','spawn'].member? words[0]
+         words[2] = words[2..-1].join(' ')
+         words.slice!(3) if words.size > 3
+        end
+
         case words[0]
         when 'help'
           puts HELP_MESSAGE
