@@ -1,10 +1,9 @@
 #!/bin/bash
 
-self=$(readlink -f ${0})
-cd $(dirname ${self})
-
-# Prevents globs from expanding to themselves if nothing matches
+set -o nounset
+set -o errexit
 shopt -s nullglob
+cd $(dirname "${0}")
 
 for pid in pids/*; do
   [ -f $pid ] && kill -9 $(basename ${pid})
