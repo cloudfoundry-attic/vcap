@@ -297,7 +297,7 @@ module DEA
     end
 
     def space_available?
-      @num_clients < @max_clients and @reserved_mem < @max_memory
+      @num_clients < @max_clients && @reserved_mem < @max_memory
     end
 
     def send_advertise
