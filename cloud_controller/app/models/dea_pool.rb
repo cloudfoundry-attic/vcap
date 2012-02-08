@@ -1,5 +1,5 @@
 class DEAPool
-  DEA_EXPIRATION_TIME = 10
+  DEA_PROFILE_EXPIRATION_TIME = 10
 
   class << self
     def dea_profiles
@@ -19,7 +19,7 @@ class DEAPool
          entry = dea_profiles[key]
          dea = entry[:profile]
          last_update = entry[:time]
-         if Time.now.to_i - last_update > DEA_EXPIRATION_TIME
+         if Time.now.to_i - last_update > DEA_PROFILE_EXPIRATION_TIME
            CloudController.logger.debug("DEA #{dea[:id]} expired from pool.")
            dea_profiles.delete(key)
            next
