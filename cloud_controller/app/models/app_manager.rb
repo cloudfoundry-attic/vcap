@@ -197,7 +197,7 @@ class AppManager
         message[:console] = @app.metadata[:console]
         (index...max_to_start).each do |i|
           message[:index] = i
-          dea_id = DEAPool.find_dea(message)
+          dea_id = find_dea_for(message)
           if dea_id
             json = Yajl::Encoder.encode(message)
             CloudController.logger.debug("Sending start message #{json} to DEA #{dea_id}")
@@ -455,7 +455,7 @@ class AppManager
         message = message.dup
         message[:executableUri] = download_app_uri(message[:executableUri])
         message[:index] = index
-        dea_id = DEAPool.find_dea(message)
+        dea_id = find_dea_for(message)
         if dea_id
           json = Yajl::Encoder.encode(message)
           CloudController.logger.debug("Sending start message #{json} to DEA #{dea_id}")
@@ -469,18 +469,22 @@ class AppManager
   end
 
   def find_dea_for(message)
-    find_dea_message = {
-      :droplet => message[:droplet],
-      :limits => message[:limits],
-      :name => message[:name],
-      :runtime => message[:runtime],
-      :sha => message[:sha1]
-    }
-    json_msg = Yajl::Encoder.encode(find_dea_message)
-    result = NATS.timed_request('dea.discover', json_msg, :timeout => 2).first
-    return nil if result.nil?
-    CloudController.logger.debug "Received #{result.inspect} in response to dea.discover request"
-    Yajl::Parser.parse(result, :symbolize_keys => true)[:id]
+    if AppConfig[:new_initial_placement]
+     DEAPool.find_dea(message)
+    else
+      find_dea_message = {
+        :droplet => message[:droplet],
+        :limits => message[:limits],
+        :name => message[:name],
+        :runtime => message[:runtime],
+        :sha => message[:sha1]
+      }
+      json_msg = Yajl::Encoder.encode(find_dea_message)
+      result = NATS.timed_request('dea.discover', json_msg, :timeout => 2).first
+      return nil if result.nil?
+      CloudController.logger.debug "Received #{result.inspect} in response to dea.discover request"
+      Yajl::Parser.parse(result, :symbolize_keys => true)[:id]
+    end
   end
 
   def stop_instances(indices)
