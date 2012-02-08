@@ -7,21 +7,19 @@ cd $(dirname "${0}")
 
 # Determine artifact path for this job
 mkdir -p root/tmp
-tmp=$(mktemp -d $(readlink -f root/tmp/runner-XXXXXX))
-echo -n ${tmp}
+tmp=$(mktemp -d root/tmp/runner-XXXXXX)
 
-# Run script with PWD=root. Bash closes stdin for processes that is moves to
-# the background so we need to pass the script via a temporary file.
-cd root
-cat - > ${tmp}/stdin
-env -i bash < ${tmp}/stdin 1> ${tmp}/stdout 2> ${tmp}/stderr &
-cd ..
+# Echo the absolute artifact path so the caller can pick up the artifacts
+echo -n ${PWD}/${tmp}
 
 # Store PID of this process while subshell runs
-child_pid=${!}
-parent_pid=${$}
-touch pids/${parent_pid}
-wait ${child_pid} 2> /dev/null
-child_exit_status=${?}
-rm pids/${parent_pid}
-echo ${child_exit_status} > ${tmp}/exit_status
+touch pids/${$}
+trap "rm -f pids/${$}" EXIT
+
+# Run script with PWD=root
+cd root
+
+# Disable errexit so the exit status can be captured and stored
+set +o errexit
+env -i bash 1> ../${tmp}/stdout 2> ../${tmp}/stderr
+echo ${?} > ../${tmp}/exit_status
