@@ -18,7 +18,7 @@ shared_context :server_linux do
   }
 end
 
-describe "server implementing Linux containers", :needs_root => true do
+describe "server implementing Linux containers", :platform => "linux", :needs_root => true do
   it_behaves_like "a warden server", Warden::Container::Linux
 
   describe 'should allow setting memory limits' do
