@@ -141,8 +141,8 @@ module DEA
       end
 
       @nats_uri = config['mbus']
-      @heartbeat_interval = config['intervals']['heartbeat']
-      @advertise_interval = config['intervals']['advertise']
+      @heartbeat_interval = config['intervals']['heartbeat'] || 10
+      @advertise_interval = config['intervals']['advertise'] || 5
 
       # XXX(mjp) - Ugh, this is needed for VCAP::Component.register(). Find a better solution when time permits.
       @config = config.dup()
