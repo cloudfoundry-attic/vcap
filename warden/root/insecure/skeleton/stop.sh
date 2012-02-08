@@ -1,8 +1,9 @@
 #!/bin/bash
 
-# Change to directory that holds this script
-self=$(readlink -f ${0})
-cd $(dirname ${self})
+set -o nounset
+set -o errexit
+shopt -s nullglob
+cd $(dirname "${0}")
 
 # Kill running scripts
 ./killprocs.sh
