@@ -7,6 +7,8 @@ module Warden
     def self.setup_logger(config = {})
       VCAP::Logging.reset
       VCAP::Logging.setup_from_config(config)
+
+      # Override existing logger instance
       @logger = VCAP::Logging.logger("warden")
     end
 
@@ -14,14 +16,12 @@ module Warden
       @logger ||= setup_logger(:level => :info)
     end
 
-    def method_missing(sym, *args)
-      if Logger.logger.respond_to?(sym)
+    VCAP::Logging::LOG_LEVELS.each_key do |level|
+      define_method(level) do |*args|
         prefix = logger_prefix_from_stack caller(1).first
         fmt = args.shift
         fmt = "%s: %s" % [prefix, fmt] if prefix
-        Logger.logger.send(sym, fmt, *args)
-      else
-        super
+        Logger.logger.send(level, fmt, *args)
       end
     end
 
