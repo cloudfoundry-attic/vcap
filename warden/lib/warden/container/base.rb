@@ -115,14 +115,42 @@ module Warden
         @events      = Set.new
         @limits      = {}
 
+        on(:before_create) {
+          check_state_in(State::Born)
+
+          self.state = State::Active
+        }
+
         on(:after_create) {
           # Clients should be able to look this container up
           self.class.registry[handle] = self
         }
 
+        on(:before_stop) {
+          check_state_in(State::Active)
+
+          self.state = State::Stopped
+        }
+
+        on(:after_stop) {
+          # Here for symmetry
+        }
+
         on(:before_destroy) {
+          check_state_in(State::Active, State::Stopped)
+
           # Clients should no longer be able to look this container up
           self.class.registry.delete(handle)
+
+          unless self.state == State::Stopped
+            self.stop
+          end
+
+          self.state = State::Destroyed
+        }
+
+        on(:after_destroy) {
+          # Here for symmetry
         }
 
         on(:finalize) {
@@ -181,10 +209,6 @@ module Warden
       def create
         debug "entry"
 
-        check_state_in(State::Born)
-
-        self.state = State::Active
-
         emit(:before_create)
         do_create
         emit(:after_create)
@@ -205,10 +229,6 @@ module Warden
 
       def stop
         debug "entry"
-
-        check_state_in(State::Active)
-
-        self.state = State::Stopped
 
         emit(:before_stop)
         do_stop
@@ -231,17 +251,13 @@ module Warden
       def destroy
         debug "entry"
 
-        check_state_in(State::Active, State::Stopped)
-
-        unless self.state == State::Stopped
-          self.stop
-        end
-
-        self.state = State::Destroyed
-
         emit(:before_destroy)
         do_destroy
         emit(:after_destroy)
+
+        # Trigger separate "finalize" event so hooks in "after_destroy" still
+        # have access to the allocated resources (e.g. the container's handle
+        # via the network allocation)
         emit(:finalize)
 
         "ok"
