@@ -1636,7 +1636,7 @@ module DEA
         expanded_exec.strip!
 
         # java prints to stderr, so munch them both..
-        version_check = `#{expanded_exec} #{version_flag} 2>&1`.strip!
+        version_check = `env -i #{expanded_exec} #{version_flag} 2>&1`.strip!
         unless $? == 0
           @logger.info("  #{pname} FAILED, executable '#{runtime['executable']}' not found")
           next
@@ -1648,7 +1648,7 @@ module DEA
         if /#{runtime['version']}/ =~ version_check
           # Additional checks should return true
           if runtime['additional_checks']
-            additional_check = `#{runtime['executable']} #{runtime['additional_checks']} 2>&1`
+            additional_check = `env -i #{runtime['executable']} #{runtime['additional_checks']} 2>&1`
             unless additional_check =~ /true/i
               @logger.info("  #{pname} FAILED, additional checks failed")
             end
