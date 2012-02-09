@@ -1,5 +1,4 @@
 #include <sched.h>
-#include <pty.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
@@ -14,19 +13,12 @@
 #include <assert.h>
 #include <errno.h>
 #include "barrier.h"
-#include "util.h"
+#include "console.h"
 
 /* This function doesn't get declared anywhere... */
 extern int pivot_root(const char *new_root, const char *put_old);
 
-typedef struct console_s console_t;
 typedef struct clone_helper_s clone_helper_t;
-
-struct console_s {
-  int master;
-  int slave;
-  char path[MAXPATHLEN];
-};
 
 struct clone_helper_s {
   int argc;
@@ -49,41 +41,6 @@ int child_die_with_parent(clone_helper_t *h) {
   rv = prctl(PR_SET_PDEATHSIG, SIGKILL);
   if (rv == -1) {
     fprintf(stderr, "prctl: %s\n", strerror(errno));
-    return -1;
-  }
-
-  return 0;
-}
-
-int child_setup_dev_console(clone_helper_t *h) {
-  const char *path = "dev/console";
-  struct stat st;
-  int rv;
-
-  rv = stat(path, &st);
-  if (rv == -1) {
-    fprintf(stderr, "stat: %s\n", strerror(errno));
-    return -1;
-  }
-
-  /* Mirror user/group */
-  rv = chown(h->console.path, st.st_uid, st.st_gid);
-  if (rv == -1) {
-    fprintf(stderr, "chown: %s\n", strerror(errno));
-    return -1;
-  }
-
-  /* Mirror permissions */
-  rv = chmod(h->console.path, st.st_mode);
-  if (rv == -1) {
-    fprintf(stderr, "chmod: %s\n", strerror(errno));
-    return -1;
-  }
-
-  /* Bind pty to /dev/console in the new root */
-  rv = mount(h->console.path, path, NULL, MS_BIND, NULL);
-  if (rv == -1) {
-    fprintf(stderr, "mount: %s\n", strerror(errno));
     return -1;
   }
 
@@ -190,8 +147,8 @@ int start(void *data) {
     exit(1);
   }
 
-  /* Redirect /dev/console to the pty the parent has set up */
-  rv = child_setup_dev_console(h);
+  /* Mount the pty the parent set up on /dev/console */
+  rv = console_mount(&h->console, "dev/console");
   if (rv == -1) {
     exit(1);
   }
@@ -279,38 +236,6 @@ err:
   return -1;
 }
 
-int parent_openpty(console_t *c) {
-  int rv;
-
-  rv = openpty(&c->master, &c->slave, c->path, NULL, NULL);
-  if (rv == -1) {
-    fprintf(stderr, "openpty: %s\n", strerror(errno));
-    return -1;
-  }
-
-  /* Don't leak master fd */
-  if (fcntl_mix_cloexec(c->master) == -1) {
-    goto err;
-  }
-
-  /* Don't leak slave fd */
-  if (fcntl_mix_cloexec(c->slave) == -1) {
-    goto err;
-  }
-
-  return 0;
-
-err:
-  close(c->master);
-  close(c->slave);
-  return -1;
-}
-
-int parent_create_console(clone_helper_t *h) {
-  console_t *c = &h->console;
-  return parent_openpty(c);
-}
-
 int parent_clone_child(clone_helper_t *h) {
   long pagesize;
   void *stack;
@@ -341,52 +266,6 @@ int parent_clone_child(clone_helper_t *h) {
   h->pid = pid;
 
   return 0;
-}
-
-int daemon_log_console(clone_helper_t *h) {
-  char path[MAXPATHLEN];
-  size_t len;
-  int fd;
-
-  len = snprintf(path, sizeof(path), "%s/%s", h->asset_path, "console.log");
-  assert(len < sizeof(path));
-
-  fd = open(path, O_CREAT | O_WRONLY | O_CLOEXEC, S_IRUSR | S_IWUSR);
-  if (fd == -1) {
-    fprintf(stderr, "open: %s\n", strerror(errno));
-    goto err;
-  }
-
-  char buf[1024];
-  int nread, nwritten, aux;
-
-  while (1) {
-    nread = read(h->console.master, buf, sizeof(buf));
-    if (nread == -1) {
-      fprintf(stderr, "read: %s\n", strerror(errno));
-      exit(1);
-    } else if (nread == 0) {
-      fprintf(stderr, "read: eof\n");
-      exit(1);
-    }
-
-    nwritten = 0;
-    while (nwritten < nread) {
-      aux = write(fd, buf + nwritten, nread - nwritten);
-      if (aux == -1) {
-        fprintf(stderr, "write: %s\n", strerror(errno));
-        exit(1);
-      }
-
-      nwritten += aux;
-    }
-  }
-
-  return 0;
-
-err:
-  if (fd >= 0) close(fd);
-  return -1;
 }
 
 int daemonize(clone_helper_t *h) {
@@ -455,7 +334,13 @@ int daemonize(clone_helper_t *h) {
   barrier_close(&h->barrier_parent);
   barrier_close(&h->barrier_child);
 
-  daemon_log_console(h);
+  char console_log_path[MAXPATHLEN];
+  size_t len;
+
+  len = snprintf(console_log_path, sizeof(console_log_path), "%s/%s", h->asset_path, "console.log");
+  assert(len < sizeof(console_log_path));
+
+  console_log(&h->console, console_log_path);
   exit(0);
 }
 
@@ -477,7 +362,7 @@ int main(int argc, char **argv) {
   h->argc = argc;
   h->argv = argv;
 
-  rv = parent_create_console(h);
+  rv = console_open(&h->console);
   if (rv == -1) {
     fprintf(stderr, "unable to create console\n");
     exit(1);
