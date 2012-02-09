@@ -179,6 +179,8 @@ module Warden
       end
 
       def create
+        debug "entry"
+
         check_state_in(State::Born)
 
         self.state = State::Active
@@ -188,6 +190,13 @@ module Warden
         emit(:after_create)
 
         handle
+
+      rescue => err
+        warn "error: #{err.message}"
+        raise
+
+      ensure
+        debug "exit"
       end
 
       def do_create
@@ -195,6 +204,8 @@ module Warden
       end
 
       def stop
+        debug "entry"
+
         check_state_in(State::Active)
 
         self.state = State::Stopped
@@ -204,6 +215,13 @@ module Warden
         emit(:after_stop)
 
         "ok"
+
+      rescue => err
+        warn "error: #{err.message}"
+        raise
+
+      ensure
+        debug "exit"
       end
 
       def do_stop
@@ -211,6 +229,8 @@ module Warden
       end
 
       def destroy
+        debug "entry"
+
         check_state_in(State::Active, State::Stopped)
 
         unless self.state == State::Stopped
@@ -225,6 +245,13 @@ module Warden
         emit(:finalize)
 
         "ok"
+
+      rescue => err
+        warn "error: #{err.message}"
+        raise
+
+      ensure
+        debug "exit"
       end
 
       def do_destroy
@@ -232,6 +259,8 @@ module Warden
       end
 
       def spawn(script)
+        debug "entry"
+
         check_state_in(State::Active)
 
         job = create_job(script)
@@ -239,9 +268,18 @@ module Warden
 
         # Return job id to caller
         job.job_id
+
+      rescue => err
+        warn "error: #{err.message}"
+        raise
+
+      ensure
+        debug "exit"
       end
 
       def link(job_id)
+        debug "entry"
+
         check_state_in(State::Active, State::Stopped)
 
         job = jobs[job_id.to_s]
@@ -250,25 +288,61 @@ module Warden
         end
 
         job.yield
+
+      rescue => err
+        warn "error: #{err.message}"
+        raise
+
+      ensure
+        debug "exit"
       end
 
       def run(script)
+        debug "entry"
+
         link(spawn(script))
+
+      rescue => err
+        warn "error: #{err.message}"
+        raise
+
+      ensure
+        debug "exit"
       end
 
       def net_in
+        debug "entry"
+
         check_state_in(State::Active)
 
         do_net_in
+
+      rescue => err
+        warn "error: #{err.message}"
+        raise
+
+      ensure
+        debug "exit"
       end
 
       def net_out(spec)
+        debug "entry"
+
         check_state_in(State::Active)
 
         do_net_out(spec)
+
+      rescue => err
+        warn "error: #{err.message}"
+        raise
+
+      ensure
+        debug "exit"
       end
 
       def get_limit(limit_name)
+        debug "entry"
+
         check_state_in(State::Active, State::Stopped)
 
         getter = "get_limit_#{limit_name}"
@@ -277,9 +351,18 @@ module Warden
         else
           raise WardenError.new("Unknown limit #{limit_name}")
         end
+
+      rescue => err
+        warn "error: #{err.message}"
+        raise
+
+      ensure
+        debug "exit"
       end
 
       def set_limit(limit_name, args)
+        debug "entry"
+
         check_state_in(State::Active)
 
         setter = "set_limit_#{limit_name}"
@@ -288,12 +371,28 @@ module Warden
         else
           raise WardenError.new("Unknown limit #{limit_name}")
         end
+
+      rescue => err
+        warn "error: #{err.message}"
+        raise
+
+      ensure
+        debug "exit"
       end
 
       def info
+        debug "entry"
+
         check_state_in(State::Active, State::Stopped)
 
         get_info
+
+      rescue => err
+        warn "error: #{err.message}"
+        raise
+
+      ensure
+        debug "exit"
       end
 
       def get_info
