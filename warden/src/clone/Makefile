@@ -8,7 +8,7 @@ clean:
 
 .PHONY: all clean
 
-clone: clone.o
+clone: clone.o barrier.o util.o
 		$(CC) -o $@ -lutil $^
 
 %.o: %.c
