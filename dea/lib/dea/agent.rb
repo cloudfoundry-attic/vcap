@@ -73,6 +73,10 @@ module DEA
     # How long to wait in between logging the structure of the apps directory in the event that a du takes excessively long
     APPS_DUMP_INTERVAL = 30*60
 
+
+    DROPLET_FS_PERCENT_USED_THRESHOLD = 95
+    DROPLET_FS_PERCENT_USED_UPDATE_INTERVAL = 2
+
     def initialize(config)
       VCAP::Logging.setup_from_config(config['logging'])
       @logger = VCAP::Logging.logger('dea')
@@ -116,6 +120,13 @@ module DEA
       @apps_dir       = File.join(@droplet_dir, 'apps')
       @db_dir         = File.join(@droplet_dir, 'db')
       @app_state_file = File.join(@db_dir, APP_STATE_FILE)
+
+      # The DEA will no longer respond to discover/start requests once this usage
+      # threshold (in percent) has been exceeded on the filesystem housing the
+      # base_dir.
+      @droplet_fs_percent_used_threshold =
+        config['droplet_fs_percent_used_threshold'] || DROPLET_FS_PERCENT_USED_THRESHOLD
+      @dropet_fs_percent_used = 0
 
       #prevent use of shared directory for droplets even if available.
       @force_http_sharing = config['force_http_sharing']
@@ -205,6 +216,7 @@ module DEA
       ['TERM', 'INT', 'QUIT'].each { |s| trap(s) { shutdown() } }
       trap('USR2') { evacuate_apps_then_quit() }
 
+
       NATS.on_error do |e|
         @logger.error("EXITING! NATS error: #{e}")
         @logger.error(e)
@@ -219,8 +231,11 @@ module DEA
         @logger.error(e)
       end
 
-      NATS.start(:uri => @nats_uri) do
+      # Calculate how much disk is available before we respond to any messages
+      update_droplet_fs_usage(:blocking => true)
+      @logger.info("Initial usage of droplet fs is: #{@droplet_fs_percent_used}%")
 
+      NATS.start(:uri => @nats_uri) do
         # Register ourselves with the system
         status_config = @config['status'] || {}
         VCAP::Component.register(:type => 'DEA',
@@ -256,6 +271,7 @@ module DEA
         EM.add_timer(MONITOR_INTERVAL) { monitor_apps }
         EM.add_periodic_timer(CRASHES_REAPER_INTERVAL) { crashes_reaper }
         EM.add_periodic_timer(VARZ_UPDATE_INTERVAL) { snapshot_varz }
+        EM.add_periodic_timer(DROPLET_FS_PERCENT_USED_UPDATE_INTERVAL) { update_droplet_fs_usage }
 
         NATS.publish('dea.start', @hello_message_json)
       end
@@ -343,6 +359,8 @@ module DEA
         @logger.debug('Ignoring request, shutting down.')
       elsif @num_clients >= @max_clients || @reserved_mem > @max_memory
         @logger.debug('Ignoring request, not enough resources.')
+      elsif droplet_fs_usage_threshold_exceeded?
+        @logger.warn("Droplet FS has exceeded usage threshold, ignoring request")
       else
         # Check that we properly support the runtime requested
         unless runtime_supported? message_json['runtime']
@@ -526,6 +544,9 @@ module DEA
         return
       elsif @reserved_mem + mem > @max_memory || @num_clients >= @max_clients
         @logger.info('Do not have room for this client application')
+        return
+      elsif droplet_fs_usage_threshold_exceeded?
+        @logger.warn("Droplet FS usage has exceeded the threshold")
         return
       end
 
@@ -1683,7 +1704,6 @@ module DEA
       FileUtils.rm_f(test_file)
     end
 
-
     def run_command(cmd)
       outdir = Dir.mktmpdir
       stderr_path = File.join(outdir, 'stderr.log')
@@ -1691,6 +1711,41 @@ module DEA
       stderr = File.read(stderr_path)
       FileUtils.rm_rf(outdir)
       [$?, stdout, stderr]
+    end
+
+    def droplet_fs_usage_threshold_exceeded?
+      @droplet_fs_percent_used > @droplet_fs_percent_used_threshold
+    end
+
+    def update_droplet_fs_usage(opts={})
+      df_cmd = "df #{@droplet_dir}"
+
+      cont = proc do |output, status|
+        raise "Failed executing #{df_cmd}" unless status.success?
+
+        percent_used = parse_df_percent_used(output)
+        raise "Failed parsing df output: #{output}" unless percent_used
+
+        @droplet_fs_percent_used = percent_used
+      end
+
+      if opts[:blocking]
+        output = `#{df_cmd}`
+        cont.call(output, $?)
+      else
+        EM.system(df_cmd, cont)
+      end
+    end
+
+    def parse_df_percent_used(output)
+      fields = output.strip.split(/\s+/)
+      return nil unless fields.count == 13
+
+      if fields[11] =~ /^(\d+)%$/
+        Integer($1)
+      else
+        nil
+      end
     end
 
   end
