@@ -134,6 +134,44 @@ describe 'DEA Agent' do
     end
   end
 
+  describe '#parse_df_percent_used' do
+    it 'should return the disk usage percentage as an integer' do
+      agent = make_test_agent
+      df_output =<<-EOT
+Filesystem           1K-blocks      Used Available Use% Mounted on
+/dev/sda1            147550696  83840896  56214632  60% /
+EOT
+      agent.parse_df_percent_used(df_output).should == 60
+    end
+
+    it 'should return nil on unexpected/malformed input' do
+      agent = make_test_agent
+      invalid_output = []
+      # Internal usage only calls with a single path, so we only
+      # expect two lines
+      invalid_output << <<-EOT
+Filesystem           1K-blocks      Used Available Use% Mounted on
+/dev/sda1            147550696  83840896  56214632  60% /
+/dev/sda1            147550696  83840896  56214632  60% /
+EOT
+
+      # Extra fields
+      invalid_output << <<-EOT
+Filesystem           1K-blocks      Used Available Use% Mounted on
+/dev/sda1            147550696  83840896  56214632  60% / f f
+EOT
+
+      # Missing fields
+      invalid_output << <<-EOT
+Filesystem           1K-blocks      Used Available Use% Mounted on
+/dev/sda1            147550696  83840896
+EOT
+      invalid_output.each do |out|
+        agent.parse_df_percent_used(out).should == nil
+      end
+    end
+  end
+
   def create_crashed_app(base_dir)
     apps_dir = create_apps_dir(base_dir)
     File.directory?(apps_dir).should be_true
