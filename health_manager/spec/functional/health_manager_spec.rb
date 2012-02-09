@@ -31,6 +31,9 @@ describe 'Health Manager' do
     @nats_uri = "nats://localhost:#{port}"
     @nats_server = VCAP::Spec::ForkedComponent::NatsServer.new(pid_file, port, @run_dir)
 
+
+    @nats_server.reopen_stdio = false
+
     @nats_server.start
     @nats_server.wait_ready.should be_true
 
@@ -38,9 +41,9 @@ describe 'Health Manager' do
       'mbus'         => @nats_uri,
       'local_route' => '127.0.0.1',
       'intervals'    => {
-        'database_scan' => 1, #60
+        'database_scan' => 3, #60
         'droplet_lost' => 1, #30
-        'droplets_analysis' => 1, #10
+        'droplets_analysis' => 5, #10
         'flapping_death' => 4, #3
         'flapping_timeout' => 9, #180
         'restart_timeout' => 15, #20
@@ -62,6 +65,8 @@ describe 'Health Manager' do
       new("ruby -r#{nats_timeout_path} #{hm_path} -c #{@hm_config_file}",
           @hm_cfg['pid'],@hm_cfg, @run_dir)
 
+    @hm.reopen_stdio = false
+
     @helper.prepare_tests
     receive_message 'healthmanager.start' do
       @hm.start
@@ -82,6 +87,7 @@ describe 'Health Manager' do
   end
 
   describe 'when running' do
+
     before :each do
 
     end
@@ -102,9 +108,11 @@ describe 'Health Manager' do
       app = nil
       msg = receive_message 'cloudcontrollers.hm.requests' do
         #putting enough into Expected State to trigger an instance START request
+        puts 'about to create app'
         app = @helper.make_app_with_owner_and_instance(
                                                        make_app_def( 'to_be_started_app'),
                                                        make_user_def)
+        puts 'app created'
       end
       app.should_not be_nil
       msg.should_not be_nil
@@ -169,11 +177,19 @@ describe 'Health Manager' do
       end
       NATS.start :uri => @nats_server.uri do
         NATS.subscribe(subj) do |msg|
+          puts "subscription received: #{subj} #{msg}"
           ret = msg
           EM.stop
+          puts 'EM stopped'
         end
         if block_given?
-          NATS.publish('foo') { yield }
+          puts 'publishing foo'
+          NATS.publish('foo') {
+            puts 'before yield'
+            yield
+            puts 'after yield'
+          }
+          puts 'after publishing foo'
         end
       end
     end
