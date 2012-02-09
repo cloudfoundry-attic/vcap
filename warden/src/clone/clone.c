@@ -13,6 +13,8 @@
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
+#include "barrier.h"
+#include "util.h"
 
 /* This function doesn't get declared anywhere... */
 extern int pivot_root(const char *new_root, const char *put_old);
@@ -35,40 +37,11 @@ struct clone_helper_s {
 
   console_t console;
 
-  int pipe_daemon[2];
-  int pipe_parent[2];
-  int pipe_child[2];
+  barrier_t barrier_daemon;
+  barrier_t barrier_parent;
+  barrier_t barrier_child;
   pid_t pid;
 };
-
-int pipe_wakeup(int pipe[2]) {
-  int rv;
-  char byte = 'x';
-
-  rv = write(pipe[1], &byte, 1);
-  if (rv == -1) {
-    fprintf(stderr, "write: %s\n", strerror(errno));
-    return -1;
-  }
-
-  return 0;
-}
-
-int pipe_wait(int pipe[2]) {
-  char buf[1];
-  int nread;
-
-  nread = read(pipe[0], buf, sizeof(buf));
-  if (nread == -1) {
-    fprintf(stderr, "read: %s\n", strerror(errno));
-    return -1;
-  } else if (nread == 0) {
-    fprintf(stderr, "read: eof\n");
-    return -1;
-  }
-
-  return 0;
-}
 
 int child_die_with_parent(clone_helper_t *h) {
   int rv;
@@ -206,7 +179,7 @@ int start(void *data) {
   }
 
   /* Wait for signal from parent */
-  rv = pipe_wait(h->pipe_parent);
+  rv = barrier_wait(&h->barrier_parent);
   if (rv == -1) {
     exit(1);
   }
@@ -247,7 +220,7 @@ int start(void *data) {
   }
 
   /* Signal parent that its child is about to exec */
-  rv = pipe_wakeup(h->pipe_child);
+  rv = barrier_signal(&h->barrier_child);
   if (rv == -1) {
     exit(1);
   }
@@ -256,55 +229,6 @@ int start(void *data) {
   execvp(argv[0], argv);
   fprintf(stderr, "execvp: %s\n", strerror(errno));
   exit(1);
-}
-
-int fcntl_mix_cloexec(int fd) {
-  int rv;
-
-  rv = fcntl(fd, F_GETFD);
-  if (rv == -1) {
-    fprintf(stderr, "fcntl(F_GETFD): %s\n", strerror(errno));
-    return -1;
-  }
-
-  int flags = rv;
-  flags |= FD_CLOEXEC;
-
-  rv = fcntl(fd, F_SETFD, flags);
-  if (rv == -1) {
-    fprintf(stderr, "fcntl(F_SETFD): %s\n", strerror(errno));
-    return -1;
-  }
-
-  return 0;
-}
-
-int parent_setup_pipe(int pipefd[2]) {
-  int rv;
-  int aux[2] = { -1, -1 };
-
-  rv = pipe(aux);
-  if (rv == -1) {
-    fprintf(stderr, "pipe: %s\n", strerror(errno));
-    goto err;
-  }
-
-  if (fcntl_mix_cloexec(aux[0]) == -1) {
-    goto err;
-  }
-
-  if (fcntl_mix_cloexec(aux[1]) == -1) {
-    goto err;
-  }
-
-  pipefd[0] = aux[0];
-  pipefd[1] = aux[1];
-  return 0;
-
-err:
-  if (aux[0] >= 0) close(aux[0]);
-  if (aux[1] >= 0) close(aux[1]);
-  return -1;
 }
 
 int parent_setup_helper(clone_helper_t *h) {
@@ -334,17 +258,17 @@ int parent_setup_helper(clone_helper_t *h) {
     goto err;
   }
 
-  rv = parent_setup_pipe(h->pipe_daemon);
+  rv = barrier_open(&h->barrier_daemon);
   if (rv == -1) {
     goto err;
   }
 
-  rv = parent_setup_pipe(h->pipe_parent);
+  rv = barrier_open(&h->barrier_parent);
   if (rv == -1) {
     goto err;
   }
 
-  rv = parent_setup_pipe(h->pipe_child);
+  rv = barrier_open(&h->barrier_child);
   if (rv == -1) {
     goto err;
   }
@@ -509,30 +433,27 @@ int daemonize(clone_helper_t *h) {
     }
   }
 
-  rv = pipe_wakeup(h->pipe_parent);
+  rv = barrier_signal(&h->barrier_parent);
   if (rv == -1) {
     fprintf(stderr, "unable to wakeup child, did it die?\n");
     exit(1);
   }
 
-  rv = pipe_wait(h->pipe_child);
+  rv = barrier_wait(&h->barrier_child);
   if (rv == -1) {
     fprintf(stderr, "unable to receive ACK from child, did it die?\n");
     exit(1);
   }
 
   /* Notify this process' parent (don't mind failure) */
-  pipe_wakeup(h->pipe_daemon);
+  barrier_signal(&h->barrier_daemon);
 
   close(fileno(stdin));
   close(fileno(stdout));
   close(fileno(stderr));
-  close(h->pipe_daemon[0]);
-  close(h->pipe_daemon[1]);
-  close(h->pipe_parent[0]);
-  close(h->pipe_parent[1]);
-  close(h->pipe_child[0]);
-  close(h->pipe_child[1]);
+  barrier_close(&h->barrier_daemon);
+  barrier_close(&h->barrier_parent);
+  barrier_close(&h->barrier_child);
 
   daemon_log_console(h);
   exit(0);
@@ -572,16 +493,14 @@ int main(int argc, char **argv) {
     daemonize(h);
     exit(1);
   } else {
-    close(h->pipe_parent[0]);
-    close(h->pipe_parent[1]);
-    close(h->pipe_child[0]);
-    close(h->pipe_child[1]);
+    barrier_close(&h->barrier_parent);
+    barrier_close(&h->barrier_child);
 
     /* Only close write side of daemon notification pipe.
      * todo: explore options different than pipes for synchronization */
-    close(h->pipe_daemon[1]);
+    barrier_close_signal(&h->barrier_daemon);
 
-    rv = pipe_wait(h->pipe_daemon);
+    rv = barrier_wait(&h->barrier_daemon);
     if (rv == -1) {
       fprintf(stderr, "error waiting for daemon\n");
       exit(1);
