@@ -2,6 +2,11 @@
 # Base directory where all applications are staged and hosted
 base_dir: /var/vcap.local/dea
 
+# The DEA will no longer respond to discover/start requests once
+# this usage threshold (in percent) has been exceeded on the filesystem housing
+# the base_dir.
+droplet_fs_percent_used_threshold: 95
+
 # Local_route is the IP address of a well known server on your network, it
 # is used to choose the right ip address (think of hosts that have multiple nics
 # and IP addresses assigned to them) of the host running the DEA. Default
