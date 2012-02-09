@@ -2,7 +2,7 @@ include_attributes "uaadb"
 default[:uaadb][:host] = "localhost"
 
 # varz password => "varzclientsecret"
-default[:uaa][:varz][:secret] = "$2a$08$x7OrEpKbVFTyg.pwEmQ48.I486F08gKCi5JzhZxhAEjotnpX2kgdO"
+default[:uaa][:varz][:password] = "varzclientsecret"
 
 # scim password => "scimsecret"
 default[:uaa][:scim][:secret] = "$2a$08$duCE9bFm.duhfe6IrjC0Q.zIvJ9DfjBPhCcuJDj9fUVXaNjNeK5fi"
