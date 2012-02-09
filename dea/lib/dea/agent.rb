@@ -1206,11 +1206,11 @@ module DEA
         instance[:state] = :STOPPED unless instance[:state] == :CRASHED
         instance[:state_timestamp] = Time.now.to_i
         stop_cmd = File.join(instance[:dir], 'stop')
-        stop_cmd = "su -c #{stop_cmd} #{username}" if @secure
         stop_cmd = "#{stop_cmd} #{instance[:pid]} 2> /dev/null"
+        stop_cmd = "su -c \"#{stop_cmd}\" #{username}" if @secure
 
         unless (RUBY_PLATFORM =~ /darwin/ and @secure)
-          @logger.debug("Executing stop script: '#{stop_cmd}'")
+          @logger.debug("Executing stop script: '#{stop_cmd}', instance state is #{instance[:state]}")
           # We can't make 'stop_cmd' into EM.system because of a race with
           # 'cleanup_droplet'
           @logger.debug("Stopping instance PID:#{instance[:pid]}")
