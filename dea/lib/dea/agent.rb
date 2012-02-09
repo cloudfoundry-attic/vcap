@@ -660,6 +660,7 @@ module DEA
         exec_operation = proc do |process|
           process.send_data("cd #{instance_dir}\n")
           if @secure || @enforce_ulimit
+            process.send_data("renice 0 $$\n")
             process.send_data("ulimit -m #{mem_kbytes} 2> /dev/null\n")  # ulimit -m takes kb, soft enforce
             process.send_data("ulimit -v 3000000 2> /dev/null\n") # virtual memory at 3G, this will be enforced
             process.send_data("ulimit -n #{num_fds} 2> /dev/null\n")
