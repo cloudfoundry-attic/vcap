@@ -1205,12 +1205,14 @@ module DEA
       if instance[:pid] || [:STARTING, :RUNNING].include?(instance[:state])
         instance[:state] = :STOPPED unless instance[:state] == :CRASHED
         instance[:state_timestamp] = Time.now.to_i
-        stop_cmd = File.join(instance[:dir], 'stop')
-        stop_cmd = "su -c #{stop_cmd} #{username}" if @secure
-        stop_cmd = "#{stop_cmd} #{instance[:pid]} 2> /dev/null"
+        stop_script = File.join(instance[:dir], 'stop')
+        insecure_stop_cmd = "#{stop_script} #{instance[:pid]} 2> /dev/null"
+        stop_cmd =if @secure
+                    "su -c \"#{insecure_stop_cmd}\" #{username}"
+                  else insecure_stop_cmd end
 
         unless (RUBY_PLATFORM =~ /darwin/ and @secure)
-          @logger.debug("Executing stop script: '#{stop_cmd}'")
+          @logger.debug("Executing stop script: '#{stop_cmd}', instance state is #{instance[:state]}")
           # We can't make 'stop_cmd' into EM.system because of a race with
           # 'cleanup_droplet'
           @logger.debug("Stopping instance PID:#{instance[:pid]}")
@@ -1636,7 +1638,7 @@ module DEA
         expanded_exec.strip!
 
         # java prints to stderr, so munch them both..
-        version_check = `#{expanded_exec} #{version_flag} 2>&1`.strip!
+        version_check = `env -i #{expanded_exec} #{version_flag} 2>&1`.strip!
         unless $? == 0
           @logger.info("  #{pname} FAILED, executable '#{runtime['executable']}' not found")
           next
@@ -1648,7 +1650,7 @@ module DEA
         if /#{runtime['version']}/ =~ version_check
           # Additional checks should return true
           if runtime['additional_checks']
-            additional_check = `#{runtime['executable']} #{runtime['additional_checks']} 2>&1`
+            additional_check = `env -i #{runtime['executable']} #{runtime['additional_checks']} 2>&1`
             unless additional_check =~ /true/i
               @logger.info("  #{pname} FAILED, additional checks failed")
             end
