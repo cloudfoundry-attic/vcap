@@ -1,5 +1,4 @@
 require "warden/server"
-require "warden/container/linux"
 require "warden/network"
 
 require "spec_helper"

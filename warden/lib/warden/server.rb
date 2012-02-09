@@ -2,8 +2,7 @@ require "warden/network"
 require "warden/event_emitter"
 require "warden/logger"
 require "warden/errors"
-require "warden/container/linux"
-require "warden/container/insecure"
+require "warden/container"
 require "warden/pool/network_pool"
 
 require "eventmachine"
@@ -36,9 +35,8 @@ module Warden
       @container_root
     end
 
-    # This is hard-coded to Linux; we can be smarter using `uname`, "/etc/issue", etc.
     def self.default_container_klass
-      ::Warden::Container::Linux
+      ::Warden::Container::Insecure
     end
 
     def self.container_klass
