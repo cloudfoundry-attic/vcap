@@ -73,6 +73,14 @@ database_environment: # replaces database.yml
     adapter: <%= node[:ccdb][:adapter] %>
     timeout: 2000
     template: template0 # Required for utf8 encoding
+
+# Enable the use of the uaa
+uaa:
+  enabled: true
+  url: http://uaa.<%= node[:deployment][:domain] %>
+  resource_id: cloud_controller
+  token_secret: <%= node[:uaa][:jwt_secret] %>
+
 # App staging parameters
 staging:
   max_concurrent_stagers: 10

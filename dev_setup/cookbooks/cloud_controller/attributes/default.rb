@@ -1,4 +1,5 @@
 include_recipe "deployment"
+include_attributes "uaa"
 default[:deployment][:welcome] = "VMware's Cloud Application Platform"
 
 default[:cloud_controller][:config_file] = "cloud_controller.yml"
