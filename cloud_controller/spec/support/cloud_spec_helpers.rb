@@ -17,6 +17,16 @@ module CloudSpecHelpers
    {:protocol => "https", :appconfig_enabled => [:https_required_for_admins], :user => "user", :success => true},
    {:protocol => "https", :appconfig_enabled => [:https_required_for_admins], :user => "admin", :success => true}]
 
+  @@use_jwt_token = false
+
+  def self.use_jwt_token
+    @@use_jwt_token
+  end
+
+  def self.use_jwt_token=(use_jwt_token)
+    @@use_jwt_token = use_jwt_token
+  end
+
   # Generate a handy header Hash.
   # At minimum it requires a User or email as the first argument.
   # Optionally, you can pass a second User or email which will be the 'proxy user'.
@@ -26,7 +36,18 @@ module CloudSpecHelpers
     headers = {}
     if user
       email = User === user ? user.email : user.to_s
-      headers['HTTP_AUTHORIZATION'] = UserToken.create(email).encode
+      if @@use_jwt_token
+        @token_secret = "tokensecret" unless @tokensecret
+        token_body = {"resource_ids" => ["cloud_controller"], "foo" => "bar", "email" => email}
+        token = JWT.encode(token_body, @token_secret)
+        AppConfig[:uaa][:enabled] = true
+        AppConfig[:uaa][:url] = "http://uaa.vcap.me"
+        AppConfig[:uaa][:resource_id] = "cloud_controller"
+        AppConfig[:uaa][:token_secret] = @token_secret
+        headers['HTTP_AUTHORIZATION'] = "Bearer #{token}"
+      else
+        headers['HTTP_AUTHORIZATION'] = UserToken.create(email).encode
+      end
     end
     if proxy_user
       proxy_email = User === proxy_user ? proxy_user.email : proxy_user.to_s
