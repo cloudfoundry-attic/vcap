@@ -12,9 +12,10 @@ class UserTokensController < ApplicationController
       end
 
       token = UserToken.create(email)
-      render :json => token
     else
       raise CloudError.new(CloudError::FORBIDDEN)
     end
+
+    render :json => token
   end
 end
