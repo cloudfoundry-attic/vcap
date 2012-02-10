@@ -92,6 +92,13 @@ database_environment: # replaces database.yml
     database: db/test.sqlite3
     encoding: utf8
 
+# Enable the use of the uaa
+uaa:
+  enabled: true
+  url: http://uaa.vcap.me
+  resource_id: cloud_controller
+  token_secret: tokensecret
+
 # App staging parameters
 staging:
   max_concurrent_stagers: 10
