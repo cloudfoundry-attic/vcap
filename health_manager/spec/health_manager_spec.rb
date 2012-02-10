@@ -57,8 +57,8 @@ describe HealthManager do
   end
 
   after(:all) do
-    #::User.destroy_all
-    #::App.destroy_all
+    ::User.destroy_all
+    ::App.destroy_all
   end
 
   before(:each) do
@@ -102,55 +102,6 @@ describe HealthManager do
       }
     end
     { 'droplets' => droplets }.to_json
-  end
-
-  pending "should not do anything when everything is running" do
-    NATS.should_receive(:start).with(:uri => 'nats://localhost:4222/')
-
-    NATS.should_receive(:subscribe).with('dea.heartbeat').and_return { |_, block| @hb_block = block }
-    NATS.should_receive(:subscribe).with('droplet.exited')
-    NATS.should_receive(:subscribe).with('droplet.updated')
-    NATS.should_receive(:subscribe).with('healthmanager.status')
-    NATS.should_receive(:subscribe).with('healthmanager.health')
-    NATS.should_receive(:publish).with('healthmanager.start')
-
-    NATS.should_receive(:subscribe).with('vcap.component.discover')
-    NATS.should_receive(:publish).with('vcap.component.announce', /\{.*\}/)
-
-    EM.run do
-      @hm.stub!(:register_error_handler)
-      @hm.run
-
-      EM.add_periodic_timer(1) do
-        @hb_block.call({:droplets => [
-          {
-            :droplet => @app.id,
-            :version => @app.staged_package_hash,
-            :state => :RUNNING,
-            :instance => 'instance 1',
-            :index => 0
-          },
-          {
-            :droplet => @app.id,
-            :version => @app.staged_package_hash,
-            :state => :RUNNING,
-            :instance => 'instance 2',
-            :index => 1
-          },
-          {
-            :droplet => @app.id,
-            :version => @app.staged_package_hash,
-            :state => :RUNNING,
-            :instance => 'instance 3',
-            :index => 2
-          }
-        ]}.to_json)
-      end
-
-      EM.add_timer(4.5) do
-        EM.stop_event_loop
-      end
-    end
   end
 
   it "should detect instances that are down and send a START request" do

@@ -51,6 +51,27 @@ module CloudController
   end
 end
 
+class ProtectedActiveRecordForwarder
+
+  def initialize(model, hm, logger)
+    @model = model
+    @hm = hm
+    @logger = logger
+  end
+
+  def method_missing(method, *args, &block)
+    super unless @model.respond_to? method
+    begin
+      @model.send(method, *args, &block)
+    rescue ActiveSupport::Dependencies::Blamable => e
+      @logger.warn("Problem invoking #{@model}.#{method}: #{e}. Commencing re-connection effort.")
+      exit! unless @hm.attempt_to_connect_to_db
+      retry
+    end
+  end
+end
+
+
 CloudController.setup
 class HealthManager
   VERSION = 0.98
@@ -94,13 +115,17 @@ class HealthManager
     @flapping_timeout = config['intervals']['flapping_timeout']
     @restart_timeout = config['intervals']['restart_timeout']
     @stable_state = config['intervals']['stable_state']
+    @max_db_reconnect_wait = config['intervals']['max_db_reconnect_wait'] || 300 #up to five minutes by default
     @dequeueing_rate = config['dequeueing_rate'] || 50
     @database_environment = config['database_environment']
 
     @droplets = {}
     @request_queue = VCAP::PrioritySet.new
 
-    configure_database
+    exit! unless attempt_to_connect_to_db
+
+    @protected_app_model = ProtectedActiveRecordForwarder.new(App, self, @logger)
+    @protected_user_model = ProtectedActiveRecordForwarder.new(User, self, @logger)
 
     if config['pid']
       @pid_file = config['pid']
@@ -136,17 +161,13 @@ class HealthManager
 
   def run
     @started = Time.now.to_i
-    register_error_handler
-
     NATS.on_error do |e|
       @logger.error("NATS problem, #{e}")
       @logger.error(e)
       exit!
     end
-
     EM.error_handler do |e|
       @logger.error "Eventmachine problem, #{e}"
-      @logger.error("#{e.backtrace.join("\n")}")
       @logger.error(e)
       exit!
     end
@@ -172,6 +193,35 @@ class HealthManager
     logger = Logger.new(STDOUT)
     logger.level = Logger::INFO
     establish_database_connection(config, logger)
+  end
+
+  def attempt_to_connect_to_db
+    sleep_time = 1
+    total_sleep_time = 0
+    failure_count = 0
+    begin
+      @logger.info("connecting to database...")
+      configure_database
+      if App.count
+        @logger.info("...database connection successful")
+        return true
+      end
+    rescue ActiveSupport::Dependencies::Blamable => e
+      failure_count += 1
+      @logger.warn("Connection failed. Failure count: #{failure_count}. Reason: #{e}")
+
+      if total_sleep_time < @max_db_reconnect_wait
+        @logger.warn("Waiting for #{sleep_time} seconds before attempting to re-connect")
+        sleep sleep_time
+        total_sleep_time += sleep_time
+        sleep_time *= 2 unless sleep_time > 60
+        retry
+      else
+        @logger.error("Unable to reconnect after #{failure_count} attempts over #{total_sleep_time} seconds of waiting, giving up. Error information follows.")
+        @logger.error(e)
+        return false
+      end
+    end
   end
 
   def establish_database_connection(db_config, logger)
@@ -288,7 +338,7 @@ class HealthManager
       end
 
       # don't act if we were looking at a stale droplet
-      if update_droplet(App.find_by_id(app_id))
+      if update_droplet(@protected_app_model.find_by_id(app_id))
         if missing_indices.any? || extra_instances.any?
           @logger.info("Droplet information is stale for app id #{app_id}, not taking action.")
           @logger.info("(#{missing_indices.length} instances need to be started, #{extra_instances.length} instances need to be stopped.)")
@@ -360,7 +410,7 @@ class HealthManager
   def process_updated_message(message)
     VCAP::Component.varz[:droplet_updated_msgs_received] += 1
     droplet_id = parse_json(message)['droplet']
-    update_droplet App.find_by_id(droplet_id)
+    update_droplet @protected_app_model.find_by_id(droplet_id)
   end
 
   def process_exited_message(message)
@@ -551,15 +601,15 @@ class HealthManager
   def update_from_db
     start = Time.now
     old_droplet_ids = Set.new(@droplets.keys)
-    App.all.each do |droplet|
+    @protected_app_model.all.each do |droplet|
       old_droplet_ids.delete(droplet.id)
       update_droplet(droplet)
     end
     old_droplet_ids.each {|id| @droplets.delete(id)}
     # TODO - Devise a version of the below that works with vast numbers of apps and users.
-    VCAP::Component.varz[:total_users] = User.count
-    VCAP::Component.varz[:users] = User.all_email_addresses.map {|e| {:email => e}}
-    VCAP::Component.varz[:apps] = App.health_manager_representations
+    VCAP::Component.varz[:total_users] = @protected_user_model.count
+    VCAP::Component.varz[:users] = @protected_user_model.all_email_addresses.map {|e| {:email => e}}
+    VCAP::Component.varz[:apps] = @protected_app_model.health_manager_representations
     @logger.info("Database scan took #{elapsed_time_in_ms(start)} and found #{@droplets.size} apps")
 
     start = Time.now
@@ -569,7 +619,7 @@ class HealthManager
       :runtimes => {}
     }
 
-    App.count(:group => ["framework", "runtime", "state"]).each do |grouping, count|
+    @protected_app_model.count(:group => ["framework", "runtime", "state"]).each do |grouping, count|
       framework, runtime, state = grouping
 
       framework_stats = VCAP::Component.varz[:total][:frameworks][framework] ||= create_db_metrics
@@ -581,7 +631,7 @@ class HealthManager
       runtime_stats[:started_apps] += count if state == "STARTED"
     end
 
-    App.sum(:instances, :group => ["framework", "runtime", "state"]).each do |grouping, count|
+    @protected_app_model.sum(:instances, :group => ["framework", "runtime", "state"]).each do |grouping, count|
       framework, runtime, state = grouping
 
       framework_stats = VCAP::Component.varz[:total][:frameworks][framework] ||= create_db_metrics
@@ -593,7 +643,7 @@ class HealthManager
       runtime_stats[:started_instances] += count if state == "STARTED"
     end
 
-    App.sum("instances * memory", :group => ["framework", "runtime", "state"]).each do |grouping, count|
+    @protected_app_model.sum("instances * memory", :group => ["framework", "runtime", "state"]).each do |grouping, count|
       # memory is stored as a string
       count = count.to_i
       framework, runtime, state = grouping
@@ -676,18 +726,6 @@ class HealthManager
     }.to_json
     NATS.publish('cloudcontrollers.hm.requests', stop_message)
     @logger.info("Requesting the stop of extra instances: #{stop_message}")
-  end
-
-  def register_error_handler
-    EM.error_handler { |e|
-      if e.kind_of? NATS::Error
-        @logger.error("NATS problem, #{e}")
-        exit
-      else
-        @logger.error "Eventmachine problem, #{e}"
-        @logger.error "#{e.backtrace.join("\n")}"
-      end
-    }
   end
 
   def configure_timers
