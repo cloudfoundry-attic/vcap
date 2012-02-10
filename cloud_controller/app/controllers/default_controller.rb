@@ -10,6 +10,9 @@ class DefaultController < ApplicationController
       :description =>  AppConfig[:description],
       :allow_debug =>  AppConfig[:allow_debug]
     }
+    if (AppConfig[:uaa][:enabled] && !AppConfig[:uaa][:url].nil?)
+      info[:authenticationEndpoint] = AppConfig[:uaa][:url]
+    end
     # If there is a logged in user, give out additional information
     if user
       info[:user]       = user.email
@@ -17,6 +20,7 @@ class DefaultController < ApplicationController
       info[:usage]      = user.account_usage
       info[:frameworks] = StagingPlugin.manifests_info
     end
+    CloudController.logger.info("AAAAAAAAA #{info.inspect}" )
     render :json => info
   end
 
