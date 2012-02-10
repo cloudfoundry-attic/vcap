@@ -94,6 +94,7 @@ class HealthManager
     @flapping_timeout = config['intervals']['flapping_timeout']
     @restart_timeout = config['intervals']['restart_timeout']
     @stable_state = config['intervals']['stable_state']
+    @max_db_reconnect_wait = config['intervals']['max_db_reconnect_wait'] || 300 #up to five minutes by default
     @dequeueing_rate = config['dequeueing_rate'] || 50
     @database_environment = config['database_environment']
 
@@ -136,17 +137,13 @@ class HealthManager
 
   def run
     @started = Time.now.to_i
-    register_error_handler
-
     NATS.on_error do |e|
       @logger.error("NATS problem, #{e}")
       @logger.error(e)
       exit!
     end
-
     EM.error_handler do |e|
       @logger.error "Eventmachine problem, #{e}"
-      @logger.error("#{e.backtrace.join("\n")}")
       @logger.error(e)
       exit!
     end
@@ -172,6 +169,36 @@ class HealthManager
     logger = Logger.new(STDOUT)
     logger.level = Logger::INFO
     establish_database_connection(config, logger)
+  end
+
+  def ensure_connected(&block)
+    sleep_time = 1
+    total_sleep_time = 0
+    failure_count = 0
+    begin
+      yield
+    rescue ActiveRecord::StatementInvalid
+      # This exception is raised when a connection was previously connected, but
+      # upon executing a statement detects that the connection is actually gone.
+      # Calling #disconnect! on the connection pool will make it reconnect.
+      @logger.warn('Possibly lost db connection, attempting to re-connect')
+      ActiveRecord::Base.connection_pool.disconnect!
+      retry
+    rescue ActiveSupport::Dependencies::Blamable => e
+      @logger.warn("Attempting to recover from: #{e}")
+      failure_count += 1
+      if total_sleep_time < @max_db_reconnect_wait
+        @logger.warn("Waiting for #{sleep_time} seconds before re-attempting database operation")
+        sleep sleep_time
+        total_sleep_time += sleep_time
+        sleep_time *= 2 unless sleep_time > 60
+        retry
+      else
+        @logger.error("Unable to reconnect after #{failure_count} attempts over #{total_sleep_time} seconds of waiting, giving up. Error information follows.")
+        @logger.error(e)
+        exit!
+      end
+    end
   end
 
   def establish_database_connection(db_config, logger)
@@ -287,13 +314,15 @@ class HealthManager
         end
       end
 
-      # don't act if we were looking at a stale droplet
-      if update_droplet(App.find_by_id(app_id))
-        if missing_indices.any? || extra_instances.any?
-          @logger.info("Droplet information is stale for app id #{app_id}, not taking action.")
-          @logger.info("(#{missing_indices.length} instances need to be started, #{extra_instances.length} instances need to be stopped.)")
+      ensure_connected do
+        # don't act if we were looking at a stale droplet
+        if update_droplet(App.find_by_id(app_id))
+          if missing_indices.any? || extra_instances.any?
+            @logger.info("Droplet information is stale for app id #{app_id}, not taking action.")
+            @logger.info("(#{missing_indices.length} instances need to be started, #{extra_instances.length} instances need to be stopped.)")
+          end
+          return
         end
-        return
       end
 
       if missing_indices.any?
@@ -360,7 +389,7 @@ class HealthManager
   def process_updated_message(message)
     VCAP::Component.varz[:droplet_updated_msgs_received] += 1
     droplet_id = parse_json(message)['droplet']
-    update_droplet App.find_by_id(droplet_id)
+    ensure_connected { update_droplet App.find_by_id(droplet_id) }
   end
 
   def process_exited_message(message)
@@ -549,66 +578,70 @@ class HealthManager
   end
 
   def update_from_db
-    start = Time.now
-    old_droplet_ids = Set.new(@droplets.keys)
-    App.all.each do |droplet|
-      old_droplet_ids.delete(droplet.id)
-      update_droplet(droplet)
+    ensure_connected do
+      start = Time.now
+      old_droplet_ids = Set.new(@droplets.keys)
+
+      App.all.each do |droplet|
+        old_droplet_ids.delete(droplet.id)
+        update_droplet(droplet)
+      end
+
+      old_droplet_ids.each {|id| @droplets.delete(id)}
+      # TODO - Devise a version of the below that works with vast numbers of apps and users.
+      VCAP::Component.varz[:total_users] = User.count
+      VCAP::Component.varz[:users] = User.all_email_addresses.map {|e| {:email => e}}
+      VCAP::Component.varz[:apps] = App.health_manager_representations
+      @logger.info("Database scan took #{elapsed_time_in_ms(start)} and found #{@droplets.size} apps")
+
+      start = Time.now
+
+      VCAP::Component.varz[:total] = {
+        :frameworks => {},
+        :runtimes => {}
+      }
+
+      App.count(:group => ["framework", "runtime", "state"]).each do |grouping, count|
+        framework, runtime, state = grouping
+
+        framework_stats = VCAP::Component.varz[:total][:frameworks][framework] ||= create_db_metrics
+        framework_stats[:apps] += count
+        framework_stats[:started_apps] += count if state == "STARTED"
+
+        runtime_stats = VCAP::Component.varz[:total][:runtimes][runtime] ||= create_db_metrics
+        runtime_stats[:apps] += count
+        runtime_stats[:started_apps] += count if state == "STARTED"
+      end
+
+      App.sum(:instances, :group => ["framework", "runtime", "state"]).each do |grouping, count|
+        framework, runtime, state = grouping
+
+        framework_stats = VCAP::Component.varz[:total][:frameworks][framework] ||= create_db_metrics
+        framework_stats[:instances] += count
+        framework_stats[:started_instances] += count if state == "STARTED"
+
+        runtime_stats = VCAP::Component.varz[:total][:runtimes][runtime] ||= create_db_metrics
+        runtime_stats[:instances] += count
+        runtime_stats[:started_instances] += count if state == "STARTED"
+      end
+
+      App.sum("instances * memory", :group => ["framework", "runtime", "state"]).each do |grouping, count|
+        # memory is stored as a string
+        count = count.to_i
+        framework, runtime, state = grouping
+
+        framework_stats = VCAP::Component.varz[:total][:frameworks][framework] ||= create_db_metrics
+        framework_stats[:memory] += count
+        framework_stats[:started_memory] += count if state == "STARTED"
+
+
+        runtime_stats = VCAP::Component.varz[:total][:runtimes][runtime] ||= create_db_metrics
+        runtime_stats[:memory] += count
+        runtime_stats[:started_memory] += count if state == "STARTED"
+      end
+
+      @logger.info("Database stat scan took #{elapsed_time_in_ms(start)}")
     end
-    old_droplet_ids.each {|id| @droplets.delete(id)}
-    # TODO - Devise a version of the below that works with vast numbers of apps and users.
-    VCAP::Component.varz[:total_users] = User.count
-    VCAP::Component.varz[:users] = User.all_email_addresses.map {|e| {:email => e}}
-    VCAP::Component.varz[:apps] = App.health_manager_representations
-    @logger.info("Database scan took #{elapsed_time_in_ms(start)} and found #{@droplets.size} apps")
-
-    start = Time.now
-
-    VCAP::Component.varz[:total] = {
-      :frameworks => {},
-      :runtimes => {}
-    }
-
-    App.count(:group => ["framework", "runtime", "state"]).each do |grouping, count|
-      framework, runtime, state = grouping
-
-      framework_stats = VCAP::Component.varz[:total][:frameworks][framework] ||= create_db_metrics
-      framework_stats[:apps] += count
-      framework_stats[:started_apps] += count if state == "STARTED"
-
-      runtime_stats = VCAP::Component.varz[:total][:runtimes][runtime] ||= create_db_metrics
-      runtime_stats[:apps] += count
-      runtime_stats[:started_apps] += count if state == "STARTED"
-    end
-
-    App.sum(:instances, :group => ["framework", "runtime", "state"]).each do |grouping, count|
-      framework, runtime, state = grouping
-
-      framework_stats = VCAP::Component.varz[:total][:frameworks][framework] ||= create_db_metrics
-      framework_stats[:instances] += count
-      framework_stats[:started_instances] += count if state == "STARTED"
-
-      runtime_stats = VCAP::Component.varz[:total][:runtimes][runtime] ||= create_db_metrics
-      runtime_stats[:instances] += count
-      runtime_stats[:started_instances] += count if state == "STARTED"
-    end
-
-    App.sum("instances * memory", :group => ["framework", "runtime", "state"]).each do |grouping, count|
-      # memory is stored as a string
-      count = count.to_i
-      framework, runtime, state = grouping
-
-      framework_stats = VCAP::Component.varz[:total][:frameworks][framework] ||= create_db_metrics
-      framework_stats[:memory] += count
-      framework_stats[:started_memory] += count if state == "STARTED"
-
-
-      runtime_stats = VCAP::Component.varz[:total][:runtimes][runtime] ||= create_db_metrics
-      runtime_stats[:memory] += count
-      runtime_stats[:started_memory] += count if state == "STARTED"
-    end
-
-    @logger.info("Database stat scan took #{elapsed_time_in_ms(start)}")
   end
 
   def droplet_version(droplet)
@@ -676,18 +709,6 @@ class HealthManager
     }.to_json
     NATS.publish('cloudcontrollers.hm.requests', stop_message)
     @logger.info("Requesting the stop of extra instances: #{stop_message}")
-  end
-
-  def register_error_handler
-    EM.error_handler { |e|
-      if e.kind_of? NATS::Error
-        @logger.error("NATS problem, #{e}")
-        exit
-      else
-        @logger.error "Eventmachine problem, #{e}"
-        @logger.error "#{e.backtrace.join("\n")}"
-      end
-    }
   end
 
   def configure_timers
