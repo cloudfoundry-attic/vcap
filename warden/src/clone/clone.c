@@ -2,7 +2,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
-#include <sys/mount.h>
 #include <sys/prctl.h>
 #include <sys/param.h>
 #include <fcntl.h>
@@ -14,6 +13,7 @@
 #include <errno.h>
 #include "barrier.h"
 #include "console.h"
+#include "mount.h"
 
 /* This function doesn't get declared anywhere... */
 extern int pivot_root(const char *new_root, const char *put_old);
@@ -45,85 +45,6 @@ int child_die_with_parent(clone_helper_t *h) {
   }
 
   return 0;
-}
-
-int child_umount_old_root(const char *old_root) {
-  char path[MAXPATHLEN];
-  char **mount_lines = NULL;
-  size_t mount_len = 0;
-  int rv;
-
-  rv = snprintf(path, sizeof(path), "%s/proc/mounts", old_root);
-  assert(rv < sizeof(path));
-
-  /* Read /proc/mounts */
-  FILE *f = fopen(path, "r");
-  char buf[1024];
-
-  while (fgets(buf, sizeof(buf), f) != NULL) {
-    char *target, *eol;
-
-    target = strchr(buf, ' ');
-    assert(target != NULL);
-    target = strchr(target, '/');
-    assert(target != NULL);
-    eol = strchr(target, ' ');
-    assert(eol != NULL);
-
-    /* Terminate target at eol */
-    *eol = '\0';
-
-    /* Only store mount points reachable from the old root */
-    if (strncmp(target, old_root, strlen(old_root))) {
-      continue;
-    }
-
-    mount_lines = realloc(mount_lines, sizeof(char*) * (mount_len + 1));
-    assert(mount_lines != NULL);
-    mount_lines[mount_len] = malloc(strlen(target)+1);
-    assert(mount_lines[mount_len] != NULL);
-    memcpy(mount_lines[mount_len], target, strlen(target)+1);
-    mount_len++;
-  }
-
-  fclose(f);
-
-  while (1) {
-    size_t umounts = 0, candidates = 0;
-    size_t i;
-
-    for (i = 0; i < mount_len; i++) {
-      char *target = mount_lines[i];
-      if (target == NULL) {
-        continue;
-      }
-
-      candidates++;
-      rv = umount(target);
-      if (rv == -1) {
-        fprintf(stderr, "umount(%s): %s\n", target, strerror(errno));
-      } else {
-        umounts++;
-        free(mount_lines[i]);
-        mount_lines[i] = NULL;
-      }
-    }
-
-    /* Keep going while mounts can be umounted */
-    if (umounts == 0) {
-      if (candidates == 0) {
-        goto ok;
-      } else {
-        goto err;
-      }
-    }
-  }
-
-ok:
-  return 0;
-
-err:
-  return -1;
 }
 
 int start(void *data) {
@@ -171,7 +92,7 @@ int start(void *data) {
     exit(1);
   }
 
-  rv = child_umount_old_root("/mnt");
+  rv = mount_umount_pivoted_root("/mnt");
   if (rv == -1) {
     exit(1);
   }
