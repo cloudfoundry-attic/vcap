@@ -69,12 +69,21 @@ class ApplicationController < ActionController::Base
   def fetch_user_from_token
     reset_user!
     unless auth_token_header.blank?
-      token = UserToken.decode(auth_token_header)
-      if token.valid?
-        @current_user = ::User.find_by_email(token.user_name)
-        unless @current_user.nil?
-          if AppConfig[:https_required] or (@current_user.admin? and AppConfig[:https_required_for_admins])
-            raise CloudError.new(CloudError::HTTPS_REQUIRED) unless request_https?
+      if(UaaToken.is_uaa_token(auth_token_header))
+        token_information = UaaToken.get_token_information(auth_token_header)
+        if(!token_information.nil?)
+          CloudController.logger.info("token information received #{token_information.inspect}")
+          user_email = token_information[:email]
+          @current_user = ::User.find_by_email(user_email)
+        end
+      else
+        token = UserToken.decode(auth_token_header)
+        if token.valid?
+          @current_user = ::User.find_by_email(token.user_name)
+          unless @current_user.nil?
+            if AppConfig[:https_required] or (@current_user.admin? and AppConfig[:https_required_for_admins])
+              raise CloudError.new(CloudError::HTTPS_REQUIRED) unless request_https?
+            end
           end
         end
       end
