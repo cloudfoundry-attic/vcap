@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    vcap_staging (0.1.38)
+    vcap_staging (0.1.39)
       nokogiri (>= 1.4.4)
       rake
       rspec
