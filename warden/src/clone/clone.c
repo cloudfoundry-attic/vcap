@@ -14,6 +14,7 @@
 #include "barrier.h"
 #include "console.h"
 #include "mount.h"
+#include "util.h"
 
 /* This function doesn't get declared anywhere... */
 extern int pivot_root(const char *new_root, const char *put_old);
@@ -186,6 +187,17 @@ int parent_clone_child(clone_helper_t *h) {
   assert(pid > 0);
   h->pid = pid;
 
+  /* Add PID to (parent) environment */
+  char buf[8];
+  int rv;
+
+  snprintf(buf, sizeof(buf), "%d", h->pid);
+  rv = setenv("PID", buf, 1);
+  if (rv == -1) {
+    fprintf(stderr, "setenv: %s\n", strerror(errno));
+    return -1;
+  }
+
   return 0;
 }
 
@@ -198,39 +210,11 @@ int daemonize(clone_helper_t *h) {
     exit(1);
   }
 
-  /* Execute pre-exec script before waking up child */
-  rv = fork();
+  /* Execute post-clone script before waking up child */
+  rv = run("./post-clone.sh");
   if (rv == -1) {
-    fprintf(stderr, "fork: %s\n", strerror(errno));
+    fprintf(stderr, "unable to run post-clone.sh\n");
     exit(1);
-  }
-
-  if (rv == 0) {
-    char buf[8];
-
-    snprintf(buf, sizeof(buf), "%d", h->pid);
-    rv = setenv("PID", buf, 1);
-    if (rv == -1) {
-      fprintf(stderr, "setenv: %s\n", strerror(errno));
-      exit(1);
-    }
-
-    execvp(h->argv[1], &h->argv[1]);
-    fprintf(stderr, "execvp: %s\n", strerror(errno));
-    exit(1);
-  } else {
-    int status;
-
-    rv = waitpid(rv, &status, 0);
-    if (rv == -1) {
-      fprintf(stderr, "waitpid: %s\n", strerror(errno));
-      exit(1);
-    }
-
-    if (WEXITSTATUS(status) != 0) {
-      fprintf(stderr, "pre-exec script exited with non-zero status\n");
-      exit(1);
-    }
   }
 
   rv = barrier_signal(&h->barrier_parent);
