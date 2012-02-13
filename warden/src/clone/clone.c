@@ -142,16 +142,6 @@ int parent_setup_helper(clone_helper_t *h) {
     goto err;
   }
 
-  rv = barrier_open(&h->barrier_parent);
-  if (rv == -1) {
-    goto err;
-  }
-
-  rv = barrier_open(&h->barrier_child);
-  if (rv == -1) {
-    goto err;
-  }
-
   return 0;
 
 err:
@@ -203,6 +193,18 @@ int parent_clone_child(clone_helper_t *h) {
 
 int daemonize(clone_helper_t *h) {
   int rv;
+
+  rv = barrier_open(&h->barrier_parent);
+  if (rv == -1) {
+    fprintf(stderr, "cannot create barrier\n");
+    exit(1);
+  }
+
+  rv = barrier_open(&h->barrier_child);
+  if (rv == -1) {
+    fprintf(stderr, "cannot create barrier\n");
+    exit(1);
+  }
 
   rv = parent_clone_child(h);
   if (rv == -1) {
@@ -283,13 +285,6 @@ int main(int argc, char **argv) {
     daemonize(h);
     exit(1);
   } else {
-    barrier_close(&h->barrier_parent);
-    barrier_close(&h->barrier_child);
-
-    /* Only close write side of daemon notification pipe.
-     * todo: explore options different than pipes for synchronization */
-    barrier_close_signal(&h->barrier_daemon);
-
     rv = barrier_wait(&h->barrier_daemon);
     if (rv == -1) {
       fprintf(stderr, "error waiting for daemon\n");

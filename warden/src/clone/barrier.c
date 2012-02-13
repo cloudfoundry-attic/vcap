@@ -43,12 +43,15 @@ void barrier_close_wait(barrier_t *bar) {
 }
 
 void barrier_close_signal(barrier_t *bar) {
-  close(bar->fd[0]);
+  close(bar->fd[1]);
 }
 
 int barrier_wait(barrier_t *bar) {
   char buf[1];
   int nread;
+
+  /* Close signal side of pipe on wait */
+  barrier_close_signal(bar);
 
   nread = read(bar->fd[0], buf, sizeof(buf));
   if (nread == -1) {
@@ -65,6 +68,9 @@ int barrier_wait(barrier_t *bar) {
 int barrier_signal(barrier_t *bar) {
   int rv;
   char byte = '\0';
+
+  /* Close wait side of pipe on signal */
+  barrier_close_wait(bar);
 
   rv = write(bar->fd[1], &byte, 1);
   if (rv == -1) {
