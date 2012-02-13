@@ -48,7 +48,7 @@ describe 'Health Manager' do
         'stable_state' => -1, #ensures all apps are "quiescent" for the purpose of testing
         'nats_ping' => 1,
       },
-      'logging'      => {'level' => 'debug'},
+      'logging'      => {'level' => 'warn'},
       'pid'          => File.join(@run_dir, 'health_manager.pid'),
 
       'rails_environment' => 'test',
