@@ -13,11 +13,11 @@ function chroot() {
   $(which chroot) ${target} env -i /bin/bash
 }
 
-function mount_union() {
+function setup_fs() {
   mkdir -p rootfs ${target}
-  $(which mount) -t aufs -o br:rootfs=rw:../../base/rootfs=ro+wh none ${target}
+  mount -t aufs -o br:rootfs=rw:../../base/rootfs=ro+wh none ${target}
 }
 
-function umount_union() {
-  $(which umount) ${target}
+function teardown_fs() {
+  umount ${target}
 }

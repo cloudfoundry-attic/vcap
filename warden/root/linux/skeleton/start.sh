@@ -13,8 +13,6 @@ if [ -f started ]; then
   exit 1
 fi
 
-mount_union
-
 export ROOT_PATH=union
 export ASSET_PATH=$(pwd)
 ../../../../src/clone/clone

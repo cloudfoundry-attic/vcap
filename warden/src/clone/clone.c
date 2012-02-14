@@ -63,6 +63,22 @@ int start(void *data) {
     exit(1);
   }
 
+  /* Setup hook script paths */
+  char hook_before_pivot[PATH_MAX];
+  char hook_after_pivot[PATH_MAX];
+
+  /* Use verbatim path for before hook */
+  realpath("./hook-child-before-pivot.sh", hook_before_pivot);
+
+  /* Prefix /mnt to path for after hook */
+  strcpy(hook_after_pivot, "/mnt");
+  realpath("./hook-child-after-pivot.sh", hook_after_pivot + strlen(hook_after_pivot));
+
+  rv = run(hook_before_pivot);
+  if (rv == -1) {
+    exit(1);
+  }
+
   rv = chdir(h->new_root_path);
   if (rv == -1) {
     fprintf(stderr, "chdir: %s\n", strerror(errno));
@@ -90,6 +106,11 @@ int start(void *data) {
   rv = chdir("/");
   if (rv == -1) {
     fprintf(stderr, "chdir: %s\n", strerror(errno));
+    exit(1);
+  }
+
+  rv = run(hook_after_pivot);
+  if (rv == -1) {
     exit(1);
   }
 
@@ -206,16 +227,21 @@ int daemonize(clone_helper_t *h) {
     exit(1);
   }
 
+  rv = run("./hook-parent-before-clone.sh");
+  if (rv == -1) {
+    fprintf(stderr, "unable to run before clone hook\n");
+    exit(1);
+  }
+
   rv = parent_clone_child(h);
   if (rv == -1) {
     fprintf(stderr, "unable to clone child\n");
     exit(1);
   }
 
-  /* Execute post-clone script before waking up child */
-  rv = run("./post-clone.sh");
+  rv = run("./hook-parent-after-clone.sh");
   if (rv == -1) {
-    fprintf(stderr, "unable to run post-clone.sh\n");
+    fprintf(stderr, "unable to run after clone hook\n");
     exit(1);
   }
 
