@@ -15,7 +15,7 @@ function chroot() {
 
 function setup_fs() {
   mkdir -p rootfs ${target}
-  mount -t aufs -o br:rootfs=rw:../../base/rootfs=ro+wh none ${target}
+  mount -n -t aufs -o br:rootfs=rw:../../base/rootfs=ro+wh none ${target}
 }
 
 function teardown_fs() {
