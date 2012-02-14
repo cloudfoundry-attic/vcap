@@ -14,5 +14,4 @@ if [ ! -f started ]; then
 fi
 
 ./killprocs.sh
-teardown_fs
 rm -f started

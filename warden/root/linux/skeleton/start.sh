@@ -19,14 +19,3 @@ export ASSET_PATH=$(pwd)
 
 ifconfig ${network_iface_host} ${network_gateway_ip} netmask ${network_netmask}
 touch started
-
-# Wait for the runner socket to come up
-start=$(date +%s)
-while [ ! -S union/tmp/runner.sock ]; do
-  if [ $(($(date +%s) - ${start})) -gt 5 ]; then
-    echo "Timeout waiting for runner socket to come up..."
-    exit 1
-  fi
-
-  sleep 0.1
-done

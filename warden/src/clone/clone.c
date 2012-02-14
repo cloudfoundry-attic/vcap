@@ -227,6 +227,14 @@ int daemonize(clone_helper_t *h) {
     exit(1);
   }
 
+  /* Unshare mount namespace, so the before clone hook is free to mount
+   * whatever it needs without polluting the global mount namespace. */
+  rv = unshare(CLONE_NEWNS);
+  if (rv == -1) {
+    fprintf(stderr, "unshare: %s\n", strerror(errno));
+    exit(1);
+  }
+
   rv = run("./hook-parent-before-clone.sh");
   if (rv == -1) {
     fprintf(stderr, "unable to run before clone hook\n");
