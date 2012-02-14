@@ -8,11 +8,8 @@ cd $(dirname "${0}")
 source ./common.sh
 source ./config
 
-if [ ! -f started ]; then
-  echo "Container is not running..."
-  exit 1
-fi
+mkdir -p /dev/pts
+mount -t devpts -o newinstance,ptmxmode=0666 devpts /dev/pts
+ln -s pts/ptmx /dev/ptmx
 
-./killprocs.sh
-teardown_fs
-rm -f started
+hostname ${id}

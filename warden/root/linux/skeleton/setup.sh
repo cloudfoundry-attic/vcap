@@ -29,8 +29,8 @@ network_iface_host=${network_iface_host}
 network_iface_container=${network_iface_container}
 EOS
 
-mount_union
-trap "umount_union" EXIT
+setup_fs
+trap "teardown_fs" EXIT
 
 write "etc/hostname" <<-EOS
 ${id}
