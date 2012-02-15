@@ -1,11 +1,12 @@
 ---
+capacity: <%= node[:redis_node][:capacity] %>
+plan: free
 local_db: sqlite3:/var/vcap/services/redis/redis_node.db
 mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
 index: <%= node[:redis_node][:index] %>
 base_dir: /var/vcap/services/redis/instances
 redis_log_dir: /var/vcap/services/redis/logs
 pid: /var/vcap/sys/run/redis_node.pid
-available_memory: <%= node[:redis_node][:available_memory] %>
 max_memory: <%= node[:redis_node][:max_memory] %>
 max_swap: 32
 node_id: <%= "redis_node_#{node[:redis_node][:index]}" %>
