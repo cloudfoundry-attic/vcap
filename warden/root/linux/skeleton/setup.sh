@@ -70,14 +70,19 @@ script
 end script
 EOS
 
-# Add runner
-cp ../../../../src/runner ${target}/bin/
+# Setup host keys for SSH
+mkdir -p ssh
+ssh-keygen -t rsa -N '' -C "${id}@$(hostname)" -f ssh/ssh_host_rsa_key
+cp ssh/ssh_host_rsa_key* ${target}/etc/ssh/
+ssh-keygen -t dsa -N '' -C "${id}@$(hostname)" -f ssh/ssh_host_dsa_key
+cp ssh/ssh_host_dsa_key* ${target}/etc/ssh/
 
-# Add upstart job
-write "etc/init/runner.conf" <<-EOS
-start on filesystem and net-device-up IFACE=${network_iface_container}
-respawn
-env ARTIFACT_PATH=/tmp
-env RUN_AS_UID=${vcap_uid}
-exec runner listen /tmp/runner.sock
-EOS
+# Add host key to known_hosts
+echo -n "${network_container_ip} " >> ssh/known_hosts
+cat ssh/ssh_host_rsa_key.pub >> ssh/known_hosts
+
+# Setup root user keys for SSH
+ssh-keygen -t rsa -N '' -C '' -f ssh/root_key
+mkdir -p ${target}/root/.ssh/
+cat ssh/root_key.pub >> ${target}/root/.ssh/authorized_keys
+chmod 600 ${target}/root/.ssh/authorized_keys
