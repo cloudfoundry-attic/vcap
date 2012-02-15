@@ -2,7 +2,8 @@
 
 set -o nounset
 set -o errexit
-cd $(dirname $(readlink -f ${0}))
+shopt -s nullglob
+cd $(dirname "${0}")
 
 source ./common.sh
 

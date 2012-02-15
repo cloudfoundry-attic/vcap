@@ -30,7 +30,7 @@ if [ -f "$PWD/app/config/database.yml" ] ; then
 fi
 if [ -n "$VCAP_CONSOLE_PORT" ]; then
   cd app
-  #{executable} ./rubygems/ruby/1.8/bin/bundle exec #{executable} cf-rails-console/console.rb >>../logs/console.log 2>> ../logs/console.log &
+  #{executable} ./rubygems/ruby/1.8/bin/bundle exec #{executable} cf-rails-console/rails_console.rb >>../logs/console.log 2>> ../logs/console.log &
   CONSOLE_STARTED=$!
   echo "$CONSOLE_STARTED" >> ../console.pid
   cd ..
@@ -70,7 +70,7 @@ if [ -f "$PWD/app/config/database.yml" ] ; then
 fi
 if [ -n "$VCAP_CONSOLE_PORT" ]; then
   cd app
-  #{executable} ./rubygems/ruby/1.8/bin/bundle exec #{executable} cf-rails-console/console.rb >>../logs/console.log 2>> ../logs/console.log &
+  #{executable} ./rubygems/ruby/1.8/bin/bundle exec #{executable} cf-rails-console/rails_console.rb >>../logs/console.log 2>> ../logs/console.log &
   CONSOLE_STARTED=$!
   echo "$CONSOLE_STARTED" >> ../console.pid
   cd ..

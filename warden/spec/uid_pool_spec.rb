@@ -1,6 +1,11 @@
 require 'spec_helper'
 
-describe Warden::Container::UidPool, :needs_root => true do
+# Define stub when it is not available
+unless defined?(Warden::Container::UidPool)
+  class Warden::Container::UidPool; end
+end
+
+describe Warden::Container::UidPool, :platform => "linux", :needs_root => true do
   before :all do
     @pool_name = 'warden-uidpool-test'
   end
