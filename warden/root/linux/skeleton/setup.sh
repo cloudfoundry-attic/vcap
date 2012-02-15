@@ -73,6 +73,8 @@ chroot <<-EOS
 sed -i -e '/^\($\|#\)/d' /etc/ssh/sshd_config
 # Don't allow env vars to propagate over ssh
 sed -i -e '/^AcceptEnv/d' /etc/ssh/sshd_config
+# Pick up authorized keys from /etc/ssh
+echo AuthorizedKeysFile /etc/ssh/authorized_keys/%u >> /etc/ssh/sshd_config
 EOS
 
 # Setup host keys for SSH
@@ -82,12 +84,23 @@ cp ssh/ssh_host_rsa_key* ${target}/etc/ssh/
 ssh-keygen -t dsa -N '' -C "${id}@$(hostname)" -f ssh/ssh_host_dsa_key
 cp ssh/ssh_host_dsa_key* ${target}/etc/ssh/
 
+# Setup access keys for SSH
+ssh-keygen -t rsa -N '' -C '' -f ssh/access_key
+mkdir -p ${target}/etc/ssh/authorized_keys
+cat ssh/access_key.pub >> ${target}/etc/ssh/authorized_keys/root
+chmod 644 ${target}/etc/ssh/authorized_keys/root
+cat ssh/access_key.pub >> ${target}/etc/ssh/authorized_keys/vcap
+chmod 644 ${target}/etc/ssh/authorized_keys/vcap
+
 # Add host key to known_hosts
 echo -n "${network_container_ip} " >> ssh/known_hosts
 cat ssh/ssh_host_rsa_key.pub >> ssh/known_hosts
 
-# Setup root user keys for SSH
-ssh-keygen -t rsa -N '' -C '' -f ssh/root_key
-mkdir -p ${target}/root/.ssh/
-cat ssh/root_key.pub >> ${target}/root/.ssh/authorized_keys
-chmod 600 ${target}/root/.ssh/authorized_keys
+# Add ssh client configuration
+cat <<-EOS > ssh/ssh_config
+StrictHostKeyChecking yes
+UserKnownHostsFile $(pwd)/ssh/known_hosts
+IdentityFile $(pwd)/ssh/access_key
+Host container
+HostName ${network_container_ip}
+EOS
