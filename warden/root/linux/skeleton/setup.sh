@@ -55,11 +55,8 @@ cp /etc/resolv.conf ${target}/etc/
 
 # Add vcap user
 chroot <<-EOS
-useradd -mU vcap ${vcap_uid+-u ${vcap_uid}}
+useradd -mU -s /bin/bash vcap
 EOS
-
-# Figure out the actual user ID
-vcap_uid=$(chroot <<< "id -u vcap")
 
 # Fake udev upstart triggers
 write "etc/init/fake-udev.conf" <<-EOS
