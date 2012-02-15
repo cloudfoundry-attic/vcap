@@ -67,6 +67,14 @@ script
 end script
 EOS
 
+# Modify sshd_config
+chroot <<-EOS
+# Delete comments and empty lines
+sed -i -e '/^\($\|#\)/d' /etc/ssh/sshd_config
+# Don't allow env vars to propagate over ssh
+sed -i -e '/^AcceptEnv/d' /etc/ssh/sshd_config
+EOS
+
 # Setup host keys for SSH
 mkdir -p ssh
 ssh-keygen -t rsa -N '' -C "${id}@$(hostname)" -f ssh/ssh_host_rsa_key
