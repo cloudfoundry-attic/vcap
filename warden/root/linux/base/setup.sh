@@ -141,6 +141,11 @@ file=${target}/dev/console
 mknod -m 600 ${file} c 5 1
 chown root:tty ${file}
 
+# /dev/tty
+file=${target}/dev/tty
+mknod -m 666 ${file} c 5 0
+chown root:tty ${file}
+
 # /dev/random, /dev/urandom
 file=${target}/dev/random
 mknod -m 666 ${file} c 1 8
