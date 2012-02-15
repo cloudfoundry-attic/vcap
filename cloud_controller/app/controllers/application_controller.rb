@@ -72,7 +72,7 @@ class ApplicationController < ActionController::Base
       if(UaaToken.is_uaa_token(auth_token_header))
         user_email = UaaToken.get_email(auth_token_header)
         if(!user_email.nil?)
-          CloudController.logger.info("user_email received #{user_email.inspect}")
+          CloudController.logger.debug("user_email received #{user_email.inspect}")
           @current_user = ::User.find_by_email(user_email)
         end
       else
