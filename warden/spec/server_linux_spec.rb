@@ -101,7 +101,7 @@ describe "server implementing Linux containers", :platform => "linux", :needs_ro
     it 'allocates a user per container' do
       reply  = client.run(@handle, "id -u")
       reply[0].should == 0
-      uid = File.read(reply[1]).chomp.to_i
+      uid = reply[1].chomp.to_i
       pool = Warden::Container::UidPool.acquire(quota_config[:uidpool][:name],
                                                 quota_config[:uidpool][:count])
       uid.should == pool.acquire
@@ -149,7 +149,7 @@ describe "server implementing Linux containers", :platform => "linux", :needs_ro
       client.limit(@handle, "disk").should == one_mb
       res = client.run(@handle, "dd if=/dev/zero of=/tmp/test bs=4MB count=1")
       res[0].should == 1
-      File.read(res[2]).should match(/quota exceeded/)
+      res[2].should match(/quota exceeded/)
 
       # Give the quota monitor a chance to run
       sleep(0.5)
@@ -193,7 +193,7 @@ describe "server implementing Linux containers", :platform => "linux", :needs_ro
 
       reply = client.run(@handle, "ping -q -W 1 -c 1 4.2.2.2")
       reply[0].should == 1
-      File.read(reply[1]).should match(/\b0 received\b/i)
+      reply[1].should match(/\b0 received\b/i)
     end
 
     it "should allow traffic after explicitly allowing its destination" do
@@ -205,19 +205,19 @@ describe "server implementing Linux containers", :platform => "linux", :needs_ro
 
       reply = client.run(@handle, "ping -q -W 1 -c 1 4.2.2.2")
       reply[0].should == 0
-      File.read(reply[1]).should match(/\b1 received\b/i)
+      reply[1].should match(/\b1 received\b/i)
     end
 
     it "should allow traffic to allowed networks" do
       reply = client.run(@handle, "ping -q -W 1 -c 1 4.2.2.3")
       reply[0].should == 0
-      File.read(reply[1]).should match(/\b1 received\b/i)
+      reply[1].should match(/\b1 received\b/i)
     end
 
     it "should allow other traffic" do
       reply = client.run(@handle, "ping -q -W 1 -c 1 8.8.8.8")
       reply[0].should == 0
-      File.read(reply[1]).should match(/\b1 received\b/i)
+      reply[1].should match(/\b1 received\b/i)
     end
   end
 
