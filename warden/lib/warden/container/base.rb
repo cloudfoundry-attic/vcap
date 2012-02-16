@@ -208,11 +208,11 @@ module Warden
       end
 
       def root_path
-        File.join(Server.container_root, self.class.name.split("::").last.downcase)
+        @root_path ||= File.join(Server.container_root, self.class.name.split("::").last.downcase)
       end
 
       def container_path
-        File.join(root_path, "instances", handle)
+        @container_path ||= File.join(root_path, "instances", handle)
       end
 
       def create
