@@ -18,5 +18,8 @@ runner: runner.o
 clone: clone.o
 		$(CC) -o $@ -lutil $^
 
+oom: oom.o
+		$(CC) -o $@ $^
+
 %.o: %.c
 		$(CC) -c -Wall -D_GNU_SOURCE $(OPTIMIZATION) $(DEBUG) $(CFLAGS) $<
