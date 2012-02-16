@@ -52,25 +52,43 @@ module Warden
         attr_reader :argv
         attr_reader :options
 
+        def out
+          @child.out
+        end
+
+        def err
+          @child.err
+        end
+
+        def status
+          @child.status
+        end
+
+        def runtime
+          @child.runtime
+        end
+
+        def success?
+          @child.success?
+        end
+
+        def exit_status
+          @child.status.exitstatus
+        end
+
         def initialize(*args)
           @env, @argv, @options = extract_process_spawn_arguments(*args)
 
-          p = Child.new(env, *(argv + [options]))
+          @child = Child.new(env, *(argv + [options]))
 
-          p.callback {
-            unless p.success?
-              # Log stderr. Don't use this as message for the raised error to
-              # prevent internal information from leaking to clients.
-              error "stderr: #{p.err.inspect}"
+          @child.callback do
+            # Log stderr when command didn't exit successfully
+            error "stderr: #{err.inspect}" unless success?
 
-              err = WardenError.new("command exited with failure")
-              set_deferred_failure(err)
-            else
-              set_deferred_success(p.out)
-            end
-          }
+            set_deferred_success
+          end
 
-          p.errback { |err|
+          @child.errback do |err|
             if err == MaximumOutputExceeded
               err = WardenError.new("command exceeded maximum output")
             elsif err == TimeoutExceeded
@@ -80,11 +98,11 @@ module Warden
             end
 
             set_deferred_failure(err)
-          }
+          end
         end
 
         # Helper to inject log message
-        def set_deferred_success(result)
+        def set_deferred_success
           debug "successfully ran #{argv.inspect}"
           super
         end
@@ -97,10 +115,23 @@ module Warden
 
         def yield
           f = Fiber.current
-          callback { |result| f.resume(:ok, result) }
-          errback { |err| f.resume(:err, err) }
+
+          callback do
+            if success?
+              f.resume(:ok, out)
+            else
+              f.resume(:err, WardenError.new("command exited with failure"))
+            end
+          end
+
+          errback do |err|
+            f.resume(:err, err)
+          end
+
           status, result = Fiber.yield
+
           raise result if status == :err
+
           result
         end
       end
