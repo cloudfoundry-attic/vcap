@@ -29,10 +29,6 @@ module Warden
         end
       end
 
-      def container_root_path
-        File.join(container_path, "union")
-      end
-
       def env
         env = {
           "id" => handle,

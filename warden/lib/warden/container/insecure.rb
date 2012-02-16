@@ -13,10 +13,6 @@ module Warden
         # noop
       end
 
-      def container_root_path
-        File.join(container_path, "root")
-      end
-
       def do_create
         # Create container
         sh "#{root_path}/create.sh #{handle}"
