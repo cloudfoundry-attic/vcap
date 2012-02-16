@@ -11,13 +11,11 @@ if [ -z "${1}" ]; then
 fi
 
 target="instances/${1}"
-mkdir -p instances
 
-if [ -d ${target} ]; then
-  echo "\"${target}\" already exists, aborting..."
-  exit 1
+if [ -d "${target}" ]; then
+  if [ -f "${target}/destroy.sh" ]; then
+    ${target}/destroy.sh
+  fi
+
+  rm -rf ${target}
 fi
-
-cp -r skeleton "${target}"
-"${target}"/setup.sh
-echo ${target}

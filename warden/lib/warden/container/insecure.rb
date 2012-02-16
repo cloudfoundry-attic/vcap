@@ -14,28 +14,18 @@ module Warden
       end
 
       def do_create
-        # Create container
         sh "#{root_path}/create.sh #{handle}"
-        debug "container created"
-
-        # Start container
-        sh "#{container_path}/start.sh"
-        debug "container started"
+        debug "insecure container created"
       end
 
       def do_stop
-        # Kill all processes in the container
-        sh "#{container_path}/killprocs.sh"
+        sh "#{container_path}/stop.sh"
+        debug "insecure container stopped"
       end
 
       def do_destroy
-        # Stop container
-        sh "#{container_path}/stop.sh"
-        debug "container stopped"
-
-        # Destroy container
-        sh "rm -rf #{container_path}"
-        debug "container destroyed"
+        sh "#{root_path}/destroy.sh #{handle}"
+        debug "insecure container destroyed"
       end
 
       def create_job(script)
