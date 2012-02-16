@@ -77,19 +77,23 @@ module Warden
       def create_job(script)
         job = Job.new(self)
 
-        runner = File.expand_path("../../../../src/runner", __FILE__)
-        socket_path = File.join(container_root_path, "/tmp/runner.sock")
-        unless File.exist?(socket_path)
-          error "socket does not exist: #{socket_path}"
+        args = ["-F", File.join(container_path, "ssh", "ssh_config"), "vcap@container"]
+        args << { :input => script }
+
+        child = DeferredChild.new("ssh", *args)
+
+        child.callback do
+          if child.exit_status == 255
+            # SSH error, the remote end was probably killed or something
+            job.resume [nil, nil, nil]
+          else
+            job.resume [child.exit_status, child.out, child.err]
+          end
         end
 
-        p = DeferredChild.new(runner, "connect", socket_path, :input => script)
-        p.callback { |path_inside_container|
-          job.finish(File.join(container_root_path, path_inside_container))
-        }
-        p.errback {
-          job.finish
-        }
+        child.errback do |err|
+          job.resume [nil, nil, nil]
+        end
 
         job
       end

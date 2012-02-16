@@ -82,9 +82,6 @@ module Warden
           @child = Child.new(env, *(argv + [options]))
 
           @child.callback do
-            # Log stderr when command didn't exit successfully
-            error "stderr: #{err.inspect}" unless success?
-
             set_deferred_success
           end
 
@@ -103,7 +100,14 @@ module Warden
 
         # Helper to inject log message
         def set_deferred_success
-          debug "successfully ran #{argv.inspect}"
+          if !success?
+            debug "exited with #{exit_status}: #{argv.inspect}"
+            error "stdout: #{out}"
+            error "stderr: #{err}"
+          else
+            debug "exited successfully: #{argv.inspect}"
+          end
+
           super
         end
 

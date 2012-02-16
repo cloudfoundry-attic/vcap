@@ -52,15 +52,15 @@ shared_examples "a warden server" do |container_klass|
     it "should redirect stdout output" do
       reply = client.run(@handle, "echo hi")
       reply[0].should == 0
-      File.read(reply[1]).should == "hi\n"
-      File.read(reply[2]).should == ""
+      reply[1].should == "hi\n"
+      reply[2].should == ""
     end
 
     it "should redirect stderr output" do
       reply = client.run(@handle, "echo hi 1>&2")
       reply[0].should == 0
-      File.read(reply[1]).should == ""
-      File.read(reply[2]).should == "hi\n"
+      reply[1].should == ""
+      reply[2].should == "hi\n"
     end
 
     it "should propagate exit status" do
