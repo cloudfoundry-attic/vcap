@@ -88,10 +88,12 @@ module Warden
               end
             end
 
-            mem_limit_path = File.join(self.cgroup_root_path, "memory.limit_in_bytes")
-            File.open(mem_limit_path, 'w') do |f|
-              f.write(mem_limit.to_s)
+            ["memory.limit_in_bytes", "memory.memsw.limit_in_bytes"].each do |path|
+              File.open(File.join(cgroup_root_path, path), 'w') do |f|
+                f.write(mem_limit.to_s)
+              end
             end
+
             self.limits['mem'] = mem_limit
           rescue => e
             raise WardenError.new("Failed setting memory limit: #{e}")
