@@ -18,7 +18,7 @@ describe VCAP::Component do
   end
 
   it "should publish an announcement" do
-    em(:timeout => 1) do
+    em(:timeout => 2) do
       nats.subscribe("vcap.component.announce") do |msg|
         body = Yajl::Parser.parse(msg, :symbolize_keys => true)
         body[:type].should == "type"
@@ -120,20 +120,17 @@ describe VCAP::Component do
 
   describe "http endpoint" do
     let(:host) { VCAP::Component.varz[:host] }
-    let(:http) { ::EM::HttpRequest.new("http://#{host}/varz") }
-    let(:http2) { ::EM::HttpRequest.new("http://#{host}/varz") }
     let(:authorization) { { :head => { "authorization" => VCAP::Component.varz[:credentials] } } }
 
     it "should let you specify the port" do
       em do
-        options = default_options
-        options[:port] = 18123
+        port = 18123
+        options = default_options.merge(:port => port)
 
         VCAP::Component.register(options)
+        VCAP::Component.varz[:host].split(':').last.to_i.should == port
 
-        http.opts.port.should == 18123
-
-        request = http.get authorization.merge(:path => "/varz")
+        request = make_em_httprequest(:get, host, "/varz", authorization)
         request.callback do
           request.response_header.status.should == 200
           done
@@ -142,19 +139,19 @@ describe VCAP::Component do
     end
 
     it "should not truncate varz on second request" do
-      em do
+      em(:timeout => 2) do
         options = default_options
 
         VCAP::Component.register(options)
 
-        request = http.get authorization.merge(:path => "/varz")
+        request = make_em_httprequest(:get, host, "/varz", authorization)
         request.callback do
           request.response_header.status.should == 200
           content_length = request.response_header['CONTENT_LENGTH'].to_i
 
           VCAP::Component.varz[:var] = 'var'
 
-          request2 = http2.get authorization.merge(:path => "/varz")
+          request2 = make_em_httprequest(:get, host, "/varz", authorization)
           request2.callback do
             request2.response_header.status.should == 200
             content_length2 = request2.response_header['CONTENT_LENGTH'].to_i
@@ -172,13 +169,13 @@ describe VCAP::Component do
 
         VCAP::Component.register(options)
 
-        request = http.get authorization.merge(:path => "/healthz")
+        request = make_em_httprequest(:get, host, "/healthz", authorization)
         request.callback do
           request.response_header.status.should == 200
 
           VCAP::Component.healthz = 'healthz'
 
-          request2 = http2.get authorization.merge(:path => "/healthz")
+          request2 = make_em_httprequest(:get, host, "/healthz", authorization)
           request2.callback do
             request2.response_header.status.should == 200
             content_length2 = request2.response_header['CONTENT_LENGTH'].to_i
@@ -200,47 +197,10 @@ describe VCAP::Component do
 
         VCAP::Component.varz[:credentials].should == ["foo", "bar"]
 
-        request = http.get authorization.merge(:path => "/varz")
+        request = make_em_httprequest(:get, host, "/varz", authorization)
         request.callback do
           request.response_header.status.should == 200
           done
-        end
-      end
-    end
-
-    it "should skip keep-alive by default" do
-      em do
-        VCAP::Component.register(default_options)
-
-        request = http.get authorization
-        request.callback do
-          request.response_header.should_not be_keepalive
-
-          request = http.get authorization
-          request.callback { raise "second request shouldn't succeed" }
-          request.errback { done }
-        end
-      end
-    end
-
-    it "should support keep-alive" do
-      em do
-        VCAP::Component.register(default_options)
-
-        first_peername = nil
-        request = http.get authorization.merge(:path => "/varz", :keepalive => true)
-        request.callback do
-          request.response_header.should be_keepalive
-          first_peername = http.get_peername
-          first_peername.should be
-
-          request = http.get authorization.merge(:path => "/varz", :keepalive => true)
-          request.callback do
-            request.response_header.should be_keepalive
-            second_peername = http.get_peername
-            second_peername.should eql first_peername
-            done
-          end
         end
       end
     end
@@ -249,7 +209,7 @@ describe VCAP::Component do
       em do
         VCAP::Component.register(default_options)
 
-        request = http.get :path => "/varz"
+        request = make_em_httprequest(:get, host, "/varz")
         request.callback do
           request.response_header.status.should == 401
           done
@@ -261,12 +221,16 @@ describe VCAP::Component do
       em do
         VCAP::Component.register(default_options)
 
-        request = http.get :path => "/varz", :head => { "authorization" => "foo" }
+        request = make_em_httprequest(:get, host, "/varz", :head => { "authorization" => "foo" })
         request.callback do
           request.response_header.status.should == 400
           done
         end
       end
     end
+  end
+
+  def make_em_httprequest(method, host, path, opts={})
+    ::EM::HttpRequest.new("http://#{host}#{path}").send(method, opts)
   end
 end
