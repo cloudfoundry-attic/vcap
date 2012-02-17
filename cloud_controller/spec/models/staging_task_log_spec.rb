@@ -53,6 +53,24 @@ describe StagingTaskLog do
       end.resume
       @deferrable_mock.succeed(nil)
     end
+
+    it 'should raise TimeoutError when timed out fetching result' do
+      Fiber.new do
+        expect do
+          res = StagingTaskLog.fetch_fibered(@task_id, @redis_mock)
+        end.to raise_error(VCAP::Stager::TaskError)
+      end.resume
+      @deferrable_mock.fail(nil)
+    end
+
+    it 'should raise error when redis fetching fails' do
+      Fiber.new do
+        expect do
+          res = StagingTaskLog.fetch_fibered(@task_id, @redis_mock)
+        end.to raise_error
+      end.resume
+      @deferrable_mock.fail(RuntimeError.new("Mock Runtime Error from EM::Hiredis"))
+    end
   end
 
 end
