@@ -43,6 +43,7 @@ class AppsController < ApplicationController
   end
 
   def delete
+    CloudController.logger.info("Deleting app, name=#{@app.name} id=#{@app.id}")
     @app.purge_all_resources!
     @app.destroy
     render :nothing => true, :status => 200

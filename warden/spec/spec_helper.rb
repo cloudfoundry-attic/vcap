@@ -35,6 +35,13 @@ def done
 end
 
 RSpec.configure do |config|
+
+  # Exclude specs for other platforms
+  config.exclusion_filter = {
+    :platform => lambda { |platform|
+      RUBY_PLATFORM !~ /#{platform}/i },
+  }
+
   if Process.uid != 0
     config.filter_run_excluding :needs_root => true
   end

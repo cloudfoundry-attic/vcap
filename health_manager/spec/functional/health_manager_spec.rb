@@ -48,7 +48,7 @@ describe 'Health Manager' do
         'stable_state' => -1, #ensures all apps are "quiescent" for the purpose of testing
         'nats_ping' => 1,
       },
-      'logging'      => {'level' => 'debug'},
+      'logging'      => {'level' => 'warn'},
       'pid'          => File.join(@run_dir, 'health_manager.pid'),
 
       'rails_environment' => 'test',
@@ -165,6 +165,7 @@ describe 'Health Manager' do
     EM.run do
       EM.add_timer(timeout) do
         puts "TIMEOUT while waiting on #{subj}"
+        EM.stop
       end
       NATS.start :uri => @nats_server.uri do
         NATS.subscribe(subj) do |msg|
@@ -172,7 +173,7 @@ describe 'Health Manager' do
           EM.stop
         end
         if block_given?
-          EM.next_tick { yield }
+          NATS.publish('foo') { yield }
         end
       end
     end

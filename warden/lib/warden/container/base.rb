@@ -115,14 +115,42 @@ module Warden
         @events      = Set.new
         @limits      = {}
 
+        on(:before_create) {
+          check_state_in(State::Born)
+
+          self.state = State::Active
+        }
+
         on(:after_create) {
           # Clients should be able to look this container up
           self.class.registry[handle] = self
         }
 
+        on(:before_stop) {
+          check_state_in(State::Active)
+
+          self.state = State::Stopped
+        }
+
+        on(:after_stop) {
+          # Here for symmetry
+        }
+
         on(:before_destroy) {
+          check_state_in(State::Active, State::Stopped)
+
           # Clients should no longer be able to look this container up
           self.class.registry.delete(handle)
+
+          unless self.state == State::Stopped
+            self.stop
+          end
+
+          self.state = State::Destroyed
+        }
+
+        on(:after_destroy) {
+          # Here for symmetry
         }
 
         on(:finalize) {
@@ -150,6 +178,8 @@ module Warden
 
       def register_connection(conn)
         if @destroy_timer
+          debug "grace timer: cancel"
+
           ::EM.cancel_timer(@destroy_timer)
           @destroy_timer = nil
         end
@@ -160,9 +190,16 @@ module Warden
 
             # Destroy container after grace period
             if connections.size == 0
+              debug "grace timer: setup (%.3fs)" % Server.container_grace_time
+
               @destroy_timer =
                 ::EM.add_timer(Server.container_grace_time) {
-                  f = Fiber.new { destroy }
+                  debug "grace timer: fired"
+
+                  f = Fiber.new do
+                    debug "grace timer: destroy"
+                    destroy
+                  end
                   f.resume
                 }
             end
@@ -179,15 +216,20 @@ module Warden
       end
 
       def create
-        check_state_in(State::Born)
-
-        self.state = State::Active
+        debug "entry"
 
         emit(:before_create)
         do_create
         emit(:after_create)
 
         handle
+
+      rescue => err
+        warn "error: #{err.message}"
+        raise
+
+      ensure
+        debug "exit"
       end
 
       def do_create
@@ -195,15 +237,20 @@ module Warden
       end
 
       def stop
-        check_state_in(State::Active)
-
-        self.state = State::Stopped
+        debug "entry"
 
         emit(:before_stop)
         do_stop
         emit(:after_stop)
 
         "ok"
+
+      rescue => err
+        warn "error: #{err.message}"
+        raise
+
+      ensure
+        debug "exit"
       end
 
       def do_stop
@@ -211,20 +258,25 @@ module Warden
       end
 
       def destroy
-        check_state_in(State::Active, State::Stopped)
-
-        unless self.state == State::Stopped
-          self.stop
-        end
-
-        self.state = State::Destroyed
+        debug "entry"
 
         emit(:before_destroy)
         do_destroy
         emit(:after_destroy)
+
+        # Trigger separate "finalize" event so hooks in "after_destroy" still
+        # have access to the allocated resources (e.g. the container's handle
+        # via the network allocation)
         emit(:finalize)
 
         "ok"
+
+      rescue => err
+        warn "error: #{err.message}"
+        raise
+
+      ensure
+        debug "exit"
       end
 
       def do_destroy
@@ -232,6 +284,8 @@ module Warden
       end
 
       def spawn(script)
+        debug "entry"
+
         check_state_in(State::Active)
 
         job = create_job(script)
@@ -239,9 +293,18 @@ module Warden
 
         # Return job id to caller
         job.job_id
+
+      rescue => err
+        warn "error: #{err.message}"
+        raise
+
+      ensure
+        debug "exit"
       end
 
       def link(job_id)
+        debug "entry"
+
         check_state_in(State::Active, State::Stopped)
 
         job = jobs[job_id.to_s]
@@ -250,25 +313,61 @@ module Warden
         end
 
         job.yield
+
+      rescue => err
+        warn "error: #{err.message}"
+        raise
+
+      ensure
+        debug "exit"
       end
 
       def run(script)
+        debug "entry"
+
         link(spawn(script))
+
+      rescue => err
+        warn "error: #{err.message}"
+        raise
+
+      ensure
+        debug "exit"
       end
 
       def net_in
+        debug "entry"
+
         check_state_in(State::Active)
 
         do_net_in
+
+      rescue => err
+        warn "error: #{err.message}"
+        raise
+
+      ensure
+        debug "exit"
       end
 
       def net_out(spec)
+        debug "entry"
+
         check_state_in(State::Active)
 
         do_net_out(spec)
+
+      rescue => err
+        warn "error: #{err.message}"
+        raise
+
+      ensure
+        debug "exit"
       end
 
       def get_limit(limit_name)
+        debug "entry"
+
         check_state_in(State::Active, State::Stopped)
 
         getter = "get_limit_#{limit_name}"
@@ -277,9 +376,18 @@ module Warden
         else
           raise WardenError.new("Unknown limit #{limit_name}")
         end
+
+      rescue => err
+        warn "error: #{err.message}"
+        raise
+
+      ensure
+        debug "exit"
       end
 
       def set_limit(limit_name, args)
+        debug "entry"
+
         check_state_in(State::Active)
 
         setter = "set_limit_#{limit_name}"
@@ -288,12 +396,28 @@ module Warden
         else
           raise WardenError.new("Unknown limit #{limit_name}")
         end
+
+      rescue => err
+        warn "error: #{err.message}"
+        raise
+
+      ensure
+        debug "exit"
       end
 
       def info
+        debug "entry"
+
         check_state_in(State::Active, State::Stopped)
 
         get_info
+
+      rescue => err
+        warn "error: #{err.message}"
+        raise
+
+      ensure
+        debug "exit"
       end
 
       def get_info

@@ -13,7 +13,7 @@ unless ARGV.length == 3
   exit 1
 end
 
-gemfile_path, lockfile_path, gem_store_dir = ARGV
+gemfile_path, lockfile_path, gem_store_dir = ARGV.map {|path| File.expand_path(path) }
 
 ENV['BUNDLE_GEMFILE'] = gemfile_path
 
@@ -30,17 +30,13 @@ end
 FileUtils.mkdir_p(gem_store_dir)
 
 to_fetch = []
-gem_cache_dir = Gem::Specification.new.cache_dir
 parser.specs.each do |spec|
   gem_basename = "#{spec.name}-#{spec.version}.gem"
-  cached_gem_path = File.join(gem_cache_dir, gem_basename)
+  dst_path = File.join(gem_store_dir, gem_basename)
   if spec.source.kind_of?(Bundler::Source::Path) && (spec.source.path.to_s == '.')
     logger.info("Skipping '#{gem_basename}', Gemfile.lock appears to belong to it")
-  elsif File.exist?(cached_gem_path)
-    logger.info("Found gem '#{gem_basename}' at '#{cached_gem_path}'")
-    logger.info("Copying to #{gem_store_dir}")
-    FileUtils.cp(cached_gem_path, gem_store_dir)
-    logger.info("Done")
+  elsif File.exist?(dst_path)
+    logger.info("Skipping '#{gem_basename}', found in '#{gem_store_dir}'")
   else
     logger.info("Need to download '#{gem_basename}'")
     to_fetch << gem_basename
@@ -60,7 +56,7 @@ unless to_fetch.empty?
 
   unless system(cmd)
     logger.error("#{cmd} failed with status #{$?}!")
-    exit $?
+    exit $?.exitstatus
   end
 end
 
