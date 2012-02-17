@@ -4,6 +4,7 @@
 # we are starting in production mode.
 require 'vcap/common'
 require 'vcap/staging/plugin/common'
+require 'openssl'
 
 config_file = ENV['CLOUD_CONTROLLER_CONFIG'] || File.expand_path('../cloud_controller.yml', __FILE__)
 begin
