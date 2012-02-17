@@ -69,12 +69,8 @@ shared_context :warden_server do
     Process.waitpid(@pid)
 
     # Destroy all artifacts
-    Dir[File.join(container_root, "*", "instances", "*")].each do |path|
-      stop_script = File.join(path, "stop.sh")
-      system(stop_script) if File.exist?(stop_script)
-
-      # Container should be stopped and destroyed by now...
-      system("rm -rf #{path}")
+    Dir[File.join(container_root, "*", "clear.sh")].each do |clear|
+      system(clear)
     end
   end
 end
