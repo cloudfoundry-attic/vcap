@@ -28,18 +28,6 @@ when "ubuntu"
     not_if { ::File.exists?(File.join("", "tmp", "lua-#{lua_version}.tar.gz")) }
   end
 
-  remote_file File.join("", "tmp", "lua-openssl-0.1.1.tar.gz") do
-    owner node[:deployment][:user]
-    source node[:lua][:openssl_source]
-    not_if { ::File.exists?(File.join("", "tmp", "lua-openssl-0.1.1.tar.gz")) }
-  end
-
-  remote_file File.join("", "tmp", "lbase64.tar.gz") do
-    owner node[:deployment][:user]
-    source node[:lua][:base64_source]
-    not_if { ::File.exists?(File.join("", "tmp", "lbase64.tar.gz")) }
-  end
-
   remote_file File.join("", "tmp", "lua-cjson-1.0.3.tar.gz") do
     owner node[:deployment][:user]
     source node[:lua][:cjson_source]
@@ -112,22 +100,6 @@ when "ubuntu"
       end
   end
 
-  bash "Install lua openssl" do
-    cwd File.join("", "tmp")
-    user node[:deployment][:user]
-    code <<-EOH
-      tar xzf lua-openssl-0.1.1.tar.gz
-      cd zhaozg-lua-openssl-5ecb647
-      sed 's!^PREFIX=.*!PREFIX='#{lua_path}'!' config > tmp
-      sed 's!^CC=.*!CC= gcc $(CFLAGS)!' tmp > config
-      make
-      make install
-    EOH
-    not_if do
-      ::File.exists?(File.join(lua_module_path, "openssl.so"))
-    end
-  end
-
   bash "Install lua json" do
     cwd File.join("", "tmp")
     user node[:deployment][:user]
@@ -142,24 +114,6 @@ when "ubuntu"
     not_if do
       ::File.exists?(File.join(lua_module_path, "cjson.so"))
     end
-  end
-
-  bash "Install lua base64" do
-    cwd File.join("", "tmp")
-    user node[:deployment][:user]
-    code <<-EOH
-      tar xzf lbase64.tar.gz
-      cd base64
-      sed 's!^LUAINC=.*!LUAINC='#{lua_path}/include'!' Makefile > tmp
-      sed 's!^LUABIN=.*!LUABIN='#{lua_path}/bin'!' tmp > Makefile
-      sed 's!^CFLAGS=.*!CFLAGS= $(INCS) $(WARN) -fPIC -O2 $G!' Makefile > tmp
-      mv tmp Makefile
-      make
-      cp base64.so #{lua_module_path}
-      EOH
-      not_if do
-        ::File.exists?(File.join(lua_module_path, "base64.so"))
-      end
   end
 
   bash "Install nginx" do
@@ -195,14 +149,16 @@ when "ubuntu"
 
   template "uls.lua" do
     path File.join(lua_module_path, "uls.lua")
-    source "uls.lua.erb"
+    source File.join(node[:lua][:plugin_source_path], "uls.lua")
+    local true
     owner node[:deployment][:user]
     mode 0644
   end
 
   template "tablesave.lua" do
     path File.join(lua_module_path, "tablesave.lua")
-    source "tablesave.lua"
+    source File.join(node[:lua][:plugin_source_path], "tablesave.lua")
+    local true
     owner node[:deployment][:user]
     mode 0644
   end

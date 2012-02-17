@@ -18,7 +18,7 @@ default[:lua][:openssl_source]  = "https://github.com/zhaozg/lua-openssl/tarball
 default[:lua][:cjson_source]  = "http://www.kyne.com.au/~mark/software/lua-cjson-1.0.3.tar.gz"
 default[:lua][:base64_source]  = "http://www.tecgraf.puc-rio.br/~lhf/ftp/lua/5.1/lbase64.tar.gz"
 default[:lua][:module_path]    = File.join(lua[:path], 'lib', 'lua', lua[:simple_version])
-
+default[:lua][:plugin_source_path] = File.join(node["cloudfoundry"]["path"], "router", "ext", "nginx")
 
 default[:nginx][:worker_connections] = 2048
 default[:nginx][:uls_ip] = "localhost"

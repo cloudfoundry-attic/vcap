@@ -36,9 +36,6 @@ ULS_BACKEND_ADDR       = "backend_addr"
 ULS_REQEST_TAGS        = "request_tags"
 ULS_ROUTER_IP          = "router_ip"
 
-SESSION_KEY            = "<%= node[:router][:session_key] %>"
-TRACE_KEY              = "<%= node[:router][:trace_key] %>"
-
 --[[
   Message between nginx and uls (as http body)
   nginx -> uls
