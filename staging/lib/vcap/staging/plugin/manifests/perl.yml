@@ -1,0 +1,23 @@
+---
+name: "perl"
+runtimes:
+  - "perl":
+      description: "Perl 5"
+      version: "5.14.2"
+      executable: "perl"
+      default: true
+app_servers:
+  - "plack":
+      description: "Plack"
+      executable: "plackup"
+      default: true
+detection:
+  - "*.pl": true
+  - "*.pm": true
+staged_services:
+  - "name": "mysql"
+    "version": "*"
+  - "name": "postgresql"
+    "version": "*"
+
+# vim: filetype=yaml

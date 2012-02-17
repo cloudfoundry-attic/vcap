@@ -261,6 +261,19 @@ if [[ $DEA == true || $ALL == true ]]; then
         rm -fr node-v$NODE_VERSION
     fi
 
+    # Perl
+    if [[ $PLATFORM == 'Linux' ]]; then
+        wget -O - http://cpanmin.us | perl - --self-upgrade
+        # cpanm App::perlbrew
+        # perlbrew init
+        # source ~/perl5/perlbrew/etc/bashrc
+        `perl -Mlocal::lib`
+        cpanm ExtUtils::MakeMaker
+        cpanm Module::Build
+        cpanm Task::Plack
+    fi
+
+
     # For PHP
     if [[ $PLATFORM == 'Linux' ]]; then
         apt-get install -qqy libpcre3 libpcre3-dev apache2 php5 php5-mysql php5-dev php-pear php5-gd libapr1 libaprutil1 php5-common php5-curl php5-mcrypt php5-imagick php5-xmlrpc zend-framework php5-imap
