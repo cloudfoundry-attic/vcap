@@ -104,3 +104,11 @@ IdentityFile $(pwd)/ssh/access_key
 Host container
 HostName ${network_container_ip}
 EOS
+
+# The `mesg` tool modifies permissions on stdin. Warden regularly passes a
+# custom stdin, which makes `mesg` complain that stdin is not a tty. Instead of
+# removing all occurances of `mesg`, we simply bind it to /bin/true.
+chroot <<EOS
+rm /usr/bin/mesg
+ln -s /bin/true /usr/bin/mesg
+EOS
