@@ -21,7 +21,6 @@ class StagingTaskManager
   # @return VCAP::Stager::TaskResult
   def run_staging_task(app, dl_uri, ul_uri)
     inbox = "cc.staging." + VCAP.secure_uuid
-    nonce = VCAP.secure_uuid
     f = Fiber.current
 
     # Wait for notification from the stager
