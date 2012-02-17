@@ -189,7 +189,7 @@ module Warden
             connections.delete(conn)
 
             # Destroy container after grace period
-            if connections.size == 0
+            if connections.size == 0 && self.state != State::Destroyed
               debug "grace timer: setup (%.3fs)" % Server.container_grace_time
 
               @destroy_timer =

@@ -182,6 +182,21 @@ shared_examples "a warden server" do |container_klass|
       }.should raise_error(/unknown handle/)
     end
 
+    it "should not crash when container was already destroyed" do
+      # Disconnect the client
+      client.destroy(@handle)
+      client.disconnect
+
+      # Let the grace time pass
+      sleep 1.1
+
+      # Test that the container can no longer be referenced
+      lambda {
+        client.reconnect
+        result = client.run(@handle, "echo")
+      }.should raise_error(/unknown handle/)
+    end
+
     it "doesn't destroy containers when referenced by another client" do
       # Disconnect the client
       client.disconnect
