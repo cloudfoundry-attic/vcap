@@ -20,7 +20,7 @@ module Warden
           def initialize(container)
             @container = container
 
-            oom_notifier_path = File.expand_path("../../../../../src/oom", __FILE__)
+            oom_notifier_path = File.expand_path("../../../../../src/oom/oom", __FILE__)
             @child = DeferredChild.new(oom_notifier_path, container.cgroup_root_path)
 
             # Zero exit status means a process OOMed, non-zero means an error occurred
