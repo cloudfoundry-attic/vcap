@@ -6,14 +6,7 @@ class StagingTaskLog
       "staging_task_log:#{app_id}"
     end
 
-    def fetch(app_id, redis=nil)
-      redis ||= @redis
-      key = key_for_id(app_id)
-      result = redis.get(key)
-      result ? StagingTaskLog.new(app_id, result) : nil
-    end
-
-    def fetch_fibered(app_id, timeout=5, redis=nil)
+    def fetch_fibered(app_id, redis=nil, timeout=5)
       redis ||= @redis
       f = Fiber.current
       key = key_for_id(app_id)
