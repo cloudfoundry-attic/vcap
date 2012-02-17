@@ -14,14 +14,14 @@ module VCAP
   class Varz
     def call(env)
       varz = Yajl::Encoder.encode(Component.updated_varz, :pretty => true, :terminator => "\n")
-      [200, { 'Content-Type' => 'application/json' }, varz]
+      [200, { 'Content-Type' => 'application/json', 'Content-Length' => varz.length.to_s }, varz]
     end
   end
 
   class Healthz
     def call(env)
       healthz = Component.updated_healthz
-      [200, { 'Content-Type' => 'application/json' }, healthz]
+      [200, { 'Content-Type' => 'application/json', 'Content-Length' => healthz.length.to_s }, healthz]
     end
   end
 
