@@ -69,6 +69,7 @@ describe 'DEA Agent' do
         }
       },
       'disable_dir_cleanup' => true,
+      'droplet_fs_percent_used_threshold' => 100, # don't fail if a developer's machine is almost full
     }
     @dea_config_file = File.join(@run_dir, 'dea.config')
     File.open(@dea_config_file, 'w') {|f| YAML.dump(@dea_cfg, f) }
