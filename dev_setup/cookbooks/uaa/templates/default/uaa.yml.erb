@@ -24,9 +24,8 @@ cloud_controller:
   login_url: http://api.vcap.me/users/{username}/tokens
 
 varz:
-  client:
-    username: varz
-    password: <%= node[:uaa][:varz][:password] %>
+  username: varz
+  password: <%= node[:uaa][:varz][:password] %>
 
 app:
   client:
