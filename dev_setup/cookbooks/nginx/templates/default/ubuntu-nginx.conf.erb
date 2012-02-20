@@ -89,12 +89,8 @@ http {
           local uls = require ("uls")
           local cjson = require("cjson")
 
-          local uls_req_spec = {}
-          local req_stats = uls.serialize_request_statistics()
-          if req_stats then
-            uls_req_spec[uls.ULS_STATS_UPDATE] = req_stats
-            ngx.log(ngx.DEBUG, "monitor trigger stats syncup")
-          end
+          ngx.log(ngx.DEBUG, "monitor trigger stats syncup")
+          uls_req_spec = uls.update_stats_request()
 
           -- generate one subrequest to uls with uls_req_spec
           ngx.location.capture(
@@ -129,30 +125,17 @@ http {
           local uls = require ("uls")
           local cjson = require("cjson")
 
-          if string.len(ngx.var.http_host) == 0 then
-            ngx.exit(ngx.HTTP_BAD_REQUEST)
-          end
-
           ngx.var.timestamp = ngx.time()
 
-          local uls_req_spec = {}
-          uls_req_spec[uls.ULS_HOST_QUERY] = ngx.var.http_host
-
-          local uls_sticky_session = uls.retrieve_vcap_sticky_session(
-                                  ngx.req.get_headers()[uls.COOKIE_HEADER])
-          if uls_sticky_session then
-            uls_req_spec[uls.ULS_STICKY_SESSION] = uls_sticky_session
-            ngx.log(ngx.DEBUG, "req sticks to backend session:"..uls_sticky_session)
+          if string.len(ngx.var.http_host) == 0 then
+            ngx.exit(ngx.HTTP_BAD_REQUEST)
           end
 
           if ngx.req.get_headers()[uls.VCAP_TRACE_HEADER] then
             ngx.var.trace = "Y"
           end
 
-          local req_stats = uls.serialize_request_statistics()
-          if req_stats then
-            uls_req_spec[uls.ULS_STATS_UPDATE] = req_stats
-          end
+          local uls_req_spec = uls.lookup_uls_request(ngx)
 
           -- generate one subrequest to uls with uls_req_spec
           local res = ngx.location.capture(
@@ -190,29 +173,8 @@ http {
             ngx.header[uls.VCAP_ROUTER_HEADER] = ngx.var.router_ip
           end
 
-          local cookies = ngx.header.set_cookie
-          if not cookies then return end
+          uls.handle_cookies(ngx)
 
-          if type(cookies) ~= "table" then cookies = {cookies} end
-          local sticky = false
-          for _, val in ipairs(cookies) do
-            local i, j = string.find(val:upper(), uls.STICKY_SESSIONS)
-            if i then
-              sticky = true
-              break
-            end
-          end
-          if not sticky then return end
-
-          local vcap_cookie = uls.VCAP_SESSION_ID.."="..ngx.var.sticky
-
-          ngx.log(ngx.DEBUG, "generate cookie:"..vcap_cookie.." for resp from:"..
-                  ngx.var.backend_addr)
-          table.insert(cookies, vcap_cookie)
-          -- ngx.header.set_cookie incorrectly makes header to "set-cookie",
-          -- so workaround to set "Set-Cookie" directly
-          -- ngx.header.set_cookie = cookies
-          ngx.header["Set-Cookie"] = cookies
         ';
       }
     }
