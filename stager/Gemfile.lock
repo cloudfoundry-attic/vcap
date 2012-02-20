@@ -43,7 +43,7 @@ GEM
       thin (~> 1.3.1)
       yajl-ruby (~> 0.8.3)
     vcap_logging (0.1.3)
-    vcap_staging (0.1.40)
+    vcap_staging (0.1.41)
       nokogiri (>= 1.4.4)
       rake
       rspec
@@ -67,6 +67,6 @@ DEPENDENCIES
   sinatra
   vcap_common (~> 1.0.8)
   vcap_logging (>= 0.1.3)
-  vcap_staging (~> 0.1.40)
+  vcap_staging (~> 0.1.41)
   webmock
   yajl-ruby (>= 0.7.9)
