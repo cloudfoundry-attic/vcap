@@ -150,3 +150,61 @@ function serialize_request_statistics()
   stats_not_synced = {}
   return stats
 end
+
+function update_stats_request()
+  local uls_req_spec = {}
+  local req_stats = uls.serialize_request_statistics()
+  if req_stats then
+    uls_req_spec[ULS_STATS_UPDATE] = req_stats
+  end
+  return uls_req_spec
+end
+
+function lookup_uls_request(ngx)
+  local uls_req_spec = {}
+
+  -- add host in request
+  uls_req_spec[uls.ULS_HOST_QUERY] = ngx.var.http_host
+
+  -- add sticky session in request
+  local uls_sticky_session = retrieve_vcap_sticky_session(
+          ngx.req.get_headers()[COOKIE_HEADER])
+  if uls_sticky_session then
+    uls_req_spec[ULS_STICKY_SESSION] = uls_sticky_session
+    ngx.log(ngx.DEBUG, "req sticks to backend session:"..uls_sticky_session)
+  end
+
+  -- add status update in request
+  local req_stats = uls.serialize_request_statistics()
+  if req_stats then
+    uls_req_spec[ULS_STATS_UPDATE] = req_stats
+  end
+
+  return uls_req_spec
+end
+
+function handle_cookies(ngx)
+  local cookies = ngx.header.set_cookie
+  if not cookies then return end
+
+  if type(cookies) ~= "table" then cookies = {cookies} end
+  local sticky = false
+  for _, val in ipairs(cookies) do
+    local i, j = string.find(val:upper(), STICKY_SESSIONS)
+    if i then
+      sticky = true
+      break
+    end
+  end
+  if not sticky then return end
+
+  local vcap_cookie = VCAP_SESSION_ID.."="..ngx.var.sticky
+
+  ngx.log(ngx.DEBUG, "generate cookie:"..vcap_cookie.." for resp from:"..
+          ngx.var.backend_addr)
+  table.insert(cookies, vcap_cookie)
+  -- ngx.header.set_cookie incorrectly makes header to "set-cookie",
+  -- so workaround to set "Set-Cookie" directly
+  -- ngx.header.set_cookie = cookies
+  ngx.header["Set-Cookie"] = cookies
+end
