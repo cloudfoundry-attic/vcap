@@ -150,3 +150,104 @@ function serialize_request_statistics()
   stats_not_synced = {}
   return stats
 end
+
+function vcap_handle_cookies(ngx)
+  local cookies = ngx.header.set_cookie
+  if not cookies then return end
+
+  if type(cookies) ~= "table" then cookies = {cookies} end
+  local sticky = false
+  for _, val in ipairs(cookies) do
+    local i, j = string.find(val:upper(), STICKY_SESSIONS)
+    if i then
+      sticky = true
+      break
+    end
+  end
+  if not sticky then return end
+
+  local vcap_cookie = VCAP_SESSION_ID.."="..ngx.var.sticky
+
+  ngx.log(ngx.DEBUG, "generate cookie:"..vcap_cookie.." for resp from:"..
+          ngx.var.backend_addr)
+  table.insert(cookies, vcap_cookie)
+  -- ngx.header.set_cookie incorrectly makes header to "set-cookie",
+  -- so workaround to set "Set-Cookie" directly
+  -- ngx.header.set_cookie = cookies
+  ngx.header["Set-Cookie"] = cookies
+end
+
+function vcap_add_trace_header(backend_addr, router_ip)
+  ngx.header[VCAP_BACKEND_HEADER] = backend_addr
+  ngx.header[VCAP_ROUTER_HEADER] = router_ip
+end
+
+function generate_stats_request()
+  local uls_req_spec = {}
+  local req_stats = uls.serialize_request_statistics()
+  if req_stats then
+    uls_req_spec[ULS_STATS_UPDATE] = req_stats
+  end
+  return cjson.encode(uls_req_spec)
+end
+
+function pre_process_subrequest(ngx)
+  ngx.var.timestamp = ngx.time()
+
+  if string.len(ngx.var.http_host) == 0 then
+    ngx.exit(ngx.HTTP_BAD_REQUEST)
+  end
+
+  if ngx.req.get_headers()[VCAP_TRACE_HEADER] then
+    ngx.var.trace = "Y"
+  end
+end
+
+function generate_uls_request(ngx)
+  local uls_req_spec = {}
+
+  -- add host in request
+  uls_req_spec[uls.ULS_HOST_QUERY] = ngx.var.http_host
+
+  -- add sticky session in request
+  local uls_sticky_session = retrieve_vcap_sticky_session(
+          ngx.req.get_headers()[COOKIE_HEADER])
+  if uls_sticky_session then
+    uls_req_spec[ULS_STICKY_SESSION] = uls_sticky_session
+    ngx.log(ngx.DEBUG, "req sticks to backend session:"..uls_sticky_session)
+  end
+
+  -- add status update in request
+  local req_stats = uls.serialize_request_statistics()
+  if req_stats then
+    uls_req_spec[ULS_STATS_UPDATE] = req_stats
+  end
+
+  return cjson.encode(uls_req_spec)
+end
+
+function post_process_subrequest(ngx, res)
+  if res.status ~= 200 then
+    ngx.exit(ngx.HTTP_NOT_FOUND)
+  end
+
+  local msg = cjson.decode(res.body)
+  ngx.var.backend_addr = msg[ULS_BACKEND_ADDR]
+  ngx.var.uls_req_tags = msg[ULS_REQEST_TAGS]
+  ngx.var.router_ip    = msg[ULS_ROUTER_IP]
+  ngx.var.sticky       = msg[ULS_STICKY_SESSION]
+
+  ngx.log(ngx.DEBUG, "route "..ngx.var.http_host.." to "..ngx.var.backend_addr)
+end
+
+function post_process_response(ngx)
+  local latency = ( ngx.time() - ngx.var.timestamp ) * 1000
+  vcap_store_stats(ngx.var.uls_req_tags, ngx.status, latency)
+
+  if ngx.var.trace == "Y" then
+    vcap_add_trace_header(ngx.var.backend_addr, ngx.var.router_ip)
+  end
+
+  vcap_handle_cookies(ngx)
+end
+
