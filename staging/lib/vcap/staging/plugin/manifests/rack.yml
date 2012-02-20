@@ -1,5 +1,5 @@
 ---
-name: "sinatra"
+name: "rack"
 runtimes:
   - "ruby18":
       version: "1.8.7" # FIXME change to 1.8.7-p334
@@ -24,8 +24,7 @@ app_servers:
       executable: false # determined during staging
       default: true
 detection:
-  - "*.rb": "require 'sinatra'|require \"sinatra\"" # .rb files in the root dir containing a require?
-  - "config.ru": false # use rack if it detects a config.ru
+  - "config.ru": true
   - "config/environment.rb": false # and config/environment.rb must not exist
 staged_services:
   - "name": "mysql"
