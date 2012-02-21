@@ -191,14 +191,14 @@ function generate_stats_request()
   return cjson.encode(uls_req_spec)
 end
 
-function pre_process_subrequest(ngx)
+function pre_process_subrequest(ngx, trace_key)
   ngx.var.timestamp = ngx.time()
 
   if string.len(ngx.var.http_host) == 0 then
     ngx.exit(ngx.HTTP_BAD_REQUEST)
   end
 
-  if ngx.req.get_headers()[VCAP_TRACE_HEADER] then
+  if ngx.req.get_headers()[VCAP_TRACE_HEADER] == trace_key then
     ngx.var.trace = "Y"
   end
 end

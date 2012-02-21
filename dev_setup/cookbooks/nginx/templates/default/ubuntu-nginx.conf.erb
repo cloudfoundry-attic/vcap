@@ -122,7 +122,7 @@ http {
           package.cpath = package.cpath..";<%= node[:lua][:module_path] %>/?.so"
           local uls = require ("uls")
 
-          uls.pre_process_subrequest(ngx)
+          uls.pre_process_subrequest(ngx, "<%= node[:router][:trace_key] %>")
 
           local req = uls.generate_uls_request(ngx)
 

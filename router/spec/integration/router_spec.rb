@@ -87,7 +87,7 @@ describe 'Router Integration Tests (require nginx running)' do
 
   it 'should get correct statistics' do
     num_apps = 10
-    num_requests = 1000
+    num_requests = 100
     dea = DummyDea.new(@nats_server.uri, '1234')
 
     apps = []
@@ -241,7 +241,7 @@ describe 'Router Integration Tests (require nginx running)' do
     dea = DummyDea.new(@nats_server.uri, '1234')
     dea.register_app(app, {"component" => "trace", "runtime" => "ruby"})
 
-    resp = app.get_trace_header("127.0.0.1", RouterServer.port)
+    resp = app.get_trace_header("127.0.0.1", RouterServer.port, TRACE_KEY)
 
     resp.headers["X-Vcap-Backend"].should_not be_nil
     h, p = resp.headers["X-Vcap-Backend"].split(":")
@@ -249,6 +249,21 @@ describe 'Router Integration Tests (require nginx running)' do
 
     resp.headers["X-Vcap-Router"].should_not be_nil
     resp.headers["X-Vcap-Router"].should == RouterServer.host
+
+    dea.unregister_app(app)
+
+    app.stop
+  end
+
+  it 'should not add vcap trace headers when trace key is wrong' do
+    app = TestApp.new('trace.vcap.me')
+    dea = DummyDea.new(@nats_server.uri, '1234')
+    dea.register_app(app, {"component" => "trace", "runtime" => "ruby"})
+
+    resp = app.get_trace_header("127.0.0.1", RouterServer.port, "fake_trace_key")
+
+    resp.headers["X-Vcap-Backend"].should be_nil
+    resp.headers["X-Vcap-Router"].should be_nil
 
     dea.unregister_app(app)
 
