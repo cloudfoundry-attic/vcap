@@ -131,7 +131,7 @@ http {
             ngx.exit(ngx.HTTP_BAD_REQUEST)
           end
 
-          if ngx.req.get_headers()[uls.VCAP_TRACE_HEADER] then
+          if ngx.req.get_headers()[uls.VCAP_TRACE_HEADER] == "<%= node[:router][:trace_key] %>" then
             ngx.var.trace = "Y"
           end
 

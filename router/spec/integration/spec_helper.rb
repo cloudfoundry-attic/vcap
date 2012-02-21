@@ -10,6 +10,8 @@ STICKY_REQUEST = "GET /sticky HTTP/1.1\r\nHost: sticky.vcap.me\r\nConnection: ke
 
 STICKY_RESPONSE = "HTTP/1.1 200 OK\r\nContent-Type: text/html;charset=utf-8\r\nContent-Length: 242\r\nSet-Cookie: _session_id=be009e56c7be0e855d951a3b49e288c98aa36ede; path=/\r\nSet-Cookie: JSESSIONID=be009e56c7be0e855d951a3b49e288c98aa36ede; path=/\r\nConnection: keep-alive\r\nServer: thin 1.2.7 codename No Hup\r\n\r\n<h1>Hello from the Cookie Monster! via: 10.0.1.222:35267</h1><h2>session = be009e56c7be0e855d951a3b49e288c98aa36ede</h2><h4>Cookies set: _session_id, JSESSIONID<h4>Note: Trigger new sticky session cookie name via ?ss=NAME appended to URL</h4>"
 
+TRACE_KEY = "222" # Should be consistent with dev_setup deployment configuration
+
 def simple_http_request(host, path, http_version='1.1')
   "GET #{path} HTTP/#{http_version}\r\nUser-Agent: curl/7.19.7 (i486-pc-linux-gnu) libcurl/7.19.7 OpenSSL/0.9.8k zlib/1.2.3.3 libidn/1.15\r\nHost: #{host}\r\nAccept: */*\r\nContent-Length: 11\r\n\r\nhello world"
 end
@@ -254,8 +256,8 @@ module Integration
       end
     end
 
-    def get_trace_header(router_host, router_port)
-      req = trace_request("222")  # Make sure consistent with deployment config
+    def get_trace_header(router_host, router_port, trace_key)
+      req = trace_request(trace_key)
       # Send out simple request and check request and response
       TCPSocket.open(router_host, router_port) do |rs|
         rs.send(req, 0)
