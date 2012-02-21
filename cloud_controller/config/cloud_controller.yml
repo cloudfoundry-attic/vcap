@@ -159,8 +159,12 @@ runtimes:
     version: 1.9.2
   node:
     version: 0.4.12
+    debug_modes:
+      - run
   node06:
     version: 0.6.8
+    debug_modes:
+      - run
   java:
     version: 1.6.0
     debug_modes:
