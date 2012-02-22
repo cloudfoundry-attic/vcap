@@ -7,7 +7,7 @@ class DEAPool
     end
 
     def process_advertise_message(msg)
-      CloudController.logger.debug("Got DEA advertisement#{msg}.")
+      CloudController.logger.debug2("Got DEA advertisement#{msg}.")
       dea_profiles[msg[:id]] = {:profile => msg, :time => Time.now.to_i}
     end
 
