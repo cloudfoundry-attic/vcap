@@ -64,7 +64,9 @@ module Warden
       def create_job(script)
         job = Job.new(self)
 
-        args = ["-F", File.join(container_path, "ssh", "ssh_config"), "vcap@container"]
+        # -T: Never request a TTY
+        # -F: Use configuration from <container_path>/ssh/ssh_config
+        args = ["-T", "-F", File.join(container_path, "ssh", "ssh_config"), "vcap@container"]
         args << { :input => script }
 
         child = DeferredChild.new("ssh", *args)
