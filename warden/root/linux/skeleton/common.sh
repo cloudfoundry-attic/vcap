@@ -21,7 +21,25 @@ function setup_fs() {
 
   mkdir -p rootfs ${target}
   mount -n -o loop fs rootfs
-  mount -n -t aufs -o br:rootfs=rw:../../base/rootfs=ro+wh none ${target}
+
+  codename=$(lsb_release -c -s)
+
+  case "${codename}" in
+
+  lucid)
+    mount -n -t aufs -o br:rootfs=rw:../../base/rootfs=ro+wh none ${target}
+    ;;
+
+  precise)
+    mount -n -t overlayfs -o rw,upperdir=rootfs,lowerdir=../../base/rootfs none ${target}
+    ;;
+
+  *)
+    echo "Unsupported: '${codename}'"
+    exit 1
+    ;;
+
+  esac
 }
 
 function teardown_fs() {
