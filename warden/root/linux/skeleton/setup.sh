@@ -53,9 +53,12 @@ EOS
 # Inherit nameserver(s)
 cp /etc/resolv.conf ${target}/etc/
 
-# Add vcap user
+# Add vcap user if not already present
 chroot <<-EOS
+if ! id vcap > /dev/null 2>&1
+then
 useradd -mU -s /bin/bash vcap
+fi
 EOS
 
 # Fake udev upstart triggers
