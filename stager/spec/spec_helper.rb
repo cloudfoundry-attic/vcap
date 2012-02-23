@@ -62,7 +62,7 @@ RSpec.configure do |config|
   end
 end
 
-at_exit { FileUtils.rm_r(STAGING_TEMP) }
+# at_exit { FileUtils.rm_r(STAGING_TEMP) }
 
 include WebMock::API
 WebMock.allow_net_connect!
