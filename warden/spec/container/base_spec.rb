@@ -12,10 +12,14 @@ describe Warden::Container::Base do
   Container = Warden::Container::Base
   NetworkPool = SpecNetworkPool
 
-  let(:connection) do
+  def new_connection
     connection = double("connection")
     connection.extend Warden::EventEmitter
     connection
+  end
+
+  let(:connection) do
+    new_connection
   end
 
   let(:network) do
@@ -37,8 +41,8 @@ describe Warden::Container::Base do
     network_pool.push(network)
   end
 
-  def initialize_container
-    container = Container.new(connection)
+  def initialize_container(connection = nil, options = {})
+    container = Container.new(connection || new_connection, options)
     container.stub(:do_create)
     container.stub(:do_stop)
     container.stub(:do_destroy)
@@ -211,6 +215,88 @@ describe Warden::Container::Base do
         expect do
           @container.destroy
         end.to_not raise_error(/failure/i)
+      end
+    end
+  end
+
+  describe "connection management" do
+
+    before(:each) do
+      @connection = new_connection
+      @container = initialize_container(@connection)
+    end
+
+    it "should not store existing connections more than once" do
+      expect do
+        @container.register_connection(@connection)
+      end.to_not change(@container.connections, :size)
+    end
+
+    it "should store new connections" do
+      another_connection = new_connection
+
+      expect do
+        @container.register_connection(another_connection)
+      end.to change(@container.connections, :size)
+    end
+
+    it "should setup grace timer when the last connection closed" do
+      @container.should_receive(:setup_grace_timer)
+      @container.connections.size.should == 1
+      @connection.emit(:close)
+    end
+
+    it "should setup grace timer when the next to last connection is closed" do
+      @container.register_connection(new_connection)
+      @container.should_not_receive(:setup_grace_timer)
+      @container.connections.size.should == 2
+      @connection.emit(:close)
+    end
+  end
+
+  context "grace timer" do
+
+    before(:each) do
+      @container = initialize_container(new_connection, :grace_time => 0.02)
+    end
+
+    it "should fire after grace time" do
+      em do
+        @container.should_receive(:fire_grace_timer)
+        @container.setup_grace_timer
+
+        ::EM.add_timer(0.03) { done }
+      end
+    end
+
+    it "should not fire when timer is cancelled" do
+      em do
+        @container.should_not_receive(:fire_grace_timer)
+        @container.setup_grace_timer
+
+        ::EM.add_timer(0.01) { @container.cancel_grace_timer }
+        ::EM.add_timer(0.03) { done }
+      end
+    end
+
+    context "when fired" do
+
+      it "should destroy container" do
+        em do
+          @container.should_receive(:destroy)
+          @container.setup_grace_timer
+
+          ::EM.add_timer(0.03) { done }
+        end
+      end
+
+      it "should ignore any WardenError raised by destroy" do
+        em do
+          @container.should_receive(:destroy).and_raise(Warden::WardenError.new("failure"))
+          @container.setup_grace_timer
+
+          ::EM.add_timer(0.03) { done }
+        end
       end
     end
   end

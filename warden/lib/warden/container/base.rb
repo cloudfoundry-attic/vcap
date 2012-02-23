@@ -78,10 +78,10 @@ module Warden
         # Override #new to make sure that acquired resources are released when
         # one of the pooled resourced can not be required. Acquiring the
         # necessary resources must be atomic to prevent leakage.
-        def new(conn)
+        def new(conn, options = {})
           resources = {}
           acquire(resources)
-          instance = super(resources)
+          instance = super(resources, options)
           instance.register_connection(conn)
           instance
 
@@ -108,13 +108,14 @@ module Warden
       attr_reader :events
       attr_reader :limits
 
-      def initialize(resources)
+      def initialize(resources, options = {})
         @resources   = resources
         @connections = ::Set.new
         @jobs        = {}
         @state       = State::Born
         @events      = Set.new
         @limits      = {}
+        @options     = options
 
         on(:before_create) {
           check_state_in(State::Born)
@@ -182,34 +183,56 @@ module Warden
         @container_ip ||= network + 2
       end
 
-      def register_connection(conn)
-        if @destroy_timer
-          debug "grace timer: cancel"
+      def grace_time
+        @options[:grace_time] || Server.container_grace_time
+      end
 
-          ::EM.cancel_timer(@destroy_timer)
-          @destroy_timer = nil
+      def cancel_grace_timer
+        return unless @destroy_timer
+
+        debug "grace timer: cancel"
+
+        ::EM.cancel_timer(@destroy_timer)
+        @destroy_timer = nil
+      end
+
+      def setup_grace_timer
+        debug "grace timer: setup (%.3fs)" % grace_time
+
+        @destroy_timer = ::EM.add_timer(grace_time) do
+          debug "grace timer: fired"
+          fire_grace_timer
+        end
+      end
+
+      def fire_grace_timer
+        f = Fiber.new do
+          debug "grace timer: destroy"
+
+          begin
+            destroy
+
+          rescue WardenError => err
+            # Ignore, destroying after grace time is a best effort
+          end
         end
 
+        f.resume
+      end
+
+      def register_connection(conn)
+        cancel_grace_timer
+
         if connections.add?(conn)
-          conn.on(:close) {
+          conn.on(:close) do
             connections.delete(conn)
 
-            # Destroy container after grace period
-            if connections.size == 0 && self.state != State::Destroyed
-              debug "grace timer: setup (%.3fs)" % Server.container_grace_time
-
-              @destroy_timer =
-                ::EM.add_timer(Server.container_grace_time) {
-                  debug "grace timer: fired"
-
-                  f = Fiber.new do
-                    debug "grace timer: destroy"
-                    destroy
-                  end
-                  f.resume
-                }
+            # Setup grace timer when this was the last connection to reference
+            # this container, and it hasn't already been destroyed
+            if connections.empty? && !has_state?(State::Destroyed)
+              setup_grace_timer
             end
-          }
+          end
         end
       end
 
@@ -452,6 +475,10 @@ module Warden
 
       def state=(state)
         @state = state
+      end
+
+      def has_state?(state)
+        self.state == state
       end
 
       def check_state_in(*states)
