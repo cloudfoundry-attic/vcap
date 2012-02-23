@@ -9,7 +9,7 @@ else
   debootstrap_bin=""
 fi
 chroot_bin=$(which chroot)
-packages="ubuntu-minimal"
+packages="ubuntu-minimal,openssh-server,rsync"
 suite="lucid"
 target="rootfs"
 mirror=$(grep "^deb" /etc/apt/sources.list | head -n1 | cut -d" " -f2)
@@ -85,7 +85,7 @@ EOS
 # Install packages
 chroot <<-EOS
 apt-get update
-apt-get install -y openssh-server rsync
+# apt-get install -y <list of packages>
 EOS
 
 # Remove files we don't need or want
