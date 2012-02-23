@@ -36,7 +36,6 @@ required = { :external_uri => 'api.vcap.me',
              :rails_environment => 'development',
              :local_route  => '127.0.0.1',
              :allow_external_app_uris => false,
-             :new_initial_placement => false,
              :staging => { :max_concurrent_stagers => 10,
                            :max_staging_runtime => 60 },
              :external_port => 9022,
@@ -89,6 +88,10 @@ env_overrides.each do |cfg_key, env_key|
   if ENV.key?(env_key)
     AppConfig[cfg_key] = ENV[env_key]
   end
+end
+
+unless AppConfig.key? :new_initial_placement
+  AppConfig[:new_initial_placement] = false
 end
 
 #generate bulk api credentials unless they've been explicitly specified (not that they should)
