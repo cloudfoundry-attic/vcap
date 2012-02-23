@@ -476,6 +476,7 @@ class HealthManager
             if index_entry[:crashes] > @flapping_death
               index_entry[:state] = FLAPPING
               index_entry[:state_timestamp] = Time.now.to_i
+              @logger.info("Giving up on flapping instance (app_id=#{droplet_id}, index=#{index}). Number of crashes: #{index_entry[:crashes]}.")
             else
               index_entry[:state] = DOWN
               index_entry[:state_timestamp] = Time.now.to_i
