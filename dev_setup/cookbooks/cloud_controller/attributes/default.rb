@@ -21,7 +21,7 @@ default[:cloud_controller][:staging][:django] = "django.yml"
 default[:cloud_controller][:staging][:wsgi] = "wsgi.yml"
 
 # Default builtin services
-default[:cloud_controller][:builtin_services] = ["redis", "mongodb", "mysql", "neo4j"]
+default[:cloud_controller][:builtin_services] = ["redis", "mongodb", "mysql", "neo4j", "rabbitmq"]
 
 # Default capacity
 default[:capacity][:max_uris] = 4
