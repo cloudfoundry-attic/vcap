@@ -13,5 +13,9 @@ define :cloudfoundry_service do
       mode 0644
     end
   end
-  cf_bundle_install(File.expand_path(File.join(node[:cloudfoundry][:path], "services", params[:name])))
+  if params[:components] != "rabbitmq"
+    cf_bundle_install(File.expand_path(File.join(node[:cloudfoundry][:path], "services", params[:name])))
+  else
+    cf_bundle_install(File.expand_path(File.join(node[:cloudfoundry][:path], "services", "rabbit")))
+  end
 end

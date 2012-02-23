@@ -150,6 +150,7 @@ class Component
           cc_dir = File.expand_path(File.join(DIR, '..', 'cloud_controller'))
           Dir.chdir(cc_dir) { `bundle exec rake db:migrate` }
         end
+        puts component_start_path
         exec("#{component_start_path}")
       end
 
