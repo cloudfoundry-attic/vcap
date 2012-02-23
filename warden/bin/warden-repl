@@ -10,7 +10,7 @@ include Shellwords
 module WardenRepl
   class << self
 
-    COMMAND_LIST = ['ping', 'create', 'stop', 'destroy', 'spawn', 'link', 'run', 'show', 'net', 'limit', 'info', 'list','help']
+    COMMAND_LIST = ['ping', 'create', 'stop', 'destroy', 'spawn', 'link', 'run', 'net', 'limit', 'info', 'list','help']
     HELP_MESSAGE = ['ping         - ping warden',
                     'create       - create new container.',
                     'destroy  <handle> - shutdown container <handle>.',
@@ -18,7 +18,6 @@ module WardenRepl
                     'spawn    <handle> cmd    - spawns cmd inside container <handle>, returns #jobid.',
                     'link     <handle> #jobid - do blocking read on results from #jobid.',
                     'run <handle>  cmd - short hand for link(spawn(cmd)) i.e. runs cmd, blocks for result.',
-                    'show <handle> cmd - run cmd and display stdout,stderr.',
                     'list              - list containers.',
                     'info <handle>     - show metadata for container <handle>.',
                     'limit <handle> (mem | disk) [<value>] - set or get resource limit.',
@@ -79,23 +78,15 @@ module WardenRepl
         save_history
 
         #coalesce shell commands into a single string
-        if ['run','show','spawn'].member? words[0]
+        if ['run','spawn'].member? words[0]
           if words.size > 3
             tail = words.slice!(2..-1)
             words.push(tail.join(' '))
            end
         end
 
-        case words[0]
-        when 'help'
+        if words[0] == 'help'
           puts HELP_MESSAGE
-          next
-        when 'show'
-          words[0] = 'run'
-          @client.write(words)
-          result = Yajl::Parser.parse(@client.read.inspect)
-          result[1,2].map {|path| open(path){|f| puts f.read}}
-          puts "exited: #{result[0]}"
           next
         end
 
