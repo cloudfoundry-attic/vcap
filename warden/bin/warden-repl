@@ -10,4 +10,27 @@ unless Process.uid == 0
   exit 1
 end
 
-Warden::Repl.new.run
+options = {}
+OptionParser.new do |op|
+  op.banner = <<-EOT
+Usage: warden-repl [options]
+Runs an interactive REPL by default.
+
+EOT
+  op.on("-c COMMAND", "Run COMMAND non-interactively") do |command|
+    options[:command] = command
+  end
+
+  op.on("-x", "Writes each command preceded by a '+' to stdout before executing") do
+    options[:trace] = true
+  end
+end.parse!
+
+repl = Warden::Repl.new(options)
+
+if options[:command]
+  repl.run_command(options[:command])
+else
+  trap('INT') { exit }
+  repl.run
+end

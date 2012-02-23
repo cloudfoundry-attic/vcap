@@ -28,6 +28,7 @@ Please see README.md for more details.
 EOT
 
     def initialize(opts={})
+      @trace = opts[:trace] == true
       @warden_socket_path = opts[:warden_socket_path] || "/tmp/warden.sock"
       @client = Warden::Client.new(@warden_socket_path)
       @history_path = opts[:history_path] || File.join(ENV['HOME'], '.warden-history')
@@ -56,6 +57,11 @@ EOT
       end
     end
 
+    def run_command(command)
+      @client.connect unless @client.connected?
+      process_line(command)
+    end
+
     private
 
     def container_list
@@ -79,6 +85,8 @@ EOT
     def process_line(line)
       words = Shellwords.shellwords(line)
       return false if words.empty?
+
+      puts "+ #{line}" if @trace
 
       #coalesce shell commands into a single string
       if ['run','spawn'].member? words[0]
