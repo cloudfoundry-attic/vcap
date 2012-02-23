@@ -1,109 +1,13 @@
 #!/usr/bin/env ruby
+$LOAD_PATH.unshift(File.expand_path("../../lib", __FILE__))
 
-require "shellwords"
-require "warden/client"
-require "readline"
-require "yajl"
+require "optparse"
 
-include Shellwords
+require "warden/repl"
 
-module WardenRepl
-  class << self
-
-    COMMAND_LIST = ['ping', 'create', 'stop', 'destroy', 'spawn', 'link', 'run', 'net', 'limit', 'info', 'list','help']
-    HELP_MESSAGE = ['ping         - ping warden',
-                    'create       - create new container.',
-                    'destroy  <handle> - shutdown container <handle>.',
-                    'stop     <handle> - stop all processes in <handle>.',
-                    'spawn    <handle> cmd    - spawns cmd inside container <handle>, returns #jobid.',
-                    'link     <handle> #jobid - do blocking read on results from #jobid.',
-                    'run <handle>  cmd - short hand for link(spawn(cmd)) i.e. runs cmd, blocks for result.',
-                    'list              - list containers.',
-                    'info <handle>     - show metadata for container <handle>.',
-                    'limit <handle> (mem | disk) [<value>] - set or get resource limit.',
-                    'net <handle> #in - forward port #in on external interface to container <handle>.',
-                    'net <handle> #out <address[/mask][:port]> - allow traffic from the container <handle> to address <address>.',
-                    'help - show help message',
-                    '',
-                    'Please see README.md for more details.'
-
-    ]
-
-    def setup
-      unless Process.uid == 0
-        puts "root privilege is required to run."
-        exit 1
-      end
-      @client = Warden::Client.new("/tmp/warden.sock")
-      @client.connect
-      trap('INT') {  exit }
-      @history_path = File.join ENV['HOME'],'.warden-history'
-      restore_history
-    end
-
-
-    def container_list
-      @client.write(['list'])
-      Yajl::Parser.parse(@client.read.inspect)
-    end
-
-    def save_history
-      marshalled = Yajl::Encoder.encode(Readline::HISTORY.to_a)
-      open(@history_path, 'w+') {|f| f.write(marshalled)}
-    end
-
-    def restore_history
-      return unless File.exists? @history_path
-      open(@history_path, 'r') { |file|
-        history = Yajl::Parser.parse(file.read)
-        history.map {|line| Readline::HISTORY.push line}
-      }
-    end
-
-    def run
-      comp = proc { |s|
-        if s[0] == '0'
-          container_list.grep( /^#{Regexp.escape(s)}/ )
-        else
-          COMMAND_LIST.grep( /^#{Regexp.escape(s)}/ )
-        end
-      }
-
-      Readline.completion_append_character = " "
-      Readline.completion_proc = comp
-
-      while line = Readline.readline('warden> ', true)
-        words = shellwords(line)
-        next if words.empty?
-        save_history
-
-        #coalesce shell commands into a single string
-        if ['run','spawn'].member? words[0]
-          if words.size > 3
-            tail = words.slice!(2..-1)
-            words.push(tail.join(' '))
-           end
-        end
-
-        if words[0] == 'help'
-          puts HELP_MESSAGE
-          next
-        end
-
-        @client.write(words)
-        begin
-          STDOUT.puts @client.read.inspect
-        rescue  => e
-          if e.message.match('unknown command')
-            puts "#{e.message}, try help for assistance."
-          else
-            puts e.message
-          end
-        end
-      end
-    end
-  end
+unless Process.uid == 0
+  STDERR.puts "root privilege is required to run."
+  exit 1
 end
 
-WardenRepl.setup
-WardenRepl.run
+Warden::Repl.new.run
