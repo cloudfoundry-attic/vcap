@@ -44,13 +44,12 @@ describe 'Health Manager' do
         'flapping_death' => 4, #3
         'flapping_timeout' => 9, #180
         'restart_timeout' => 15, #20
-        'request_queue' => 0.02,
         'stable_state' => -1, #ensures all apps are "quiescent" for the purpose of testing
         'nats_ping' => 1,
       },
       'logging'      => {'level' => 'warn'},
       'pid'          => File.join(@run_dir, 'health_manager.pid'),
-
+      'dequeueing_rate' => 0,
       'rails_environment' => 'test',
       'database_environment' =>{
         'test' => @helper.config
@@ -66,7 +65,6 @@ describe 'Health Manager' do
     receive_message 'healthmanager.start' do
       @hm.start
     end.should_not be_nil
-
   end
 
   after :all do
@@ -83,10 +81,6 @@ describe 'Health Manager' do
 
   describe 'when running' do
     before :each do
-
-    end
-
-    after :each do
       @helper.delete_all
     end
 

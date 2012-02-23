@@ -334,30 +334,69 @@ class HealthManager
     end
   end
 
-  def analyze_all_apps(collect_stats = true)
-    start = Time.now
-    instances = crashed = 0
-    stats = {:running => 0, :down => 0, :frameworks => {}, :runtimes => {}}
 
-    @droplets.each do |id, droplet_entry|
-      analyze_app(id, droplet_entry, stats) if collect_stats
-      instances += droplet_entry[:instances]
-      crashed += droplet_entry[:crashes].size if droplet_entry[:crashes]
-    end
+  def prepare_analysis(collect_stats)
 
-    VCAP::Component.varz[:total_apps] = @droplets.size
-    VCAP::Component.varz[:total_instances] = instances
-    VCAP::Component.varz[:crashed_instances] = crashed
+    @analysis = {
+      :collect_stats => collect_stats,
+      :start => Time.now,
+      :instances => 0,
+      :crashed => 0,
+      :stats => {:running => 0, :down => 0, :frameworks => {}, :runtimes => {}},
+      :ids => @droplets.keys,
+      :current_key_index => 0
+    }
+  end
 
-    if collect_stats
-      VCAP::Component.varz[:running_instances] = stats[:running]
-      VCAP::Component.varz[:down_instances] = stats[:down]
-      VCAP::Component.varz[:running][:frameworks] = stats[:frameworks]
-      VCAP::Component.varz[:running][:runtimes] = stats[:runtimes]
-      @logger.info("Analyzed #{stats[:running]} running and #{stats[:down]} down apps in #{elapsed_time_in_ms(start)}")
+  def analysis_complete?
+    @analysis && @analysis[:complete]
+  end
+
+  def perform_quantum(id, droplet_entry)
+    analyze_app(id, droplet_entry, @analysis[:stats]) if @analysis[:collect_stats]
+    @analysis[:instances] += droplet_entry[:instances]
+    @analysis[:crashed] += droplet_entry[:crashes].size if droplet_entry[:crashes]
+  end
+
+  def perform_and_schedule_next_quantum
+
+    if @analysis[:current_key_index] < @analysis[:ids].size
+      perform_quantum(
+                      @analysis[:ids][@analysis[:current_key_index]],
+                      @droplets[@analysis[:ids][@analysis[:current_key_index]]])
+
+      @analysis[:current_key_index] += 1
+
+      EM.next_tick {
+        perform_and_schedule_next_quantum
+      }
     else
-      @logger.info("Analyzed #{@droplets.size} apps in #{elapsed_time_in_ms(start)}")
+      finish_analysis
     end
+  end
+
+  def finish_analysis
+
+    return unless @analysis
+    VCAP::Component.varz[:total_apps] = @droplets.size
+    VCAP::Component.varz[:total_instances] = @analysis[:instances]
+    VCAP::Component.varz[:crashed_instances] = @analysis[:crashed]
+
+    if @analysis[:collect_stats]
+      VCAP::Component.varz[:running_instances] = @analysis[:stats][:running]
+      VCAP::Component.varz[:down_instances] = @analysis[:stats][:down]
+      VCAP::Component.varz[:running][:frameworks] = @analysis[:stats][:frameworks]
+      VCAP::Component.varz[:running][:runtimes] = @analysis[:stats][:runtimes]
+      @logger.info("Analyzed #{@analysis[:stats][:running]} running and #{@analysis[:stats][:down]} down apps in #{elapsed_time_in_ms(@analysis[:start])}")
+    else
+      @logger.info("Analyzed #{@droplets.size} apps in #{elapsed_time_in_ms(@analysis[:start])}")
+    end
+    @analysis[:complete] = true
+  end
+
+  def analyze_all_apps(collect_stats = true)
+    prepare_analysis(collect_stats)
+    perform_and_schedule_next_quantum
   end
 
   def create_runtime_metrics
