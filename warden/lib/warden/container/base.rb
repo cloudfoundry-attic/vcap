@@ -66,11 +66,7 @@ module Warden
         # Release resources required for every container instance.
         def release(resources)
           if network = resources.delete(:network)
-              # Release network after some time to make sure the kernel has
-              # time to clean up things such as lingering connections.
-              ::EM.add_timer(5) {
-                network_pool.release(network)
-              }
+            network_pool.release(network)
           end
         end
 
