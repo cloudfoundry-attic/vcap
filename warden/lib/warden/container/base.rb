@@ -22,9 +22,9 @@ module Warden
       # Container setup completed
       class Active < Base; end
 
-      # Triggered by an error condition in the container (OOM, Quota violation)
-      # or explicitly by the user.  All processes have been killed but the
-      # container exists for introspection.  No new commands may be run.
+      # Triggered by an error condition in the container (e.g. OOM) or
+      # explicitly by the user. All processes have been killed but the
+      # container exists for introspection. No new commands may be run.
       class Stopped < Base; end
 
       # All state associated with the container has been destroyed.

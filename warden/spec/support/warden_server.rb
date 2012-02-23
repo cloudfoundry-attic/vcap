@@ -37,7 +37,6 @@ shared_context :warden_server do
           :container_root => container_root,
           :container_klass => container_klass,
           :container_grace_time => 1 },
-        :quota => quota_config,
         :network => {
           :pool_start_address => start_address,
           :pool_size => 64,

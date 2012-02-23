@@ -1,6 +1,5 @@
 require "warden/errors"
 require "warden/container/base"
-require "warden/container/features/quota"
 require "warden/container/features/cgroup"
 require "warden/container/features/net_out"
 require "warden/container/features/net_in"
@@ -12,7 +11,6 @@ module Warden
 
     class Linux < Base
 
-      include Features::Quota
       include Features::Cgroup
       include Features::NetIn
       include Features::NetOut
@@ -36,7 +34,6 @@ module Warden
           "network_container_ip" => container_ip.to_human,
           "network_netmask" => self.class.network_pool.netmask.to_human,
         }
-        env['vcap_uid'] = self.uid if self.uid
         env
       end
 
