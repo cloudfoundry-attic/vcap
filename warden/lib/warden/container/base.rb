@@ -1,3 +1,4 @@
+require "warden/event_emitter"
 require "warden/logger"
 require "warden/errors"
 require "warden/container/spawn"
@@ -45,6 +46,10 @@ module Warden
         # when they are being destroyed.
         def registry
           @registry ||= {}
+        end
+
+        def reset!
+          @registry = nil
         end
 
         # This needs to be set by some setup routine. Container logic expects
@@ -139,7 +144,12 @@ module Warden
           self.class.registry.delete(handle)
 
           unless self.state == State::Stopped
-            self.stop
+            begin
+              self.stop
+
+            rescue WardenError
+              # Ignore, stopping before destroy is a best effort
+            end
           end
 
           self.state = State::Destroyed
@@ -214,11 +224,23 @@ module Warden
       def create
         debug "entry"
 
-        emit(:before_create)
-        do_create
-        emit(:after_create)
+        begin
+          emit(:before_create)
+          do_create
+          emit(:after_create)
 
-        handle
+          handle
+
+        rescue WardenError
+          begin
+            destroy
+
+          rescue WardenError
+            # Ignore, raise original error
+          end
+
+          raise
+        end
 
       rescue => err
         warn "error: #{err.message}"
@@ -300,8 +322,6 @@ module Warden
 
       def link(job_id)
         debug "entry"
-
-        check_state_in(State::Active, State::Stopped)
 
         job = jobs[job_id.to_s]
         unless job
