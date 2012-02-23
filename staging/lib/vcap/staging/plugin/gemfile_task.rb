@@ -131,6 +131,7 @@ class GemfileTask
     Dir.mktmpdir do |tmp_dir|
       @logger.info("Fetching missing gems from RubyGems")
       unless fetch_gems(missing, tmp_dir)
+        @logger.debug "Failed fetching missing gems: $? is #{$?}"
         raise "Failed fetching missing gems from RubyGems"
       end
 
@@ -186,7 +187,7 @@ class GemfileTask
   def fetch_gems(gems, directory)
     return if gems.empty?
     urls = gems.map { |(name, version)| rubygems_url_for(name, version) }.join(" ")
-    cmd  = "wget --quiet --retry-connrefused --connect-timeout=5 --no-check-certificate #{urls}"
+    cmd  = "wget --retry-connrefused --connect-timeout=5 --no-check-certificate #{urls}"
 
     Dir.chdir(directory) do
       system(cmd)
