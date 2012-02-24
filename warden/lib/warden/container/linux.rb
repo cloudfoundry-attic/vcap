@@ -42,9 +42,9 @@ module Warden
       end
 
       def do_create
-        sh "#{env_command} #{root_path}/create.sh #{handle}"
+        sh "#{env_command} #{root_path}/create.sh #{handle}", :timeout => nil
         debug "container created"
-        sh "#{container_path}/start.sh"
+        sh "#{container_path}/start.sh", :timeout => nil
         debug "container started"
       end
 
@@ -53,9 +53,10 @@ module Warden
       end
 
       def do_destroy
-        sh "#{root_path}/destroy.sh #{handle}"
-        sh "rm -rf #{container_path}"
+        sh "#{root_path}/destroy.sh #{handle}", :timeout => nil
         debug "container destroyed"
+        sh "rm -rf #{container_path}", :timeout => nil
+        debug "container removed"
       end
 
       def create_job(script)
