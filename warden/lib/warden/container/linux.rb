@@ -84,6 +84,36 @@ module Warden
 
         job
       end
+
+      def do_copy_in(src_path, dst_path)
+        perform_rsync(src_path, "vcap@container:#{dst_path}")
+
+        "ok"
+      end
+
+      def do_copy_out(src_path, dst_path, owner=nil)
+        perform_rsync("vcap@container:#{src_path}", dst_path)
+
+        if owner
+          sh "chown -R #{owner} #{dst_path}"
+        end
+
+        "ok"
+      end
+
+      private
+
+      def perform_rsync(src_path, dst_path)
+        ssh_config_path = File.join(container_path, "ssh", "ssh_config")
+        cmd = ["rsync -e 'ssh -T -F #{ssh_config_path}'",
+               "-r",           # Recursive copy
+               "-p",           # Preserve permissions
+               "--links",      # Preserve symlinks
+               src_path,
+               dst_path].join(" ")
+        sh(cmd)
+      end
+
     end
   end
 end
