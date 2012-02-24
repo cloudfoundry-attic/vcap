@@ -13,11 +13,36 @@ function chroot() {
   $(which chroot) ${target} env -i /bin/bash
 }
 
-function mount_union() {
+function setup_fs() {
+  if [ ! -f fs ]; then
+    dd if=/dev/null of=fs bs=1k seek=512k
+    mkfs.ext2 -q -F fs
+  fi
+
   mkdir -p rootfs ${target}
-  $(which mount) -t aufs -o br:rootfs=rw:../../base/rootfs=ro+wh none ${target}
+  mount -n -o loop fs rootfs
+
+  codename=$(lsb_release -c -s)
+
+  case "${codename}" in
+
+  lucid)
+    mount -n -t aufs -o br:rootfs=rw:../../base/rootfs=ro+wh none ${target}
+    ;;
+
+  precise)
+    mount -n -t overlayfs -o rw,upperdir=rootfs,lowerdir=../../base/rootfs none ${target}
+    ;;
+
+  *)
+    echo "Unsupported: '${codename}'"
+    exit 1
+    ;;
+
+  esac
 }
 
-function umount_union() {
-  $(which umount) ${target}
+function teardown_fs() {
+  umount ${target}
+  umount rootfs
 }

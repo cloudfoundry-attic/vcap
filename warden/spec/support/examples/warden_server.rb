@@ -52,15 +52,15 @@ shared_examples "a warden server" do |container_klass|
     it "should redirect stdout output" do
       reply = client.run(@handle, "echo hi")
       reply[0].should == 0
-      File.read(reply[1]).should == "hi\n"
-      File.read(reply[2]).should == ""
+      reply[1].should == "hi\n"
+      reply[2].should == ""
     end
 
     it "should redirect stderr output" do
       reply = client.run(@handle, "echo hi 1>&2")
       reply[0].should == 0
-      File.read(reply[1]).should == ""
-      File.read(reply[2]).should == "hi\n"
+      reply[1].should == ""
+      reply[2].should == "hi\n"
     end
 
     it "should propagate exit status" do
@@ -170,6 +170,21 @@ shared_examples "a warden server" do |container_klass|
 
     it "destroys unreferenced containers after some time" do
       # Disconnect the client
+      client.disconnect
+
+      # Let the grace time pass
+      sleep 1.1
+
+      # Test that the container can no longer be referenced
+      lambda {
+        client.reconnect
+        result = client.run(@handle, "echo")
+      }.should raise_error(/unknown handle/)
+    end
+
+    it "should not crash when container was already destroyed" do
+      # Disconnect the client
+      client.destroy(@handle)
       client.disconnect
 
       # Let the grace time pass

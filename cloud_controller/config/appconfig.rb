@@ -4,6 +4,7 @@
 # we are starting in production mode.
 require 'vcap/common'
 require 'vcap/staging/plugin/common'
+require 'openssl'
 
 config_file = ENV['CLOUD_CONTROLLER_CONFIG'] || File.expand_path('../cloud_controller.yml', __FILE__)
 begin
@@ -87,6 +88,10 @@ env_overrides.each do |cfg_key, env_key|
   if ENV.key?(env_key)
     AppConfig[cfg_key] = ENV[env_key]
   end
+end
+
+unless AppConfig.key? :new_initial_placement
+  AppConfig[:new_initial_placement] = false
 end
 
 #generate bulk api credentials unless they've been explicitly specified (not that they should)
