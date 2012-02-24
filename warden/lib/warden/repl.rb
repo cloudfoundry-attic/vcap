@@ -7,7 +7,7 @@ module Warden
   class Repl
 
     COMMAND_LIST = ['ping', 'create', 'stop', 'destroy', 'spawn', 'link',
-                    'run', 'net', 'limit', 'info', 'list','help']
+                    'run', 'net', 'limit', 'info', 'list','copy', 'help']
 
     HELP_MESSAGE =<<-EOT
 ping                          - ping warden
@@ -23,6 +23,7 @@ limit <handle> mem  [<value>] - set or get the memory limit for the container (i
 limit <handle> disk [<value>] - set or get the disk limit for the container (in 1k blocks)
 net <handle> #in              - forward port #in on external interface to container <handle>
 net <handle> #out <address[/mask][:port]> - allow traffic from the container <handle> to address <address>
+copy <handle> <in|out> <src path> <dst path> [ownership opts] - Copy files/directories in and out of the container
 help                          - show help message
 Please see README.md for more details.
 EOT

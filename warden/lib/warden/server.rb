@@ -245,6 +245,17 @@ module Warden
         end
       end
 
+      def process_copy(request)
+        request.require_arguments {|n| (n == 5) || (n == 6) }
+        container = find_container(request[1])
+
+        unless (request[2] == "in") || (request[2] == "out")
+          raise WardenError.new("Invalid direction, must be 'in' or 'out'.")
+        end
+
+        container.copy(*request.slice(2, request.length - 2))
+      end
+
       def process_limit(request)
         request.require_arguments { |n| n >= 3 }
         container = find_container(request[1])
