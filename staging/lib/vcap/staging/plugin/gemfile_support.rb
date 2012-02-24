@@ -24,6 +24,7 @@ module GemfileSupport
     path.unshift(File.dirname(ruby)) if ruby[0] == '/'
 
     safe_env << " PATH='%s'" % [ path.uniq.join(":") ]
+    safe_env << " LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8"
     base_dir = StagingPlugin.platform_config["cache"]
 
     app_dir  = File.join(destination_directory, 'app')
