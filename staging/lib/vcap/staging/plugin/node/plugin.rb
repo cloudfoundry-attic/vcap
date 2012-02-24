@@ -17,7 +17,7 @@ class NodePlugin < StagingPlugin
   # Let DEA fill in as needed..
   def start_command
     command = package_json_start || guess_main_file
-    "%VCAP_LOCAL_RUNTIME% #{command} $@"
+    "%VCAP_LOCAL_RUNTIME% $NODE_ARGS #{command} $@"
   end
 
   private
