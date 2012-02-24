@@ -52,11 +52,11 @@ module Warden
         attr_reader :argv
         attr_reader :options
 
-        def out
+        def stdout
           @child.out
         end
 
-        def err
+        def stderr
           @child.err
         end
 
@@ -101,9 +101,9 @@ module Warden
         # Helper to inject log message
         def set_deferred_success
           if !success?
-            debug "exited with #{exit_status}: #{argv.inspect}"
-            error "stdout: #{out}"
-            error "stderr: #{err}"
+            warn "exited with #{exit_status}: #{argv.inspect}"
+            warn "stdout: #{stdout}"
+            warn "stderr: #{stderr}"
           else
             debug "exited successfully: #{argv.inspect}"
           end
@@ -114,6 +114,8 @@ module Warden
         # Helper to inject log message
         def set_deferred_failure(err)
           error "error running #{argv.inspect}: #{err.message}"
+          warn "stdout (maybe incomplete): #{stdout}"
+          warn "stderr (maybe incomplete): #{stderr}"
           super
         end
 
@@ -122,7 +124,7 @@ module Warden
 
           callback do
             if success?
-              f.resume(:ok, out)
+              f.resume(:ok, stdout)
             else
               f.resume(:err, WardenError.new("command exited with failure"))
             end
