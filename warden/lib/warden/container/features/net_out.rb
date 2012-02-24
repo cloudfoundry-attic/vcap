@@ -89,15 +89,6 @@ module Warden
 
             sh "echo 1 > /proc/sys/net/ipv4/ip_forward"
 
-            # Containers may not communicate with local interfaces
-            sh "iptables -N warden-input", :raise => false
-            sh "iptables -F warden-input"
-            iptables_rule "-A INPUT",
-              %{--in-interface veth+},
-              %{--jump warden-input}
-            iptables_rule "-A warden-input",
-              %{--jump DROP}
-
             # Filter outgoing traffic
             sh "iptables -N warden-forward", :raise => false
             sh "iptables -F warden-forward"

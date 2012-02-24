@@ -37,7 +37,6 @@ shared_context :warden_server do
           :container_root => container_root,
           :container_klass => container_klass,
           :container_grace_time => 1 },
-        :quota => quota_config,
         :network => {
           :pool_start_address => start_address,
           :pool_size => 64,
@@ -69,12 +68,8 @@ shared_context :warden_server do
     Process.waitpid(@pid)
 
     # Destroy all artifacts
-    Dir[File.join(container_root, "*", "instances", "*")].each do |path|
-      stop_script = File.join(path, "stop.sh")
-      system(stop_script) if File.exist?(stop_script)
-
-      # Container should be stopped and destroyed by now...
-      system("rm -rf #{path}")
+    Dir[File.join(container_root, "*", "clear.sh")].each do |clear|
+      system(clear)
     end
   end
 end
