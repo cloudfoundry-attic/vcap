@@ -8,7 +8,6 @@ require 'openssl'
 require 'rubygems'
 require 'bundler/setup'
 
-require 'logging'
 require 'nats/client'
 require 'http/parser'
 

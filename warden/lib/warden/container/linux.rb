@@ -1,6 +1,5 @@
 require "warden/errors"
 require "warden/container/base"
-require "warden/container/features/quota"
 require "warden/container/features/cgroup"
 require "warden/container/features/net_out"
 require "warden/container/features/net_in"
@@ -12,7 +11,6 @@ module Warden
 
     class Linux < Base
 
-      include Features::Quota
       include Features::Cgroup
       include Features::NetIn
       include Features::NetOut
@@ -29,10 +27,6 @@ module Warden
         end
       end
 
-      def container_root_path
-        File.join(container_path, "union")
-      end
-
       def env
         env = {
           "id" => handle,
@@ -40,7 +34,6 @@ module Warden
           "network_container_ip" => container_ip.to_human,
           "network_netmask" => self.class.network_pool.netmask.to_human,
         }
-        env['vcap_uid'] = self.uid if self.uid
         env
       end
 
@@ -49,27 +42,18 @@ module Warden
       end
 
       def do_create
-        # Create container
         sh "#{env_command} #{root_path}/create.sh #{handle}"
         debug "container created"
-
-        # Start container
         sh "#{container_path}/start.sh"
         debug "container started"
       end
 
       def do_stop
-        # Kill all processes in the container
-        sh "#{container_path}/killprocs.sh"
+        sh "#{container_path}/stop.sh"
       end
 
       def do_destroy
-        # Stop container
-        sh "#{container_path}/stop.sh"
-
-        debug "container stopped"
-
-        # Destroy container
+        sh "#{root_path}/destroy.sh #{handle}"
         sh "rm -rf #{container_path}"
         debug "container destroyed"
       end
@@ -77,19 +61,25 @@ module Warden
       def create_job(script)
         job = Job.new(self)
 
-        runner = File.expand_path("../../../../src/runner", __FILE__)
-        socket_path = File.join(container_root_path, "/tmp/runner.sock")
-        unless File.exist?(socket_path)
-          error "socket does not exist: #{socket_path}"
+        # -T: Never request a TTY
+        # -F: Use configuration from <container_path>/ssh/ssh_config
+        args = ["-T", "-F", File.join(container_path, "ssh", "ssh_config"), "vcap@container"]
+        args << { :input => script }
+
+        child = DeferredChild.new("ssh", *args)
+
+        child.callback do
+          if child.exit_status == 255
+            # SSH error, the remote end was probably killed or something
+            job.resume [nil, nil, nil]
+          else
+            job.resume [child.exit_status, child.out, child.err]
+          end
         end
 
-        p = DeferredChild.new(runner, "connect", socket_path, :input => script)
-        p.callback { |path_inside_container|
-          job.finish(File.join(container_root_path, path_inside_container))
-        }
-        p.errback {
-          job.finish
-        }
+        child.errback do |err|
+          job.resume [nil, nil, nil]
+        end
 
         job
       end

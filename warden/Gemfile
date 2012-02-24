@@ -7,10 +7,6 @@ gem "eventmachine", "0.12.11.cloudfoundry.3"
 gem "yajl-ruby"
 gem "em-posix-spawn", '> 0.0.1'
 
-group :linux do
-  gem "sleepy_penguin"
-end
-
 group :spec do
   gem "rspec"
   gem "warden-client"

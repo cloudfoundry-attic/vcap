@@ -69,6 +69,7 @@ describe 'DEA Agent' do
         }
       },
       'disable_dir_cleanup' => true,
+      'droplet_fs_percent_used_threshold' => 100, # don't fail if a developer's machine is almost full
     }
     @dea_config_file = File.join(@run_dir, 'dea.config')
     File.open(@dea_config_file, 'w') {|f| YAML.dump(@dea_cfg, f) }
@@ -138,6 +139,11 @@ describe 'DEA Agent' do
       send_request(@nats_server.uri, 'dea.discover', disc_msg).should_not be_nil
     end
 
+    it 'should respond to a locate message' do
+      send_request(@nats_server.uri, 'dea.locate', {})
+      receive_message(@nats_server.uri, 'dea.advertise').should_not be_nil
+    end
+
     it 'should start a droplet when requested' do
       droplet_info = start_droplet(@nats_server.uri, @droplet)
       droplet_info.should_not be_nil
@@ -204,7 +210,7 @@ describe 'DEA Agent' do
     ret = nil
     em_run_with_timeout do
       NATS.start(:uri => uri) do
-        NATS.subscribe('dea.heartbeat') do |msg|
+        NATS.subscribe(subj) do |msg|
           ret = msg
           EM.stop
         end

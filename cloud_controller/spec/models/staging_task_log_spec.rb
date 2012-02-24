@@ -22,26 +22,55 @@ describe StagingTaskLog do
     end
   end
 
-  describe '#fetch' do
+  describe '#fetch_fibered' do
+    before :each do
+      @redis_mock = mock()
+      @deferrable_mock = EM::DefaultDeferrable.new()
+      @deferrable_mock.stubs(:timeout)
+      @redis_mock.expects(:get).with(@task_key).returns(@deferrable_mock)
+    end
+
     it 'should fetch and decode an existing task result' do
-      redis_mock = mock()
-      redis_mock.expects(:get).with(@task_key).returns(@task_log.task_log)
-      res = StagingTaskLog.fetch(@task_id, redis_mock)
-      res.should be_instance_of(StagingTaskLog)
+      Fiber.new do
+        res = StagingTaskLog.fetch_fibered(@task_id, @redis_mock)
+        res.should be_instance_of(StagingTaskLog)
+      end.resume
+      @deferrable_mock.succeed(@task_log.task_log)
     end
 
     it 'should return nil if no key exists' do
-      redis_mock = mock()
-      redis_mock.expects(:get).with(@task_key).returns(nil)
-      res = StagingTaskLog.fetch(@task_id, redis_mock)
-      res.should be_nil
+      Fiber.new do
+        res = StagingTaskLog.fetch_fibered(@task_id, @redis_mock)
+        res.should be_nil
+      end.resume
+      @deferrable_mock.succeed(nil)
     end
 
     it 'should use the static instance of redis if none is provided' do
-      redis_mock = mock()
-      redis_mock.expects(:get).with(@task_key).returns(nil)
-      StagingTaskLog.redis = redis_mock
-      res = StagingTaskLog.fetch(@task_id, redis_mock)
+      Fiber.new do
+        StagingTaskLog.redis = @redis_mock
+        res = StagingTaskLog.fetch_fibered(@task_id)
+      end.resume
+      @deferrable_mock.succeed(nil)
+    end
+
+    it 'should raise TimeoutError when timed out fetching result' do
+      Fiber.new do
+        expect do
+          res = StagingTaskLog.fetch_fibered(@task_id, @redis_mock)
+        end.to raise_error(VCAP::Stager::TaskError)
+      end.resume
+      @deferrable_mock.fail(nil)
+    end
+
+    it 'should raise error when redis fetching fails' do
+      Fiber.new do
+        expect do
+          res = StagingTaskLog.fetch_fibered(@task_id, @redis_mock)
+        end.to raise_error
+      end.resume
+      @deferrable_mock.fail(RuntimeError.new("Mock Runtime Error from EM::Hiredis"))
     end
   end
+
 end

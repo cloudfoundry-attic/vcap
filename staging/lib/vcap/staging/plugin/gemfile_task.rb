@@ -55,17 +55,30 @@ class GemfileTask
     install_gems([ ['bundler', '1.0.10'] ])
   end
 
+  def install_local_gem(gem_dir,gem_filename,gem_name,gem_version)
+    blessed_gems_dir = File.join(@cache_base_dir, "blessed_gems")
+
+    if File.exists?(File.join(blessed_gems_dir, gem_filename))
+       install_gems([ [gem_name, gem_version] ])
+    else
+       install_from_local_dir(gem_dir, gem_filename)
+    end
+  end
+
   # The application includes some version of Thin in its bundle.
   def bundles_thin?
     dependencies.assoc('thin')
   end
 
+ #The application includes some version of the specified gem in its bundle
+ def bundles_gem?(gem_name)
+    dependencies.assoc(gem_name)
+ end
+
   # The application includes some version of Rack in its bundle.
   def bundles_rack?
     dependencies.assoc('rack')
   end
-
-  private
 
   # Each dependency is a gem [name, version] pair;
   # e.g. ['thin', '1.2.10']
@@ -140,6 +153,25 @@ class GemfileTask
       end
     end
   end
+
+  private
+
+  def install_from_local_dir(local_dir,gem_filename)
+    blessed_gems_dir = File.join(@cache_base_dir, "blessed_gems")
+    gem_path     = File.join(local_dir, gem_filename)
+    @logger.debug "Installing downloaded gem: #{gem_path}"
+    tmp_gem_dir = install_gem(gem_path)
+    raise "Failed installing #{gem_filename}" unless tmp_gem_dir
+
+    installed_gem_path = @cache.put(gem_path, tmp_gem_dir)
+    output = `cp -n #{gem_path} #{blessed_gems_dir} 2>&1`
+    if $?.exitstatus != 0
+      @logger.debug "Failed adding #{gem_path} to #{blessed_gems_dir}: #{output}"
+    end
+    @logger.info "Adding #{gem_filename} to app..."
+    copy_gem_to_app(installed_gem_path)
+  end
+
 
   def copy_gem_to_app(src)
     return unless src && File.exists?(src)

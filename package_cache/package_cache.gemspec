@@ -21,7 +21,7 @@ Gem::Specification.new do |s|
   s.add_dependency('rake', '0.9.2.2')
   s.add_dependency('thin', '1.3.1')
   s.add_dependency('sinatra', '1.3.2')
-  s.add_dependency('vcap_common', '~> 1.0.6')
+  s.add_dependency('vcap_common', '~> 1.0.8')
   s.add_dependency('vcap_logging', '>= 0.1.1')
   s.add_dependency('vcap_package_cache_client', '0.1.8')
 

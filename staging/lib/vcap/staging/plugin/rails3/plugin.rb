@@ -4,6 +4,7 @@ require 'uuidtools'
 class Rails3Plugin < StagingPlugin
   include GemfileSupport
   include RailsDatabaseSupport
+  include RubyAutoconfig
 
   def framework
     'rails3'
@@ -41,13 +42,21 @@ class Rails3Plugin < StagingPlugin
     end
   end
 
+  def resource_dir
+    File.join(File.dirname(__FILE__), 'resources')
+  end
+
   def stage_application
     Dir.chdir(destination_directory) do
       create_app_directories
       copy_source_files
       stage_console
       compile_gems
-      configure_database # TODO - Fail if we just configured a database that the user did not bundle a driver for.
+      if autoconfig_enabled?
+        configure_database # TODO - Fail if we just configured a database that the user did not bundle a driver for.
+        install_autoconfig_gem
+        setup_autoconfig_script
+      end
       create_asset_plugin if disables_static_assets?
       create_startup_script
       create_stop_script
@@ -67,6 +76,11 @@ class Rails3Plugin < StagingPlugin
     end
   end
 
+  def setup_autoconfig_script
+    FileUtils.cp(resource_dir+ '/01-autoconfig.rb',destination_directory +
+      '/app/config/initializers')
+  end
+
   def startup_script
     vars = environment_hash
     # PWD here is before we change to the 'app' directory.
@@ -76,6 +90,7 @@ class Rails3Plugin < StagingPlugin
       vars['GEM_PATH'] = vars['GEM_HOME'] = "$PWD/app/rubygems/ruby/#{library_version}"
     end
     vars['RUBYOPT'] = '-I$PWD/ruby -rstdsync'
+    vars['DISABLE_AUTO_CONFIG'] = 'mysql:postgresql'
     generate_startup_script(vars) do
       cmds = ['mkdir ruby', 'echo "\$stdout.sync = true" >> ./ruby/stdsync.rb']
       cmds << <<-MIGRATE
