@@ -10,7 +10,6 @@ jobs:
           - redis
           - mongodb
           - mysql
-          - blob
     - health_manager
     - redis_node:
         index: "0"
@@ -23,6 +22,3 @@ jobs:
     - mongodb_gateway
     - mongodb_node:
         index: "0"
-    - blob_node:
-        index: "0"
-    - blob_gateway

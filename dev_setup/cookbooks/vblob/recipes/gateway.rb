@@ -5,6 +5,6 @@
 # Copyright 2011, VMware
 #
 
-cloudfoundry_service "blob" do
-  components ["blob_gateway"]
+cloudfoundry_service "vblob" do
+  components ["vblob_gateway"]
 end

@@ -5,6 +5,6 @@
 # Copyright 2011, VMware
 #
 
-cloudfoundry_service "blob" do
-  components ["blob_node"]
+cloudfoundry_service "vblob" do
+  components ["vblob_node"]
 end

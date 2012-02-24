@@ -15,7 +15,7 @@
 # - redis
 # - mysql
 # - mongo
-#
+# - vblob
 
 require 'yaml'
 require 'fileutils'
@@ -313,7 +313,7 @@ module Run
     puts
     kill_service_instances('neo4j', /neo4j/ )
     puts
-    kill_service_instances('blob', /server\.js/); #the entry point is server.js for blob
+    kill_service_instances('vblob', /server\.js/); #the entry point is server.js for vblob
     puts
 
     puts "Cleaning shared directories:"

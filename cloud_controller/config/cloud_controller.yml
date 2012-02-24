@@ -131,7 +131,7 @@ builtin_services:
     token: "0xdeadbeef"
   neo4j:
     token: "0xdeadbeef"
-  blob:
+  vblob:
     token: "0xdeadbeef"
   atmos:
     token: "0xdeadbeef"

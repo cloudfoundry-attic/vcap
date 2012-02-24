@@ -1,0 +1,17 @@
+---
+local_db: sqlite3:/var/vcap/services/vblob/vblob_node.db
+mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
+index: <%= node[:vblob_node][:index] %>
+base_dir: /var/vcap/services/vblob/instances
+vblobd_log_dir: /var/vcap/services/vblob/logs
+pid: /var/vcap/sys/run/vblob_node.pid
+available_memory: <%= node[:vblob_node][:available_memory] %>
+max_memory: <%= node[:vblob_node][:max_memory] %>
+node_id: <%= "vblob_node_#{node[:vblob_node][:index]}" %>
+vblobd_path: <%= File.join(node[:vblob][:path], "bin") %>
+nodejs_path: <%= File.join(node[:nodejs][:path], "bin", "node") %>
+port_range:
+  first: 45001
+  last: 65000
+logging:
+  level: debug
