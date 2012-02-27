@@ -22,6 +22,7 @@ popd > /dev/null
 echo ${PPID} >> ${ASSET_PATH}/ppid
 
 ip link add name ${network_iface_host} type veth peer name ${network_iface_container}
+ip link set ${network_iface_host} netns 1
 ip link set ${network_iface_container} netns ${PID}
 
 exit 0
