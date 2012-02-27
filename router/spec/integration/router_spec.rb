@@ -57,7 +57,7 @@ describe 'Router Integration Tests (require nginx running)' do
     app.stop
   end
 
-  it 'should properly distibute messages between multiple backends' do
+  it 'should properly distribute messages between multiple backends' do
     num_apps = 10
     num_requests = 100
     dea = DummyDea.new(@nats_server.uri, '1234')
