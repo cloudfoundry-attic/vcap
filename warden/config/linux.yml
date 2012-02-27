@@ -1,0 +1,6 @@
+---
+server:
+  container_klass: Warden::Container::Linux
+
+logging:
+  level: debug2
