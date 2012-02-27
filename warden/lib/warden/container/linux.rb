@@ -74,7 +74,7 @@ module Warden
             # SSH error, the remote end was probably killed or something
             job.resume [nil, nil, nil]
           else
-            job.resume [child.exit_status, child.out, child.err]
+            job.resume [child.exit_status, child.stdout, child.stderr]
           end
         end
 
