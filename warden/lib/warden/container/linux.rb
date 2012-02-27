@@ -111,7 +111,7 @@ module Warden
                "--links",      # Preserve symlinks
                src_path,
                dst_path].join(" ")
-        sh(cmd)
+        sh(cmd, :timeout => nil)
       end
 
     end
