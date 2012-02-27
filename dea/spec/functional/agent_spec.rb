@@ -63,7 +63,7 @@ describe 'DEA Agent' do
       'pid'          => File.join(@run_dir, 'dea.pid'),
       'runtimes'     => {
         'ruby18' => {
-          'executable'        => '/usr/bin/ruby',
+          'executable'        => '/usr/bin/ruby1.8',
           'version'           => '1.8.7',
           'version_flag'      => "-e 'puts RUBY_VERSION'"
         }
