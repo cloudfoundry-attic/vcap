@@ -9,11 +9,6 @@ require "optparse"
 
 require "warden/repl"
 
-unless Process.uid == 0
-  STDERR.puts "root privilege is required to run."
-  exit 1
-end
-
 options = {}
 OptionParser.new do |op|
   op.banner = <<-EOT
