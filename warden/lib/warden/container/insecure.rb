@@ -34,7 +34,7 @@ module Warden
         child = DeferredChild.new(File.join(container_path, "run.sh"), :input => script)
 
         child.callback do
-          job.resume [child.exit_status, child.out, child.err]
+          job.resume [child.exit_status, child.stdout, child.stderr]
         end
 
         child.errback do |err|
