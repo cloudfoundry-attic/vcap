@@ -23,8 +23,16 @@ module Warden
       "/tmp/warden.sock"
     end
 
+    def self.default_unix_domain_permissions
+      0755
+    end
+
     def self.unix_domain_path
       @unix_domain_path
+    end
+
+    def self.unix_domain_permissions
+      @unix_domain_permissions
     end
 
     def self.default_container_root
@@ -54,6 +62,7 @@ module Warden
     def self.setup_server(config = nil)
       config ||= {}
       @unix_domain_path = config.delete(:unix_domain_path) { default_unix_domain_path }
+      @unix_domain_permissions = config.delete(:unix_domain_permissions) { default_unix_domain_permissions }
       @container_root = config.delete(:container_root) { default_container_root  }
       @container_klass = config.delete(:container_klass) { default_container_klass }
       @container_grace_time = config.delete(:container_grace_time) { default_container_grace_time }
@@ -87,6 +96,10 @@ module Warden
 
           FileUtils.rm_f(unix_domain_path)
           ::EM.start_unix_domain_server(unix_domain_path, ClientConnection)
+
+          # This is intentionally blocking. We do not want to start accepting
+          # connections before permissions have been set on the socket.
+          FileUtils.chmod(unix_domain_permissions, unix_domain_path)
         end
 
         f.resume
