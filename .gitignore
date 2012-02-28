@@ -12,3 +12,5 @@ ci-working-dir
 *.swp
 .rvmrc
 *.pid
+*.iml
+.DS_Store
