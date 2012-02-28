@@ -58,13 +58,6 @@ EOT
       end
     end
 
-    def run_command(command)
-      @client.connect unless @client.connected?
-      process_line(command)
-    end
-
-    private
-
     def container_list
       @client.write(['list'])
       Yajl::Parser.parse(@client.read.inspect)
@@ -107,6 +100,7 @@ EOT
         return command_info
       end
 
+      @client.connect() unless @client.connected?
       @client.write(words)
       begin
         raw_result = @client.read.inspect

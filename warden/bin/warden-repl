@@ -28,7 +28,7 @@ end.parse!
 repl = Warden::Repl.new(options)
 
 if options[:command]
-  command_info = repl.run_command(options[:command])
+  command_info = repl.process_line(options[:command])
   status =
     if command_info[:error]
       1
