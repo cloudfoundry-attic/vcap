@@ -12,3 +12,5 @@ default[:uaa][:my][:secret] = "$2a$08$fsPmrV9zHPU14qpPR1c49.GVRL8JvW33y1qlYFwiZW
 
 # app client password => "appclientsecret"
 default[:uaa][:app][:secret] = "$2a$08$Q7ZoYHasNrVzeaZ1Vjgau.2LsOJeDm7.KlCU9w3xZMDa60WYLfVom"
+
+default[:uaa][:jwt_secret] = "uaa_jwt_secret"
