@@ -1,8 +1,7 @@
 require "warden/errors"
 require "warden/container/base"
 require "warden/container/features/cgroup"
-require "warden/container/features/net_out"
-require "warden/container/features/net_in"
+require "warden/container/features/net"
 require "warden/container/features/mem_limit"
 
 module Warden
@@ -12,8 +11,7 @@ module Warden
     class Linux < Base
 
       include Features::Cgroup
-      include Features::NetIn
-      include Features::NetOut
+      include Features::Net
       include Features::MemLimit
 
       class << self

@@ -1,6 +1,5 @@
 require "warden/errors"
 require "warden/container/spawn"
-require "warden/container/features/net_helper"
 
 module Warden
 
@@ -8,7 +7,7 @@ module Warden
 
     module Features
 
-      module NetIn
+      module Net
 
         include Spawn
 
@@ -19,65 +18,76 @@ module Warden
         def initialize(*args)
           super(*args)
 
-          on(:before_create) {
-            # Inbound port forwarding rules MUST be deleted before the container is started
-            clear_inbound_port_forwarding_rules
+          on(:after_create) {
+            sh "#{container_path}/net.sh setup"
           }
 
-          on(:after_destroy) {
-            # Inbound port forwarding rules SHOULD be deleted after the container is stopped
-            clear_inbound_port_forwarding_rules
+          on(:before_destroy) {
+            sh "#{container_path}/net.sh teardown"
           }
         end
 
         def do_net_in
           port = PortPool.acquire
 
-          rule = [
-            "--protocol tcp",
-            "--destination-port #{port}",
-            "--jump DNAT",
-            "--to-destination #{container_ip.to_human}:#{port}" ]
-            sh "iptables -t nat -A warden-prerouting #{rule.join(" ")}"
+          sh *[ %{env},
+                %{PORT=%s} % port,
+                %{%s/net.sh} % container_path,
+                %{in} ]
 
-            # Port may be re-used after this container has been destroyed
-            on(:after_destroy) {
-              PortPool.release(port)
-            }
+          # Port may be re-used after this container has been destroyed
+          on(:after_destroy) {
+            PortPool.release(port)
+          }
 
-            # Return mapped port to the caller
-            port
+          # Return mapped port to the caller
+          port
 
         rescue WardenError
           PortPool.release(port)
           raise
         end
 
-        protected
+        def do_net_out(spec)
+          network, port = spec.split(":")
 
-        def clear_inbound_port_forwarding_rules
-          commands = [
-            %{iptables -t nat -S warden-prerouting},
-            %{grep " #{Regexp.escape(container_ip.to_human)}:"},
-            %{sed s/-A/-D/},
-            %{xargs -L 1 -r iptables -t nat} ]
-          sh commands.join(" | ")
+          sh *[ %{env},
+                %{NETWORK=%s} % network,
+                %{PORT=%s} % port,
+                %{%s/net.sh} % container_path,
+                %{out} ]
+
+          "ok"
         end
 
         module ClassMethods
 
-          include NetHelper
           include Spawn
+
+          # Network blacklist
+          attr_accessor :deny_networks
+
+          # Network whitelist
+          attr_accessor :allow_networks
 
           def setup(config = {})
             super(config)
 
-            # Prepare chain for DNAT
-            sh "iptables -t nat -N warden-prerouting", :raise => false
-            sh "iptables -t nat -F warden-prerouting"
-            iptables_rule "-t nat -A PREROUTING",
-              %{--in-interface #{external_interface}},
-              %{--jump warden-prerouting}
+            allow_networks = []
+            if config[:network]
+              allow_networks = [config[:network][:allow_networks]].flatten.compact
+            end
+
+            deny_networks = []
+            if config[:network]
+              deny_networks = [config[:network][:deny_networks]].flatten.compact
+            end
+
+            sh *[ %{env},
+                  %{ALLOW_NETWORKS=%s} % allow_networks.join(" "),
+                  %{DENY_NETWORKS=%s} % deny_networks.join(" "),
+                  %{%s/net.sh} % root_path,
+                  %{setup} ]
 
             # 1k available ports should be "good enough"
             if PortPool.instance.available < 1000
