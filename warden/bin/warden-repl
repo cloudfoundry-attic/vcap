@@ -28,7 +28,16 @@ end.parse!
 repl = Warden::Repl.new(options)
 
 if options[:command]
-  repl.run_command(options[:command])
+  command_info = repl.run_command(options[:command])
+  status =
+    if command_info[:error]
+      1
+    elsif command_info[:name] == "run"
+      Integer(command_info[:result][0])
+    else
+      0
+    end
+  exit status
 else
   trap('INT') { exit }
   repl.run

@@ -85,7 +85,12 @@ EOT
 
     def process_line(line)
       words = Shellwords.shellwords(line)
-      return false if words.empty?
+      return nil if words.empty?
+
+      command_info = {
+        :name   => words[0],
+        :args   => words.slice(1, words.length - 1),
+      }
 
       puts "+ #{line}" if @trace
 
@@ -99,13 +104,16 @@ EOT
 
       if words[0] == 'help'
         puts HELP_MESSAGE
-        return true
+        return command_info
       end
 
       @client.write(words)
       begin
-        puts @client.read.inspect
+        raw_result = @client.read.inspect
+        puts raw_result
+        command_info[:result] = Yajl::Parser.parse(raw_result)
       rescue  => e
+        command_info[:error] = e
         if e.message.match('unknown command')
           puts "#{e.message}, try help for assistance."
         else
@@ -113,7 +121,7 @@ EOT
         end
       end
 
-      true
+      command_info
     end
 
   end
