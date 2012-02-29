@@ -1,0 +1,12 @@
+{
+  "name": "rabbit_node",
+  "override_attributes": {},
+  "json_class": "Chef::Role",
+  "description": "RabbitMQ messaging system",
+  "chef_type": "role",
+  "run_list" : ["recipe[deployment]",
+                "recipe[essentials]",
+                "recipe[ruby]",
+                "recipe[rabbitmq]",
+                "recipe[rabbitmq::node]"]
+}
