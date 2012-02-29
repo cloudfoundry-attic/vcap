@@ -1,21 +1,13 @@
 require 'rake'
+require 'rubygems/package_task'
 
 $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), 'lib'))
 require 'vcap/staging/version'
 
-task :build do
-  sh "gem build vcap_staging.gemspec"
-end
+Gem::PackageTask.new(Gem::Specification.load('vcap_staging.gemspec')).define
 
-task :spec => ['bundler:install:test'] do
-  desc 'Run tests'
-  sh('cd spec && rake spec')
-end
-
-task 'ci:spec' do
-  desc 'Run tests for CI'
-  sh('cd spec && rake ci:spec')
-end
+desc "build gem"
+task :build => :gem
 
 namespace 'bundler' do
   task 'install' do
@@ -30,3 +22,16 @@ namespace 'bundler' do
     end
   end
 end
+
+require 'rspec/core/rake_task'
+require 'ci/reporter/rake/rspec'
+
+RSpec::Core::RakeTask.new(:spec) do |t|
+  t.pattern = 'spec/**/*_spec.rb'
+  t.rspec_opts = ['--color', '--format nested']
+end
+
+task :default => [:spec]
+
+desc 'Run tests for CI'
+task 'ci:spec' => ['ci:setup:rspec', :spec]
