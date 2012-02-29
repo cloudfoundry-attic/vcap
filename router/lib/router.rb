@@ -144,7 +144,8 @@ EM.run do
                            :config => config,
                            :port => status_config['port'],
                            :user => status_config['user'],
-                           :password => status_config['password'])
+                           :password => status_config['password'],
+                           :logger => Router.log)
 
   # Setup some of our varzs..
   VCAP::Component.varz[:requests] = 0
