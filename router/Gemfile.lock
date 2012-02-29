@@ -30,7 +30,7 @@ GEM
       daemons (>= 1.0.9)
       eventmachine (>= 0.12.6)
       rack (>= 1.0.0)
-    vcap_common (1.0.8)
+    vcap_common (1.0.9)
       eventmachine (~> 0.12.11.cloudfoundry.3)
       nats (~> 0.4.22.beta.8)
       posix-spawn (~> 0.3.6)
@@ -51,6 +51,6 @@ DEPENDENCIES
   rake
   rcov
   rspec
-  vcap_common (~> 1.0.8)
+  vcap_common (~> 1.0.9)
   vcap_logging
   yajl-ruby
