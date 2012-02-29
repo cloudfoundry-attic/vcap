@@ -15,35 +15,19 @@ class SinatraPlugin < StagingPlugin
       create_app_directories
       copy_source_files
       compile_gems
-      if autoconfig_enabled?
-        install_autoconfig_gem
-        setup_autoconfig_script
-      end
+      install_autoconfig_gem if autoconfig_enabled?
       create_startup_script
       create_stop_script
     end
   end
 
-  #Copy a wrapper script, auto_stage.rb, from resources dir to user's app
-  #and replace references to @@MAIN_FILE@@ with the user's main sinatra file name
-  def setup_autoconfig_script
-    sinatra_main = detect_main_file
-    FileUtils.cp(resource_dir + "/auto_stage.rb", destination_directory + '/app')
-    text = File.read(destination_directory + '/app/auto_stage.rb')
-    replaced_text = text.gsub(/@@MAIN_FILE@@/, sinatra_main)
-    File.open(destination_directory + '/app/auto_stage.rb', 'w') {
-      |f| f.puts(replaced_text) }
-  end
-
   # Sinatra has a non-standard startup process.
   # TODO - Synthesize a 'config.ru' file for each app to avoid this.
   def start_command
-    if autoconfig_enabled?
-      sinatra_main = 'auto_stage.rb'
-    else
      sinatra_main = detect_main_file
-    end
-    if uses_bundler?
+    if uses_bundler? && autoconfig_enabled?
+      "#{local_runtime} ./rubygems/ruby/#{library_version}/bin/bundle exec #{local_runtime} -rcfautoconfig ./#{sinatra_main} $@"
+    elsif uses_bundler?
       "#{local_runtime} ./rubygems/ruby/#{library_version}/bin/bundle exec #{local_runtime} ./#{sinatra_main} $@"
     else
       "#{local_runtime} #{sinatra_main} $@"
@@ -56,7 +40,7 @@ class SinatraPlugin < StagingPlugin
     if uses_bundler?
       vars['PATH'] = "$PWD/app/rubygems/ruby/#{library_version}/bin:$PATH"
       vars['GEM_PATH'] = vars['GEM_HOME'] = "$PWD/app/rubygems/ruby/#{library_version}"
-      vars['RUBYOPT'] = '-I$PWD/ruby -rstdsync'
+      vars['RUBYOPT'] = "-I$PWD/ruby #{autoconfig_load_path} -rstdsync"
     else
       vars['RUBYOPT'] = "-rubygems -I$PWD/ruby -rstdsync"
     end
