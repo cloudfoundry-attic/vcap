@@ -1,32 +1,18 @@
-require 'rake'
+require 'rubygems/package_task'
+require 'rspec/core/rake_task'
+require 'ci/reporter/rake/rspec'
 
-$LOAD_PATH.unshift(File.join(File.dirname(__FILE__), 'lib'))
-require 'vcap/staging/version'
+Gem::PackageTask.new(Gem::Specification.load('vcap_staging.gemspec')).define
 
-task :build do
-  sh "gem build vcap_staging.gemspec"
+desc "build gem"
+task :build => :gem
+
+RSpec::Core::RakeTask.new(:spec) do |t|
+  t.pattern = 'spec/**/*_spec.rb'
+  t.rspec_opts = ['--color', '--format nested']
 end
 
-task :spec => ['bundler:install:test'] do
-  desc 'Run tests'
-  sh('cd spec && rake spec')
-end
+task :default => [:spec]
 
-task 'ci:spec' do
-  desc 'Run tests for CI'
-  sh('cd spec && rake ci:spec')
-end
-
-namespace 'bundler' do
-  task 'install' do
-    sh('bundle install')
-  end
-
-  environments = %w(test development production)
-  environments.each do |env|
-    desc "Install gems for #{env}"
-    task "install:#{env}" do
-      sh("bundle install --local --without #{(environments - [env]).join(' ')}")
-    end
-  end
-end
+desc 'Run tests for CI'
+task 'ci:spec' => ['ci:setup:rspec', :spec]
