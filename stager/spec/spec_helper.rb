@@ -23,7 +23,7 @@ RSpec.configure do |config|
   config.before(:all) do
     begin
       VCAP::Subprocess.run("cp -a #{File.join(StagingPlugin::DEFAULT_MANIFEST_ROOT, 'sinatra.yml')} #{STAGING_TEMP}")
-      if ENV["CI_VCAP_STAGER_RUBY18"] && ENV["CI_VCAP_STAGER_RUBY18_VER"] then
+      if ENV["CI_VCAP_RUBY18"] && ENV["CI_VCAP_RUBY18_VER"] then
         sinatra_manifest = {
           'name' => "sinatra",
           'runtimes' => [
@@ -39,7 +39,6 @@ RSpec.configure do |config|
         File.open(File.join(STAGING_TEMP, "sinatra.yml"), "w") do |file|
           YAML.dump sinatra_manifest, file
         end
-        puts File.join(STAGING_TEMP, "sinatra.yml")
       end
     rescue VCAP::SubprocessStatusError => e
       puts "Unable to copy staging manifests. Permissions problem?"
