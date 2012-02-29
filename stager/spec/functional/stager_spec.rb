@@ -138,7 +138,7 @@ describe VCAP::Stager do
   def wait_for_task_result(nats_uri, subj, task_args)
     task_result = nil
     NATS.start(:uri => nats_uri) do
-      EM.add_timer(5) { NATS.stop }
+      EM.add_timer(12) { NATS.stop }
       NATS.subscribe(subj) do |msg|
         task_result = VCAP::Stager::TaskResult.decode(msg)
         NATS.stop
