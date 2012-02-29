@@ -7,6 +7,7 @@ default[:nginx][:module_upload_source]  = "http://www.grid.net.ru/nginx/download
 default[:nginx][:module_headers_more_source]  = "https://github.com/agentzh/headers-more-nginx-module/tarball/v0.15rc3"
 default[:nginx][:module_devel_kit_source]  = "https://github.com/simpl/ngx_devel_kit/tarball/v0.2.17rc2"
 default[:nginx][:module_lua_source]  = "https://github.com/chaoslawful/lua-nginx-module/tarball/v0.3.1rc24"
+default[:nginx][:module_chunkin_source]  = "https://github.com/agentzh/chunkin-nginx-module/zipball/v0.23rc2"
 default[:nginx][:path]    = File.join(node[:deployment][:home], "deploy", "nginx", "nginx-#{nginx[:version]}")
 default[:nginx][:vcap_log] = File.join(node[:deployment][:home], "sys", "log", "vcap.access.log")
 

@@ -49,6 +49,13 @@ http {
     server_name  _;
     server_name_in_redirect off;
 
+    # The following is for supporting chunked encoding
+    chunkin on;
+    error_page 411 = @my_411_error;
+    location @my_411_error {
+      chunkin_resume;
+    }
+
     #TODO: how to make this internal location totally transparent to outside
     location = /vcapuls {
       internal;

@@ -50,7 +50,7 @@ when "ubuntu"
   remote_file File.join("", "tmp", "nginx_upload_module-2.2.0.tar.gz") do
     owner node[:deployment][:user]
     source node[:nginx][:module_upload_source]
-    not_if { ::File.exists?(File.join("", "tmp", "nginx_upload_module-2.2.0.tar.g")) }
+    not_if { ::File.exists?(File.join("", "tmp", "nginx_upload_module-2.2.0.tar.gz")) }
   end
 
   remote_file File.join("", "tmp", "headers-more-v0.15rc3.tar.gz") do
@@ -69,6 +69,12 @@ when "ubuntu"
     owner node[:deployment][:user]
     source node[:nginx][:module_lua_source]
     not_if { ::File.exists?(File.join("", "tmp", "nginx-lua.v0.3.1rc24.tar.gz")) }
+  end
+
+  remote_file File.join("", "tmp", "chunkin-nginx-module-v0.23rc2.zip") do
+    owner node[:deployment][:user]
+    source node[:nginx][:module_chunkin_source]
+    not_if { ::File.exists?(File.join("", "tmp", "chunkin-nginx-module-v0.23rc2.zip")) }
   end
 
   directory nginx_path do
@@ -126,6 +132,7 @@ when "ubuntu"
       tar xzf headers-more-v0.15rc3.tar.gz
       tar xzf devel-kit-v0.2.17rc2.tar.gz
       tar xzf nginx-lua.v0.3.1rc24.tar.gz
+      unzip chunkin-nginx-module-v0.23rc2.zip
       cd nginx-#{nginx_version}
       LUA_LIB=#{lua_path}/lib LUA_INC=#{lua_path}/include ./configure \
         --prefix=#{nginx_path} \
@@ -133,7 +140,9 @@ when "ubuntu"
         --add-module=../nginx_upload_module-2.2.0 \
         --add-module=../agentzh-headers-more-nginx-module-5fac223 \
         --add-module=../simpl-ngx_devel_kit-bc97eea \
-        --add-module=../chaoslawful-lua-nginx-module-4d92cb1
+        --add-module=../chaoslawful-lua-nginx-module-4d92cb1 \
+        --add-module=../agentzh-chunkin-nginx-module-ddc0dd5
+
       make
       make install
 
