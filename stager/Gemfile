@@ -14,4 +14,5 @@ group :test do
   gem 'rspec'
   gem 'sinatra'
   gem 'webmock'
+  gem 'ci_reporter'
 end
