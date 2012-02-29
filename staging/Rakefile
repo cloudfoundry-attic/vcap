@@ -2,17 +2,24 @@ require 'rake'
 
 $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), 'lib'))
 require 'vcap/staging/version'
-
-GEM_NAME    = 'vcap_staging'
-GEM_VERSION = VCAP::Staging::VERSION
+require 'ci/reporter/rake/rspec'
+ENV['CI_REPORTS'] = File.expand_path('spec/reports', File.dirname(__FILE__))
 
 task :build do
   sh "gem build vcap_staging.gemspec"
 end
 
-task :spec => ['bundler:install:test'] do
-  desc 'Run tests'
+task :spec => ['bundler:install:test', 'spec:run'] do
+  desc 'Prepare bundle and run tests'
+end
+
+task 'spec:run' do
+  desc 'Run tests (only)'
   sh('cd spec && rake spec')
+end
+
+task 'ci:spec' => ["ci:setup:rspec", "spec:run"] do
+  desc 'Run tests for CI'
 end
 
 namespace 'bundler' do
