@@ -37,7 +37,7 @@ class DefaultController < ApplicationController
       ret[svc_type] ||= {}
       ret[svc_type][svc.name] ||= {}
       ret[svc_type][svc.name][svc.version] ||= {}
-      ret[svc_type][svc.name][svc.version] = svc.as_legacy
+      ret[svc_type][svc.name][svc.version] = svc.as_legacy(user)
     end
 
     render :json => ret

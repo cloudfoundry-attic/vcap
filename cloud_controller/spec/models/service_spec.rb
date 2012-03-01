@@ -74,8 +74,13 @@ describe Service do
       @user_b.set_and_encrypt_password('foo')
       @user_b.should be_valid
 
+      @user_c = User.new(:email => 'c@foo.com')
+      @user_c.set_and_encrypt_password('foo')
+      @user_c.should be_valid
+
       @svc = make_service(
         :url   => 'http://www.foo.com',
+        :plans => ['plan_a', 'plan_b', 'plan_c'],
         :label => 'foo-bar',
         :token => 'foobar'
       )
@@ -83,6 +88,7 @@ describe Service do
 
       @user_acl_svc = make_service(
         :url   => 'http://www.foo.com',
+        :plans => ['plan_a', 'plan_b', 'plan_c'],
         :label => 'foo-bar1',
         :token => 'foobar',
         :acls  => {'users' => ['a@bar.com'], 'wildcards' => []}
@@ -91,14 +97,43 @@ describe Service do
 
       @wc_acl_svc = make_service(
         :url   => 'http://www.foo.com',
+        :plans => ['plan_a', 'plan_b', 'plan_c'],
         :label => 'foo-bar2',
         :token => 'foobar',
         :acls  => {'users' => [], 'wildcards' => ['*@bar.com']}
       )
       @wc_acl_svc.should be_valid
+
+      @p_acl_svc = make_service(
+        :url   => 'http://www.foo.com',
+        :plans => ['plan_a', 'plan_b', 'plan_c'],
+        :label => 'foo-bar3',
+        :token => 'foobar',
+        :acls  => {
+          'plans' => {
+            'plan_a' => {'wildcards' => ['*@bar.com']}
+          }
+        }
+      )
+      @p_acl_svc.should be_valid
+
+      @combo_acl_svc = make_service(
+        :url   => 'http://www.foo.com',
+        :plans => ['plan_a', 'plan_b', 'plan_c'],
+        :label => 'foo-bar4',
+        :token => 'foobar',
+        :acls  => {
+          'wildcards' => ['*@bar.com'],
+          'plans' => {
+            'plan_a' => {'users' => ['a@bar.com']}
+          }
+        }
+      )
+      @combo_acl_svc.should be_valid
     end
 
     it "should return true for services with no acls" do
+      @svc.visible_to_user?(@user_a, 'plan_a').should be_true
       @svc.visible_to_user?(@user_a).should be_true
     end
 
@@ -110,6 +145,27 @@ describe Service do
     it "should correctly validate users in the wildcard acl" do
       @wc_acl_svc.visible_to_user?(@user_a).should be_true
       @wc_acl_svc.visible_to_user?(@user_b).should be_true
+      @wc_acl_svc.visible_to_user?(@user_c).should be_false
+    end
+
+    it "should correctly validate user in the plan acls" do
+      @p_acl_svc.visible_to_user?(@user_a).should be_true  # can see plan_a, plan_b, plan_c
+      @p_acl_svc.visible_to_user?(@user_b).should be_true  # can see plan_a, plan_b, plan_c
+      @p_acl_svc.visible_to_user?(@user_c).should be_true  # can see plan_b, plan_c
+
+      @p_acl_svc.visible_to_user?(@user_a, "plan_a").should be_true
+      @p_acl_svc.visible_to_user?(@user_b, "plan_a").should be_true
+      @p_acl_svc.visible_to_user?(@user_c, "plan_a").should be_false
+    end
+
+    it "should correctly validate user in the service acls and the plan acls" do
+      @combo_acl_svc.visible_to_user?(@user_a).should be_true    # can see plan_a, plan_b, plan_c
+      @combo_acl_svc.visible_to_user?(@user_b).should be_true    # can see plan_b, plan_c
+      @combo_acl_svc.visible_to_user?(@user_c).should be_false   # can not see service
+
+      @combo_acl_svc.visible_to_user?(@user_a, "plan_a").should be_true
+      @combo_acl_svc.visible_to_user?(@user_b, "plan_a").should be_false
+      @combo_acl_svc.visible_to_user?(@user_c, "plan_a").should be_false
     end
   end
 
