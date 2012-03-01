@@ -1,0 +1,7 @@
+Code-Review+2: Matt Page <mpage@vmware.com>
+Verified+1: Matt Page <mpage@vmware.com>
+Submitted-by: Matt Page <mpage@vmware.com>
+Submitted-at: Thu, 01 Mar 2012 22:48:11 +0000
+Reviewed-on: http://cloudfoundry-codereview.qa.mozycloud.com/gerrit/3891
+Project: vcap
+Branch: refs/heads/new_stager_remove_old_droplets
