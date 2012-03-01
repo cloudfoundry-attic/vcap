@@ -30,10 +30,12 @@ repl = Warden::Repl.new(options)
 if options[:command]
   command_info = repl.process_line(options[:command])
   status =
-    if command_info[:error]
+    if !command_info
+      0
+    elsif command_info[:error]
       1
     elsif command_info[:name] == "run"
-      Integer(command_info[:result][0])
+      Integer(command_info[:result][0] || 1)
     else
       0
     end
