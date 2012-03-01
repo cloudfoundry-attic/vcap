@@ -23,23 +23,38 @@ EOT
   op.on("-x", "Writes each command preceded by a '+' to stdout before executing") do
     options[:trace] = true
   end
+
+  op.on("-e",
+        "Only applicable to -c. If a multi-command string is supplied, exit" \
+        + " after the first unsuccessful command.") do
+    options[:errexit] = true
+  end
 end.parse!
 
 repl = Warden::Repl.new(options)
 
 if options[:command]
-  command_info = repl.process_line(options[:command])
-  status =
-    if !command_info
-      0
-    elsif command_info[:error]
-      1
-    elsif command_info[:name] == "run"
-      Integer(command_info[:result][0] || 1)
-    else
-      0
+  commands = options[:command].split("\n")
+  exit_status = nil
+  commands.each do |command|
+    command_info = repl.process_line(command)
+
+    exit_status =
+      if !command_info
+        0
+      elsif command_info[:error]
+        1
+      elsif command_info[:name] == "run"
+        Integer(command_info[:result][0] || 1)
+      else
+        0
+      end
+
+    if (exit_status != 0) && options[:errexit]
+      break
     end
-  exit status
+  end
+  exit(exit_status)
 else
   trap('INT') { exit }
   repl.run
