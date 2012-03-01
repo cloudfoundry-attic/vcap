@@ -13,7 +13,7 @@ module Warden
         # noop
       end
 
-      def do_create
+      def do_create(config={})
         sh "#{root_path}/create.sh #{handle}"
         debug "insecure container created"
       end
