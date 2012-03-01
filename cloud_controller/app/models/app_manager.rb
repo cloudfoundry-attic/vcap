@@ -443,6 +443,7 @@ class AppManager
     ['http://', "#{CloudController.bind_address}:#{CloudController.external_port}", path].join
   end
 
+
   # start_instance involves several moving pieces, from sending requests for help to the
   # dea_pool, to sending the actual start messages. In addition, many of these can be
   # triggered by one update call, so we simply queue them for the next go around through
@@ -468,18 +469,22 @@ class AppManager
   end
 
   def find_dea_for(message)
-    find_dea_message = {
-      :droplet => message[:droplet],
-      :limits => message[:limits],
-      :name => message[:name],
-      :runtime => message[:runtime],
-      :sha => message[:sha1]
-    }
-    json_msg = Yajl::Encoder.encode(find_dea_message)
-    result = NATS.timed_request('dea.discover', json_msg, :timeout => 2).first
-    return nil if result.nil?
-    CloudController.logger.debug "Received #{result.inspect} in response to dea.discover request"
-    Yajl::Parser.parse(result, :symbolize_keys => true)[:id]
+    if AppConfig[:new_initial_placement]
+     DEAPool.find_dea(message)
+    else
+      find_dea_message = {
+        :droplet => message[:droplet],
+        :limits => message[:limits],
+        :name => message[:name],
+        :runtime => message[:runtime],
+        :sha => message[:sha1]
+      }
+      json_msg = Yajl::Encoder.encode(find_dea_message)
+      result = NATS.timed_request('dea.discover', json_msg, :timeout => 2).first
+      return nil if result.nil?
+      CloudController.logger.debug "Received #{result.inspect} in response to dea.discover request"
+      Yajl::Parser.parse(result, :symbolize_keys => true)[:id]
+    end
   end
 
   def stop_instances(indices)

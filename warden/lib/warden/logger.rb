@@ -12,8 +12,16 @@ module Warden
       @logger = VCAP::Logging.logger("warden")
     end
 
+    def self.logger?
+      !! @logger
+    end
+
     def self.logger
       @logger ||= setup_logger(:level => :info)
+    end
+
+    def self.logger=(logger)
+      @logger = logger
     end
 
     VCAP::Logging::LOG_LEVELS.each_key do |level|
@@ -21,7 +29,7 @@ module Warden
         prefix = logger_prefix_from_stack caller(1).first
         fmt = args.shift
         fmt = "%s: %s" % [prefix, fmt] if prefix
-        Logger.logger.send(level, fmt, *args)
+        Logger.logger.send(level, fmt, *args) if Logger.logger?
       end
     end
 

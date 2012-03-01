@@ -9,7 +9,7 @@ else
   debootstrap_bin=""
 fi
 chroot_bin=$(which chroot)
-packages="ubuntu-minimal"
+packages="ubuntu-minimal,openssh-server,rsync"
 suite="lucid"
 target="rootfs"
 mirror=$(grep "^deb" /etc/apt/sources.list | head -n1 | cut -d" " -f2)
@@ -41,7 +41,7 @@ function write() {
 }
 
 function chroot() {
-  ${chroot_bin} ${target} env -i /bin/bash
+  ${chroot_bin} ${target} env -i $(cat ${target}/etc/environment) /bin/bash
 }
 
 if [ ${EUID} -ne 0 ]; then
@@ -71,6 +71,11 @@ deb ${mirror} lucid main universe
 deb ${mirror} lucid-updates main universe
 EOS
 
+# Disable initctl so that apt cannot start any daemons
+mv ${target}/sbin/initctl ${target}/sbin/initctl.real
+ln -s /bin/true ${target}/sbin/initctl
+trap "mv ${target}/sbin/initctl.real ${target}/sbin/initctl" EXIT
+
 # Disable interactive dpkg
 chroot <<-EOS
 echo debconf debconf/frontend select noninteractive |
@@ -83,11 +88,12 @@ apt-get update
 # apt-get install -y <list of packages>
 EOS
 
-# Remove files we don't need
+# Remove files we don't need or want
 chroot <<-EOS
 rm -f /var/cache/apt/archives/*.deb
 rm -f /var/cache/apt/*cache.bin
 rm -f /var/lib/apt/lists/*_Packages
+rm -f /etc/ssh/ssh_host_*
 EOS
 fi
 
@@ -133,6 +139,11 @@ mkdir -p ${target}/dev
 # the container can use its permissions as reference.
 file=${target}/dev/console
 mknod -m 600 ${file} c 5 1
+chown root:tty ${file}
+
+# /dev/tty
+file=${target}/dev/tty
+mknod -m 666 ${file} c 5 0
 chown root:tty ${file}
 
 # /dev/random, /dev/urandom

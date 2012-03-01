@@ -21,6 +21,7 @@ mbus: nats://localhost:4222/
 intervals:
   # Time interval between heartbeats sent to the Health Manager
   heartbeat: 10
+  advertise: 5
 logging:
   level: debug
 
@@ -63,11 +64,21 @@ runtimes:
     version: 0.4.12
     version_flag: '-v'
     environment:
+    debug_env:
+      run:
+        - NODE_ARGS="--debug=$VCAP_DEBUG_PORT"
+      suspend:
+        - NODE_ARGS="--debug-brk=$VCAP_DEBUG_PORT"
   node06:
     executable: node
     version: 0.6.8
     version_flag: '-v'
     environment:
+    debug_env:
+      run:
+        - NODE_ARGS="--debug=$VCAP_DEBUG_PORT"
+      suspend:
+        - NODE_ARGS="--debug-brk=$VCAP_DEBUG_PORT"
   java:
     executable: java
     version: 1.6.0

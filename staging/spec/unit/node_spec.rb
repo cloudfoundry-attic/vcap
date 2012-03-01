@@ -13,7 +13,7 @@ describe "A simple Node.js app being staged" do
       script_body.should == <<-EXPECTED
 #!/bin/bash
 cd app
-%VCAP_LOCAL_RUNTIME% app.js $@ > ../logs/stdout.log 2> ../logs/stderr.log &
+%VCAP_LOCAL_RUNTIME% $NODE_ARGS app.js $@ > ../logs/stdout.log 2> ../logs/stderr.log &
 STARTED=$!
 echo "$STARTED" >> ../run.pid
 wait $STARTED
@@ -34,7 +34,7 @@ EXPECTED
         script_body.should == <<-EXPECTED
 #!/bin/bash
 cd app
-%VCAP_LOCAL_RUNTIME% bin/app.js $@ > ../logs/stdout.log 2> ../logs/stderr.log &
+%VCAP_LOCAL_RUNTIME% $NODE_ARGS bin/app.js $@ > ../logs/stdout.log 2> ../logs/stderr.log &
 STARTED=$!
 echo "$STARTED" >> ../run.pid
 wait $STARTED
@@ -56,7 +56,7 @@ EXPECTED
         script_body.should == <<-EXPECTED
 #!/bin/bash
 cd app
-%VCAP_LOCAL_RUNTIME% ./bin/app.js $@ > ../logs/stdout.log 2> ../logs/stderr.log &
+%VCAP_LOCAL_RUNTIME% $NODE_ARGS ./bin/app.js $@ > ../logs/stdout.log 2> ../logs/stderr.log &
 STARTED=$!
 echo "$STARTED" >> ../run.pid
 wait $STARTED
@@ -79,7 +79,7 @@ EXPECTED
           script_body.should == <<-EXPECTED
   #!/bin/bash
   cd app
-  %VCAP_LOCAL_RUNTIME% app.js $@ > ../logs/stdout.log 2> ../logs/stderr.log &
+  %VCAP_LOCAL_RUNTIME% $NODE_ARGS app.js $@ > ../logs/stdout.log 2> ../logs/stderr.log &
   STARTED=$!
   echo "$STARTED" >> ../run.pid
   wait $STARTED
@@ -102,7 +102,7 @@ EXPECTED
         script_body.should == <<-EXPECTED
 #!/bin/bash
 cd app
-%VCAP_LOCAL_RUNTIME% app.js $@ > ../logs/stdout.log 2> ../logs/stderr.log &
+%VCAP_LOCAL_RUNTIME% $NODE_ARGS app.js $@ > ../logs/stdout.log 2> ../logs/stderr.log &
 STARTED=$!
 echo "$STARTED" >> ../run.pid
 wait $STARTED

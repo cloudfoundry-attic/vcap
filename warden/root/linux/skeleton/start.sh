@@ -13,20 +13,21 @@ if [ -f started ]; then
   exit 1
 fi
 
-mount_union
-
 export ROOT_PATH=union
 export ASSET_PATH=$(pwd)
-../../../../src/clone "./pre-exec.sh"
+unshare -n ../../../../src/clone/clone
 
 ifconfig ${network_iface_host} ${network_gateway_ip} netmask ${network_netmask}
 touch started
 
-# Wait for the runner socket to come up
+function ssh_running() {
+  cat console.log | grep "ssh state changed" | tail -n1 | cut -d' ' -f8 | grep running > /dev/null
+}
+
 start=$(date +%s)
-while [ ! -S union/tmp/runner.sock ]; do
+while ! ssh_running; do
   if [ $(($(date +%s) - ${start})) -gt 5 ]; then
-    echo "Timeout waiting for runner socket to come up..."
+    echo "Timeout waiting for SSH to come up..."
     exit 1
   fi
 

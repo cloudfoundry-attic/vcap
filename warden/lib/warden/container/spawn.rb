@@ -52,25 +52,40 @@ module Warden
         attr_reader :argv
         attr_reader :options
 
+        def stdout
+          @child.out
+        end
+
+        def stderr
+          @child.err
+        end
+
+        def status
+          @child.status
+        end
+
+        def runtime
+          @child.runtime
+        end
+
+        def success?
+          @child.success?
+        end
+
+        def exit_status
+          @child.status.exitstatus
+        end
+
         def initialize(*args)
           @env, @argv, @options = extract_process_spawn_arguments(*args)
 
-          p = Child.new(env, *(argv + [options]))
+          @child = Child.new(env, *(argv + [options]))
 
-          p.callback {
-            unless p.success?
-              # Log stderr. Don't use this as message for the raised error to
-              # prevent internal information from leaking to clients.
-              error "stderr: #{p.err.inspect}"
+          @child.callback do
+            set_deferred_success
+          end
 
-              err = WardenError.new("command exited with failure")
-              set_deferred_failure(err)
-            else
-              set_deferred_success(p.out)
-            end
-          }
-
-          p.errback { |err|
+          @child.errback do |err|
             if err == MaximumOutputExceeded
               err = WardenError.new("command exceeded maximum output")
             elsif err == TimeoutExceeded
@@ -80,27 +95,49 @@ module Warden
             end
 
             set_deferred_failure(err)
-          }
+          end
         end
 
         # Helper to inject log message
-        def set_deferred_success(result)
-          debug "successfully ran #{argv.inspect}"
+        def set_deferred_success
+          if !success?
+            warn "exited with #{exit_status}: #{argv.inspect}"
+            warn "stdout: #{stdout}"
+            warn "stderr: #{stderr}"
+          else
+            debug "exited successfully: #{argv.inspect}"
+          end
+
           super
         end
 
         # Helper to inject log message
         def set_deferred_failure(err)
           error "error running #{argv.inspect}: #{err.message}"
+          warn "stdout (maybe incomplete): #{stdout}"
+          warn "stderr (maybe incomplete): #{stderr}"
           super
         end
 
         def yield
           f = Fiber.current
-          callback { |result| f.resume(:ok, result) }
-          errback { |err| f.resume(:err, err) }
+
+          callback do
+            if success?
+              f.resume(:ok, stdout)
+            else
+              f.resume(:err, WardenError.new("command exited with failure"))
+            end
+          end
+
+          errback do |err|
+            f.resume(:err, err)
+          end
+
           status, result = Fiber.yield
+
           raise result if status == :err
+
           result
         end
       end

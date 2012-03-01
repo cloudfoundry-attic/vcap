@@ -92,6 +92,13 @@ database_environment: # replaces database.yml
     database: db/test.sqlite3
     encoding: utf8
 
+# Enable the use of the uaa
+uaa:
+  enabled: true
+  url: http://uaa.vcap.me
+  resource_id: cloud_controller
+  token_secret: tokensecret
+
 # App staging parameters
 staging:
   max_concurrent_stagers: 10
@@ -147,6 +154,9 @@ service_lifecycle:
 # Enable/disable starting apps in debug modes.
 allow_debug: true
 
+# Enable new initial placement protocol.
+new_initial_placement: false
+
 # Supported runtime versions and debug modes.
 # Used for /info/runtimes endpoint (served unfiltered as JSON)
 runtimes:
@@ -156,8 +166,14 @@ runtimes:
     version: 1.9.2
   node:
     version: 0.4.12
+    debug_modes:
+      - run
+      - suspend
   node06:
     version: 0.6.8
+    debug_modes:
+      - run
+      - suspend
   java:
     version: 1.6.0
     debug_modes:

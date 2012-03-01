@@ -3,7 +3,7 @@ GEM
   specs:
     daemons (1.1.5)
     diff-lcs (1.1.3)
-    em-posix-spawn (0.0.4)
+    em-posix-spawn (0.0.5)
       eventmachine
       posix-spawn
     eventmachine (0.12.11.cloudfoundry.3)
@@ -27,7 +27,6 @@ GEM
     rspec-expectations (2.8.0)
       diff-lcs (~> 1.1.2)
     rspec-mocks (2.8.0)
-    sleepy_penguin (3.0.1)
     thin (1.3.1)
       daemons (>= 1.0.9)
       eventmachine (>= 0.12.6)
@@ -40,7 +39,8 @@ GEM
       thin (~> 1.3.1)
       vcap_logging
       yajl-ruby (~> 0.8.3)
-    vcap_logging (0.1.3)
+    vcap_logging (0.1.5)
+      rake
     warden-client (0.0.1)
       yajl-ruby
     yajl-ruby (0.8.3)
@@ -53,7 +53,6 @@ DEPENDENCIES
   eventmachine (= 0.12.11.cloudfoundry.3)
   rake
   rspec
-  sleepy_penguin
   vcap_common
   vcap_logging
   warden-client

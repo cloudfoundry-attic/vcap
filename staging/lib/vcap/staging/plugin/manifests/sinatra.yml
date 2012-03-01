@@ -25,6 +25,7 @@ app_servers:
       default: true
 detection:
   - "*.rb": "require 'sinatra'|require \"sinatra\"" # .rb files in the root dir containing a require?
+  - "config.ru": false # use rack if it detects a config.ru
   - "config/environment.rb": false # and config/environment.rb must not exist
 staged_services:
   - "name": "mysql"
