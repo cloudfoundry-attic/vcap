@@ -39,6 +39,10 @@ class BulkController < ApplicationController
   end
 
   def retrieve_results(model)
+    CloudController.logger.debug("Params: #{params}")
+    CloudController.logger.debug("Retrieving bulk results for bulk_token: #{bulk_token}")
+    CloudController.logger.debug("WHERE-clause: #{where_clause}")
+
     model.where(where_clause).order('id').limit(batch_size).to_a
   end
 
@@ -55,7 +59,9 @@ class BulkController < ApplicationController
   end
 
   def sanitize_atom(atom)
-    unless atom =~ /^\w+$/
+    atom = atom.to_s
+    unless atom =~ /^[a-zA-Z0-9_]+$/
+      CloudController.logger.error("invalid atom #{atom} in bulk_token #{bulk_token}")
       raise CloudError.new(CloudError::BAD_REQUEST, "bad atom #{atom} in bulk_api token")
     end
     atom
@@ -68,5 +74,7 @@ class BulkController < ApplicationController
 
   def bulk_token
     @bulk_token||=params['bulk_token'] ? params['bulk_token'] : {}
+    @bulk_token = Yajl::Parser.parse(@bulk_token) if @bulk_token.kind_of? String
+    @bulk_token
   end
 end

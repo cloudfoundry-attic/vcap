@@ -22,14 +22,9 @@ module HealthManager2
       end
 
       scheduler.at_interval :expected_state_update do
-        expected_state_provider.rewind
-        scheduler.start_task :expected_state_update do
-          expected_droplet = expected_state_provider.next_droplet
-          if expected_droplet
-            known_state_provider.set_expected_state(expected_droplet)
-          else
-            nil #signal end of task
-          end
+        expected_state_provider.each_droplet do |app_id, expected|
+          known = known_state_provider.get_droplet(app_id)
+          expected_state_provider.set_expected_state(known, expected)
         end
       end
 

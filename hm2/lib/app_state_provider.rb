@@ -179,6 +179,9 @@ module HealthManager2
 
   # "abstract" provider of expected state. Primarily for documenting the API
   class ExpectedStateProvider < AppStateProvider
+    def set_expected_state(known, expected)
+      raise 'Not Implemented' #should be implemented by the concerete class
+    end
   end
 
   # "abstract" provider of known state. Primarily for documenting the API

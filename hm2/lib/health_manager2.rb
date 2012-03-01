@@ -18,16 +18,13 @@ require 'harmonizer'
 module HealthManager2
 
   class Manager
-
     #primarily for testing
     attr_reader :scheduler
     attr_reader :known_state_provider
     attr_reader :expected_state_provider
 
     def initialize(config={})
-
       @config = config
-
       @scheduler = Scheduler.new(config)
       register_hm_component(:scheduler, @scheduler, @config)
 
