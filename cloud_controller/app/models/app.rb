@@ -521,6 +521,13 @@ class App < ActiveRecord::Base
   end
 
   def update_staged_package(upload_path)
+    # Remove old package if needed
+    if self.staged_package_path
+      CloudController.logger.info("Removing old staged package for" \
+                                  + " app_id=#{self.id} app_name=#{self.name}" \
+                                  + " path=#{self.staged_package_path}")
+      FileUtils.rm_f(self.staged_package_path)
+    end
     self.staged_package_hash = Digest::SHA1.file(upload_path).hexdigest
     FileUtils.mv(upload_path, self.staged_package_path)
   end
