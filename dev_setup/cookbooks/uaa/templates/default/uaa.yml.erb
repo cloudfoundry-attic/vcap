@@ -17,7 +17,7 @@ bootstrap:
     username: marissa
     password: $2a$10$ikFXo9IFG6zbMbhGcssySOhjDsGPpqzKwsdVOeCvJ7JoWjSQxyfs6
     given_name: Marissa
-    familay_name: Bloggs
+    family_name: Bloggs
     email: marissa@test.org
 
 cloud_controller:
@@ -26,10 +26,6 @@ cloud_controller:
 jwt:
   token:
     key: <%= node[:uaa][:jwt_secret] %>
-
-varz:
-  username: varz
-  password: <%= node[:uaa][:varz][:password] %>
 
 app:
   client:
