@@ -39,7 +39,7 @@ module Warden
         "env #{env.map { |k, v| "#{k}=#{v}" }.join(" ")}"
       end
 
-      def do_create
+      def do_create(config=nil)
         sh "#{env_command} #{root_path}/create.sh #{handle}", :timeout => nil
         debug "container created"
         sh "#{container_path}/start.sh", :timeout => nil
