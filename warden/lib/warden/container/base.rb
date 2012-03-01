@@ -101,6 +101,11 @@ module Warden
           @job_id ||= 0
           @job_id += 1
         end
+
+        # Root path for container assets
+        def root_path
+          @root_path ||= File.join(Server.container_root, self.name.split("::").last.downcase)
+        end
       end
 
       attr_reader :resources
@@ -238,7 +243,7 @@ module Warden
       end
 
       def root_path
-        @root_path ||= File.join(Server.container_root, self.class.name.split("::").last.downcase)
+        @root_path ||= self.class.root_path
       end
 
       def container_path
