@@ -5,11 +5,13 @@ runtimes:
       version: '0.4.12'
       description: 'Node.js'
       executable: <%= File.join(node[:node04][:path], "bin", "node") %>
+      npm: <%= File.join(node[:node04][:npm][:path], "bin", "npm-cli.js") %>
       default: true
   - node06:
       version: '0.6.8'
       description: 'Node.js'
       executable: <%= File.join(node[:node06][:path], "bin", "node") %>
+      npm: <%= File.join(node[:node06][:path], "bin", "npm") %>
 app_servers:
 detection:
   - "*.js": '.'
