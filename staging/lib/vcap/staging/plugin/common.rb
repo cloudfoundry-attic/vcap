@@ -59,6 +59,7 @@ class StagingPlugin
     begin
       # NOTE - Make others as needed for other kinds of package managers.
       FileUtils.mkdir_p File.join(staging_cache_dir, 'gems')
+      FileUtils.mkdir_p File.join(staging_cache_dir, "node_modules")
       # TODO - Validate java runtimes as well.
       check_ruby_runtimes
     rescue => ex
