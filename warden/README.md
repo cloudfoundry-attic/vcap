@@ -72,11 +72,22 @@ the outside world, and does so over a Unix socket, which is located at
 that either create new containers, modify container state, or run scripts
 inside of a container. The verbs that `warden` responds to are:
 
-* `create`: This creates a new container. In the future this verb may accept an
-  optional configuration parameter. This command returns handle (or name) of
-  the container which is used to identify it. The handle is equal to the
-  hexadecimal representation of its IP address, as acquired from the pool of
-  unused network addresses in the configured subnet.
+* `create [config]`: This creates a new container. The optional `config`
+   parameter is a hash that specifies configuration options used during
+   container creation. The supported configuration options are:
+
+   * `bind_mounts`: If supplied, this specifies a set of paths to be bind mounted
+   inside the container. The value must be a hash of the form:
+   ```
+   "/host/path" => {                  # Path in the host filesystem
+     "path" => "/path/in/container",  # Path in the container
+     "mode" => "ro|rw",               # Optional. Remount the path as ro or rw.
+   ```
+
+   This command returns handle (or name) of the container which is used to
+   identify it. The handle is equal to the hexadecimal representation of its IP
+   address, as acquired from the pool of unused network addresses in the
+   configured subnet.
 
 * `spawn <handle> <script>`: Run the Bash script `<script>` in the context of the
   container identified by `<handle>`. This command returns a job

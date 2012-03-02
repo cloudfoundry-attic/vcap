@@ -250,7 +250,7 @@ module Warden
         @container_path ||= File.join(root_path, "instances", handle)
       end
 
-      def create(config=nil)
+      def create(config={})
         debug "entry"
 
         begin

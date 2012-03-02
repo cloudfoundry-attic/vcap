@@ -9,3 +9,5 @@ source ./common.sh
 source ./config
 
 setup_fs
+
+./setup-bind-mounts.sh

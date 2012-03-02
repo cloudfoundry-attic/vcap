@@ -123,4 +123,62 @@ describe "server implementing Linux containers", :platform => "linux", :needs_ro
       info["stats"]["mem_usage_B"].should > 0
     end
   end
+
+  describe "bind mounts" do
+
+    include_context :server_linux
+
+    before :each do
+      @tmpdir = Dir.mktmpdir
+      @test_path = File.join(@tmpdir, "test")
+      @test_basename = "test"
+      @test_contents = "testing123"
+      File.open(@test_path, "w+") {|f| f.write(@test_contents) }
+      FileUtils.chmod_R(0777, @tmpdir)
+      @bind_mount_path = "/tmp/bind_mounted"
+      @config = {
+        "bind_mounts" => {
+          @tmpdir => {"path" => @bind_mount_path}
+        }
+      }
+    end
+
+    after :each do
+      FileUtils.rm_rf(@tmpdir)
+    end
+
+    it "should raise an error if an invalid mode is supplied" do
+      @config["bind_mounts"][@tmpdir]["mode"] = "invalid"
+      expect do
+        handle = client.create(@config)
+      end.to raise_error(/Invalid mode/)
+    end
+
+    it "should support bind mounting paths from the host into the container" do
+      handle = client.create(@config)
+
+      # Make sure we can read a file that already exists
+      result = client.run(handle, "cat #{@bind_mount_path}/#{@test_basename}")
+      result[0].should == 0
+      result[1].should == @test_contents
+
+      # Make sure we can create/write a file
+      new_contents = "test"
+      new_path = "#{@bind_mount_path}/newfile"
+      result = client.run(handle, "echo -n #{new_contents} > #{new_path}")
+      result[0].should == 0
+      result = client.run(handle, "cat #{new_path}")
+      result[0].should == 0
+      result[1].should == new_contents
+    end
+
+    it "should support bind mounting paths with different permissions" do
+      @config["bind_mounts"][@tmpdir]["mode"] = "ro"
+      handle = client.create(@config)
+
+      result = client.run(handle, "touch #{@bind_mount_path}/test")
+      result[0].should == 1
+      result[2].should match(/Read-only file system/)
+    end
+  end
 end
