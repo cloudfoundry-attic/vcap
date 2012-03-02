@@ -19,6 +19,20 @@ RSpec.configure do |config|
       puts "Unable to copy staging manifests. Permissions problem?"
       exit 1
     end
+    if ENV['CI_VCAP_RUBY18'] then
+      %w(sinatra rails3 rack).each do |framework|
+        manifest = YAML.load_file(File.join(STAGING_TEMP, "#{framework}.yml"))
+        unless runtimes = manifest['runtimes']
+          raise ArgumentError.new("Bad manifest")
+        end
+        if runtime=runtimes.find {|h| h.include? 'ruby18'}
+          runtime['ruby18']['executable'] = ENV['CI_VCAP_RUBY18']
+          File.open(File.join(STAGING_TEMP, "#{framework}.yml"), "w") do |file|
+            YAML.dump manifest, file
+          end
+        end
+      end
+    end
     platform_hash = {}
     File.open(File.join(STAGING_TEMP, 'platform.yml'), 'wb') do |f|
       cache_dir = File.join('/tmp', '.vcap_gems')
@@ -33,4 +47,12 @@ at_exit do
   if File.directory?(STAGING_TEMP)
     FileUtils.rm_r(STAGING_TEMP)
   end
+end
+
+def ci_manifests
+  {
+    'rails3' => rails_manifest,
+    'sinatra' => sinatra_manifest,
+    'rack' => rack_manifest,
+  }
 end
