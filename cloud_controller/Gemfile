@@ -8,7 +8,7 @@ gem 'nats', :require => 'nats/client'
 # VCAP common components
 gem 'vcap_common', :require => ['vcap/common', 'vcap/component']
 gem 'vcap_logging', :require => ['vcap/logging']
-gem 'vcap_staging', '~> 0.1.50'
+gem 'vcap_staging', '~> 0.1.51'
 gem 'cf-uaa-client', '>= 0.0.8'
 
 # For queuing staging tasks
