@@ -1,3 +1,4 @@
+include_attribute "deployment"
 include_attribute "postgresql"
 default[:uaadb][:user] = "root"
 default[:uaadb][:password] = "changeme"

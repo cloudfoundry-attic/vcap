@@ -65,6 +65,11 @@ runtimes:
     version: 0.4.12
     version_flag: '-v'
     environment:
+    debug_env:
+      run:
+        - NODE_ARGS="--debug=$VCAP_DEBUG_PORT"
+      suspend:
+        - NODE_ARGS="--debug-brk=$VCAP_DEBUG_PORT"
 <% end %>
 <% if node[:dea][:runtimes].include?("node06") %>
   node06:
@@ -72,6 +77,11 @@ runtimes:
     version: 0.6.8
     version_flag: '-v'
     environment:
+    debug_env:
+      run:
+        - NODE_ARGS="--debug=$VCAP_DEBUG_PORT"
+      suspend:
+        - NODE_ARGS="--debug-brk=$VCAP_DEBUG_PORT"
 <% end %>
 <% if node[:dea][:runtimes].include?("java") %>
   java:

@@ -14,11 +14,17 @@ describe "A Rails 3 application being staged" do
       start_script = File.join(staged_dir, 'startup')
       start_script.should be_executable_file
       script_body = File.read(start_script)
+
+      # FIXME sunset this by Monday, March 5
+      # The expected string should really stay hardcoded
+      local_bin_path = ENV['VCAP_RUNTIME_RUBY18']? File.dirname(ENV['VCAP_RUNTIME_RUBY18']) : '/usr/bin'
+
       script_body.should == <<-EXPECTED
 #!/bin/bash
+export DISABLE_AUTO_CONFIG="mysql:postgresql"
 export GEM_HOME="$PWD/app/rubygems/ruby/1.8"
 export GEM_PATH="$PWD/app/rubygems/ruby/1.8"
-export PATH="$PWD/app/rubygems/ruby/1.8/bin:/usr/bin:/usr/bin:/bin"
+export PATH="$PWD/app/rubygems/ruby/1.8/bin:#{local_bin_path}:/usr/bin:/bin"
 export RACK_ENV="production"
 export RAILS_ENV="production"
 export RUBYOPT="-I$PWD/ruby -rstdsync"
@@ -44,6 +50,30 @@ wait $STARTED
     end
   end
 
+  it "generates an auto-config script" do
+     stage :rails3 do |staged_dir|
+       auto_stage_script = File.join(staged_dir,'app','config','initializers','01-autoconfig.rb')
+       script_body = File.read(auto_stage_script)
+       script_body.should == <<-EXPECTED
+require 'cfautoconfig'
+     EXPECTED
+     end
+  end
+
+it "installs autoconfig gem" do
+     stage :rails3 do |staged_dir|
+       gemfile = File.join(staged_dir,'app','Gemfile')
+       gemfile_body = File.read(gemfile)
+       gemfile_body.should == <<-EXPECTED
+source 'http://rubygems.org'
+
+gem 'rails', '3.0.4'
+
+gem "cf-autoconfig"
+     EXPECTED
+    end
+  end
+
   describe "which bundles 'thin'" do
     before do
       app_fixture :rails3_no_assets
@@ -54,11 +84,16 @@ wait $STARTED
         executable = '%VCAP_LOCAL_RUNTIME%'
         start_script = File.join(staged_dir, 'startup')
         script_body = File.read(start_script)
+        # FIXME sunset this by Monday, March 5
+        # The expected string should really stay hardcoded
+        local_bin_path = ENV['VCAP_RUNTIME_RUBY18']? File.dirname(ENV['VCAP_RUNTIME_RUBY18']) : '/usr/bin'
+
         script_body.should == <<-EXPECTED
 #!/bin/bash
+export DISABLE_AUTO_CONFIG="mysql:postgresql"
 export GEM_HOME="$PWD/app/rubygems/ruby/1.8"
 export GEM_PATH="$PWD/app/rubygems/ruby/1.8"
-export PATH="$PWD/app/rubygems/ruby/1.8/bin:/usr/bin:/usr/bin:/bin"
+export PATH="$PWD/app/rubygems/ruby/1.8/bin:#{local_bin_path}:/usr/bin:/bin"
 export RACK_ENV="production"
 export RAILS_ENV="production"
 export RUBYOPT="-I$PWD/ruby -rstdsync"
