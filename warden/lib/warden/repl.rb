@@ -11,7 +11,7 @@ module Warden
 
     HELP_MESSAGE =<<-EOT
 ping                          - ping warden
-create                        - create new container
+create [MOUNT MOUNT ...]      - create container, optionally bind mount.
 destroy <handle>              - shutdown container <handle>
 stop <handle>                 - stop all processes in <handle>
 spawn <handle> cmd            - spawns cmd inside container <handle>, returns #jobid
@@ -25,6 +25,12 @@ net <handle> #in              - forward port #in on external interface to contai
 net <handle> #out <address[/mask][:port]> - allow traffic from the container <handle> to address <address>
 copy <handle> <in|out> <src path> <dst path> [ownership opts] - Copy files/directories in and out of the container
 help                          - show help message
+
+---
+
+MOUNT syntax is  bind_mount:/hostpath,/containerpath,rw | ro
+e.g. create bind_mount:/tmp/,/home/vcap/tmp,ro
+
 Please see README.md for more details.
 EOT
 
