@@ -2,7 +2,6 @@ $:.unshift(File.dirname(__FILE__))
 require 'spec_helper'
 
 require 'rubygems'
-require 'eventmachine'
 require 'fileutils'
 
 require 'gem_builder'
@@ -22,7 +21,7 @@ describe VCAP::PackageCache::GemBuilder do
     FileUtils.cp(File.join('../fixtures', @test_gem), @test_gem)
     config_file = VCAP::PackageCache::Config::DEFAULT_CONFIG_PATH
     config = VCAP::PackageCache::Config.from_file(config_file)
-    runtimes = config[:runtimes][:gem]
+    runtimes = config[:runtimes]
 
     @gbl = VCAP::PackageCache::GemBuilder.new(user, @build_dir, runtimes)
     @gbr = VCAP::PackageCache::GemBuilder.new(user, @build_dir, runtimes)
