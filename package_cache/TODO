@@ -1,15 +1,15 @@
 #Worklist
 ---------
 
--package for deployment
+-mount suplied runtimes at /mount/#{binpath}
+-fix up runtime paths to reflect change.
+-rebase and get working with warden.
 
-p0
+---
+
+
 
 -create debug formatter based on matt's stuff and transition to his logger.
-
-p1
-
--add container support
 
 -add npm support
 

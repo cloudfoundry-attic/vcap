@@ -70,7 +70,7 @@ module VCAP
       end
 
       def clean_directories
-        tmp_dir_names = %w[inbox builds]
+        tmp_dir_names = %w[inbox tmp builds]
         tmp_dir_names.each { |name|
           path = @directories[name]
           purge_directory!(path)
@@ -79,7 +79,7 @@ module VCAP
 
       def init_directories
         @directories = Hash.new
-        dir_names = %w[inbox cache builds]
+        dir_names = %w[inbox tmp cache builds]
         base_dir = @config[:base_dir]
         dir_names.each {|name|
           @directories[name] = File.join(base_dir, name)
