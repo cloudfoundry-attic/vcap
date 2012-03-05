@@ -23,13 +23,13 @@ RSpec.configure do |config|
   config.before(:all) do
     begin
       VCAP::Subprocess.run("cp -a #{File.join(StagingPlugin::DEFAULT_MANIFEST_ROOT, 'sinatra.yml')} #{STAGING_TEMP}")
-      if ENV["CI_VCAP_RUBY18"] && ENV["CI_VCAP_RUBY18_VER"] then
+      if ENV["VCAP_RUNTIME_RUBY18"] && ENV["VCAP_RUNTIME_RUBY18_VER"] then
         sinatra_manifest = {
           'name' => "sinatra",
           'runtimes' => [
             'ruby18' => {
-              'version' => ENV["CI_VCAP_RUBY18_VER"],
-              'executable' => ENV["CI_VCAP_RUBY18"],
+              'version' => ENV["VCAP_RUNTIME_RUBY18_VER"],
+              'executable' => ENV["VCAP_RUNTIME_RUBY18"],
             },
           ],
           'detection' => [
