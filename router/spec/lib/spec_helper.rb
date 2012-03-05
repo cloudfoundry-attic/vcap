@@ -5,13 +5,13 @@ require 'fileutils'
 require 'nats/client'
 require 'yajl/json_gem'
 require 'vcap/common'
+require 'vcap/logging'
 require 'openssl'
 require 'net/http'
 require 'uri'
 require "http/parser"
 require "router/const"
 require "router/router"
-
 require 'pp'
 
 class NatsServer
@@ -57,6 +57,7 @@ class RouterServer
   LOG_FILE    = '/tmp/router-test.log'
   UNIX_SOCK   = '/tmp/router.sock' # unix socket between nginx and uls
   PORT        = 80                 # nginx listening port
+  ULS_PORT    = 8082               # ULS listening port
   STATUS_PORT = 8081               # must be consistent with nginx config in dev_setup
   STATUS_USER = "admin"            # must be consistent with nginx config in dev_setup
   STATUS_PASSWD = "password"       # must be consistent with nginx config in dev_setup
@@ -65,13 +66,17 @@ class RouterServer
   # In all tests, when a client like to send a request to an test app,
   # it has to send to the port which nginx is listening.
   def initialize(nats_uri)
-    mbus      = "mbus: #{nats_uri}"
+    @nats_uri = nats_uri
     log_info  = "logging:\n  level: debug\n  file: #{LOG_FILE}"
-    @config = %Q{sock: #{UNIX_SOCK}\n#{mbus}\n#{log_info}\npid: #{PID_FILE}\nlocal_route: 127.0.0.1\nstatus:\n  port: #{STATUS_PORT}\n  user: #{STATUS_USER}\n  password: #{STATUS_PASSWD}}
+    @config = %Q{port: #{ULS_PORT}\ninet: 127.0.0.1\nsock: #{UNIX_SOCK}\nmbus: #{@nats_uri}\n#{log_info}\npid: #{PID_FILE}\nlocal_route: 127.0.0.1\nstatus:\n  port: #{STATUS_PORT}\n  user: #{STATUS_USER}\n  password: #{STATUS_PASSWD}}
   end
 
   def self.port
     PORT
+  end
+
+  def self.uls_port
+    ULS_PORT
   end
 
   def self.sock
@@ -132,4 +137,94 @@ class RouterServer
     %x[rm #{CONFIG_FILE}] if File.exists? CONFIG_FILE
     sleep(0.2)
   end
+
+  def get_healthz_by_nginx
+    rbody = nil
+    TCPSocket.open(RouterServer.host, RouterServer.port) {|rs|
+      rs.send(healthz_request, 0)
+
+      resp, rbody = parse_http_msg_from_socket(rs)
+      resp.status_code.should == 200
+    }
+    rbody
+  end
+
+  def get_healthz
+    get_stats("/healthz")
+  end
+
+  def get_varz
+    JSON.parse(get_stats("/varz"), :symbolize_keys => true)
+  end
+
+  private
+
+  def healthz_request
+    "GET / HTTP/1.0\r\nUser-Agent: HTTP-Monitor/1.1\r\n\r\n"
+  end
+
+  def get_stats(stats_path)
+    reply = json_request(@nats_uri, 'vcap.component.discover')
+
+    credentials = reply[:credentials]
+    host, port = reply[:host].split(":")
+
+    req = Net::HTTP::Get.new(stats_path)
+    req.basic_auth *credentials
+    resp = Net::HTTP.new(host, port).start { |http| http.request(req) }
+    resp.body
+  end
+end
+
+# Encodes _data_ as json, decodes reply as json
+def json_request(uri, subj, data=nil, timeout=1)
+  reply = nil
+  data_enc = data ? Yajl::Encoder.encode(data) : nil
+  NATS.start(:uri => uri) do
+    NATS.request(subj, data_enc) do |msg|
+      reply = JSON.parse(msg, :symbolize_keys => true)
+      NATS.stop
+    end
+    EM.add_timer(timeout) { NATS.stop }
+  end
+
+  reply
+end
+
+def parse_http_msg_from_socket(socket)
+  parser = Http::Parser.new
+  complete = false
+  body = ''
+
+  parser.on_body = proc do |chunk|
+    body << chunk
+  end
+
+  parser.on_message_complete = proc do
+    complete = true
+    :stop
+  end
+
+  while not complete
+    raw_data = socket.recv(1024)
+    parser << raw_data
+  end
+
+  return parser, body
+end
+
+def parse_http_msg_from_buf(buf)
+  parser = Http::Parser.new
+  body = ''
+
+  parser.on_body = proc do |chunk|
+    body << chunk
+  end
+  parser.on_message_complete = proc do
+    :stop
+  end
+
+  parser << buf
+
+  return parser, body
 end

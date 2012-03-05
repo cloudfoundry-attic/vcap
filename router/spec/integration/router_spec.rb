@@ -30,30 +30,25 @@ describe 'Router Integration Tests (require nginx running)' do
   end
 
   it 'should get health status via nginx' do
-    body = get_healthz()
+    body = @router.get_healthz_by_nginx()
     body.should =~ /ok/i
   end
 
   it 'should properly register an application endpoint' do
-    # setup the "app"
     app = TestApp.new('router_test.vcap.me')
     dea = DummyDea.new(@nats_server.uri, '1234')
     dea.register_app(app)
-    app.verify_registered('127.0.0.1', RouterServer.port)
+    app.verify_registered
     app.stop
   end
 
   it 'should properly unregister an application endpoint' do
-    # setup the "app"
     app = TestApp.new('router_test.vcap.me')
     dea = DummyDea.new(@nats_server.uri, '1234')
     dea.register_app(app)
-    app.verify_registered('127.0.0.1', RouterServer.port)
+    app.verify_registered
     dea.unregister_app(app)
-    # We should be unregistered here..
-    # Send out simple request and check request and response
-    req = simple_http_request('router_test.cap.me', '/')
-    verify_vcap_404(req, '127.0.0.1', RouterServer.port)
+    app.verify_unregistered
     app.stop
   end
 
@@ -99,10 +94,7 @@ describe 'Router Integration Tests (require nginx running)' do
 
     # Before we count the statistics, we should restart nginx worker
     # to cleanup unsynced stats.
-    # TODO: It's hard to tell which nginx process belongs to us since it was
-    # started by vcap_dev_setup, we may figure out an elegant way to do this
-    # and get notification when it's ready instead of sleep 2 seconds.
-    %x[ps -ef|grep "nginx: master process"|grep -v grep|awk '{print $2}'|xargs sudo kill -HUP 2> /dev/null]
+    %x[sudo service nginx restart 2&> /dev/null]
     sleep(2)
 
     req = simple_http_request('lb_test.vcap.me', '/')
@@ -124,7 +116,7 @@ describe 'Router Integration Tests (require nginx running)' do
 
     apps.each {|a| a.stop }
 
-    varz = get_varz()
+    varz = @router.get_varz()
     varz[:requests].should be_a_kind_of(Integer)
     varz[:type].should =~ /router/i
 
@@ -149,10 +141,10 @@ describe 'Router Integration Tests (require nginx running)' do
     varz[:tags][:runtime][:ruby][:responses_2xx].should == num_requests - 1
 
     # Send an monitor request to nginx to syncup the left stats
-    body = get_healthz()
+    body = @router.get_healthz_by_nginx()
     body.should =~ /ok/i
 
-    varz = get_varz()
+    varz = @router.get_varz()
     comp_resps_2xx = 0
     # Verify the statistics for each type of request tags
     for ii in (0...num_apps)
@@ -177,19 +169,20 @@ describe 'Router Integration Tests (require nginx running)' do
     vcap_id = app_socket = nil
     app_sockets = apps.collect { |a| a.socket }
 
+    req = simple_http_request('sticky.vcap.me', '/sticky')
     TCPSocket.open('127.0.0.1', RouterServer.port) do |rs|
-      rs.send(STICKY_REQUEST, 0)
+      rs.send(req, 0)
       ready = IO.select(app_sockets, nil, nil, 1)
       ready[0].should have(1).items
       app_socket = ready[0].first
       ss = app_socket.accept_nonblock
 
-      smsg, sbody = parse_http_msg_from_buf(STICKY_REQUEST)
+      smsg, sbody = parse_http_msg_from_buf(req)
       rmsg, rbody = parse_http_msg_from_socket(ss)
       validate_recv_msg_against_send(smsg, sbody, rmsg, rbody).should == true
 
-      ss.send(STICKY_RESPONSE, 0)
-      smsg, sbody = parse_http_msg_from_buf(STICKY_RESPONSE)
+      ss.send(STICKY_HTTP_RESPONSE, 0)
+      smsg, sbody = parse_http_msg_from_buf(STICKY_HTTP_RESPONSE)
       rmsg, rbody = parse_http_msg_from_socket(rs)
       validate_recv_msg_against_send(smsg, sbody, rmsg, rbody).should == true
       rmsg.headers["Set-Cookie"] =~ /\s*__VCAP_ID__=([^,;]+)/
@@ -230,8 +223,7 @@ describe 'Router Integration Tests (require nginx running)' do
       dea.unregister_app(app)
     end
 
-    # Check that it is gone
-    verify_vcap_404(STICKY_REQUEST, '127.0.0.1', RouterServer.port)
+    apps[0].verify_unregistered
 
     apps.each {|a| a.stop }
   end

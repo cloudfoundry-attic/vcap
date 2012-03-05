@@ -27,6 +27,11 @@ RSpec::Core::RakeTask.new("test") do |t|
   t.rspec_opts = ["--format", "documentation", "--colour"]
 end
 
+RSpec::Core::RakeTask.new("integration") do |t|
+  t.pattern = "integration/*_spec.rb"
+  t.rspec_opts = ["--format", "documentation", "--colour"]
+end
+
 ignore_pattern = 'spec,[.]bundle,[/]gems[/]'
 
 desc "Run specs using RCov (internal, use spec:rcov instead)"

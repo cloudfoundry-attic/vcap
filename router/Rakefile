@@ -22,7 +22,8 @@ desc "Run specs using RCov"
 task "spec:rcov" => ["bundler:install:test", "test:spec:rcov"]
 
 desc "Synonym for spec"
-task :test => :spec
+task :test => ["bundler:install:test", "test:test"]
+
 desc "Synonym for spec"
 task :tests => :spec
 

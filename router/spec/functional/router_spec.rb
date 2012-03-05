@@ -44,20 +44,10 @@ describe 'Router Functional Tests' do
   end
 
   it 'should have proper http endpoints (/healthz, /varz)' do
-    reply = json_request(@nats_server.uri, 'vcap.component.discover')
-    reply.should_not be_nil
+    healthz = @router.get_healthz()
+    healthz.should =~ /ok/i
 
-    credentials = reply[:credentials]
-    credentials.should_not be_nil
-
-    host, port = reply[:host].split(":")
-
-    healthz_req = Net::HTTP::Get.new("/healthz")
-    healthz_req.basic_auth *credentials
-    healthz_resp = Net::HTTP.new(host, port).start { |http| http.request(healthz_req) }
-    healthz_resp.body.should =~ /ok/i
-
-    varz = get_varz()
+    varz = @router.get_varz()
     varz[:requests].should be_a_kind_of(Integer)
     varz[:bad_requests].should be_a_kind_of(Integer)
     varz[:type].should =~ /router/i
@@ -113,35 +103,6 @@ describe 'Router Functional Tests' do
     @router.is_running?.should be_false
   end
 
-  # Encodes _data_ as json, decodes reply as json
-  def json_request(uri, subj, data=nil, timeout=1)
-    reply = nil
-    data_enc = data ? Yajl::Encoder.encode(data) : nil
-    NATS.start(:uri => uri) do
-      NATS.request(subj, data_enc) do |msg|
-        reply = JSON.parse(msg, :symbolize_keys => true)
-        NATS.stop
-      end
-      EM.add_timer(timeout) { NATS.stop }
-    end
-
-    reply
-  end
-
-  def get_varz
-    reply = json_request(@nats_server.uri, 'vcap.component.discover')
-    reply.should_not be_nil
-
-    credentials = reply[:credentials]
-    credentials.should_not be_nil
-
-    host, port = reply[:host].split(":")
-
-    varz_req = Net::HTTP::Get.new("/varz")
-    varz_req.basic_auth *credentials
-    varz_resp = Net::HTTP.new(host, port).start { |http| http.request(varz_req) }
-    varz = JSON.parse(varz_resp.body, :symbolize_keys => true)
-    varz
-  end
+  private
 
 end
