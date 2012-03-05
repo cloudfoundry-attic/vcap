@@ -6,3 +6,5 @@ default[:rabbit_node][:token] = "changerabbitmqtoken"
 default[:rabbit_node][:index] = "0"
 default[:rabbit_node][:available_memory] = "1024"
 default[:rabbit_node][:max_memory] = "16"
+
+default[:rabbitmq_node][:token] = node[:rabbit_node][:token]
