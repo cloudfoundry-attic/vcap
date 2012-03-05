@@ -42,40 +42,13 @@ module Functional
     private
 
     def query_uls(uri)
-      parser, body = nil, nil
-      UNIXSocket.open(RouterServer.sock) do |socket|
-        socket.send(simple_uls_request(uri), 0)
-        socket.close_write
-        buf = socket.read
-        parser, body = parse_http_msg(buf)
-        socket.close
-      end
-      return parser.status_code, body
+      req = Net::HTTP::Get.new("/")
+      req.body = { :host => uri }.to_json
+      resp = Net::HTTP.new('localhost', RouterServer.uls_port).start { |http| http.request(req) }
+      return resp.code.to_i, resp.body
     end
-
-    def simple_uls_request(host)
-      body = { :host => host }.to_json
-      "GET / HTTP/1.0\r\nConnection: Keep-alive\r\nHost: localhost\r\nContent-Length: #{body.length}\r\nContent-Type: application/json\r\nX-Vcap-Service-Token: changemysqltoken\r\nUser-Agent: EventMachine HttpClient\r\n\r\n#{body}"
-    end
-
-    def parse_http_msg(buf)
-      parser = Http::Parser.new
-      body = ''
-
-      parser.on_body = proc do |chunk|
-        body << chunk
-      end
-
-      parser.on_message_complete = proc do
-        :stop
-      end
-
-      parser << buf
-
-      return parser, body
-    end
-
   end
+
 
   class Droplet
     attr_reader :host, :port
@@ -89,6 +62,7 @@ module Functional
       "#{host}:#{port}"
     end
   end
+
 
   class DummyDea
 
