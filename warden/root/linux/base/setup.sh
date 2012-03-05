@@ -85,7 +85,7 @@ EOS
 # Install packages
 chroot <<-EOS
 apt-get update
-apt-get install -y gcc make
+apt-get install -y build-essential
 EOS
 
 # Remove files we don't need or want
