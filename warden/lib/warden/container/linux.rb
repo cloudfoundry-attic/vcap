@@ -16,12 +16,17 @@ module Warden
 
       class << self
 
+        attr_reader :bind_mount_script_template
+
         def setup(config = {})
           unless Process.uid == 0
             raise WardenError.new("linux containers require root privileges")
           end
 
           super(config)
+
+          template_path = File.join(self.root_path, "setup-bind-mounts.erb")
+          @bind_mount_script_template = ERB.new(File.read(template_path))
         end
       end
 
@@ -39,9 +44,15 @@ module Warden
         "env #{env.map { |k, v| "#{k}=#{v}" }.join(" ")}"
       end
 
-      def do_create
+      def do_create(config={})
+        check_create_config(config)
+
         sh "#{env_command} #{root_path}/create.sh #{handle}", :timeout => nil
         debug "container created"
+
+        create_bind_mount_script(config["bind_mounts"] || {})
+        debug "wrote bind mount script"
+
         sh "#{container_path}/start.sh", :timeout => nil
         debug "container started"
       end
@@ -101,6 +112,18 @@ module Warden
 
       private
 
+      def check_create_config(config)
+        if config["bind_mounts"]
+          config["bind_mounts"].each do |src_path, dest_info|
+            unless dest_info["mode"].nil? || ["rw", "ro"].include?(dest_info["mode"])
+              emsg = "Invalid mode for bind mount '#{src_path}'." \
+                     + " Must be one of 'rw, ro'."
+              raise WardenError.new(emsg)
+            end
+          end
+        end
+      end
+
       def perform_rsync(src_path, dst_path)
         ssh_config_path = File.join(container_path, "ssh", "ssh_config")
         cmd = ["rsync -e 'ssh -T -F #{ssh_config_path}'",
@@ -110,6 +133,23 @@ module Warden
                src_path,
                dst_path].join(" ")
         sh(cmd, :timeout => nil)
+      end
+
+      def create_bind_mount_script(bind_mounts)
+        params = {"bind_mounts" => bind_mounts.dup}
+
+        # Fix up destination paths so that they are absolute paths inside the union
+        params["bind_mounts"].each_value do |mount_info|
+          path = mount_info["path"]
+          mount_info["path"] = File.join(container_path,
+                                         "union",
+                                         path.slice(1, path.size - 1))
+        end
+
+        script_contents = self.class.bind_mount_script_template.result(binding())
+        script_path = File.join(container_path, "setup-bind-mounts.sh")
+        File.open(script_path, 'w+') {|f| f.write(script_contents) }
+        sh "chmod 0700 #{script_path}"
       end
 
     end
