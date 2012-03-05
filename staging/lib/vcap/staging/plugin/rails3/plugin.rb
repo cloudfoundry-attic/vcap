@@ -85,8 +85,7 @@ class Rails3Plugin < StagingPlugin
     vars = environment_hash
     # PWD here is before we change to the 'app' directory.
     if uses_bundler?
-      local_bin_path = File.dirname(runtime['executable'])
-      vars['PATH'] = "$PWD/app/rubygems/ruby/#{library_version}/bin:#{local_bin_path}:/usr/bin:/bin"
+      vars['PATH'] = "$PWD/app/rubygems/ruby/#{library_version}/bin:/usr/bin:/bin"
       vars['GEM_PATH'] = vars['GEM_HOME'] = "$PWD/app/rubygems/ruby/#{library_version}"
     end
     vars['RUBYOPT'] = '-I$PWD/ruby -rstdsync'
