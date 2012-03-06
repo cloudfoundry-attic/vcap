@@ -5,6 +5,8 @@ describe 'Router Functional Tests' do
   before :each do
     @nats_server = NatsServer.new
     @nats_server.start_server
+    @nats_server.start_server
+    @nats_server.start_server
     @nats_server.is_running?.should be_true
 
     @router = RouterServer.new(@nats_server.uri)
