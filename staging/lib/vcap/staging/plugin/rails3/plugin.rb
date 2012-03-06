@@ -1,8 +1,10 @@
 require File.expand_path('../database_support', __FILE__)
+require 'uuidtools'
 
 class Rails3Plugin < StagingPlugin
   include GemfileSupport
   include RailsDatabaseSupport
+  include RubyAutoconfig
 
   def framework
     'rails3'
@@ -32,16 +34,51 @@ class Rails3Plugin < StagingPlugin
     end
   end
 
+  def console_command
+   if uses_bundler?
+      "#{local_runtime} #{gem_bin_dir}/bundle exec #{local_runtime} cf-rails-console/rails_console.rb"
+    else
+      "#{local_runtime} cf-rails-console/rails_console.rb"
+    end
+  end
+
+  def resource_dir
+    File.join(File.dirname(__FILE__), 'resources')
+  end
+
   def stage_application
     Dir.chdir(destination_directory) do
       create_app_directories
       copy_source_files
+      stage_console
       compile_gems
-      configure_database # TODO - Fail if we just configured a database that the user did not bundle a driver for.
+      if autoconfig_enabled?
+        configure_database # TODO - Fail if we just configured a database that the user did not bundle a driver for.
+        install_autoconfig_gem
+        setup_autoconfig_script
+      end
       create_asset_plugin if disables_static_assets?
       create_startup_script
       create_stop_script
     end
+  end
+
+  def stage_console
+    #Copy cf-rails-console to app
+    cf_rails_console_dir = destination_directory + '/app/cf-rails-console'
+    FileUtils.mkdir_p(cf_rails_console_dir)
+    FileUtils.cp_r(File.join(File.dirname(__FILE__), 'resources','cf-rails-console'),destination_directory + '/app')
+    #Generate console access file for caldecott access
+    config_file = cf_rails_console_dir + '/.consoleaccess'
+    data = {'username' => UUIDTools::UUID.random_create.to_s,'password' => UUIDTools::UUID.random_create.to_s}
+    File.open(config_file, 'w') do |fh|
+      fh.write(YAML.dump(data))
+    end
+  end
+
+  def setup_autoconfig_script
+    FileUtils.cp(resource_dir+ '/01-autoconfig.rb',destination_directory +
+      '/app/config/initializers')
   end
 
   def startup_script
@@ -53,6 +90,7 @@ class Rails3Plugin < StagingPlugin
       vars['GEM_PATH'] = vars['GEM_HOME'] = "$PWD/app/rubygems/ruby/#{library_version}"
     end
     vars['RUBYOPT'] = '-I$PWD/ruby -rstdsync'
+    vars['DISABLE_AUTO_CONFIG'] = 'mysql:postgresql'
     generate_startup_script(vars) do
       cmds = ['mkdir ruby', 'echo "\$stdout.sync = true" >> ./ruby/stdsync.rb']
       cmds << <<-MIGRATE
@@ -60,6 +98,15 @@ if [ -f "$PWD/app/config/database.yml" ] ; then
   cd app && #{migration_command} >>../logs/migration.log 2>> ../logs/migration.log && cd ..;
 fi
       MIGRATE
+      cmds << <<-RUBY_CONSOLE
+if [ -n "$VCAP_CONSOLE_PORT" ]; then
+  cd app
+  #{console_command} >>../logs/console.log 2>> ../logs/console.log &
+  CONSOLE_STARTED=$!
+  echo "$CONSOLE_STARTED" >> ../console.pid
+  cd ..
+fi
+      RUBY_CONSOLE
       cmds.join("\n")
       end
   end
@@ -67,6 +114,19 @@ fi
   def stop_script
     vars = environment_hash
     generate_stop_script(vars)
+  end
+
+  def stop_command
+    cmds = []
+    cmds << 'APP_PID=$1'
+    cmds << 'APP_PPID=`ps -o ppid= -p $APP_PID`'
+    cmds << 'kill -9 $APP_PID'
+    cmds << 'kill -9 $APP_PPID'
+    cmds << 'SCRIPT=$(readlink -f "$0")'
+    cmds << 'SCRIPTPATH=`dirname "$SCRIPT"`'
+    cmds << 'CONSOLE_PID=`head -1 $SCRIPTPATH/console.pid`'
+    cmds << 'kill -9 $CONSOLE_PID'
+    cmds.join("\n")
   end
 
   # Rails applications often disable asset serving in production mode, and delegate that to

@@ -5,6 +5,7 @@ filer_port: 12346
 mbus: nats://localhost:4222/
 intervals:
   heartbeat: 10
+  advertise: 5
 logging:
   level: debug
 multi_tenant: true

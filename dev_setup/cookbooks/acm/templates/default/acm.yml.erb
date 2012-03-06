@@ -1,0 +1,14 @@
+---
+pid: /var/vcap/sys/run/acm.pid
+name: ACM
+port: 9090
+logging:
+  level: info
+  file: /tmp/acm.log
+db:
+  database: <%= "\"postgres://#{node[:acmdb][:user]}:#{node[:acmdb][:password]}@#{node[:acmdb][:host]}:#{node[:acmdb][:port]}/#{node[:acmdb][:database]}\"" %>
+  max_connections: 10
+  pool_timeout: 2000
+basic_auth:
+  user: 'acm_user'
+  password: 'acm_password'

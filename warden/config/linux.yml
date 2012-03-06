@@ -1,0 +1,7 @@
+---
+server:
+  container_klass: Warden::Container::Linux
+  unix_domain_permissions: 0777
+
+logging:
+  level: debug2

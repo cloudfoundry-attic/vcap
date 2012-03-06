@@ -14,11 +14,17 @@ describe "A Rails 3 application being staged" do
       start_script = File.join(staged_dir, 'startup')
       start_script.should be_executable_file
       script_body = File.read(start_script)
+
+      # FIXME sunset this by Monday, March 5
+      # The expected string should really stay hardcoded
+      local_bin_path = ENV['VCAP_RUNTIME_RUBY18']? File.dirname(ENV['VCAP_RUNTIME_RUBY18']) : '/usr/bin'
+
       script_body.should == <<-EXPECTED
 #!/bin/bash
+export DISABLE_AUTO_CONFIG="mysql:postgresql"
 export GEM_HOME="$PWD/app/rubygems/ruby/1.8"
 export GEM_PATH="$PWD/app/rubygems/ruby/1.8"
-export PATH="$PWD/app/rubygems/ruby/1.8/bin:/usr/bin:/usr/bin:/bin"
+export PATH="$PWD/app/rubygems/ruby/1.8/bin:#{local_bin_path}:/usr/bin:/bin"
 export RACK_ENV="production"
 export RAILS_ENV="production"
 export RUBYOPT="-I$PWD/ruby -rstdsync"
@@ -28,12 +34,43 @@ echo "\\$stdout.sync = true" >> ./ruby/stdsync.rb
 if [ -f "$PWD/app/config/database.yml" ] ; then
   cd app && #{executable} ./rubygems/ruby/1.8/bin/bundle exec #{executable} ./rubygems/ruby/1.8/bin/rake db:migrate --trace >>../logs/migration.log 2>> ../logs/migration.log && cd ..;
 fi
+if [ -n "$VCAP_CONSOLE_PORT" ]; then
+  cd app
+  #{executable} ./rubygems/ruby/1.8/bin/bundle exec #{executable} cf-rails-console/rails_console.rb >>../logs/console.log 2>> ../logs/console.log &
+  CONSOLE_STARTED=$!
+  echo "$CONSOLE_STARTED" >> ../console.pid
+  cd ..
+fi
 cd app
 #{executable} ./rubygems/ruby/1.8/bin/bundle exec #{executable} ./rubygems/ruby/1.8/bin/rails server $@ > ../logs/stdout.log 2> ../logs/stderr.log &
 STARTED=$!
 echo "$STARTED" >> ../run.pid
 wait $STARTED
       EXPECTED
+    end
+  end
+
+  it "generates an auto-config script" do
+     stage :rails3 do |staged_dir|
+       auto_stage_script = File.join(staged_dir,'app','config','initializers','01-autoconfig.rb')
+       script_body = File.read(auto_stage_script)
+       script_body.should == <<-EXPECTED
+require 'cfautoconfig'
+     EXPECTED
+     end
+  end
+
+it "installs autoconfig gem" do
+     stage :rails3 do |staged_dir|
+       gemfile = File.join(staged_dir,'app','Gemfile')
+       gemfile_body = File.read(gemfile)
+       gemfile_body.should == <<-EXPECTED
+source 'http://rubygems.org'
+
+gem 'rails', '3.0.4'
+
+gem "cf-autoconfig"
+     EXPECTED
     end
   end
 
@@ -47,11 +84,16 @@ wait $STARTED
         executable = '%VCAP_LOCAL_RUNTIME%'
         start_script = File.join(staged_dir, 'startup')
         script_body = File.read(start_script)
+        # FIXME sunset this by Monday, March 5
+        # The expected string should really stay hardcoded
+        local_bin_path = ENV['VCAP_RUNTIME_RUBY18']? File.dirname(ENV['VCAP_RUNTIME_RUBY18']) : '/usr/bin'
+
         script_body.should == <<-EXPECTED
 #!/bin/bash
+export DISABLE_AUTO_CONFIG="mysql:postgresql"
 export GEM_HOME="$PWD/app/rubygems/ruby/1.8"
 export GEM_PATH="$PWD/app/rubygems/ruby/1.8"
-export PATH="$PWD/app/rubygems/ruby/1.8/bin:/usr/bin:/usr/bin:/bin"
+export PATH="$PWD/app/rubygems/ruby/1.8/bin:#{local_bin_path}:/usr/bin:/bin"
 export RACK_ENV="production"
 export RAILS_ENV="production"
 export RUBYOPT="-I$PWD/ruby -rstdsync"
@@ -60,6 +102,13 @@ mkdir ruby
 echo "\\$stdout.sync = true" >> ./ruby/stdsync.rb
 if [ -f "$PWD/app/config/database.yml" ] ; then
   cd app && #{executable} ./rubygems/ruby/1.8/bin/bundle exec #{executable} ./rubygems/ruby/1.8/bin/rake db:migrate --trace >>../logs/migration.log 2>> ../logs/migration.log && cd ..;
+fi
+if [ -n "$VCAP_CONSOLE_PORT" ]; then
+  cd app
+  #{executable} ./rubygems/ruby/1.8/bin/bundle exec #{executable} cf-rails-console/rails_console.rb >>../logs/console.log 2>> ../logs/console.log &
+  CONSOLE_STARTED=$!
+  echo "$CONSOLE_STARTED" >> ../console.pid
+  cd ..
 fi
 cd app
 #{executable} ./rubygems/ruby/1.8/bin/bundle exec #{executable} ./rubygems/ruby/1.8/bin/rails server thin $@ > ../logs/stdout.log 2> ../logs/stderr.log &
@@ -75,6 +124,17 @@ wait $STARTED
     stage :rails3 do |staged_dir|
       plugin_dir = staged_dir.join('app', 'vendor', 'plugins', 'serve_static_assets')
       plugin_dir.should_not be_directory
+    end
+  end
+
+  it "receives the rails console" do
+    stage :rails3 do |staged_dir|
+      plugin_dir = staged_dir.join('app', 'cf-rails-console')
+      plugin_dir.should be_directory
+      access_file = staged_dir.join('app', 'cf-rails-console','.consoleaccess')
+      config = YAML.load_file(access_file)
+      config['username'].should_not be_nil
+      config['password'].should_not be_nil
     end
   end
 

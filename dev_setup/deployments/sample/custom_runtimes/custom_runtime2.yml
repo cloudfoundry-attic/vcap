@@ -27,5 +27,5 @@ jobs:
         runtimes:
           - ruby18
           - ruby19
-          - nodejs
+          - node
           - java

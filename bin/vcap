@@ -9,7 +9,11 @@
 # - router
 # - cloud_controller
 # - health_manager
+# - stager
+# - package_cache
 # - dea
+# - uaa
+# - acm
 #
 # services
 # - redis
@@ -435,7 +439,7 @@ module Run
   private
 
   def self.core
-    %w(router cloud_controller dea health_manager stager)
+    %w(router cloud_controller dea health_manager stager uaa acm package_cache)
   end
 
   def self.services
@@ -596,6 +600,7 @@ opts_parser = OptionParser.new do |opts|
   opts.on('--noprompt', '-n')                      { $noprompt = true }
 
 end
+$configdir ||= ENV['CLOUD_FOUNDRY_CONFIG_PATH']
 args = opts_parser.parse!(args)
 
 $nocolor = true unless STDOUT.tty?

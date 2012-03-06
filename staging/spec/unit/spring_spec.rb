@@ -83,7 +83,7 @@ describe "A Spring web application being staged without a web config" do
   end
 
   it "should fail" do
-    lambda { stage :spring }.should raise_error
+    lambda { stage(:spring){} }.should raise_error
   end
 end
 
@@ -259,7 +259,7 @@ describe "A Spring web application being staged without a Spring DispatcherServl
   end
 
   it "should be staged" do
-    lambda { stage :spring }.should_not raise_error
+    lambda { stage(:spring){} }.should_not raise_error
   end
 
   it "should have a 'contextInitializerClasses' context-param with only the CloudApplicationContextInitializer" do

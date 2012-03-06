@@ -19,20 +19,11 @@ describe 'Health Manager' do
     FileUtils.mkdir(@test_dir)
     File.directory?(@test_dir).should be_true
     @run_id = 0
-  end
 
-  after :all do
-    # Cleanup after ourselves
-    FileUtils.rm_rf(@test_dir)
-  end
-
-  before :each do
-    # Create a directory per scenario to store log files, pid files, etc.
     @run_dir = File.join(@test_dir, "run_#{run_id_ctr}")
     create_dir(@run_dir)
 
     @helper = HMExpectedStateHelperDB.new( 'run_dir' => @run_dir)
-
 
     # NATS
     port = VCAP.grab_ephemeral_port
@@ -40,63 +31,57 @@ describe 'Health Manager' do
     @nats_uri = "nats://localhost:#{port}"
     @nats_server = VCAP::Spec::ForkedComponent::NatsServer.new(pid_file, port, @run_dir)
 
-    # HM
+    @nats_server.start
+    @nats_server.wait_ready.should be_true
+
     @hm_cfg = {
       'mbus'         => @nats_uri,
       'local_route' => '127.0.0.1',
       'intervals'    => {
-        'database_scan' => 2, #60
-        'droplet_lost' => 4, #30
-        'droplet_analysis' => 4, #10
+        'database_scan' => 1, #60
+        'droplet_lost' => 1, #30
+        'droplets_analysis' => 1, #10
         'flapping_death' => 4, #3
         'flapping_timeout' => 9, #180
         'restart_timeout' => 15, #20
-        'request_queue' => 0.02,
-        'stable_state' => 5, #60
+        'stable_state' => -1, #ensures all apps are "quiescent" for the purpose of testing
         'nats_ping' => 1,
       },
-      'logging'      => {'level' => 'debug'},
+      'logging'      => {'level' => 'warn'},
       'pid'          => File.join(@run_dir, 'health_manager.pid'),
-
+      'dequeueing_rate' => 0,
       'rails_environment' => 'test',
       'database_environment' =>{
         'test' => @helper.config
       }
     }
-
     @hm_config_file = File.join(@run_dir, 'health_manager.config')
     File.open(@hm_config_file, 'w') {|f| YAML.dump(@hm_cfg, f) }
-
     @hm = HealthManagerComponent.
       new("ruby -r#{nats_timeout_path} #{hm_path} -c #{@hm_config_file}",
           @hm_cfg['pid'],@hm_cfg, @run_dir)
 
-    @app_state_file = File.join(@run_dir, 'db', 'applications.json')
+    @helper.prepare_tests
+    receive_message 'healthmanager.start' do
+      @hm.start
+    end.should_not be_nil
   end
 
-  after :each do
-    run_id_ctr += 1
+  after :all do
+    # Cleanup after ourselves
+    @nats_server.stop
+    @nats_server.running?.should be_false
+
+    @hm.stop
+    @hm.running?.should be_false
+    @helper.release_resources
+
+    FileUtils.rm_rf(@test_dir)
   end
 
   describe 'when running' do
     before :each do
-      @helper.prepare_tests
-      @nats_server.start
-      @nats_server.wait_ready.should be_true
-
-      receive_message 'healthmanager.start' do
-        @hm.start
-      end.should_not be_nil
-    end
-
-    after :each do
-
-      @hm.stop
-      @hm.running?.should be_false
-
-      @nats_server.stop
-      @nats_server.running?.should be_false
-      @helper.release_resources
+      @helper.delete_all
     end
 
     #TODO: test stop duplicate instances
@@ -106,19 +91,14 @@ describe 'Health Manager' do
     #TODO: test wait for droplet to be stable
     #TODO: test that droplets have a chance to restart
 
-    it 'should receive healthmanager.nats.ping message' do
-      msg = receive_message 'healthmanager.nats.ping'
-      msg.should_not be_nil
-    end
-
     #test start missing instances
     it 'should start missing instances' do
       app = nil
-      msg = receive_message 'cloudcontrollers.hm.requests', 'app_create_prompter' do
+      msg = receive_message 'cloudcontrollers.hm.requests' do
         #putting enough into Expected State to trigger an instance START request
         app = @helper.make_app_with_owner_and_instance(
-                                                 make_app_def( 'to_be_started_app'),
-                                                 make_user_def)
+                                                       make_app_def( 'to_be_started_app'),
+                                                       make_user_def)
       end
       app.should_not be_nil
       msg.should_not be_nil
@@ -138,7 +118,7 @@ describe 'Health Manager' do
         'reason' => 'CRASHED',
         'crash_timestamp' => Time.now.to_i
       }
-      msg = receive_message 'cloudcontrollers.hm.requests', 'app_restart_prompter' do
+      msg = receive_message 'cloudcontrollers.hm.requests' do
         NATS.publish('droplet.exited', crash_msg.to_json)
       end
       msg.should_not be_nil
@@ -147,7 +127,6 @@ describe 'Health Manager' do
       msg['op'].should == 'START'
       msg['version'].to_i.should == crash_msg['version']
     end
-
   end
 
   def make_user_def
@@ -170,48 +149,28 @@ describe 'Health Manager' do
     File.directory?(dir).should be_true
   end
 
-  def send_request(uri, subj, req, timeout=10)
-    response = nil
-    em_run_with_timeout(timeout) do
-      NATS.start(:uri => uri) do
-        NATS.request(subj, req) do |msg|
-          response = msg
-          EM.stop
-        end
-      end
-    end
-    response
-  end
-
   def parse_json(str)
     Yajl::Parser.parse(str)
   end
 
-  def receive_message(subj, prompting_msg='foo', timeout=10)
+  def receive_message(subj)
     ret = nil
-    em_run_with_timeout do
+    timeout = 10
+    EM.run do
+      EM.add_timer(timeout) do
+        puts "TIMEOUT while waiting on #{subj}"
+        EM.stop
+      end
       NATS.start :uri => @nats_server.uri do
         NATS.subscribe(subj) do |msg|
           ret = msg
           EM.stop
         end
         if block_given?
-          NATS.publish(prompting_msg) { yield }
+          NATS.publish('foo') { yield }
         end
       end
     end
     ret
-  end
-
-  # NB: This is intended to be used without the event-loop already running.
-  #     (We expect to block here.)
-  def em_run_with_timeout(timeout=10)
-    EM.run do
-      EM.add_timer(timeout) {
-        puts 'TIMEOUT!'
-        EM.stop
-      }
-      yield
-    end
   end
 end
