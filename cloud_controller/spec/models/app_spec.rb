@@ -4,6 +4,26 @@ describe App do
   it "must have an owner"
   it "requires a unique name/owner combination"
   it "specifies a runtime and framework"
+  it "allows a nil runtime" do
+    app = App.create(
+        :name      => 'foobar',
+        :runtime  =>  nil,
+        :framework => 'sinatra')
+    app.should be_valid
+  end
+  it "allows a missing runtime" do
+    app = App.create(
+        :name      => 'foobar',
+        :framework => 'sinatra')
+    app.should be_valid
+  end
+  it "does not allow an invalid runtime" do
+    app = App.create(
+        :name      => 'foobar',
+        :runtime   => 'notsupported',
+        :framework => 'sinatra')
+    app.should_not be_valid
+  end
   it "defaults to 0 instances when initialized" do
     App.new.instances.should be_zero
   end

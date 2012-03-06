@@ -23,16 +23,18 @@ class App < ActiveRecord::Base
 
   AppStates = %w[STOPPED STARTED]
   PackageStates = %w[PENDING STAGED FAILED]
-  Runtimes = %w[ruby18 ruby19 java node node06 php erlangR14B02 python2]
-  Frameworks = %w[sinatra rack rails3 java_web spring grails node php otp_rebar lift wsgi django unknown]
 
-  validates_presence_of :name, :framework, :runtime
+  Runtimes = %w[ruby18 ruby19 java node node06 php erlangR14B02 python2]
+  Frameworks = %w[sinatra rack rails3 java_web spring grails node php otp_rebar lift wsgi django standalone unknown]
+
+
+  validates_presence_of :name, :framework
 
   validates_format_of :name, :with => /^[\w-]+$/ # Don't allow periods, !, etc
 
   # TODO - Update vmc client to use reasonable strings for these.
   validates_inclusion_of :framework, :in => Frameworks
-  validates_inclusion_of :runtime, :in => Runtimes
+  validates :runtime, :inclusion =>{:in => Runtimes, :allow_nil => true}
   validates_inclusion_of :state, :in => AppStates
   validates_inclusion_of :package_state, :in => PackageStates
 
@@ -91,8 +93,8 @@ class App < ActiveRecord::Base
   end
 
   def as_json(options = nil)
-    { :name => name,
-      :staging => {:model => framework, :stack => runtime},
+    app_json = { :name => name,
+      :staging => {:model => framework},
       :uris => mapped_urls,
       :instances => instances,
       :runningInstances => running_instances,
@@ -106,6 +108,8 @@ class App < ActiveRecord::Base
         :created => Time.now.to_i
       })
     }
+    app_json[:staging][:stack] = runtime if runtime
+    app_json
   end
 
   # Called by AppManager when staging this app.
@@ -117,19 +121,23 @@ class App < ActiveRecord::Base
   def staging_environment_data
     # each ServiceBinding returns a denormalized configuration.
     services = service_bindings(true).map {|sb| sb.for_staging}
-    { :services => services,
+    props = { :services => services,
       :framework => framework,
-      :runtime => runtime,
-      :resources => resource_requirements }
+      :resources => resource_requirements,
+      :meta => metadata }
+    props[:runtime] = runtime if runtime
+    props
   end
 
   def staging_task_properties
     services = service_bindings(true).map {|sb| sb.for_staging}
-    { :services    => services,
+    props = { :services    => services,
       :framework   => framework,
-      :runtime     => runtime,
       :resources   => resource_requirements,
-      :environment => environment}
+      :environment => environment,
+      :meta => metadata }
+    props[:runtime] = runtime if runtime
+    props
   end
 
   # Returns an array of the URLs that point to this application
