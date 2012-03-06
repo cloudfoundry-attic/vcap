@@ -618,16 +618,18 @@ module DEA
 
       start_operation = lambda do
         @logger.debug('Completed download')
-
-        port = grab_port
-        if port
-          instance[:port] = port
+        if not instance[:uris].empty?
+          port = grab_port
+          if port
+            instance[:port] = port
+          else
+            @logger.warn("Unable to allocate port for instance#{instance[:log_id]}")
+            stop_droplet(instance)
+            return
+          end
         else
-          @logger.warn("Unable to allocate port for instance#{instance[:log_id]}")
-          stop_droplet(instance)
-          return
+          @logger.info("No URIs found for application.  Not assigning a port")
         end
-
         if debug
           debug_port = grab_port
           if debug_port
@@ -713,7 +715,11 @@ module DEA
             process.send_data("umask 077\n")
           end
           app_env.each { |env| process.send_data("export #{env}\n") }
-          process.send_data("./startup -p #{instance[:port]}\n")
+          if instance[:port]
+            process.send_data("./startup -p #{instance[:port]}\n")
+          else
+            process.send_data("./startup\n")
+          end
           process.send_data("exit\n")
         end
 
@@ -925,8 +931,10 @@ module DEA
       if state_file
         state_file = File.join(instance[:dir], state_file)
         detect_state_ready(instance, state_file, &block)
-      else
+      elsif instance[:port]
         detect_port_ready(instance, &block)
+      else
+        block.call(true)
       end
     end
 
@@ -1187,7 +1195,6 @@ module DEA
           env << "#{k}=#{v}"
         end
       end
-
       return env
     end
 
@@ -1643,7 +1650,8 @@ module DEA
     end
 
     def runtime_supported?(runtime_name)
-      unless runtime_name && runtime = @runtimes[runtime_name]
+      return true if runtime_name == nil
+      unless runtime = @runtimes[runtime_name]
         @logger.debug("Ignoring request, no suitable runtimes available for '#{runtime_name}'")
         return false
       end
