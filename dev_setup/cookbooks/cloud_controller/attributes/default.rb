@@ -26,3 +26,4 @@ default[:cloud_controller][:builtin_services] = ["redis", "mongodb", "mysql", "n
 default[:capacity][:max_uris] = 4
 default[:capacity][:max_services] = 16
 default[:capacity][:max_apps] = 20
+default[:capacity][:max_memory] = 2048
