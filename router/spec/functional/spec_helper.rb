@@ -1,117 +1,62 @@
-# Copyright (c) 2009-2011 VMware, Inc.
+# Copyright (c) 2009-2012 VMware, Inc.
 require File.dirname(__FILE__) + '/../spec_helper'
 
 require 'fileutils'
 require 'nats/client'
 require 'yajl/json_gem'
-require 'vcap/common'
 require 'openssl'
 require 'net/http'
 require 'uri'
+require 'tempfile'
+require 'yaml'
+require 'vcap/spec/forked_component/nats_server'
 
 require 'pp'
 
-class NatsServer
-
-  TEST_PORT = 4228
-
-  def initialize(uri="nats://localhost:#{TEST_PORT}", pid_file='/tmp/nats-router-tests.pid')
-    @uri = URI.parse(uri)
-    @pid_file = pid_file
-  end
-
-  def uri
-    @uri.to_s
-  end
-
-  def server_pid
-    @pid ||= File.read(@pid_file).chomp.to_i
-  end
-
-  def start_server
-    return if NATS.server_running? @uri
-    %x[ruby -S bundle exec nats-server -p #{@uri.port} -P #{@pid_file} -d 2> /dev/null]
-    NATS.wait_for_server(@uri) # New version takes opt_timeout
-  end
-
-  def is_running?
-    NATS.server_running? @uri
-  end
-
-  def kill_server
-    if File.exists? @pid_file
-      Process.kill('KILL', server_pid)
-      FileUtils.rm_f(@pid_file)
-    end
-  end
+# Full path to the Ruby we are running under as configured when it was
+# compiled, so if you have moved or copied it, funny things might happen
+def current_ruby
+  File.join(Config::CONFIG['bindir'], Config::CONFIG['ruby_install_name'])
 end
 
-class RouterServer
+class ForkedRouter < VCAP::Spec::ForkedComponent::Base
 
-  PID_FILE    = '/tmp/router-test.pid'
-  CONFIG_FILE = '/tmp/router-test.yml'
-  LOG_FILE    = '/tmp/router-test.log'
-  PORT        = 2228
+  ROUTER_PATH = File.expand_path('../../../bin/router', __FILE__)
 
-  def initialize(nats_uri)
-    port      = "port: #{PORT}"
-    mbus      = "mbus: #{nats_uri}"
-    log_info  = "log_level: DEBUG\nlog_file: #{LOG_FILE}"
-    @config = %Q{#{port}\ninet: 127.0.0.1\n#{mbus}\n#{log_info}\npid: #{PID_FILE}}
-  end
+  attr_reader :port
+  def initialize(log_file, port, nats_port, router_dir)
+    @port, @nats_port, @log_file = port, nats_port, log_file
+    pid_file = File.join(router_dir, 'router.pid')
+    config = {
+      'port' => port,
+      'inet' => '127.0.0.1',
+      'mbus' => "nats://127.0.0.1:#{nats_port}",
+      'logging' => { 'level' => 'debug' },
+      'pid' => pid_file,
+    }
 
-  def self.port
-    PORT
-  end
-
-  def server_pid
-    File.read(PID_FILE).chomp.to_i
-  end
-
-  def start_server
-    return if is_running?
+    config_file = File.join(router_dir, 'router.yml')
+    nats_timeout = File.expand_path(File.join(File.dirname(__FILE__), 'nats_timeout'))
 
     # Write the config
-    File.open(CONFIG_FILE, 'w') { |f| f.puts "#{@config}" }
+    File.open(config_file, 'w') { |f| YAML.dump config, f }
+    cmd = "#{current_ruby} -r#{nats_timeout} #{ROUTER_PATH} -c #{config_file}"
 
-    # Wipe old log file, but truncate so running tail works
-    if (File.exists? LOG_FILE)
-      File.truncate(LOG_FILE, 0)
-      # %x[rm #{LOG_FILE}] if File.exists? LOG_FILE
-    end
+    super(cmd, 'router', router_dir, pid_file)
+  end
 
-    server = File.expand_path(File.join(__FILE__, '../../../bin/router'))
-    nats_timeout = File.expand_path(File.join(File.dirname(__FILE__), 'nats_timeout'))
-    # pid = Process.fork { %x[#{server} -c #{CONFIG_FILE} 2> /dev/null] }
-    pid = Process.fork { %x[ruby -r#{nats_timeout} #{server} -c #{CONFIG_FILE} 2> /dev/null] }
-    Process.detach(pid)
-
-    wait_for_server
+  def start
+    return if is_running?
+    super
   end
 
   def is_running?
     require 'socket'
-    s = TCPSocket.new('localhost', PORT)
+    s = TCPSocket.new('localhost', @port)
     s.close
     return true
   rescue
     return false
-  end
-
-  def wait_for_server(max_wait = 5)
-    start = Time.now
-    while (Time.now - start < max_wait) # Wait max_wait seconds max
-      break if is_running?
-      sleep(0.2)
-    end
-  end
-
-  def kill_server
-    if File.exists? PID_FILE
-      %x[kill -9 #{server_pid} 2> /dev/null]
-      %x[rm #{PID_FILE}]
-    end
-    %x[rm #{CONFIG_FILE}] if File.exists? CONFIG_FILE
   end
 end
 
