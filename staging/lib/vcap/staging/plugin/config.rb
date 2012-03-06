@@ -17,7 +17,7 @@ class StagingPlugin::Config < VCAP::Config
       optional(:environment) => {               # This is misnamed, but it is called this
         :services  => [Hash],                   # throughout the existing staging code. We use
         :framework => String,                   # it to maintain consistency.
-        :runtime   => String,
+        optional(:runtime)   => String,
         :resources => {
           :memory => Integer,
           :disk   => Integer,
