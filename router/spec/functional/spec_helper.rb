@@ -1,4 +1,4 @@
-# Copyright (c) 2009-2011 VMware, Inc.
+# Copyright (c) 2009-2012 VMware, Inc.
 require File.dirname(__FILE__) + '/../spec_helper'
 
 require 'fileutils'
@@ -8,16 +8,15 @@ require 'vcap/common'
 require 'openssl'
 require 'net/http'
 require 'uri'
+require 'tempfile'
+require 'yaml'
 
 require 'pp'
 
 class NatsServer
-
-  TEST_PORT = 4228
-
-  def initialize(uri="nats://localhost:#{TEST_PORT}", pid_file='/tmp/nats-router-tests.pid')
-    @uri = URI.parse(uri)
-    @pid_file = pid_file
+  def initialize(uri=nil)
+    @uri = URI.parse(uri || "nats://localhost:#{VCAP.grab_ephemeral_port}")
+    @pid_file = Tempfile.new(['nats-router-tests', '.pid'])
   end
 
   def uri
@@ -25,12 +24,12 @@ class NatsServer
   end
 
   def server_pid
-    @pid ||= File.read(@pid_file).chomp.to_i
+    @pid ||= @pid_file.read.chomp.to_i
   end
 
   def start_server
     return if NATS.server_running? @uri
-    %x[ruby -S bundle exec nats-server -p #{@uri.port} -P #{@pid_file} -d 2> /dev/null]
+    %x[bundle exec nats-server -p #{@uri.port} -P #{@pid_file.path} -V -D -d 2> /dev/null]
     NATS.wait_for_server(@uri) # New version takes opt_timeout
   end
 
@@ -39,9 +38,9 @@ class NatsServer
   end
 
   def kill_server
-    if File.exists? @pid_file
+    if @pid_file.path
       Process.kill('KILL', server_pid)
-      FileUtils.rm_f(@pid_file)
+      @pid_file.unlink
     end
   end
 end
@@ -57,7 +56,14 @@ class RouterServer
     port      = "port: #{PORT}"
     mbus      = "mbus: #{nats_uri}"
     log_info  = "log_level: DEBUG\nlog_file: #{LOG_FILE}"
-    @config = %Q{#{port}\ninet: 127.0.0.1\n#{mbus}\n#{log_info}\npid: #{PID_FILE}}
+    @config = {
+      'port' => PORT,
+      'inet' => '127.0.0.1',
+      'mbus' => nats_uri,
+      'log_level' => 'DEBUG',
+      'log_file' => LOG_FILE,
+      'pid' => PID_FILE,
+    }
   end
 
   def self.port
@@ -72,7 +78,7 @@ class RouterServer
     return if is_running?
 
     # Write the config
-    File.open(CONFIG_FILE, 'w') { |f| f.puts "#{@config}" }
+    File.open(CONFIG_FILE, 'w') { |f| YAML.dump @config, f }
 
     # Wipe old log file, but truncate so running tail works
     if (File.exists? LOG_FILE)
