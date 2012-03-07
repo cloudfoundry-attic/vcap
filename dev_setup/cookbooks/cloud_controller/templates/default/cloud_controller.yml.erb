@@ -86,6 +86,14 @@ admins: [ <%= node[:cloud_controller][:admins].join(", ") %> ]
 https_required: false
 https_required_for_admins: false
 
+bootstrap_users:
+  <% @bootstrap_users.each do |user| %>
+  - email: <%= user[:email] %>:
+    password: <%= user[:password] %>
+    is_admin: <%= user[:is_admin] %>
+    is_hashed_password: <%= user[:is_hashed_password] %>
+  <% end %>
+
 # Controls the amount of resources assigned to a user
 # Normal user accounts
 default_account_capacity:
