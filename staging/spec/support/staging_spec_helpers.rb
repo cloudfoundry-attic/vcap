@@ -55,10 +55,19 @@ module StagingSpecHelpers
                    app_source
                  end
     stager = plugin_klass.new(source_dir, working_dir, env)
+    # I still don't get why it's an array of single key hashes
+    # instead of a hash of {name => attrs}
+    StagingPlugin.manifests[framework.to_s]['runtimes'].each do |runtime|
+      runtime.each do |name, attrs|
+        if ENV["VCAP_RUNTIME_#{name.upcase}"]
+          attrs['executable'] = ENV["VCAP_RUNTIME_#{name.upcase}"]
+        end
+      end
+    end
     stager.stage_application
     return working_dir unless block_given?
     Dir.chdir(working_dir) do
-      yield Pathname.new(working_dir), Pathname.new(app_source)
+      yield Pathname.new(working_dir), Pathname.new(source_dir)
     end
     nil
   ensure

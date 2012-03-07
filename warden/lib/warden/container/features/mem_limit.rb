@@ -1,6 +1,6 @@
 require "warden/errors"
 require "warden/logger"
-require "sleepy_penguin"
+require "warden/container/spawn"
 
 module Warden
 
@@ -10,52 +10,42 @@ module Warden
 
       module MemLimit
 
-        class OomNotifier < EM::Connection
-          class << self
-            def for_container(container)
-              cgroup_root = container.cgroup_root_path
-              cio = File.open(File.join(cgroup_root, 'memory.oom_control'), File::RDONLY)
-              eio = SleepyPenguin::EventFD.new(0, :NONBLOCK)
+        class OomNotifier
 
-              ctrl_file = File.open(File.join(cgroup_root, 'cgroup.event_control'), File::WRONLY)
-              ctrl_file.syswrite(["#{eio.fileno} #{cio.fileno} 1"].pack("Z*"))
-              ctrl_file.close
-              cio.close
+          include Spawn
+          include Logger
 
-              notifier = EM.attach(eio, OomNotifier)
-              notifier.container = container
-              notifier
-            end
-          end
+          attr_reader :container
 
-          def container=(container)
+          def initialize(container)
             @container = container
-          end
 
-          def container
-            @container
-          end
+            oom_notifier_path = File.expand_path("../../../../../src/oom/oom", __FILE__)
+            @child = DeferredChild.new(oom_notifier_path, container.cgroup_root_path)
 
-          # We don't care about the data written to us. Its only purpose is to
-          # notify us that a process inside the container OOMed
-          def receive_data(_)
-            # We rely on container destruction to unregister ourselves from
-            # the event loop and close our event fd (by calling #unregister).
-            #
-            # NB: This is executed on the next tick of the reactor to avoid
-            #     doing a detach inside the read callback.
-            EM.next_tick do
-              Fiber.new do
-                self.container.oomed
-              end.resume
+            # Zero exit status means a process OOMed, non-zero means an error occurred
+            @child.callback do
+              if @child.success?
+                Fiber.new do
+                  container.oomed
+                end.resume
+              else
+                debug "stderr: #{@child.err}"
+              end
             end
+
+            # Don't care about errback, nothing we can do
           end
 
           def unregister
-            detach
-            @io.close rescue nil
+            # Overwrite callback
+            @child.callback do
+              # Nothing
+            end
+
+            # TODO: kill child
           end
-        end # OomNotifier
+        end
 
         def oomed
           self.warn "OOM condition occurred inside container #{self.handle}"
@@ -88,7 +78,7 @@ module Warden
             # avoid a race between when the limit is set and when the oom
             # notifier is registered.
             unless @oom_notifier
-              @oom_notifier = OomNotifier.for_container(self)
+              @oom_notifier = OomNotifier.new(self)
               on(:after_stop) do
                 if @oom_notifier
                   self.debug "Unregistering OOM Notifier for container '#{self.handle}'"
@@ -98,10 +88,12 @@ module Warden
               end
             end
 
-            mem_limit_path = File.join(self.cgroup_root_path, "memory.limit_in_bytes")
-            File.open(mem_limit_path, 'w') do |f|
-              f.write(mem_limit.to_s)
+            ["memory.limit_in_bytes", "memory.memsw.limit_in_bytes"].each do |path|
+              File.open(File.join(cgroup_root_path, path), 'w') do |f|
+                f.write(mem_limit.to_s)
+              end
             end
+
             self.limits['mem'] = mem_limit
           rescue => e
             raise WardenError.new("Failed setting memory limit: #{e}")

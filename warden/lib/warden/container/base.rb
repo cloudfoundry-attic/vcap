@@ -1,9 +1,11 @@
+require "warden/event_emitter"
 require "warden/logger"
 require "warden/errors"
 require "warden/container/spawn"
 
 require "eventmachine"
 require "set"
+require "shellwords"
 
 module Warden
 
@@ -22,9 +24,9 @@ module Warden
       # Container setup completed
       class Active < Base; end
 
-      # Triggered by an error condition in the container (OOM, Quota violation)
-      # or explicitly by the user.  All processes have been killed but the
-      # container exists for introspection.  No new commands may be run.
+      # Triggered by an error condition in the container (e.g. OOM) or
+      # explicitly by the user. All processes have been killed but the
+      # container exists for introspection. No new commands may be run.
       class Stopped < Base; end
 
       # All state associated with the container has been destroyed.
@@ -47,6 +49,10 @@ module Warden
           @registry ||= {}
         end
 
+        def reset!
+          @registry = nil
+        end
+
         # This needs to be set by some setup routine. Container logic expects
         # this attribute to hold an instance of Warden::Pool::NetworkPool.
         attr_accessor :network_pool
@@ -66,21 +72,17 @@ module Warden
         # Release resources required for every container instance.
         def release(resources)
           if network = resources.delete(:network)
-              # Release network after some time to make sure the kernel has
-              # time to clean up things such as lingering connections.
-              ::EM.add_timer(5) {
-                network_pool.release(network)
-              }
+            network_pool.release(network)
           end
         end
 
         # Override #new to make sure that acquired resources are released when
         # one of the pooled resourced can not be required. Acquiring the
         # necessary resources must be atomic to prevent leakage.
-        def new(conn)
+        def new(conn, options = {})
           resources = {}
           acquire(resources)
-          instance = super(resources)
+          instance = super(resources, options)
           instance.register_connection(conn)
           instance
 
@@ -99,6 +101,11 @@ module Warden
           @job_id ||= 0
           @job_id += 1
         end
+
+        # Root path for container assets
+        def root_path
+          @root_path ||= File.join(Server.container_root, self.name.split("::").last.downcase)
+        end
       end
 
       attr_reader :resources
@@ -107,22 +114,56 @@ module Warden
       attr_reader :events
       attr_reader :limits
 
-      def initialize(resources)
+      def initialize(resources, options = {})
         @resources   = resources
         @connections = ::Set.new
         @jobs        = {}
         @state       = State::Born
         @events      = Set.new
         @limits      = {}
+        @options     = options
+
+        on(:before_create) {
+          check_state_in(State::Born)
+
+          self.state = State::Active
+        }
 
         on(:after_create) {
           # Clients should be able to look this container up
           self.class.registry[handle] = self
         }
 
+        on(:before_stop) {
+          check_state_in(State::Active)
+
+          self.state = State::Stopped
+        }
+
+        on(:after_stop) {
+          # Here for symmetry
+        }
+
         on(:before_destroy) {
+          check_state_in(State::Active, State::Stopped)
+
           # Clients should no longer be able to look this container up
           self.class.registry.delete(handle)
+
+          unless self.state == State::Stopped
+            begin
+              self.stop
+
+            rescue WardenError
+              # Ignore, stopping before destroy is a best effort
+            end
+          end
+
+          self.state = State::Destroyed
+        }
+
+        on(:after_destroy) {
+          # Here for symmetry
         }
 
         on(:finalize) {
@@ -148,46 +189,94 @@ module Warden
         @container_ip ||= network + 2
       end
 
-      def register_connection(conn)
-        if @destroy_timer
-          ::EM.cancel_timer(@destroy_timer)
-          @destroy_timer = nil
+      def grace_time
+        @options[:grace_time] || Server.container_grace_time
+      end
+
+      def cancel_grace_timer
+        return unless @destroy_timer
+
+        debug "grace timer: cancel"
+
+        ::EM.cancel_timer(@destroy_timer)
+        @destroy_timer = nil
+      end
+
+      def setup_grace_timer
+        debug "grace timer: setup (%.3fs)" % grace_time
+
+        @destroy_timer = ::EM.add_timer(grace_time) do
+          debug "grace timer: fired"
+          fire_grace_timer
+        end
+      end
+
+      def fire_grace_timer
+        f = Fiber.new do
+          debug "grace timer: destroy"
+
+          begin
+            destroy
+
+          rescue WardenError => err
+            # Ignore, destroying after grace time is a best effort
+          end
         end
 
+        f.resume
+      end
+
+      def register_connection(conn)
+        cancel_grace_timer
+
         if connections.add?(conn)
-          conn.on(:close) {
+          conn.on(:close) do
             connections.delete(conn)
 
-            # Destroy container after grace period
-            if connections.size == 0
-              @destroy_timer =
-                ::EM.add_timer(Server.container_grace_time) {
-                  f = Fiber.new { destroy }
-                  f.resume
-                }
+            # Setup grace timer when this was the last connection to reference
+            # this container, and it hasn't already been destroyed
+            if connections.empty? && !has_state?(State::Destroyed)
+              setup_grace_timer
             end
-          }
+          end
         end
       end
 
       def root_path
-        File.join(Server.container_root, self.class.name.split("::").last.downcase)
+        @root_path ||= self.class.root_path
       end
 
       def container_path
-        File.join(root_path, ".instance-#{handle}")
+        @container_path ||= File.join(root_path, "instances", handle)
       end
 
-      def create
-        check_state_in(State::Born)
+      def create(config={})
+        debug "entry"
 
-        self.state = State::Active
+        begin
+          emit(:before_create)
+          do_create(config)
+          emit(:after_create)
 
-        emit(:before_create)
-        do_create
-        emit(:after_create)
+          handle
 
-        handle
+        rescue WardenError
+          begin
+            destroy
+
+          rescue WardenError
+            # Ignore, raise original error
+          end
+
+          raise
+        end
+
+      rescue => err
+        warn "error: #{err.message}"
+        raise
+
+      ensure
+        debug "exit"
       end
 
       def do_create
@@ -195,15 +284,20 @@ module Warden
       end
 
       def stop
-        check_state_in(State::Active)
-
-        self.state = State::Stopped
+        debug "entry"
 
         emit(:before_stop)
         do_stop
         emit(:after_stop)
 
         "ok"
+
+      rescue => err
+        warn "error: #{err.message}"
+        raise
+
+      ensure
+        debug "exit"
       end
 
       def do_stop
@@ -211,20 +305,25 @@ module Warden
       end
 
       def destroy
-        check_state_in(State::Active, State::Stopped)
-
-        unless self.state == State::Stopped
-          self.stop
-        end
-
-        self.state = State::Destroyed
+        debug "entry"
 
         emit(:before_destroy)
         do_destroy
         emit(:after_destroy)
+
+        # Trigger separate "finalize" event so hooks in "after_destroy" still
+        # have access to the allocated resources (e.g. the container's handle
+        # via the network allocation)
         emit(:finalize)
 
         "ok"
+
+      rescue => err
+        warn "error: #{err.message}"
+        raise
+
+      ensure
+        debug "exit"
       end
 
       def do_destroy
@@ -232,6 +331,8 @@ module Warden
       end
 
       def spawn(script)
+        debug "entry"
+
         check_state_in(State::Active)
 
         job = create_job(script)
@@ -239,10 +340,17 @@ module Warden
 
         # Return job id to caller
         job.job_id
+
+      rescue => err
+        warn "error: #{err.message}"
+        raise
+
+      ensure
+        debug "exit"
       end
 
       def link(job_id)
-        check_state_in(State::Active, State::Stopped)
+        debug "entry"
 
         job = jobs[job_id.to_s]
         unless job
@@ -250,25 +358,84 @@ module Warden
         end
 
         job.yield
+
+      rescue => err
+        warn "error: #{err.message}"
+        raise
+
+      ensure
+        debug "exit"
       end
 
       def run(script)
+        debug "entry"
+
         link(spawn(script))
+
+      rescue => err
+        warn "error: #{err.message}"
+        raise
+
+      ensure
+        debug "exit"
       end
 
       def net_in
+        debug "entry"
+
         check_state_in(State::Active)
 
         do_net_in
+
+      rescue => err
+        warn "error: #{err.message}"
+        raise
+
+      ensure
+        debug "exit"
       end
 
       def net_out(spec)
+        debug "entry"
+
         check_state_in(State::Active)
 
         do_net_out(spec)
+
+      rescue => err
+        warn "error: #{err.message}"
+        raise
+
+      ensure
+        debug "exit"
+      end
+
+      def copy(direction, src_path, dst_path, owner=nil)
+        debug "entry"
+
+        check_state_in(State::Active)
+
+        if owner && (direction == "in")
+          raise WardenError.new("You can only supply a target owner when copying out")
+        end
+
+        src_path = Shellwords.shellescape(src_path)
+        dst_path = Shellwords.shellescape(dst_path)
+
+        if direction == "in"
+          do_copy_in(src_path, dst_path)
+        else
+          chown_opts = Shellwords.shellescape(owner) if owner
+          do_copy_out(src_path, dst_path, owner)
+        end
+
+      ensure
+        debug "exit"
       end
 
       def get_limit(limit_name)
+        debug "entry"
+
         check_state_in(State::Active, State::Stopped)
 
         getter = "get_limit_#{limit_name}"
@@ -277,9 +444,18 @@ module Warden
         else
           raise WardenError.new("Unknown limit #{limit_name}")
         end
+
+      rescue => err
+        warn "error: #{err.message}"
+        raise
+
+      ensure
+        debug "exit"
       end
 
       def set_limit(limit_name, args)
+        debug "entry"
+
         check_state_in(State::Active)
 
         setter = "set_limit_#{limit_name}"
@@ -288,12 +464,28 @@ module Warden
         else
           raise WardenError.new("Unknown limit #{limit_name}")
         end
+
+      rescue => err
+        warn "error: #{err.message}"
+        raise
+
+      ensure
+        debug "exit"
       end
 
       def info
+        debug "entry"
+
         check_state_in(State::Active, State::Stopped)
 
         get_info
+
+      rescue => err
+        warn "error: #{err.message}"
+        raise
+
+      ensure
+        debug "exit"
       end
 
       def get_info
@@ -312,6 +504,10 @@ module Warden
 
       def state=(state)
         @state = state
+      end
+
+      def has_state?(state)
+        self.state == state
       end
 
       def check_state_in(*states)
@@ -334,23 +530,6 @@ module Warden
 
           @status = nil
           @yielded = []
-        end
-
-        def finish(path = nil)
-          path ||= "/idontexist"
-          exit_status_path = File.join(path, "exit_status")
-          stdout_path = File.join(path, "stdout")
-          stderr_path = File.join(path, "stderr")
-
-          exit_status = File.read(exit_status_path) if File.exist?(exit_status_path)
-          exit_status = exit_status.to_i if exit_status && !exit_status.empty?
-          stdout_path = nil unless File.exist?(stdout_path)
-          stderr_path = nil unless File.exist?(stderr_path)
-
-          status = [exit_status, stdout_path, stderr_path]
-          debug "job exit status: #{exit_status}"
-
-          resume(status)
         end
 
         def yield

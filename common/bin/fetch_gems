@@ -1,0 +1,63 @@
+#!/usr/bin/env ruby
+
+require 'bundler'
+require 'fileutils'
+require 'logger'
+require 'rubygems'
+
+# Provides functionality similar to `bundle package`, but without needing
+# to install any gems.
+
+unless ARGV.length == 3
+  puts "Usage: fetch_gems [/path/to/Gemfile] [/path/to/Gemfile.lock] [/path/to/store]"
+  exit 1
+end
+
+gemfile_path, lockfile_path, gem_store_dir = ARGV.map {|path| File.expand_path(path) }
+
+ENV['BUNDLE_GEMFILE'] = gemfile_path
+
+lockfile_contents = File.read(lockfile_path)
+parser = Bundler::LockfileParser.new(lockfile_contents)
+
+logger = Logger.new(STDOUT)
+
+if parser.specs.empty?
+  logger.info("No gems found")
+  exit 0
+end
+
+FileUtils.mkdir_p(gem_store_dir)
+
+to_fetch = []
+parser.specs.each do |spec|
+  gem_basename = "#{spec.name}-#{spec.version}.gem"
+  dst_path = File.join(gem_store_dir, gem_basename)
+  if spec.source.kind_of?(Bundler::Source::Path) && (spec.source.path.to_s == '.')
+    logger.info("Skipping '#{gem_basename}', Gemfile.lock appears to belong to it")
+  elsif File.exist?(dst_path)
+    logger.info("Skipping '#{gem_basename}', found in '#{gem_store_dir}'")
+  else
+    logger.info("Need to download '#{gem_basename}'")
+    to_fetch << gem_basename
+  end
+end
+
+unless to_fetch.empty?
+  urls = to_fetch.map do |gem_basename|
+    "http://production.s3.rubygems.org/gems/#{gem_basename}"
+  end.join(' ')
+
+  cmd = "wget --quiet --retry-connrefused --connect-timeout=5"
+  cmd += " --no-check-certificate --directory-prefix #{gem_store_dir} #{urls}"
+
+  logger.info("Fetching #{to_fetch.join(', ')} from rubygems")
+  logger.info("Executing '#{cmd}'")
+
+  unless system(cmd)
+    logger.error("#{cmd} failed with status #{$?}!")
+    exit $?.exitstatus
+  end
+end
+
+logger.info("Done")

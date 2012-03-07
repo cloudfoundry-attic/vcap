@@ -35,18 +35,21 @@ def done
 end
 
 RSpec.configure do |config|
+
+  # Exclude specs for other platforms
+  config.exclusion_filter = {
+    :platform => lambda { |platform|
+      RUBY_PLATFORM !~ /#{platform}/i },
+  }
+
   if Process.uid != 0
     config.filter_run_excluding :needs_root => true
-  end
-
-  unless (Process.uid == 0) && ENV['WARDEN_TEST_QUOTA_FS'] && ENV['WARDEN_TEST_REPORT_QUOTA_PATH']
-    config.filter_run_excluding :needs_quota_config => true
   end
 
   config.before(:each) do
     config = {
       # Run every logging statement, but discard output
-      :logger => {
+      :logging => {
         :level => :debug2,
         :file  => '/dev/null',
       },
