@@ -1,4 +1,6 @@
 ---
+capacity: <%= node[:mysql_node][:capacity] %>
+plan: free
 local_db: sqlite3:/var/vcap/services/mysql/mysql_node.db
 base_dir: /var/vcap/services/mysql/
 mysqldump_bin: mysqldump
@@ -7,7 +9,6 @@ mysql_bin: mysql
 mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
 index: <%= node[:mysql_node][:index] %>
 pid: /var/vcap/sys/run/mysql_node.pid
-available_storage: <%= node[:mysql_node][:available_storage] %>
 node_id: <%= "mysql_node_#{node[:mysql_node][:index]}" %>
 max_db_size: <%= node[:mysql_node][:max_db_size] %>
 max_long_query: 3
