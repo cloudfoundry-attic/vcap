@@ -109,6 +109,19 @@ admins: [derek@gmail.com, foobar@vmware.com]
 https_required: false
 https_required_for_admins: false
 
+bootstrap_users:
+  - email: admin@bootstrap
+    password: $2a$10$ncpsT/Uh1Z2BRf1XkI11M.zfAsxrjA34F9PTr1C4xS0tbmDnUuZdS  # stands for '1234'
+    is_admin: true
+    is_hashed_password: true
+  - email: admin2@bootstrap
+    password: "1234"
+    is_admin: true
+  - email: user@bootstrap
+    password: $2a$10$ncpsT/Uh1Z2BRf1XkI11M.zfAsxrjA34F9PTr1C4xS0tbmDnUuZdS  # stands for '1234'
+    is_admin: false
+    is_hashed_password: true
+
 # Controls the amount of resources assigned to a user
 # Normal user accounts
 default_account_capacity:
