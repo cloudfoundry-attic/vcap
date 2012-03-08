@@ -88,7 +88,7 @@ https_required_for_admins: false
 
 bootstrap_users:
   <% node[:cloud_controller][:bootstrap_users].each do |user| %>
-  - email: <%= user[:email] %>:
+  - email: <%= user[:email] %>
     password: <%= user[:password] %>
     is_admin: <%= user[:is_admin] %>
     is_hashed_password: <%= user[:is_hashed_password] %>
