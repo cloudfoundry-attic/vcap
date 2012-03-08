@@ -1,13 +1,11 @@
 {
-  "name": "cloud_controller",
-  "default_attributes": {},
+  "name": "rabbit_gateway",
   "override_attributes": {},
   "json_class": "Chef::Role",
-  "description": "Cloudfoundry Cloud Controller",
+  "description": "Rabbit services gateway",
   "chef_type": "role",
   "run_list" : [ "recipe[deployment]",
                  "recipe[essentials]",
                  "recipe[ruby]",
-                 "recipe[ruby::ruby18]",
-                 "recipe[cloud_controller]"]
+                 "recipe[rabbitmq::gateway]"]
 }
