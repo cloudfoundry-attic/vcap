@@ -11,7 +11,7 @@ support_address: http://support.cloudfoundry.com
 local_route: <%= node[:cloud_controller][:local_route] %>
 
 # Specifies if new users are allowed to register via VMC
-allow_registration: true
+allow_registration: <%= node[:cloud_controller][:allow_registration] %>
 
 # Allow applications to register URIs that are outside your domain.
 # Legacy (FIXME REMOVE)

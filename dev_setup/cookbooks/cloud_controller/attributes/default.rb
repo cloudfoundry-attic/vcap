@@ -6,6 +6,7 @@ default[:cloud_controller][:service_api_uri] = "http://api.#{node[:deployment][:
 default[:cloud_controller][:local_route] = nil
 default[:cloud_controller][:admins] = ["dev@cloudfoundry.org"]
 default[:cloud_controller][:bootstrap_users] = []
+default[:cloud_controller][:allow_registration] = "true"
 
 # Staging
 default[:cloud_controller][:staging][:grails] = "grails.yml"
