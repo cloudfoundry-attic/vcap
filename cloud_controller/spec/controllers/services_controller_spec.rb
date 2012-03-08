@@ -659,6 +659,34 @@ describe ServicesController do
       end
     end
 
+    describe "#lifecycle_extension" do
+      it 'should return not implemented error when lifecycle is disabled' do
+        begin
+          origin = AppConfig.delete :service_lifecycle
+          %w(create_snapshot enum_snapshots serialized_url import_from_url import_from_data).each do |api|
+            post api.to_sym, :id => 'xxx'
+            response.status.should == 501
+            resp = Yajl::Parser.parse(response.body)
+            resp['description'].include?("not implemented").should == true
+          end
+
+          %w(snapshot_details rollback_snapshot).each do |api|
+            post api.to_sym, :id => 'xxx', :sid => '1'
+            response.status.should == 501
+            resp = Yajl::Parser.parse(response.body)
+            resp['description'].include?("not implemented").should == true
+          end
+
+          get :job_info, :id => 'xxx', :job_id => '1'
+          response.status.should == 501
+          resp = Yajl::Parser.parse(response.body)
+          resp['description'].include?("not implemented").should == true
+        ensure
+          AppConfig[:service_lifecycle] = origin
+        end
+      end
+    end
+
     describe "#create_snapshot" do
 
       it 'should return not authorized for unknown users' do

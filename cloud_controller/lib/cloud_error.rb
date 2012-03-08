@@ -16,6 +16,7 @@ class CloudError < StandardError
   HTTP_FORBIDDEN             = 403
   HTTP_NOT_FOUND             = 404
   HTTP_INTERNAL_SERVER_ERROR = 500
+  HTTP_NOT_IMPLEMENTED       = 501
   HTTP_BAD_GATEWAY           = 502
 
   # HTTP / JSON errors
@@ -53,6 +54,7 @@ class CloudError < StandardError
   TOKEN_NOT_FOUND   = [502, HTTP_NOT_FOUND, "Token not found"]
   SERVICE_GATEWAY_ERROR = [503, HTTP_BAD_GATEWAY, "Unexpected response from service gateway"]
   ACCOUNT_TOO_MANY_SERVICES = [504, HTTP_FORBIDDEN, "Too many Services provisioned: %s, you're allowed: %s"]
+  EXTENSION_NOT_IMPL = [505, HTTP_NOT_IMPLEMENTED, "Service extension %s is not implemented."]
 
   # Account Capacity
   ACCOUNT_NOT_ENOUGH_MEMORY = [600, HTTP_FORBIDDEN, "Not enough memory capacity, you're allowed: %s"]
