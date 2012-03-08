@@ -198,8 +198,8 @@ class AppManager
         (index...max_to_start).each do |i|
           message[:index] = i
           dea_id = find_dea_for(message)
+          json = Yajl::Encoder.encode(message)
           if dea_id
-            json = Yajl::Encoder.encode(message)
             CloudController.logger.debug("Sending start message #{json} to DEA #{dea_id}")
             NATS.publish("dea.#{dea_id}.start", json)
           else
@@ -456,8 +456,8 @@ class AppManager
         message[:executableUri] = download_app_uri(message[:executableUri])
         message[:index] = index
         dea_id = find_dea_for(message)
+        json = Yajl::Encoder.encode(message)
         if dea_id
-          json = Yajl::Encoder.encode(message)
           CloudController.logger.debug("Sending start message #{json} to DEA #{dea_id}")
           NATS.publish("dea.#{dea_id}.start", json)
         else

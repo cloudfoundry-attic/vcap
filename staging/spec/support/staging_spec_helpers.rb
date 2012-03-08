@@ -67,7 +67,7 @@ module StagingSpecHelpers
     stager.stage_application
     return working_dir unless block_given?
     Dir.chdir(working_dir) do
-      yield Pathname.new(working_dir), Pathname.new(app_source)
+      yield Pathname.new(working_dir), Pathname.new(source_dir)
     end
     nil
   ensure

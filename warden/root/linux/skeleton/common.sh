@@ -30,6 +30,10 @@ function setup_fs() {
     mount -n -t aufs -o br:rootfs=rw:../../base/rootfs=ro+wh none ${target}
     ;;
 
+  natty)
+    mount -n -t aufs -o br:rootfs=rw:../../base/rootfs=ro+wh none ${target}
+    ;;
+
   precise)
     mount -n -t overlayfs -o rw,upperdir=rootfs,lowerdir=../../base/rootfs none ${target}
     ;;

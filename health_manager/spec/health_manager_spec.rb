@@ -104,6 +104,13 @@ describe HealthManager do
     { 'droplets' => droplets }.to_json
   end
 
+  describe '#perform_quantum' do
+    it 'should be resilient to nil arguments' do
+      @hm.perform_quantum(nil, nil)
+    end
+  end
+
+
   it "should detect instances that are down and send a START request" do
     stats = { :frameworks => {}, :runtimes => {}, :down => 0 }
     should_publish_to_nats "cloudcontrollers.hm.requests", {

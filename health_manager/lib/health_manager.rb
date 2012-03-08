@@ -353,6 +353,9 @@ class HealthManager
   end
 
   def perform_quantum(id, droplet_entry)
+    return if id.nil?
+    return if droplet_entry.nil?
+
     analyze_app(id, droplet_entry, @analysis[:stats]) if @analysis[:collect_stats]
     @analysis[:instances] += droplet_entry[:instances]
     @analysis[:crashed] += droplet_entry[:crashes].size if droplet_entry[:crashes]

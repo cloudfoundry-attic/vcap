@@ -37,11 +37,13 @@ class VCAP::PackageCache::Config < VCAP::Config
     end
 
     private
-
     def normalize_config(config)
       config[:runtimes].each { |k,v|
         path = v.values[0]
-        raise "Invalid runtime #{path}." if not File.executable?(path)
+        field = v.keys[0]
+        raise "\nInvalid runtime #{path} for parameter #{field}."\
+              "\nPlease ensure #{path} points to an executable for the #{field} runtime."\
+              if not File.executable?(path)
       }
 
       log_level = config[:logging][:level]

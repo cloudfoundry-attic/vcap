@@ -250,12 +250,12 @@ module Warden
         @container_path ||= File.join(root_path, "instances", handle)
       end
 
-      def create
+      def create(config={})
         debug "entry"
 
         begin
           emit(:before_create)
-          do_create
+          do_create(config)
           emit(:after_create)
 
           handle
