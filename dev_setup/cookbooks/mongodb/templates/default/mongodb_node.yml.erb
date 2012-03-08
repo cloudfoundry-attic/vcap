@@ -1,11 +1,12 @@
 ---
+capacity: <%= node[:mongodb_node][:capacity] %>
+plan: free
 local_db: sqlite3:/var/vcap/services/mongodb/mongodb_node.db
 mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
 index: <%= node[:mongodb_node][:index] %>
 base_dir: /var/vcap/services/mongodb/instances
 mongod_log_dir: /var/vcap/services/mongodb/logs
 pid: /var/vcap/sys/run/mongodb_node.pid
-available_memory: <%= node[:mongodb_node][:available_memory] %>
 max_memory: <%= node[:mongodb_node][:max_memory] %>
 node_id: <%= "mongodb_node_#{node[:mongodb_node][:index]}" %>
 mongod_path: <%= File.join(node[:mongodb][:path], "bin", "mongod") %>
