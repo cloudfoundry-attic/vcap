@@ -87,11 +87,17 @@ EOT
 
       puts "+ #{line}" if @trace
 
-      #coalesce shell commands into a single string
-      if ['run','spawn'].member? words[0]
+      case words[0]
+      when 'run', 'spawn'
+        #coalesce shell commands into a single string
         if words.size > 3
           tail = words.slice!(2..-1)
           words.push(tail.join(' '))
+        end
+      when 'create'
+        # Support a config supplied as json
+        if words.length == 2
+          words[1] = Yajl::Parser.parse(words[1])
         end
       end
 
