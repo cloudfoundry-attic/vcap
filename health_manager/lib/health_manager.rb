@@ -336,7 +336,6 @@ class HealthManager
 
 
   def prepare_analysis(collect_stats)
-
     @analysis = {
       :collect_stats => collect_stats,
       :start => Time.now,
@@ -348,8 +347,8 @@ class HealthManager
     }
   end
 
-  def analysis_complete?
-    @analysis && @analysis[:complete]
+  def analysis_in_progress?
+    @analysis && !@analysis[:complete]
   end
 
   def perform_quantum(id, droplet_entry)
@@ -381,6 +380,7 @@ class HealthManager
   def finish_analysis
 
     return unless @analysis
+    @logger.debug("Analysis complete: #{@analysis.inspect}")
     VCAP::Component.varz[:total_apps] = @droplets.size
     VCAP::Component.varz[:total_instances] = @analysis[:instances]
     VCAP::Component.varz[:crashed_instances] = @analysis[:crashed]
@@ -398,8 +398,12 @@ class HealthManager
   end
 
   def analyze_all_apps(collect_stats = true)
+
+    return false if analysis_in_progress?
+
     prepare_analysis(collect_stats)
     perform_and_schedule_next_quantum
+    return true
   end
 
   def create_runtime_metrics
