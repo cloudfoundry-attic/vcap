@@ -70,7 +70,7 @@ class ApplicationController < ActionController::Base
     reset_user!
     unless auth_token_header.blank?
       user_email = nil
-      if (AppConfig[:uaa][:enabled] && UaaToken.is_uaa_token?(auth_token_header))
+      if uaa_enabled? && UaaToken.is_uaa_token?(auth_token_header)
         user_email = UaaToken.decode_token(auth_token_header)
       else
         token = UserToken.decode(auth_token_header)
@@ -168,6 +168,10 @@ class ApplicationController < ActionController::Base
   def handle_general_exception(e)
     log_exception(e)
     render_cloud_error CloudError.new(CloudError::SYSTEM_ERROR)
+  end
+
+  def uaa_enabled?
+    AppConfig[:uaa][:enabled] && !AppConfig[:uaa][:url].nil?
   end
 
 end

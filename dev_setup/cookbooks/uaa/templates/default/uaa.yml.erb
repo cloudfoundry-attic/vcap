@@ -22,6 +22,8 @@ bootstrap:
 
 cloud_controller:
   login_url: http://api.vcap.me/users/{username}/tokens
+  client:
+    secret: <%= node[:uaa][:cloud_controller][:secret] %>
 
 jwt:
   token:
