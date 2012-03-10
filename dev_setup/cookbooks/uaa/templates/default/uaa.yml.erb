@@ -10,7 +10,7 @@ database:
   url: jdbc:postgresql://<%= node[:uaadb][:host] %>:<%= node[:uaadb][:port] %>/<%= node[:uaadb][:database] %>
 
 jvm_args: -Xmx512m
-spring_profiles: jdbc,postgresql,legacy
+spring_profiles: jdbc,postgresql,!legacy
 
 bootstrap:
   admin:
@@ -22,6 +22,13 @@ bootstrap:
 
 cloud_controller:
   login_url: http://api.vcap.me/users/{username}/tokens
+  client:
+    secret: <%= node[:uaa][:cloud_controller][:secret] %>
+  database:
+    postgresql:
+      url: jdbc:postgresql://<%= node[:ccdb][:host] %>:<%= node[:ccdb][:port] %>/<%= node[:ccdb][:database] %>
+      username: <%= node[:ccdb][:user] %>
+      password: <%= node[:ccdb][:password] %>
 
 jwt:
   token:
