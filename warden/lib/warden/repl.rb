@@ -76,6 +76,27 @@ EOT
       end
     end
 
+    def make_create_config(args)
+      config = {}
+
+      return config if args.nil?
+
+      args.each do |arg|
+        if arg =~ /^bind_mount:(.*)/
+          src, dst, mode = $1.split(",")
+          config["bind_mounts"] ||= {}
+          config["bind_mounts"][src] = {
+            "path" => dst,
+            "mode" => mode,
+          }
+        else
+          raise "Unknown argument: #{arg}"
+        end
+      end
+
+      config
+    end
+
     def process_line(line)
       words = Shellwords.shellwords(line)
       return nil if words.empty?
@@ -87,11 +108,20 @@ EOT
 
       puts "+ #{line}" if @trace
 
-      #coalesce shell commands into a single string
-      if ['run','spawn'].member? words[0]
+      case words[0]
+      when 'run', 'spawn'
+        #coalesce shell commands into a single string
         if words.size > 3
           tail = words.slice!(2..-1)
           words.push(tail.join(' '))
+        end
+      when 'create'
+        create_args = words.slice(1, words.length - 1)
+        begin
+          words = ['create', make_create_config(create_args)]
+        rescue => e
+          puts "Error: #{e}"
+          return command_info
         end
       end
 
