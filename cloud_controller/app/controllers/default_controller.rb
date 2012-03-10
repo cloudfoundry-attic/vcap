@@ -10,8 +10,8 @@ class DefaultController < ApplicationController
       :description =>  AppConfig[:description],
       :allow_debug =>  AppConfig[:allow_debug]
     }
-    if (AppConfig[:uaa][:enabled] && !AppConfig[:uaa][:url].nil?)
-      info[:authenticationEndpoint] = AppConfig[:uaa][:url]
+    if uaa_enabled?
+      info[:authorization_endpoint] = AppConfig[:uaa][:url]
     end
     # If there is a logged in user, give out additional information
     if user

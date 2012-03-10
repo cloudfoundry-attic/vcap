@@ -155,7 +155,7 @@ PLATFORMS
 DEPENDENCIES
   SystemTimer (~> 1.2)
   bcrypt-ruby (~> 2.1.4)
-  cf-uaa-client
+  cf-uaa-client (>= 0.0.3)
   ci_reporter
   delorean
   em-hiredis
