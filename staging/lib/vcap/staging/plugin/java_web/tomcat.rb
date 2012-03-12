@@ -22,7 +22,6 @@ class Tomcat
     server_xml = File.join(dir, "tomcat", "conf", "server.xml")
     FileUtils.rm_f(server_xml)
     FileUtils.rm(File.join(dir, "resources", "tomcat.zip"))
-    FileUtils.mv(File.join(dir, "resources", "droplet.yaml"), dir)
     FileUtils.mkdir_p(webapp_path)
     webapp_path
   end
