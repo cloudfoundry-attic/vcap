@@ -659,10 +659,6 @@ module DEA
         @logger.debug("Clients: #{@num_clients}")
         @logger.debug("Reserved Memory Usage: #{@reserved_mem} MB of #{@max_memory} MB TOTAL")
 
-        manifest_file = File.join(instance[:dir], 'droplet.yaml')
-        manifest = {}
-        manifest = File.open(manifest_file) { |f| YAML.load(f) } if File.file?(manifest_file)
-
         prepare_script = File.join(instance_dir, 'prepare')
         # once EM allows proper close_on_exec we can remove
         FileUtils.cp(File.expand_path("../../../bin/close_fds", __FILE__), prepare_script)
@@ -733,7 +729,7 @@ module DEA
 
         # Send the start message, which will bind the router, when we have established the
         # connection..
-        detect_app_ready(instance, manifest) do |detected|
+        detect_port_ready(instance) do |detected|
           if detected and not instance[:stop_processed]
             @logger.info("Instance #{instance[:log_id]} is ready for connections, notifying system of status")
             instance[:state] = :RUNNING
@@ -918,39 +914,6 @@ module DEA
 
     def grab_port
       VCAP.grab_ephemeral_port
-    end
-
-    def detect_app_ready(instance, manifest, &block)
-      state_file = manifest['state_file']
-      if state_file
-        state_file = File.join(instance[:dir], state_file)
-        detect_state_ready(instance, state_file, &block)
-      else
-        detect_port_ready(instance, &block)
-      end
-    end
-
-    def detect_state_ready(instance, state_file, &block)
-      attempts = 0
-      timer = EM.add_periodic_timer(0.5) do
-        state = nil
-        begin
-          if File.file?(state_file)
-            state = File.open(state_file) { |f| JSON.parse(f.read) }
-          end
-        rescue
-        end
-        if state && state['state'] == 'RUNNING'
-          block.call(true)
-          timer.cancel
-        elsif instance[:debug_mode] != "suspend"
-          attempts += 1
-          if attempts > 600 || instance[:state] != :STARTING # 5 minutes or instance was stopped
-            block.call(false)
-            timer.cancel
-          end
-        end
-      end
     end
 
     def detect_port_ready(instance, &block)
