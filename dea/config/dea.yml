@@ -99,7 +99,7 @@ runtimes:
     version: ".* 5.8.3"
     version_flag: '-version'
     environment:
-  python26:
+  python2:
     executable: python
     version: 2.6.5
     version_flag: '--version'
