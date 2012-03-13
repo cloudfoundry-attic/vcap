@@ -98,6 +98,7 @@ uaa:
   url: http://uaa.vcap.me
   resource_id: cloud_controller
   token_secret: tokensecret
+  client_secret: cloudcontrollerclientsecret
 
 # App staging parameters
 staging:

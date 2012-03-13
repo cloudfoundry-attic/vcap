@@ -3,7 +3,7 @@ GEM
   specs:
     addressable (2.2.6)
     builder (3.0.0)
-    cf-uaa-client (0.0.3)
+    cf-uaa-client (0.0.4)
       json_pure
       rest-client
     ci_reporter (1.6.5)

@@ -80,6 +80,7 @@ uaa:
   url: http://uaa.<%= node[:deployment][:domain] %>
   resource_id: cloud_controller
   token_secret: <%= node[:uaa][:jwt_secret] %>
+  client_secret: <%= node[:uaa][:cloud_controller][:password] %>
 
 # App staging parameters
 staging:
