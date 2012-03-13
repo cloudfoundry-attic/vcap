@@ -1700,7 +1700,7 @@ module DEA
         if /#{runtime['version']}/ =~ version_check
           # Additional checks should return true
           if runtime['additional_checks']
-            additional_check = `env -i #{runtime['executable']} #{runtime['additional_checks']} 2>&1`
+            additional_check = `env -i HOME=$HOME #{runtime['executable']} #{runtime['additional_checks']} 2>&1`
             unless additional_check =~ /true/i
               @logger.info("  #{pname} FAILED, additional checks failed")
             end

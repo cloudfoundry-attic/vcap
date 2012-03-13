@@ -51,10 +51,12 @@ function setup_filter() {
 
   # Whitelist
   for n in "${ALLOW_NETWORKS}"; do
+    if [${n} -eq '']; then break; fi
     iptables -A ${filter_default_chain} --destination "${n}" --jump RETURN
   done
 
   for n in "${DENY_NETWORKS}"; do
+    if [${n} -eq '']; then break; fi
     iptables -A ${filter_default_chain} --destination "${n}" --jump DROP
   done
 
@@ -90,6 +92,9 @@ function teardown_nat() {
 
 function setup_nat() {
   teardown_nat
+
+  #create chain
+  iptables -t nat -N ${nat_prerouting_chain} 2> /dev/null || true
 
   external_interface=$(ip route get 1.1.1.1 | head -n1 | cut -d" " -f5)
 
