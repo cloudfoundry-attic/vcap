@@ -1,5 +1,7 @@
 #!/usr/bin/env ruby
 # Copyright (c) 2009-2011 VMware, Inc.
+require 'fileutils'
+
 puts "STOP SCRIPT!"
 
 def process_running?(pid)
