@@ -44,13 +44,13 @@ module Warden
         "env #{env.map { |k, v| "#{k}=#{v}" }.join(" ")}"
       end
 
-      def do_create(config={})
-        check_create_config(config)
+      def do_create(config = {})
+        config = sanitize_config(config)
 
         sh "#{env_command} #{root_path}/create.sh #{handle}", :timeout => nil
         debug "container created"
 
-        create_bind_mount_script(config["bind_mounts"] || {})
+        create_bind_mount_script(config)
         debug "wrote bind mount script"
 
         sh "#{container_path}/start.sh", :timeout => nil
@@ -112,16 +112,53 @@ module Warden
 
       private
 
-      def check_create_config(config)
-        if config["bind_mounts"]
-          config["bind_mounts"].each do |src_path, dest_info|
-            unless dest_info["mode"].nil? || ["rw", "ro"].include?(dest_info["mode"])
-              emsg = "Invalid mode for bind mount '#{src_path}'." \
-                     + " Must be one of 'rw, ro'."
-              raise WardenError.new(emsg)
+      def sanitize_config(config)
+        bind_mounts = config.delete("bind_mounts")
+
+        # Raise when it is not an Array
+        if !bind_mounts.is_a?(Array)
+          raise WardenError.new("Expected `bind_mounts` to hold an array.")
+        end
+
+        # Transform entries
+        bind_mounts = bind_mounts.map do |src_path, dst_path, options|
+          options ||= {}
+
+          if !src_path.is_a?(String)
+            raise WardenError.new("Expected `src_path` to be a string.")
+          end
+
+          if !dst_path.is_a?(String)
+            raise WardenError.new("Expected `dst_path` to be a string.")
+          end
+
+          if !options.is_a?(Hash)
+            raise WardenError.new("Expected `options` to be a hash.")
+          end
+
+          # Fix up destination path to be an absolute path inside the union
+          dst_path = File.join(container_path,
+                                "union",
+                                dst_path.slice(1, dst_path.size - 1))
+
+          # Check that the mount mode -- if given -- is "ro" or "rw"
+          if options.has_key?("mode")
+            unless ["ro", "rw"].include?(options["mode"])
+              raise WardenError, [
+                  %{Invalid mode for bind mount "%s".} % src_path,
+                  %{Must be one of "ro", "rw".}
+                ].join(" ")
             end
           end
+
+          [src_path, dst_path, options]
         end
+
+        # Filter nil entries
+        bind_mounts = bind_mounts.compact
+
+        # Return sanitized config
+        { "bind_mounts" => bind_mounts }
       end
 
       def perform_rsync(src_path, dst_path)
@@ -135,23 +172,13 @@ module Warden
         sh(cmd, :timeout => nil)
       end
 
-      def create_bind_mount_script(bind_mounts)
-        params = {"bind_mounts" => bind_mounts.dup}
-
-        # Fix up destination paths so that they are absolute paths inside the union
-        params["bind_mounts"].each_value do |mount_info|
-          path = mount_info["path"]
-          mount_info["path"] = File.join(container_path,
-                                         "union",
-                                         path.slice(1, path.size - 1))
-        end
-
+      def create_bind_mount_script(config)
+        params = config.dup
         script_contents = self.class.bind_mount_script_template.result(binding())
         script_path = File.join(container_path, "setup-bind-mounts.sh")
         File.open(script_path, 'w+') {|f| f.write(script_contents) }
         sh "chmod 0700 #{script_path}"
       end
-
     end
   end
 end

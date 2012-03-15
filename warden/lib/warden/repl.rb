@@ -84,11 +84,8 @@ EOT
       args.each do |arg|
         if arg =~ /^bind_mount:(.*)/
           src, dst, mode = $1.split(",")
-          config["bind_mounts"] ||= {}
-          config["bind_mounts"][src] = {
-            "path" => dst,
-            "mode" => mode,
-          }
+          config["bind_mounts"] ||= []
+          config["bind_mounts"].push [src, dst, { "mode" => mode }]
         else
           raise "Unknown argument: #{arg}"
         end
