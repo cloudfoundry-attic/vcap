@@ -26,11 +26,7 @@ function setup_fs() {
 
   case "${codename}" in
 
-  lucid)
-    mount -n -t aufs -o br:rootfs=rw:../../base/rootfs=ro+wh none ${target}
-    ;;
-
-  natty)
+  lucid|natty|oneiric)
     mount -n -t aufs -o br:rootfs=rw:../../base/rootfs=ro+wh none ${target}
     ;;
 
