@@ -1688,7 +1688,7 @@ module DEA
         expanded_exec.strip!
 
         # java prints to stderr, so munch them both..
-        version_check = `env -i #{expanded_exec} #{version_flag} 2>&1`.strip!
+        version_check = `env -i HOME=$HOME #{expanded_exec} #{version_flag} 2>&1`.strip!
         unless $? == 0
           @logger.info("  #{pname} FAILED, executable '#{runtime['executable']}' not found")
           next
