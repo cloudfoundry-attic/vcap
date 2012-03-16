@@ -41,6 +41,12 @@ when "ubuntu"
     not_if { ::File.exists?(File.join("", "tmp", "nginx-#{nginx_version}.tar.gz")) }
   end
 
+  remote_file File.join("", "tmp", "zero_byte_in_cstr_20120315.patch") do
+    owner node[:deployment][:user]
+    source node[:nginx][:patch]
+    not_if { ::File.exists?(File.join("", "tmp", "zero_byte_in_cstr_20120315.patch")) }
+  end
+
   remote_file File.join("", "tmp", "pcre-8.12.tar.gz") do
     owner node[:deployment][:user]
     source node[:nginx][:pcre_source]
@@ -127,6 +133,9 @@ when "ubuntu"
       tar xzf devel-kit-v0.2.17rc2.tar.gz
       tar xzf nginx-lua.v0.3.1rc24.tar.gz
       cd nginx-#{nginx_version}
+
+      patch -p0 < ../zero_byte_in_cstr_20120315.patch
+
       LUA_LIB=#{lua_path}/lib LUA_INC=#{lua_path}/include ./configure \
         --prefix=#{nginx_path} \
         --with-pcre=../pcre-8.12 \

@@ -2,6 +2,7 @@ include_attribute "deployment"
 
 default[:nginx][:version] = "0.8.54"
 default[:nginx][:source]  = "http://nginx.org/download/nginx-#{nginx[:version]}.tar.gz"
+default[:nginx][:patch] = "http://nginx.org/download/patch.2012.memory.txt"
 default[:nginx][:pcre_source]  = "http://sourceforge.net/projects/pcre/files/pcre/8.12/pcre-8.12.tar.gz"
 default[:nginx][:module_upload_source]  = "http://www.grid.net.ru/nginx/download/nginx_upload_module-2.2.0.tar.gz"
 default[:nginx][:module_headers_more_source]  = "https://github.com/agentzh/headers-more-nginx-module/tarball/v0.15rc3"
