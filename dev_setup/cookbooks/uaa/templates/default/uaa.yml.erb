@@ -25,10 +25,9 @@ cloud_controller:
   client:
     secret: <%= node[:uaa][:cloud_controller][:secret] %>
   database:
-    postgresql:
-      url: jdbc:postgresql://<%= node[:ccdb][:host] %>:<%= node[:ccdb][:port] %>/<%= node[:ccdb][:database] %>
-      username: <%= node[:ccdb][:user] %>
-      password: <%= node[:ccdb][:password] %>
+    url: jdbc:postgresql://<%= node[:ccdb][:host] %>:<%= node[:ccdb][:port] %>/<%= node[:ccdb][:database] %>
+    username: <%= node[:ccdb][:user] %>
+    password: <%= node[:ccdb][:password] %>
 
 jwt:
   token:
@@ -45,3 +44,7 @@ my:
 scim:
   client:
     secret: <%= node[:uaa][:scim][:secret] %>
+
+batch:
+  username: <%= node[:uaa][:batch][:username] %>
+  password: <%= node[:uaa][:batch][:secret] %>
