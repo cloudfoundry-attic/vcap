@@ -15,7 +15,7 @@ class UsersController < ApplicationController
         user_account.logger = CloudController.logger
         user = user_account.create(body_params[:email], body_params[:password], body_params[:email])
 
-        CloudController.logger.info("User with email #{username} and id #{user[:id]} created in the UAA") unless user == nil
+        CloudController.logger.info("User with email #{body_params[:email]} and id #{user[:id]} created in the UAA") unless user == nil
       rescue => e
         CloudController.logger.error("Error trying to create a UAA user - message #{e.message} trace #{e.backtrace[0..10]}")
       end
