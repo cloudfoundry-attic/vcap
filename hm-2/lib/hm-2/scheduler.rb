@@ -62,7 +62,6 @@ module HealthManager2
     end
 
     def cancel(receipt)
-
       if @receipt_to_timer.has_key?(receipt)
         EM.cancel_timer(@receipt_to_timer.delete(receipt))
       else
@@ -96,7 +95,6 @@ module HealthManager2
     end
 
     def start
-
       if EM.reactor_running?
         run
       else
@@ -108,7 +106,6 @@ module HealthManager2
 
     def stop
       EM.stop if EM.reactor_running?
-
     end
   end
 
