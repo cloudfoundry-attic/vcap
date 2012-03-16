@@ -11,10 +11,13 @@ module HealthManager2
     def deque_batch_of_requests
       @queue_batch_size.times do |i|
         break if @queue.empty?
-        message = @queue.remove
+        message = encode_json(@queue.remove)
+
         @logger.info("nudger: NATS.publish: cloudcontrollers.hm.requests: #{message}")
-        unless ENV['HM-2_SHADOW']=='false'
-          NATS.publish('cloudcontrollers.hm.requests', encode_json(message))
+        if ENV['HM-2_SHADOW']=='false'
+          NATS.publish('cloudcontrollers.hm.requests', message)
+        else
+          #do some shadow accounting!
         end
       end
     end
@@ -52,5 +55,24 @@ module HealthManager2
     priority ||= NORMAL_PRIORITY
     key = message.clone.delete(:last_updated)
     @queue.insert(message, priority, key)
+  end
+
+
+  class Shadower
+    def initialize(config = {})
+      @received = []
+      @logger = get_logger
+    end
+
+    def subscribe
+      NATS.subscribe('cloudcontrollers.hm.requests') do |message|
+        @logger.info{"shadower: received: #{message}"}
+
+        @received << message
+        if @received.size > 2000
+          @received = @received[1000..-1]
+        end
+      end
+    end
   end
 end

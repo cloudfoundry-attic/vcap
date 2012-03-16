@@ -13,6 +13,20 @@ discrepancies are found, actions are initiated to bring the
 applications to the Expected State, e.g., start/stop commands are
 issued for missing/extra instances, respectively.
 
+Additionally, Health Manager collects and exposes statistics and
+health status for individual applications, as well as aggregates for
+frameworks, runtimes, etc. (WIP at this time)
+
+## AppState
+
+The state of each application is represented by an instance of an
+aptly named class AppState. AppState gets forwarded important
+state-changing messages (i.e. hearbeats and exit signals), updates its
+internal state accordingly and then invokes registered event
+handlers. It is the job of these handlers (housed in the Harmonizer,
+see below) to enforce complex policies, e.g., whether to restart
+application, if so, with which priority, etc.
+
 ## Components
 
 HM-2 comprises the following components:
@@ -23,6 +37,7 @@ HM-2 comprises the following components:
 - ExpectedStateProvider
 - KnownStateProvider
 - Nudger
+
 
 ### Manager
 
