@@ -47,37 +47,46 @@ module HealthManager2
         nudger.start_instances([[app_state,LOW_PRIORITY]])
       end
 
-
       #schedule time-based actions
+      scheduler.immediately { update_expected_state }
+
       scheduler.at_interval :request_queue do
-        # @logger.debug { "harmonizer: deque request queue"}
         nudger.deque_batch_of_requests
       end
 
       scheduler.at_interval :expected_state_update do
-        @logger.debug { "harmonizer: expected_state_update"}
-        expected_state_provider.each_droplet do |app_id, expected|
-          known = known_state_provider.get_droplet(app_id)
-          expected_state_provider.set_expected_state(known, expected)
-        end
+        update_expected_state
       end
 
       scheduler.at_interval :droplet_analysis do
-        @logger.debug { "harmonizer: droplet_analysis"}
-        known_state_provider.rewind
-        scheduler.start_task :droplet_analysis do
-          known_droplet = known_state_provider.next_droplet
-          if known_droplet
-            known_droplet.analyze
-            true
-          else
-            nil
-          end
-        end
+        analyze_all_apps
       end
     end
 
     private
+
+    def analyze_all_apps
+      @logger.debug { "harmonizer: droplet_analysis"}
+      known_state_provider.rewind
+      scheduler.start_task :droplet_analysis do
+        known_droplet = known_state_provider.next_droplet
+        if known_droplet
+          known_droplet.analyze
+          true
+        else
+          false
+        end
+      end
+    end
+
+    def update_expected_state
+      @logger.debug { "harmonizer: expected_state_update"}
+      expected_state_provider.each_droplet do |app_id, expected|
+        known = known_state_provider.get_droplet(app_id)
+        expected_state_provider.set_expected_state(known, expected)
+      end
+    end
+
     def scheduler
       find_hm_component(:scheduler, @config)
     end

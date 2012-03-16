@@ -19,7 +19,7 @@ module HealthManager2
       known.live_version = "#{expected['staged_package_hash']}-#{expected['run_count']}"
       known.framework = expected['framework']
       known.runtime = expected['runtime']
-      known.last_updated = expected['update_at']
+      known.last_updated = parse_utc(expected['updated_at'])
     end
 
     private

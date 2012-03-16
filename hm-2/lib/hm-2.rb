@@ -2,6 +2,7 @@
 $:.unshift(File.dirname(__FILE__))
 
 require 'yajl'
+require 'time'
 require 'nats/client'
 
 require 'vcap/common'
@@ -52,6 +53,12 @@ module HealthManager2
         @harmonizer.prepare
         @expected_state_provider.start
         @known_state_provider.start
+
+        unless ENV['HM-2_SHADOW']==false
+          @shadower = Shadower.new(@config)
+          @shadower.subscribe
+        end
+
         @scheduler.start #blocking call
       end
     end
@@ -62,7 +69,7 @@ module HealthManager2
       @logger.info("...good bye.")
     end
 
-    #The setter for @now this is defined in the spec helper
+    #The setter for @now is defined in the spec helper
     #and is used exclusively for testing
     def self.now
       @now || Time.now.to_i
@@ -72,6 +79,11 @@ module HealthManager2
   def now
     Manager.now
   end
+
+  def parse_utc(time)
+    Time.parse(time).to_i
+  end
+
   def get_interval_from_config_or_constant(name, config)
     intervals = config[:intervals] || config['intervals'] || {}
     get_param_from_config_or_constant(name,intervals)

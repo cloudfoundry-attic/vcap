@@ -82,9 +82,11 @@ module HealthManager2
       if  index['state'] == RUNNING &&
           RUNNING_STATES.include?(beat['state']) &&
           index['instance'] != beat['instance']
-        #instance mismatch, need to stop the instance
+
+        get_logger.info {"app_state: instance_mismatch: index: #{index}, beat: #{beat}"}
         events << [:instances_rogue, beat['instance']]
       else
+        index['timestamp'] = now
         %w(instance state_timestamp state).each do |key|
           index[key] = beat[key]
         end
@@ -144,7 +146,9 @@ module HealthManager2
 
     def process_exit_crash(message)
       @missing_indices = [message['index']]
-      @state = CRASHED
+      get_index(message['version'],message['index'])['state'] = CRASHED
+      #TODO: flapping logic, is it here?
+      #NO, it must be externalized into harmonizer
       #TODO: save crash info in @crashes
       notify :exit_crashed, message
     end
