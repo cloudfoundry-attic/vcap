@@ -489,5 +489,25 @@ describe Warden::Container::Base do
         container.set_limit(:foo, "something")
       }
     end
+
+    describe "copy in" do
+      before(:each) do
+        @container.stub(:do_copy_in)
+      end
+
+      include_examples "succeeds when active", lambda { |container|
+        container.copy("in", "/tmp/foo", "/tmp/bar")
+      }
+    end
+
+    describe "copy out" do
+      before(:each) do
+        @container.stub(:do_copy_out)
+      end
+
+      include_examples "succeeds when active", lambda { |container|
+        container.copy("out", "/tmp/foo", "/tmp/bar")
+      }
+    end
   end
 end

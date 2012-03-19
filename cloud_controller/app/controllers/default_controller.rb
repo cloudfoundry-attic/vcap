@@ -10,6 +10,9 @@ class DefaultController < ApplicationController
       :description =>  AppConfig[:description],
       :allow_debug =>  AppConfig[:allow_debug]
     }
+    if (AppConfig[:uaa][:enabled] && !AppConfig[:uaa][:url].nil?)
+      info[:authenticationEndpoint] = AppConfig[:uaa][:url]
+    end
     # If there is a logged in user, give out additional information
     if user
       info[:user]       = user.email
@@ -34,7 +37,7 @@ class DefaultController < ApplicationController
       ret[svc_type] ||= {}
       ret[svc_type][svc.name] ||= {}
       ret[svc_type][svc.name][svc.version] ||= {}
-      ret[svc_type][svc.name][svc.version] = svc.as_legacy
+      ret[svc_type][svc.name][svc.version] = svc.as_legacy(user)
     end
 
     render :json => ret

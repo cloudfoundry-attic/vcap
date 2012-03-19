@@ -1,118 +1,61 @@
 #!/usr/bin/env ruby
+ENV['BUNDLE_GEMFILE'] ||= File.expand_path("../../Gemfile", __FILE__)
+$LOAD_PATH.unshift(File.expand_path("../../lib", __FILE__))
 
-require "shellwords"
-require "warden/client"
-require "readline"
-require "yajl"
+require "bundler"
+Bundler.setup
 
-include Shellwords
+require "optparse"
 
-module WardenRepl
-  class << self
+require "warden/repl"
 
-    COMMAND_LIST = ['ping', 'create', 'stop', 'destroy', 'spawn', 'link', 'run', 'show', 'net', 'limit', 'info', 'list','help']
-    HELP_MESSAGE = ['ping         - ping warden',
-                    'create       - create new container.',
-                    'destroy  <handle> - shutdown container <handle>.',
-                    'stop     <handle> - stop all processes in <handle>.',
-                    'spawn    <handle> cmd    - spawns cmd inside container <handle>, returns #jobid.',
-                    'link     <handle> #jobid - do blocking read on results from #jobid.',
-                    'run <handle>  cmd - short hand for link(spawn(cmd)) i.e. runs cmd, blocks for result.',
-                    'show <handle> cmd - run cmd and display stdout,stderr.',
-                    'list              - list containers.',
-                    'info <handle>     - show metadata for container <handle>.',
-                    'limit <handle> (mem | disk) [<value>] - set or get resource limit.',
-                    'net <handle> #in - forward port #in on external interface to container <handle>.',
-                    'net <handle> #out <address[/mask][:port]> - allow traffic from the container <handle> to address <address>.',
-                    'help - show help message',
-                    '',
-                    'Please see README.md for more details.'
+options = {}
+OptionParser.new do |op|
+  op.banner = <<-EOT
+Usage: warden-repl [options]
+Runs an interactive REPL by default.
 
-    ]
+EOT
+  op.on("-c COMMAND", "Run COMMAND non-interactively") do |command|
+    options[:command] = command
+  end
 
-    def setup
-      unless Process.uid == 0
-        puts "root privilege is required to run."
-        exit 1
+  op.on("-x", "Writes each command preceded by a '+' to stdout before executing") do
+    options[:trace] = true
+  end
+
+  op.on("-e",
+        "Only applicable to -c. If a multi-command string is supplied, exit" \
+        + " after the first unsuccessful command.") do
+    options[:errexit] = true
+  end
+end.parse!
+
+repl = Warden::Repl.new(options)
+
+if options[:command]
+  commands = options[:command].split("\n")
+  exit_status = nil
+  commands.each do |command|
+    command_info = repl.process_line(command)
+
+    exit_status =
+      if !command_info
+        0
+      elsif command_info[:error]
+        1
+      elsif command_info[:name] == "run"
+        Integer(command_info[:result][0] || 1)
+      else
+        0
       end
-      @client = Warden::Client.new("/tmp/warden.sock")
-      @client.connect
-      trap('INT') {  exit }
-      @history_path = File.join ENV['HOME'],'.warden-history'
-      restore_history
-    end
 
-
-    def container_list
-      @client.write(['list'])
-      Yajl::Parser.parse(@client.read.inspect)
-    end
-
-    def save_history
-      marshalled = Yajl::Encoder.encode(Readline::HISTORY.to_a)
-      open(@history_path, 'w+') {|f| f.write(marshalled)}
-    end
-
-    def restore_history
-      return unless File.exists? @history_path
-      open(@history_path, 'r') { |file|
-        history = Yajl::Parser.parse(file.read)
-        history.map {|line| Readline::HISTORY.push line}
-      }
-    end
-
-    def run
-      comp = proc { |s|
-        if s[0] == '0'
-          container_list.grep( /^#{Regexp.escape(s)}/ )
-        else
-          COMMAND_LIST.grep( /^#{Regexp.escape(s)}/ )
-        end
-      }
-
-      Readline.completion_append_character = " "
-      Readline.completion_proc = comp
-
-      while line = Readline.readline('warden> ', true)
-        words = shellwords(line)
-        next if words.empty?
-        save_history
-
-        #coalesce shell commands into a single string
-        if ['run','show','spawn'].member? words[0]
-          if words.size > 3
-            tail = words.slice!(2..-1)
-            words.push(tail.join(' '))
-           end
-        end
-
-        case words[0]
-        when 'help'
-          puts HELP_MESSAGE
-          next
-        when 'show'
-          words[0] = 'run'
-          @client.write(words)
-          result = Yajl::Parser.parse(@client.read.inspect)
-          result[1,2].map {|path| open(path){|f| puts f.read}}
-          puts "exited: #{result[0]}"
-          next
-        end
-
-        @client.write(words)
-        begin
-          STDOUT.puts @client.read.inspect
-        rescue  => e
-          if e.message.match('unknown command')
-            puts "#{e.message}, try help for assistance."
-          else
-            puts e.message
-          end
-        end
-      end
+    if (exit_status != 0) && options[:errexit]
+      break
     end
   end
+  exit(exit_status)
+else
+  trap('INT') { exit }
+  repl.run
 end
-
-WardenRepl.setup
-WardenRepl.run

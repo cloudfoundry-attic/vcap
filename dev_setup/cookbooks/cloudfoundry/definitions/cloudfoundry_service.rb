@@ -13,5 +13,8 @@ define :cloudfoundry_service do
       mode 0644
     end
   end
-  cf_bundle_install(File.expand_path(File.join(node[:cloudfoundry][:path], "services", params[:name])))
+  service_name = params[:name]
+  # Work around for RabbitMQ service since its directory name is "rabbit"
+  service_name = "rabbit" if service_name == "rabbitmq"
+  cf_bundle_install(File.expand_path(File.join(node[:cloudfoundry][:path], "services", service_name)))
 end

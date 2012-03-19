@@ -100,8 +100,8 @@ describe ServicesController do
 
       it 'should update existing offerings' do
         acls = {
-          'users' => ['foo@bar.com'],
           'wildcards' => ['*@foo.com'],
+          'plans' => {'free' => {'users' => ['a@b.com']}}
         }
         svc = Service.create(
           :label => 'foo-bar',
@@ -129,8 +129,8 @@ describe ServicesController do
 
       it 'should support reverting existing offerings to nil' do
         acls = {
-          'users' => ['foo@bar.com'],
           'wildcards' => ['*@foo.com'],
+          'plans' => {'free' => {'users' => ['aaa@bbb.com']}}
         }
         svc = Service.create(
           :label => 'foo-bar',
@@ -384,6 +384,7 @@ describe ServicesController do
       svc.label = "foo-bar"
       svc.url   = "http://localhost:56789"
       svc.token = 'foobar'
+      svc.plans = ['free', 'nonfree']
       svc.save
       svc.should be_valid
       @svc = svc
@@ -656,6 +657,34 @@ describe ServicesController do
         cfg = ServiceConfig.find_by_id(@cfg.id)
         cfg.should be_nil
         stop_gateway(gw_pid)
+      end
+    end
+
+    describe "#lifecycle_extension" do
+      it 'should return not implemented error when lifecycle is disabled' do
+        begin
+          origin = AppConfig.delete :service_lifecycle
+          %w(create_snapshot enum_snapshots serialized_url import_from_url import_from_data).each do |api|
+            post api.to_sym, :id => 'xxx'
+            response.status.should == 501
+            resp = Yajl::Parser.parse(response.body)
+            resp['description'].include?("not implemented").should == true
+          end
+
+          %w(snapshot_details rollback_snapshot).each do |api|
+            post api.to_sym, :id => 'xxx', :sid => '1'
+            response.status.should == 501
+            resp = Yajl::Parser.parse(response.body)
+            resp['description'].include?("not implemented").should == true
+          end
+
+          get :job_info, :id => 'xxx', :job_id => '1'
+          response.status.should == 501
+          resp = Yajl::Parser.parse(response.body)
+          resp['description'].include?("not implemented").should == true
+        ensure
+          AppConfig[:service_lifecycle] = origin
+        end
       end
     end
 

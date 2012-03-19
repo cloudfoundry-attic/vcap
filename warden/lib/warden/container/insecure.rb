@@ -34,7 +34,7 @@ module Warden
         child = DeferredChild.new(File.join(container_path, "run.sh"), :input => script)
 
         child.callback do
-          job.resume [child.exit_status, child.out, child.err]
+          job.resume [child.exit_status, child.stdout, child.stderr]
         end
 
         child.errback do |err|
@@ -57,6 +57,39 @@ module Warden
         socket.close
         port
       end
+
+      def do_copy_in(src_path, dst_path)
+        perform_rsync(src_path, container_relative_path(dst_path))
+
+        "ok"
+      end
+
+      def do_copy_out(src_path, dst_path, owner=nil)
+        perform_rsync(container_relative_path(src_path), dst_path)
+
+        if owner
+          sh "chown -R #{owner} #{dst_path}"
+        end
+
+        "ok"
+      end
+
+      private
+
+      def perform_rsync(src_path, dst_path)
+        cmd = ["rsync",
+               "-r",           # Recursive copy
+               "-p",           # Preserve permissions
+               "--links",      # Preserve symlinks
+               src_path,
+               dst_path].join(" ")
+        sh(cmd, :timeout => nil)
+      end
+
+      def container_relative_path(path)
+        File.join(container_path, 'root', path.slice(1, path.length - 1))
+      end
+
     end
   end
 end

@@ -11,6 +11,8 @@ class ServicesController < ApplicationController
   before_filter :require_user, :only => [:provision, :bind, :bind_external, :unbind, :unprovision,
                                          :create_snapshot, :enum_snapshots, :snapshot_details,:rollback_snapshot,
                                          :serialized_url, :import_from_url, :import_from_data, :job_info]
+  before_filter :require_lifecycle_extension, :only => [:create_snapshot, :enum_snapshots, :snapshot_details,:rollback_snapshot,
+                                         :serialized_url, :import_from_url, :import_from_data, :job_info]
 
   rescue_from(JsonMessage::Error) {|e| render :status => 400, :json =>  {:errors => e.to_s}}
   rescue_from(ActiveRecord::RecordInvalid) {|e| render :status => 400, :json =>  {:errors => e.to_s}}
@@ -157,7 +159,7 @@ class ServicesController < ApplicationController
     req = VCAP::Services::Api::CloudControllerProvisionRequest.decode(request_body)
 
     svc = Service.find_by_label(req.label)
-    raise CloudError.new(CloudError::SERVICE_NOT_FOUND) unless svc && svc.visible_to_user?(user)
+    raise CloudError.new(CloudError::SERVICE_NOT_FOUND) unless svc && svc.visible_to_user?(user, req.plan)
 
     cfg = ServiceConfig.provision(svc, user, req.name, req.plan, req.plan_option)
 
@@ -258,7 +260,7 @@ class ServicesController < ApplicationController
   # import serialized data to an instance from request data
   #
   def import_from_data
-    max_upload_size = (AppConfig[:service_lifecycle][:max_upload_size] if AppConfig[:service_lifecycle]) || 1
+    max_upload_size = AppConfig[:service_lifecycle][:max_upload_size] || 1
     max_upload_size = max_upload_size * 1024 * 1024
     raise CloudError.new(CloudError::BAD_REQUEST) unless request.content_length < max_upload_size
 
@@ -356,5 +358,9 @@ class ServicesController < ApplicationController
     hdr = VCAP::Services::Api::GATEWAY_TOKEN_HEADER.upcase.gsub(/-/, '_')
     @service_auth_token = request.headers[hdr]
     raise CloudError.new(CloudError::FORBIDDEN) unless @service_auth_token
+  end
+
+  def require_lifecycle_extension
+    raise CloudError.new(CloudError::EXTENSION_NOT_IMPL, "lifecycle") unless AppConfig.has_key?(:service_lifecycle)
   end
 end

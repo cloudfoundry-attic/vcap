@@ -5,6 +5,7 @@ require "warden/container/spawn"
 
 require "eventmachine"
 require "set"
+require "shellwords"
 
 module Warden
 
@@ -99,6 +100,11 @@ module Warden
         def generate_job_id
           @job_id ||= 0
           @job_id += 1
+        end
+
+        # Root path for container assets
+        def root_path
+          @root_path ||= File.join(Server.container_root, self.name.split("::").last.downcase)
         end
       end
 
@@ -237,7 +243,7 @@ module Warden
       end
 
       def root_path
-        @root_path ||= File.join(Server.container_root, self.class.name.split("::").last.downcase)
+        @root_path ||= self.class.root_path
       end
 
       def container_path
@@ -399,6 +405,29 @@ module Warden
       rescue => err
         warn "error: #{err.message}"
         raise
+
+      ensure
+        debug "exit"
+      end
+
+      def copy(direction, src_path, dst_path, owner=nil)
+        debug "entry"
+
+        check_state_in(State::Active)
+
+        if owner && (direction == "in")
+          raise WardenError.new("You can only supply a target owner when copying out")
+        end
+
+        src_path = Shellwords.shellescape(src_path)
+        dst_path = Shellwords.shellescape(dst_path)
+
+        if direction == "in"
+          do_copy_in(src_path, dst_path)
+        else
+          chown_opts = Shellwords.shellescape(owner) if owner
+          do_copy_out(src_path, dst_path, owner)
+        end
 
       ensure
         debug "exit"

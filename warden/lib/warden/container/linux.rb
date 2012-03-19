@@ -1,8 +1,7 @@
 require "warden/errors"
 require "warden/container/base"
 require "warden/container/features/cgroup"
-require "warden/container/features/net_out"
-require "warden/container/features/net_in"
+require "warden/container/features/net"
 require "warden/container/features/mem_limit"
 
 module Warden
@@ -12,8 +11,7 @@ module Warden
     class Linux < Base
 
       include Features::Cgroup
-      include Features::NetIn
-      include Features::NetOut
+      include Features::Net
       include Features::MemLimit
 
       class << self
@@ -42,9 +40,9 @@ module Warden
       end
 
       def do_create
-        sh "#{env_command} #{root_path}/create.sh #{handle}"
+        sh "#{env_command} #{root_path}/create.sh #{handle}", :timeout => nil
         debug "container created"
-        sh "#{container_path}/start.sh"
+        sh "#{container_path}/start.sh", :timeout => nil
         debug "container started"
       end
 
@@ -53,9 +51,10 @@ module Warden
       end
 
       def do_destroy
-        sh "#{root_path}/destroy.sh #{handle}"
-        sh "rm -rf #{container_path}"
+        sh "#{root_path}/destroy.sh #{handle}", :timeout => nil
         debug "container destroyed"
+        sh "rm -rf #{container_path}", :timeout => nil
+        debug "container removed"
       end
 
       def create_job(script)
@@ -73,7 +72,7 @@ module Warden
             # SSH error, the remote end was probably killed or something
             job.resume [nil, nil, nil]
           else
-            job.resume [child.exit_status, child.out, child.err]
+            job.resume [child.exit_status, child.stdout, child.stderr]
           end
         end
 
@@ -83,6 +82,36 @@ module Warden
 
         job
       end
+
+      def do_copy_in(src_path, dst_path)
+        perform_rsync(src_path, "vcap@container:#{dst_path}")
+
+        "ok"
+      end
+
+      def do_copy_out(src_path, dst_path, owner=nil)
+        perform_rsync("vcap@container:#{src_path}", dst_path)
+
+        if owner
+          sh "chown -R #{owner} #{dst_path}"
+        end
+
+        "ok"
+      end
+
+      private
+
+      def perform_rsync(src_path, dst_path)
+        ssh_config_path = File.join(container_path, "ssh", "ssh_config")
+        cmd = ["rsync -e 'ssh -T -F #{ssh_config_path}'",
+               "-r",           # Recursive copy
+               "-p",           # Preserve permissions
+               "--links",      # Preserve symlinks
+               src_path,
+               dst_path].join(" ")
+        sh(cmd, :timeout => nil)
+      end
+
     end
   end
 end
