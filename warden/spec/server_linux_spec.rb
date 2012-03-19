@@ -137,9 +137,9 @@ describe "server implementing Linux containers", :platform => "linux", :needs_ro
       FileUtils.chmod_R(0777, @tmpdir)
       @bind_mount_path = "/tmp/bind_mounted"
       @config = {
-        "bind_mounts" => {
-          @tmpdir => {"path" => @bind_mount_path}
-        }
+        "bind_mounts" => [
+          [@tmpdir, @bind_mount_path, {}]
+        ]
       }
     end
 
@@ -148,7 +148,7 @@ describe "server implementing Linux containers", :platform => "linux", :needs_ro
     end
 
     it "should raise an error if an invalid mode is supplied" do
-      @config["bind_mounts"][@tmpdir]["mode"] = "invalid"
+      @config["bind_mounts"][0][2]["mode"] = "invalid"
       expect do
         handle = client.create(@config)
       end.to raise_error(/Invalid mode/)
@@ -173,7 +173,7 @@ describe "server implementing Linux containers", :platform => "linux", :needs_ro
     end
 
     it "should support bind mounting paths with different permissions" do
-      @config["bind_mounts"][@tmpdir]["mode"] = "ro"
+      @config["bind_mounts"][0][2]["mode"] = "ro"
       handle = client.create(@config)
 
       result = client.run(handle, "touch #{@bind_mount_path}/test")
