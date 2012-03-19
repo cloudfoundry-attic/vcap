@@ -29,7 +29,9 @@ describe HealthManager2 do
       instances_with_priorities = (1..2).map {|i| [AppState.new(i), 0]}
       NATS.should_receive(:publish).with('cloudcontrollers.hm.requests', an_instance_of(String)).exactly(2).times
       n.start_instances(instances_with_priorities)
+      set_env(HM_SHADOW, 'false')
       n.deque_batch_of_requests
+      restore_env(HM_SHADOW)
     end
 
     it 'should be able to stop app instance'

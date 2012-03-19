@@ -14,7 +14,7 @@ module HealthManager2
         message = encode_json(@queue.remove)
 
         @logger.info("nudger: NATS.publish: cloudcontrollers.hm.requests: #{message}")
-        if ENV['HM-2_SHADOW']=='false'
+        if ENV[HM_SHADOW]=='false'
           NATS.publish('cloudcontrollers.hm.requests', message)
         else
           #do some shadow accounting!

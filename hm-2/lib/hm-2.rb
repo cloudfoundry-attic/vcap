@@ -49,12 +49,13 @@ module HealthManager2
     def start
       @logger.info("starting...")
 
-      NATS.start :uri => ENV['NATS_URI'] || 'nats://nats:nats@192.168.24.128:4222' do #TODO: nats_uri through config
+      NATS.start :uri => ENV[NATS_URI] || 'nats://nats:nats@192.168.24.128:4222' do #TODO: nats_uri through config
         @harmonizer.prepare
         @expected_state_provider.start
         @known_state_provider.start
 
-        unless ENV['HM-2_SHADOW']==false
+        unless ENV[HM_SHADOW]=='false'
+          @logger.info("creating Shadower")
           @shadower = Shadower.new(@config)
           @shadower.subscribe
         end
