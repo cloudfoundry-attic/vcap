@@ -33,7 +33,9 @@ GEM
     arel (2.0.9)
     bcrypt-ruby (2.1.4)
     builder (2.1.2)
-    cf-uaa-client (0.0.4)
+    cf-uaa-client (0.0.5)
+      em-http-request (= 1.0.0.beta.3)
+      eventmachine
       json_pure
       rest-client
     chronic (0.6.4)
@@ -155,7 +157,7 @@ PLATFORMS
 DEPENDENCIES
   SystemTimer (~> 1.2)
   bcrypt-ruby (~> 2.1.4)
-  cf-uaa-client (>= 0.0.4)
+  cf-uaa-client (>= 0.0.5)
   ci_reporter
   delorean
   em-hiredis

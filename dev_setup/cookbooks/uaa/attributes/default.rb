@@ -16,3 +16,6 @@ default[:uaa][:cloud_controller][:secret] = "$2a$08$BoWTL27.xae6li/bF3pybOGkEPk8
 default[:uaa][:cloud_controller][:password] = "cloudcontrollersecret"
 
 default[:uaa][:jwt_secret] = "uaa_jwt_secret"
+
+default[:uaa][:batch][:username] = "batch_user"
+default[:uaa][:batch][:secret] = "batch_password"
