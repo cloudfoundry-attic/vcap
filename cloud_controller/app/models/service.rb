@@ -103,6 +103,8 @@ class Service < ActiveRecord::Base
       'key-value'
     when /mongodb/
       'key-value'
+    when /mssql/
+      'database'
     else
       'generic'
     end

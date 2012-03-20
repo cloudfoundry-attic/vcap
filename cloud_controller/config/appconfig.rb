@@ -219,10 +219,16 @@ if AppConfig[:bootstrap_users]
       exit 1
     end
 
-    if user['is_admin'] && !(user['is_admin'].kind_of?(TrueClass) || user['password'].kind_of?(FalseClass))
+    if user['is_admin'] && !(user['is_admin'].kind_of?(TrueClass) || user['is_admin'].kind_of?(FalseClass))
       $stderr.puts "#{user.inspect} should have a bool for is_admin"
       exit 1
     end
+
+    if user['is_hashed_password'] && !(user['is_hashed_password'].kind_of?(TrueClass) || user['is_hashed_password'].kind_of?(FalseClass))
+      $stderr.puts "#{user.inspect} should have a bool for is_admin"
+      exit 1
+    end
+
   end
 end
 

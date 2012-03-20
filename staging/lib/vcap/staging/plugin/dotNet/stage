@@ -1,0 +1,7 @@
+#!/usr/bin/env ruby
+# Copyright (c) 2009-2011 VMware, Inc.
+# Copyright (c) 2011 Uhuru Software, Inc., All Rights Reserved
+require File.expand_path('../../common', __FILE__)
+plugin_class = StagingPlugin.load_plugin_for('dotNet')
+plugin_class.validate_arguments!
+plugin_class.new(*ARGV).stage_application

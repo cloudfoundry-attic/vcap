@@ -11,7 +11,7 @@ support_address: http://support.cloudfoundry.com
 local_route: <%= node[:cloud_controller][:local_route] %>
 
 # Specifies if new users are allowed to register via VMC
-allow_registration: true
+allow_registration: <%= node[:cloud_controller][:allow_registration] %>
 
 # Allow applications to register URIs that are outside your domain.
 # Legacy (FIXME REMOVE)
@@ -86,10 +86,18 @@ admins: [ <%= node[:cloud_controller][:admins].join(", ") %> ]
 https_required: false
 https_required_for_admins: false
 
+bootstrap_users:
+  <% node[:cloud_controller][:bootstrap_users].each do |user| %>
+  - email: <%= user[:email] %>
+    password: <%= user[:password] %>
+    is_admin: <%= user[:is_admin] %>
+    is_hashed_password: <%= user[:is_hashed_password] %>
+  <% end %>
+
 # Controls the amount of resources assigned to a user
 # Normal user accounts
 default_account_capacity:
-  memory:   2048
+  memory:   <%= node[:capacity][:max_memory] %>
   app_uris: <%= node[:capacity][:max_uris] %>
   services: <%= node[:capacity][:max_services] %>
   apps:     <%= node[:capacity][:max_apps] %>
@@ -124,3 +132,5 @@ runtimes:
     version: ".* 5.8.3"
   python26:
     version: 2.6.5
+  iis:
+    version: 0x7

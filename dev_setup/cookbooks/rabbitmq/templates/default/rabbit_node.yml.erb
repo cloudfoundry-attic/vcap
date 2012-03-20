@@ -1,0 +1,16 @@
+---
+local_db: sqlite3:/var/vcap/services/rabbit/rabbit_node.db
+base_dir: /var/vcap/services/rabbit/
+rabbit_ctl: rabbitmqctl
+rabbit_server: rabbitmq-server
+rabbit_port: 5672
+mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
+index: <%= node[:rabbit_node][:index] %>
+logging:
+  level: debug
+available_memory: <%= node[:rabbit_node][:available_memory] %>
+max_memory: <%= node[:rabbit_node][:max_memory] %>
+node_id: <%= "rabbit_node_#{node[:rabbit_node][:index]}" %>
+pid: /var/vcap/sys/run/rabbit_node.pid
+migration_nfs: /mnt/appcloud
+# z_interval: 30

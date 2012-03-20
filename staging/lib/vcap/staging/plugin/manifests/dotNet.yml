@@ -1,0 +1,16 @@
+---
+name: "dotNet"
+runtimes:
+  - iis:
+      version: '0x7'
+      description: 'Internet Information Services'
+      executable: iisver.cmd
+      default: true
+app_servers:
+detection:
+  - "web.config": true
+staged_services:
+  - "name": "mssql"
+    "version": "*"
+
+# vim: filetype=yaml

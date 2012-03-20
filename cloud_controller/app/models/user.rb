@@ -51,9 +51,14 @@ class User < ActiveRecord::Base
 
     # Called at startup to seed the database with initial users
     # if they do not yet exist.
-    def create_bootstrap_user(email, password, is_admin=false)
+    def create_bootstrap_user(email, password, is_admin=false, is_hashed_password=false)
       user = User.find_or_create_by_email(email)
-      user.set_and_encrypt_password(password)
+      if is_hashed_password
+        user.set_password(password)
+      else
+        user.set_and_encrypt_password(password)
+      end
+
       user.save!
       admins << email if is_admin
       user
@@ -63,6 +68,11 @@ class User < ActiveRecord::Base
   def set_and_encrypt_password(val)
     raise ActiveRecord::RecordInvalid.new(self) unless val
     self.crypted_password = BCrypt::Password.create(val).to_s
+  end
+
+  def set_password(val)
+    raise ActiveRecord::RecordInvalid.new(self) unless val
+    self.crypted_password = val
   end
 
   def admin?

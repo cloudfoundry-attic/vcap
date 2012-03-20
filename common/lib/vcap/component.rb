@@ -46,6 +46,9 @@ module VCAP
           rss, pcpu = `ps -o rss=,pcpu= -p #{Process.pid}`.split
           @varz[:mem] = rss.to_i
           @varz[:cpu] = pcpu.to_f
+          @varz[:system_cpu] = `echo $(( 100 - \`vmstat|tail -n 1|awk '{print $15}'\` ))` .to_i
+          @varz[:system_cpu_ticks] = `vmstat -s | grep "non-nice user cpu ticks"` .to_i + `vmstat -s | grep "nice user cpu ticks"` .to_i + `vmstat -s | grep "system cpu ticks"` .to_i
+          @varz[:system_mem] = `free -k|grep "buffers/cache"|awk '{print $4}'` .to_i
 
           @last_varz_update = Time.now.to_f
         end
@@ -106,6 +109,7 @@ module VCAP
         @varz = @discover.dup
         @varz[:num_cores] = VCAP.num_cores
         @varz[:config] = sanitize_config(opts[:config]) if opts[:config]
+        @varz[:system_start] = `who -b`.split("system boot")[1]
 
         @healthz = "ok\n".freeze
 

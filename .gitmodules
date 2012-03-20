@@ -7,3 +7,6 @@
 [submodule "java"]
 	path = java
 	url = https://github.com/cloudfoundry/vcap-java.git
+[submodule "dotnet"]
+	path = dotnet
+	url = https://github.com/UhuruSoftware/vcap-dotnet.git

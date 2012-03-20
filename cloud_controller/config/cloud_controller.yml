@@ -109,6 +109,19 @@ admins: [derek@gmail.com, foobar@vmware.com]
 https_required: false
 https_required_for_admins: false
 
+bootstrap_users:
+  - email: admin@bootstrap
+    password: $2a$10$ncpsT/Uh1Z2BRf1XkI11M.zfAsxrjA34F9PTr1C4xS0tbmDnUuZdS  # stands for '1234'
+    is_admin: true
+    is_hashed_password: true
+  - email: admin2@bootstrap
+    password: "1234"
+    is_admin: true
+  - email: user@bootstrap
+    password: $2a$10$ncpsT/Uh1Z2BRf1XkI11M.zfAsxrjA34F9PTr1C4xS0tbmDnUuZdS  # stands for '1234'
+    is_admin: false
+    is_hashed_password: true
+
 # Controls the amount of resources assigned to a user
 # Normal user accounts
 default_account_capacity:
@@ -133,6 +146,8 @@ builtin_services:
     token: "0xdeadbeef"
   atmos:
     token: "0xdeadbeef"
+  mssql:
+    token: "0xdeadbeef"    
 
 # Service broker
 service_broker:
@@ -161,6 +176,8 @@ runtimes:
     version: ".* 5.8.3"
   python26:
     version: 2.6.5
+  iis:
+    version: 0x7    
 
 # Used for /healthz and /vars endpoints. If not provided random
 # values will be generated on component start. Uncomment to use
