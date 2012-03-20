@@ -1,0 +1,12 @@
+#!/bin/bash
+
+set -o nounset
+set -o errexit
+
+<% for src_path, dst_path, options in params["bind_mounts"] %>
+mkdir -p <%= dst_path %>
+mount --bind <%= src_path %> <%= dst_path %>
+<% if options["mode"] %>
+mount -o remount,<%= options["mode"] %> <%= dst_path %>
+<% end %>
+<% end %>

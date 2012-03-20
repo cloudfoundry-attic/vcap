@@ -15,18 +15,24 @@ describe HealthManager do
     @user
   end
 
-  def build_app(appname = 'testapp')
-    @app = @user.apps.find_by_name(appname)
-    unless @app
-      @app = ::App.new(:name => appname, :owner => @user, :runtime => "ruby19", :framework => "sinatra")
-      @app.package_hash = random_hash
-      @app.staged_package_hash = random_hash
-      @app.state = "STARTED"
-      @app.package_state = "STAGED"
-      @app.instances = 3
-      @app.save!
-      @app.set_urls(["http://#{appname}.vcap.me"])
+  def make_db_app_entry(appname)
+    app = @user.apps.find_by_name(appname)
+    unless app
+      app = ::App.new(:name => appname, :owner => @user, :runtime => "ruby19", :framework => "sinatra")
+      app.package_hash = random_hash
+      app.staged_package_hash = random_hash
+      app.state = "STARTED"
+      app.package_state = "STAGED"
+      app.instances = 3
+      app.save!
     end
+    app
+  end
+
+  def build_app(appname = 'testapp')
+    @app = make_db_app_entry(appname)
+    @app.set_urls(["http://#{appname}.vcap.me"])
+
     @droplet_entry = {
         :last_updated => @app.last_updated - 2, # take off 2 seconds so it looks 'quiescent'
         :state => 'STARTED',
@@ -56,6 +62,10 @@ describe HealthManager do
     NATS.should_receive(:publish).with(message, payload.to_json)
   end
 
+  after(:each) do
+    VCAP::Logging.reset
+  end
+
   after(:all) do
     ::User.destroy_all
     ::App.destroy_all
@@ -65,7 +75,7 @@ describe HealthManager do
     @hm = HealthManager.new({
       'mbus' => 'nats://localhost:4222/',
       'logging' => {
-        'level' => 'warn',
+        'level' => ENV['LOG_LEVEL'] || 'warn',
       },
       'intervals' => {
         'database_scan' => 1,
@@ -87,9 +97,11 @@ describe HealthManager do
         }
       }
     })
-
     hash = Hash.new {|h,k| h[k] = 0}
     VCAP::Component.stub!(:varz).and_return(hash)
+    ::User.destroy_all
+    ::App.destroy_all
+
     build_user_and_app
   end
 
@@ -103,6 +115,13 @@ describe HealthManager do
     end
     { 'droplets' => droplets }.to_json
   end
+
+  describe '#perform_quantum' do
+    it 'should be resilient to nil arguments' do
+      @hm.perform_quantum(nil, nil)
+    end
+  end
+
 
   it "should detect instances that are down and send a START request" do
     stats = { :frameworks => {}, :runtimes => {}, :down => 0 }
@@ -186,6 +205,36 @@ describe HealthManager do
     index_entry.should_not be_nil
     index_entry[:state].should == 'DOWN'
   end
+
+  it "should not re-start timer-triggered analysis loop if previous analysis loop is still in progress" do
+
+    n=20
+    apps = []
+
+    n.times { |i|
+      apps << make_db_app_entry("test#{i}")
+    }
+
+    VCAP::Component.varz[:running] = {}
+    @hm.update_from_db
+
+    EM.run do
+
+      @hm.analysis_in_progress?.should be_false
+
+      @hm.analyze_all_apps.should be_true
+
+      @hm.analysis_in_progress?.should be_true
+
+      @hm.analyze_all_apps.should be_false
+
+      EM.add_timer(2) {
+        EM.stop
+      }
+    end
+
+  end
+
 
   it "should have FIFO behavior for DEA_EVACUATION-triggered restarts" do
 

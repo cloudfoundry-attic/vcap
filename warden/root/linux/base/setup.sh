@@ -9,7 +9,7 @@ else
   debootstrap_bin=""
 fi
 chroot_bin=$(which chroot)
-packages="ubuntu-minimal,openssh-server,rsync"
+packages="openssh-server,rsync"
 suite="lucid"
 target="rootfs"
 mirror=$(grep "^deb" /etc/apt/sources.list | head -n1 | cut -d" " -f2)
@@ -30,7 +30,7 @@ function debootstrap() {
     fi
   fi
 
-  ${debootstrap_bin} --verbose --variant=minbase --include ${packages} ${suite} ${target} ${mirror}
+  ${debootstrap_bin} --verbose --include ${packages} ${suite} ${target} ${mirror}
 }
 
 function write() {

@@ -54,7 +54,12 @@ required = { :external_uri => 'api.vcap.me',
              :default_account_capacity => { :memory => 2048,
                                             :app_uris => 4,
                                             :services => 16,
-                                            :apps => 20 } }
+                                            :apps => 20 },
+             :uaa => { :enabled => 'true',
+                       :url => 'http://uaa.vcap.me',
+                       :resource_id => 'cloud_controller',
+                       :token_secret => 'tokensecret',
+                       :client_secret => 'cloudcontrollerclientsecret'}}
 
 # Does the given hash have at least the keys contained in the default?
 required_keys = Proc.new do |candidate, default|

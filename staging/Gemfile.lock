@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    vcap_staging (0.1.40)
+    vcap_staging (0.1.44)
       nokogiri (>= 1.4.4)
       rake
       rspec
@@ -12,6 +12,9 @@ PATH
 GEM
   remote: http://rubygems.org/
   specs:
+    builder (3.0.0)
+    ci_reporter (1.7.0)
+      builder (>= 2.1.2)
     daemons (1.1.8)
     diff-lcs (1.1.3)
     eventmachine (0.12.11.cloudfoundry.3)
@@ -50,4 +53,5 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  ci_reporter
   vcap_staging!
