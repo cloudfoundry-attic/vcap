@@ -29,7 +29,7 @@ bash "Install Erlang" do
   code <<-EOH
   tar xvzf otp_src_#{node[:erlang][:version]}.tar.gz
   cd otp_src_#{node[:erlang][:version]}
-  #{File.join(".", "configure")} --prefix=#{node[:erlang][:path]}
+  #{File.join(".", "configure")} --prefix=#{node[:erlang][:path]} --disable-hipe
   make
   make install
   EOH
