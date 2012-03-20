@@ -1,4 +1,3 @@
-
 # This is a Fiber (1.9) aware extension.
 module NATS
   class << self
@@ -13,6 +12,7 @@ module NATS
       end
       NATS.timeout(sid, timeout, :expected => expected) { f.resume }
       Fiber.yield
+      NATS.unsubscribe(sid) # memory leak fix; this line can be removed after using a fixed version of nats client(> 0.4.22.beta.4)
       return results.slice(0, expected)
     end
   end
