@@ -3,7 +3,9 @@ GEM
   specs:
     addressable (2.2.6)
     builder (3.0.0)
-    cf-uaa-client (0.0.4)
+    cf-uaa-client (0.0.5)
+      em-http-request (= 1.0.0.beta.3)
+      eventmachine
       json_pure
       rest-client
     ci_reporter (1.6.5)
@@ -61,7 +63,7 @@ PLATFORMS
 
 DEPENDENCIES
   bundler (>= 1.0.10)
-  cf-uaa-client (>= 0.0.4)
+  cf-uaa-client (>= 0.0.5)
   ci_reporter
   em-http-request (~> 1.0.0.beta.3)
   eventmachine
