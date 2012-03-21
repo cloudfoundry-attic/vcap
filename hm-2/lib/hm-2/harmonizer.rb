@@ -66,8 +66,22 @@ module HealthManager2
     private
 
     def analyze_all_apps
+
+      if scheduler.task_running? :droplet_analysis
+        @logger.warn("Droplet analysis still in progress.  Consider increasing droplet_analysis configuration value.")
+        return
+      end
+
+      [:running_instances,
+       :crashed_instances,
+       :down_instances
+      ].each { |v| varz.reset(v) }
+
+
+
       @logger.debug { "harmonizer: droplet_analysis"}
       known_state_provider.rewind
+
       scheduler.start_task :droplet_analysis do
         known_droplet = known_state_provider.next_droplet
         if known_droplet
@@ -85,19 +99,6 @@ module HealthManager2
         known = known_state_provider.get_droplet(app_id)
         expected_state_provider.set_expected_state(known, expected)
       end
-    end
-
-    def scheduler
-      find_hm_component(:scheduler, @config)
-    end
-    def nudger
-      find_hm_component(:nudger, @config)
-    end
-    def known_state_provider
-      find_hm_component(:known_state_provider, @config)
-    end
-    def expected_state_provider
-      find_hm_component(:expected_state_provider, @config)
     end
   end
 end

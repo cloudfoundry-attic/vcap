@@ -28,12 +28,14 @@ module HealthManager2
     def process_droplet_exited(message)
 
       @logger.debug {"process_droplet_exited: #{message}"}
+      varz.inc(:droplet_exited_msgs_received)
       message = parse_json(message)
       id = message['droplet']
       droplet = get_droplet(message['droplet'])
 
       case message['reason']
       when CRASHED
+        varz.inc(:crashed_instances)
         droplet.process_exit_crash(message)
       when DEA_SHUTDOWN, DEA_EVACUATION
         droplet.process_exit_dea(message)
@@ -45,6 +47,7 @@ module HealthManager2
     def process_heartbeat(message)
 
       @logger.debug {"known: #process_heartbeat: #{message}"}
+      varz.inc(:heartbeat_msgs_received)
 
       message = parse_json(message)
       dea_uuid = message['dea']
@@ -77,20 +80,12 @@ module HealthManager2
         schedule_dea_timeout(dea_uuid)
       end
     end
-
-
     def check_missing_heartbeats_for_dea(dea_uuid)
-
       apps = @apps_in_dea.delete(dea_uuid)
       return unless apps
       apps.each do |app_id, app|
         get_droplet(app_id).process_heartbeat_missed(app[:latest_heartbeats])
       end
-    end
-
-    private
-    def scheduler
-      find_hm_component(:scheduler, @config)
     end
   end
 end

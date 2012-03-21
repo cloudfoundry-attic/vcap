@@ -92,7 +92,10 @@ describe HealthManager2 do
 
   def build_valid_config(config={})
     @config = config
-    register_hm_component(:scheduler, @scheduler = Scheduler.new(@config), @config)
+    varz = Varz.new(@config)
+    varz.setup_varz
+    register_hm_component(:varz, varz)
+    register_hm_component(:scheduler, @scheduler = Scheduler.new(@config))
     @config
   end
 end

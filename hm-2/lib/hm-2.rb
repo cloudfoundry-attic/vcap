@@ -33,21 +33,21 @@ module HealthManager2
 
       @logger.info("HM-2: HealthManager2 initializing")
 
-      @scheduler = Scheduler.new(config)
-      register_hm_component(:scheduler, @scheduler, @config)
-
-      @known_state_provider = AppStateProvider.get_known_state_provider(@config)
-      register_hm_component(:known_state_provider, @known_state_provider, @config)
-
-      @expected_state_provider = AppStateProvider.get_expected_state_provider(@config)
-      register_hm_component(:expected_state_provider, @expected_state_provider, @config)
-
-      @nudger = Nudger.new(@config)
-      register_hm_component(:nudger, @nudger, @config)
-
       @varz = Varz.new(@config)
       @varz.setup_varz
-      register_hm_component(:varz, @varz, @config)
+      register_hm_component(:varz, @varz)
+
+      @scheduler = Scheduler.new(@config)
+      register_hm_component(:scheduler, @scheduler)
+
+      @known_state_provider = AppStateProvider.get_known_state_provider(@config)
+      register_hm_component(:known_state_provider, @known_state_provider)
+
+      @expected_state_provider = AppStateProvider.get_expected_state_provider(@config)
+      register_hm_component(:expected_state_provider, @expected_state_provider)
+
+      @nudger = Nudger.new(@config)
+      register_hm_component(:nudger, @nudger)
 
       @harmonizer = Harmonizer.new(@config)
     end
@@ -108,24 +108,39 @@ module HealthManager2
     value
   end
 
-  def register_hm_component(name, component, config)
-    hm_registry(config)[name] = component
+  def varz
+    find_hm_component(:varz)
+  end
+  def scheduler
+    find_hm_component(:scheduler)
+  end
+  def nudger
+    find_hm_component(:nudger)
+  end
+  def known_state_provider
+    find_hm_component(:known_state_provider)
+  end
+  def expected_state_provider
+    find_hm_component(:expected_state_provider)
+  end
+  def register_hm_component(name, component)
+    hm_registry[name] = component
   end
 
-  def find_hm_component(name, config)
-    unless component = hm_registry(config)[name]
-      raise ArgumentError, "component #{name} can't be found in the registry #{config}"
+  def find_hm_component(name)
+    unless component = hm_registry[name]
+      raise ArgumentError, "component #{name} can't be found in the registry #{@config}"
     end
     component
+  end
+  def hm_registry
+    @config[:health_manager_component_registry] ||= {}
   end
 
   def get_logger(name='hm-2')
     VCAP::Logging.logger(name)
   end
 
-  def hm_registry(config)
-    config[:health_manager_component_registry] ||= {}
-  end
   def encode_json(obj={})
     Yajl::Encoder.encode(obj)
   end

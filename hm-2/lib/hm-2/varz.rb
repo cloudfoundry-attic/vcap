@@ -15,7 +15,7 @@ module HealthManager2
       declare_counter :total_instances
 
       declare_counter :running_instances
-      declare_counter :crashed_instances
+      declare_counter :crashed_instances #inc
       declare_counter :down_instances
 
       declare_counter :queue_length
@@ -32,8 +32,8 @@ module HealthManager2
 
       #TODO: under these, the frameworks and runtimes are entered dynamically
 
-      declare_counter :heartbeat_msgs_received
-      declare_counter :droplet_exited_msgs_received
+      declare_counter :heartbeat_msgs_received #varz
+      declare_counter :droplet_exited_msgs_received #varz
       declare_counter :droplet_updated_msgs_received
       declare_counter :healthmanager_status_msgs_received
       declare_counter :healthmanager_health_request_msgs_received
