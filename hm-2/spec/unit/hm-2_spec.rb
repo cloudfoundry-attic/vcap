@@ -1,8 +1,10 @@
 require 'spec_helper.rb'
 
-include HealthManager2
+describe HM2 do
 
-describe HealthManager2 do
+  Manager = HM2::Manager
+  Harmonizer = HM2::Harmonizer
+  Nudger = HM2::Nudger
 
   before(:all) do
     EM.error_handler do |e|
@@ -29,9 +31,9 @@ describe HealthManager2 do
       instances_with_priorities = (1..2).map {|i| [AppState.new(i), 0]}
       NATS.should_receive(:publish).with('cloudcontrollers.hm.requests', an_instance_of(String)).exactly(2).times
       n.start_instances(instances_with_priorities)
-      set_env(HM_SHADOW, 'false')
+      set_env(::HM2::HM_SHADOW, 'false')
       n.deque_batch_of_requests
-      restore_env(HM_SHADOW)
+      restore_env(::HM2::HM_SHADOW)
     end
 
     it 'should be able to stop app instance'

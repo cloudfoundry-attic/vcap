@@ -1,8 +1,11 @@
 require 'spec_helper'
 
-include HealthManager2
+describe HM2 do
 
-describe HealthManager2 do
+  Scheduler = HM2::Scheduler
+
+  include HM2::Common
+
   describe Scheduler do
 
     before(:each) do
@@ -22,8 +25,8 @@ describe HealthManager2 do
 
       it 'should return default interval values' do
         s = Scheduler.new
-        s.get_interval(:dea_timeout_interval).should == DEA_TIMEOUT_INTERVAL
-        s.get_interval('dea_timeout_interval').should == DEA_TIMEOUT_INTERVAL
+        s.get_interval(:dea_timeout_interval).should == ::HM2::DEA_TIMEOUT_INTERVAL
+        s.get_interval('dea_timeout_interval').should == ::HM2::DEA_TIMEOUT_INTERVAL
       end
 
       it 'should raise ArgumentError for invalid intervals' do

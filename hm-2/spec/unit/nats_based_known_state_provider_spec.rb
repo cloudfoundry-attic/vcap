@@ -1,7 +1,11 @@
 require 'spec_helper'
-include HealthManager2
 
-describe HealthManager2 do
+describe HM2 do
+
+  NatsBasedKnownStateProvider = HM2::NatsBasedKnownStateProvider
+
+  include HM2::Common
+
   before :all do
     @logger = get_logger('hm-2_spec')
   end
@@ -22,9 +26,11 @@ describe HealthManager2 do
         @nb = NatsBasedKnownStateProvider.new(build_valid_config(dea_timeout_interval: 0.2))
       end
 
-      it 'should subscribe to heartbeat and droplet.exited messages' do
+      it 'should subscribe to heartbeat, droplet.exited/updated messages' do
         NATS.should_receive(:subscribe).with('dea.heartbeat')
         NATS.should_receive(:subscribe).with('droplet.exited')
+        NATS.should_receive(:subscribe).with('droplet.updated')
+
         @nb.start
       end
 
@@ -81,7 +87,7 @@ describe HealthManager2 do
       'framework' => 'sinatra',
       'runtime' => 'ruby18',
       'live_version' => @version,
-      'state' => STARTED,
+      'state' => ::HM2::STARTED,
       'last_updated' => now
 
     }.merge(options).each { |k,v|

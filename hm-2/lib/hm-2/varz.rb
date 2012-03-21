@@ -1,7 +1,7 @@
 #this is a thin wrapper over VCAP::Component varz/healthz functionality.
 #perhaps this should be eventually migrated to common/component.
 
-module HealthManager2
+module HM2
   class Varz
     def initialize(config = {})
       @config = config
@@ -14,7 +14,7 @@ module HealthManager2
       declare_counter :total_users
       declare_counter :total_instances
 
-      declare_counter :running_instances
+      declare_counter :running_instances #nats/harmonizer
       declare_counter :crashed_instances #inc
       declare_counter :down_instances
 
@@ -32,8 +32,8 @@ module HealthManager2
 
       #TODO: under these, the frameworks and runtimes are entered dynamically
 
-      declare_counter :heartbeat_msgs_received #varz
-      declare_counter :droplet_exited_msgs_received #varz
+      declare_counter :heartbeat_msgs_received #nats-based
+      declare_counter :droplet_exited_msgs_received #nats-based
       declare_counter :droplet_updated_msgs_received
       declare_counter :healthmanager_status_msgs_received
       declare_counter :healthmanager_health_request_msgs_received

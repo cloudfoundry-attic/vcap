@@ -1,8 +1,9 @@
 require 'spec_helper'
 
-include HealthManager2
+describe HM2 do
 
-describe HealthManager2 do
+  Varz = HM2::Varz
+
   describe Varz do
 
     before :each do

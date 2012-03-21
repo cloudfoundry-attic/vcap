@@ -2,8 +2,9 @@
 #it describes a set of rules that recognize certain conditions (e.g. missing instances, etc) and
 #initiates certain actions (e.g. restarting the missing instances)
 
-module HealthManager2
+module HM2
   class Harmonizer
+    include HM2::Common
     def initialize(config = {})
       @config = config
       @logger = get_logger
@@ -47,6 +48,12 @@ module HealthManager2
         nudger.start_instances([[app_state,LOW_PRIORITY]])
       end
 
+      AppState.add_listener(:droplet_updated) do |*args|
+        @logger.debug { "harmonizer: look, updated droplet! #{args}" }
+
+      end
+
+
       #schedule time-based actions
       scheduler.immediately { update_expected_state }
 
@@ -76,8 +83,6 @@ module HealthManager2
        :crashed_instances,
        :down_instances
       ].each { |v| varz.reset(v) }
-
-
 
       @logger.debug { "harmonizer: droplet_analysis"}
       known_state_provider.rewind

@@ -6,11 +6,8 @@ require 'rubygems'
 require 'bundler/setup'
 require File.join(home, 'lib','hm-2')
 
-include HealthManager2
-
 trap('INT') { NATS.stop { EM.stop }}
 trap('SIGTERM') { NATS.stop { EM.stop }}
-
 
 
 EM::run {
@@ -21,7 +18,7 @@ EM::run {
     }
     VCAP::Logging.setup_from_config({'level'=>ENV['LOG_LEVEL'] || 'debug'})
 
-    prov = BulkBasedExpectedStateProvider.new(config)
+    prov = HM2::BulkBasedExpectedStateProvider.new(config)
     prov.each_droplet do |id, droplet|
       puts "Droplet #{id}:"
       puts droplet.inspect

@@ -1,5 +1,5 @@
 
-module HealthManager2
+module HM2
 
   #this implementation maintains the known state by listening to the
   #DEA heartbeat messages
@@ -22,15 +22,19 @@ module HealthManager2
       NATS.subscribe('droplet.exited') do |message|
         process_droplet_exited(message)
       end
+
+      @logger.info("subscribing to droplet.updated")
+      NATS.subscribe('droplet.updated') do |message|
+        process_droplet_updated(message)
+      end
+
       super
     end
 
     def process_droplet_exited(message)
-
       @logger.debug {"process_droplet_exited: #{message}"}
       varz.inc(:droplet_exited_msgs_received)
       message = parse_json(message)
-      id = message['droplet']
       droplet = get_droplet(message['droplet'])
 
       case message['reason']
@@ -45,7 +49,6 @@ module HealthManager2
     end
 
     def process_heartbeat(message)
-
       @logger.debug {"known: #process_heartbeat: #{message}"}
       varz.inc(:heartbeat_msgs_received)
 
@@ -63,6 +66,13 @@ module HealthManager2
         apps[id][:latest_heartbeats] << beat #TODO: unlimited growth!
         get_droplet(id).process_heartbeat(beat)
       end
+    end
+
+    def process_droplet_updated(message)
+      @logger.debug {"known: #process_droplet_updated: #{message}" }
+      varz.inc(:droplet_updated_msgs_received)
+      message = parse_json(message)
+      get_droplet(message['droplet']).process_droplet_updated(message)
     end
 
     #reset as in re-set
