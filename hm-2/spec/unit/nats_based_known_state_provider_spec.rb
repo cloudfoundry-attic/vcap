@@ -1,7 +1,11 @@
 require 'spec_helper'
-include HealthManager2
 
-describe HealthManager2 do
+describe HM2 do
+
+  NatsBasedKnownStateProvider = HM2::NatsBasedKnownStateProvider
+
+  include HM2::Common
+
   before :all do
     @logger = get_logger('hm-2_spec')
   end
@@ -81,7 +85,7 @@ describe HealthManager2 do
       'framework' => 'sinatra',
       'runtime' => 'ruby18',
       'live_version' => @version,
-      'state' => STARTED,
+      'state' => ::HM2::STARTED,
       'last_updated' => now
 
     }.merge(options).each { |k,v|

@@ -1,6 +1,6 @@
 require 'em-http'
 
-module HealthManager2
+module HM2
   #this implementation will use the REST(ish) BulkAPI to
   #interrogate the CloudController on the expected state of the apps
   #the API should allow for non-blocking operation

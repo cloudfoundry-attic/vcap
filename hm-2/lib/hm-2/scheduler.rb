@@ -1,5 +1,6 @@
-module HealthManager2
+module HM2
   class Scheduler
+    include HM2::Common
     def initialize( config={} )
       @config = config
       @schedule = []
@@ -107,10 +108,10 @@ module HealthManager2
     def stop
       EM.stop if EM.reactor_running?
     end
-  end
 
-  private
-  def get_receipt
-    @last_receipt += 1
+    private
+    def get_receipt
+      @last_receipt += 1
+    end
   end
 end

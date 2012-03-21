@@ -2,7 +2,7 @@ require File.join(File.dirname(__FILE__), '..','spec_helper')
 
 VCAP::Logging.setup_from_config({'level' => ENV['LOG_LEVEL'] || 'warn'})
 
-module HealthManager2
+module HM2::Common
   def in_em(timeout=2)
     EM.run do
       EM.add_timer(timeout) do
@@ -11,13 +11,13 @@ module HealthManager2
       yield
     end
   end
-  class Manager
+  class ::HM2::Manager
     def self.set_now(t)
       @now = t
     end
   end
   def set_now(t) #for testing
-    Manager.set_now(t)
+    ::HM2::Manager.set_now(t)
   end
   def make_heartbeat(apps)
     hb = []
@@ -28,7 +28,7 @@ module HealthManager2
           'version' => app.live_version,
           'instance' => "#{app.live_version}-#{index}",
           'index' => index,
-          'state' => STARTED,
+          'state' => ::HM2::STARTED,
           'state_timestamp' => now
         }
       }

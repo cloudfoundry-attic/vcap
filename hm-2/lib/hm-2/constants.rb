@@ -1,7 +1,6 @@
 require 'set'
 
-module HealthManager2
-
+module HM2
 
   #restart priorities
   LOW_PRIORITY = 1

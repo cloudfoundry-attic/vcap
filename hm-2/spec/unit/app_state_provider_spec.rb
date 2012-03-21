@@ -1,13 +1,16 @@
 require File.join(File.dirname(__FILE__),'spec_helper')
 
-include HealthManager2
+describe HM2 do
 
-describe HealthManager2 do
+  #shortcuts
+  AppState = HM2::AppState
+  AppStateProvider = HM2::AppStateProvider
+
+  include HM2::Common
 
   before :all do
     @logger = get_logger('hm-2_spec')
   end
-
 
   after :each do
     AppState.remove_all_listeners

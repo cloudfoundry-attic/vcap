@@ -11,6 +11,8 @@ require 'vcap/logging'
 require 'vcap/priority_queue'
 
 require 'hm-2/constants'
+require 'hm-2/common'
+require 'hm-2/app_state'
 require 'hm-2/app_state_provider'
 require 'hm-2/nats_based_known_state_provider'
 require 'hm-2/bulk_based_expected_state_provider'
@@ -19,9 +21,9 @@ require 'hm-2/nudger'
 require 'hm-2/harmonizer'
 require 'hm-2/varz'
 
-module HealthManager2
-
+module HM2
   class Manager
+    include HM2::Common
     #primarily for testing
     attr_reader :scheduler
     attr_reader :known_state_provider
@@ -33,23 +35,23 @@ module HealthManager2
 
       @logger.info("HM-2: HealthManager2 initializing")
 
-      @varz = Varz.new(@config)
+      @varz = HM2::Varz.new(@config)
       @varz.setup_varz
       register_hm_component(:varz, @varz)
 
-      @scheduler = Scheduler.new(@config)
+      @scheduler = HM2::Scheduler.new(@config)
       register_hm_component(:scheduler, @scheduler)
 
-      @known_state_provider = AppStateProvider.get_known_state_provider(@config)
+      @known_state_provider = HM2::AppStateProvider.get_known_state_provider(@config)
       register_hm_component(:known_state_provider, @known_state_provider)
 
-      @expected_state_provider = AppStateProvider.get_expected_state_provider(@config)
+      @expected_state_provider = HM2::AppStateProvider.get_expected_state_provider(@config)
       register_hm_component(:expected_state_provider, @expected_state_provider)
 
-      @nudger = Nudger.new(@config)
+      @nudger = HM2::Nudger.new(@config)
       register_hm_component(:nudger, @nudger)
 
-      @harmonizer = Harmonizer.new(@config)
+      @harmonizer = HM2::Harmonizer.new(@config)
     end
 
     def start
@@ -81,70 +83,5 @@ module HealthManager2
     def self.now
       @now || Time.now.to_i
     end
-  end
-
-  def now
-    Manager.now
-  end
-
-  def parse_utc(time)
-    Time.parse(time).to_i
-  end
-
-  def get_interval_from_config_or_constant(name, config)
-    intervals = config[:intervals] || config['intervals'] || {}
-    get_param_from_config_or_constant(name,intervals)
-  end
-
-  def get_param_from_config_or_constant(name, config)
-    value = config[name] || config[name.to_sym] || config[name.to_s]
-    unless value
-      const_name = name.to_s.upcase
-      if HealthManager2.const_defined?( const_name )
-        value = HealthManager2.const_get( const_name )
-      end
-    end
-    raise ArgumentError, "undefined parameter #{name}" unless value
-    value
-  end
-
-  def varz
-    find_hm_component(:varz)
-  end
-  def scheduler
-    find_hm_component(:scheduler)
-  end
-  def nudger
-    find_hm_component(:nudger)
-  end
-  def known_state_provider
-    find_hm_component(:known_state_provider)
-  end
-  def expected_state_provider
-    find_hm_component(:expected_state_provider)
-  end
-  def register_hm_component(name, component)
-    hm_registry[name] = component
-  end
-
-  def find_hm_component(name)
-    unless component = hm_registry[name]
-      raise ArgumentError, "component #{name} can't be found in the registry #{@config}"
-    end
-    component
-  end
-  def hm_registry
-    @config[:health_manager_component_registry] ||= {}
-  end
-
-  def get_logger(name='hm-2')
-    VCAP::Logging.logger(name)
-  end
-
-  def encode_json(obj={})
-    Yajl::Encoder.encode(obj)
-  end
-  def parse_json(string='{}')
-    Yajl::Parser.parse(string)
   end
 end

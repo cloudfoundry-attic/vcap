@@ -2,8 +2,9 @@
 #it describes a set of rules that recognize certain conditions (e.g. missing instances, etc) and
 #initiates certain actions (e.g. restarting the missing instances)
 
-module HealthManager2
+module HM2
   class Harmonizer
+    include HM2::Common
     def initialize(config = {})
       @config = config
       @logger = get_logger

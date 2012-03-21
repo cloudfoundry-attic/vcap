@@ -1,5 +1,5 @@
 
-module HealthManager2
+module HM2
 
   #this implementation maintains the known state by listening to the
   #DEA heartbeat messages

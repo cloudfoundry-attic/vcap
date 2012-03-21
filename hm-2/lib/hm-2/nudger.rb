@@ -1,6 +1,7 @@
-module HealthManager2
+module HM2
   QUEUE_BATCH_SIZE = 40
   class Nudger
+    include HM2::Common
     def initialize( config={} )
       @config = config
       @queue = VCAP::PrioritySet.new
@@ -46,19 +47,18 @@ module HealthManager2
       }
       queue(message,priority)
     end
+
+    private
+    def queue(message, priority)
+      @logger.debug { "nudger: queueing: #{message}, #{priority}" }
+      priority ||= NORMAL_PRIORITY
+      key = message.clone.delete(:last_updated)
+      @queue.insert(message, priority, key)
+    end
   end
-
-  private
-
-  def queue(message, priority)
-    @logger.debug { "nudger: queueing: #{message}, #{priority}" }
-    priority ||= NORMAL_PRIORITY
-    key = message.clone.delete(:last_updated)
-    @queue.insert(message, priority, key)
-  end
-
 
   class Shadower
+    include HM2::Common
     def initialize(config = {})
       @received = []
       @logger = get_logger
