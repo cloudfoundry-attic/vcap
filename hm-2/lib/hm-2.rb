@@ -17,6 +17,7 @@ require 'hm-2/bulk_based_expected_state_provider'
 require 'hm-2/scheduler'
 require 'hm-2/nudger'
 require 'hm-2/harmonizer'
+require 'hm-2/varz'
 
 module HealthManager2
 
@@ -43,6 +44,11 @@ module HealthManager2
 
       @nudger = Nudger.new(@config)
       register_hm_component(:nudger, @nudger, @config)
+
+      @varz = Varz.new(@config)
+      @varz.setup_varz
+      register_hm_component(:varz, @varz, @config)
+
       @harmonizer = Harmonizer.new(@config)
     end
 
