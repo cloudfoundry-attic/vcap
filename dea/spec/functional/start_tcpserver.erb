@@ -1,6 +1,7 @@
-#!/usr/bin/env ruby
+#!<%= dea_ruby_path || '/usr/bin/env ruby'%>
 # Copyright (c) 2009-2011 VMware, Inc.
 require 'optparse'
+require 'fileutils'
 require 'socket'
 
 port = nil
@@ -13,11 +14,18 @@ parser.parse(ARGV)
 
 fail 'Must supply port' unless port
 
-PID_FILE = '/tmp/dea_agent_test_tcpserver.pid'
+stop_contents =<<-EOT
+#!/bin/sh
+echo Killing pid #{Process.pid}
+kill -9 #{Process.pid}
+EOT
 
-File.open(PID_FILE, 'w+') do |f|
-  f.write("%d\n" % (Process.pid()))
+
+stop_path = File.expand_path('../stop', __FILE__)
+File.open(stop_path, 'w+') do |f|
+  f.write(stop_contents)
 end
+FileUtils.chmod(0755, stop_path)
 
 server = TCPServer.new('127.0.0.1', port)
 while true do
