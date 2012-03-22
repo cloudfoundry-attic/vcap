@@ -72,6 +72,12 @@ describe 'DEA Agent' do
       'disable_dir_cleanup' => true,
       'droplet_fs_percent_used_threshold' => 100, # don't fail if a developer's machine is almost full
     }
+    # override hardcoded binary paths
+    @dea_cfg['runtimes'].each do |name, attrs|
+      if ENV["VCAP_RUNTIME_#{name.upcase}"]
+        attrs['executable'] = ENV["VCAP_RUNTIME_#{name.upcase}"]
+      end
+    end
     @dea_config_file = File.join(@run_dir, 'dea.config')
     File.open(@dea_config_file, 'w') {|f| YAML.dump(@dea_cfg, f) }
     @dea_agent = DeaComponent.new("ruby -r#{nats_timeout_path} #{dea_path} -c #{@dea_config_file}", @dea_cfg['pid'], @dea_cfg, @run_dir)
