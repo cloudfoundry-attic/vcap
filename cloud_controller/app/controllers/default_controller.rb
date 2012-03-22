@@ -10,6 +10,10 @@ class DefaultController < ApplicationController
       :description =>  AppConfig[:description],
       :allow_debug =>  AppConfig[:allow_debug]
     }
+    if uaa_enabled?
+      info[:authorization_endpoint] = AppConfig[:uaa][:url]
+      info[:authenticationEndpoint] = AppConfig[:uaa][:url] # obsolete, can be removed after this release
+    end
     # If there is a logged in user, give out additional information
     if user
       info[:user]       = user.email
@@ -59,4 +63,3 @@ class DefaultController < ApplicationController
   end
 
 end
-

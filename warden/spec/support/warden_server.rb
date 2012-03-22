@@ -1,5 +1,4 @@
 require "warden/server"
-require "warden/container/lxc"
 require "warden/network"
 
 require "spec_helper"
@@ -38,13 +37,12 @@ shared_context :warden_server do
           :container_root => container_root,
           :container_klass => container_klass,
           :container_grace_time => 1 },
-        :quota => quota_config,
         :network => {
           :pool_start_address => start_address,
           :pool_size => 64,
           :allow_networks => "4.2.2.3/32",
           :deny_networks => "4.2.2.0/24" },
-        :logger => {
+        :logging => {
           :level => :debug,
           :file => File.expand_path("../../../tmp/warden.log", __FILE__) }
 
@@ -70,22 +68,8 @@ shared_context :warden_server do
     Process.waitpid(@pid)
 
     # Destroy all artifacts
-    Dir[File.join(container_root, "*", ".instance-*")].each do |path|
-      next if path.match(/-skeleton$/)
-
-      stop_script = File.join(path, "stop.sh")
-      system(stop_script) if File.exist?(stop_script)
-
-      # Try to remove the underlying directory
-      3.times {
-        system("rm -rf #{path}")
-
-        if $?.exitstatus == 0
-          break
-        else
-          sleep 0.05
-        end
-      }
+    Dir[File.join(container_root, "*", "clear.sh")].each do |clear|
+      system(clear)
     end
   end
 end

@@ -1,0 +1,3 @@
+#!/usr/bin/env ruby
+
+exec(File.expand_path("../../../services/serialization_data_server/bin/serialization_data_server", __FILE__), *ARGV)

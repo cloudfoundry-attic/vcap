@@ -1,29 +1,40 @@
 # Copyright (c) 2009-2011 VMware, Inc.
 require File.dirname(__FILE__) + '/spec_helper'
+require 'fileutils'
 
 describe 'Router Functional Tests' do
   before :each do
-    @nats_server = NatsServer.new
-    @nats_server.start_server
-    @nats_server.is_running?.should be_true
+    @dir = Dir.mktmpdir('router-test')
+    nats_port = VCAP::grab_ephemeral_port
+    @nats_server = VCAP::Spec::ForkedComponent::NatsServer.new(
+      File.join(@dir, 'nats.pid'),
+      nats_port,
+      @dir)
+    @nats_server.start
+    @nats_server.running?.should be_true
 
-    @router = RouterServer.new(@nats_server.uri)
+    router_port = VCAP::grab_ephemeral_port
+    @router = ForkedRouter.new(File.join(@dir, 'router.log'),
+                               router_port,
+                               nats_port,
+                               @dir)
     # The router will only announce itself after it has subscribed to 'vcap.component.discover'.
     NATS.start(:uri => @nats_server.uri) do
       NATS.subscribe('vcap.component.announce') { NATS.stop }
       # Ensure that NATS has processed our subscribe from above before we start the router
-      NATS.publish('xxx') { @router.start_server }
+      NATS.publish('xxx') { @router.start }
       EM.add_timer(5) { NATS.stop }
     end
     @router.is_running?.should be_true
   end
 
   after :each do
-    @router.kill_server
+    @router.stop
     @router.is_running?.should be_false
 
-    @nats_server.kill_server
-    @nats_server.is_running?.should be_false
+    @nats_server.stop
+    @nats_server.running?.should be_false
+    FileUtils.remove_entry_secure(@dir)
   end
 
   it 'should respond to a discover message properly' do
@@ -65,7 +76,7 @@ describe 'Router Functional Tests' do
     app = TestApp.new('router_test.vcap.me')
     dea = DummyDea.new(@nats_server.uri, '1234')
     dea.register_app(app)
-    app.verify_registered('127.0.0.1', RouterServer.port)
+    app.verify_registered('127.0.0.1', @router.port)
     app.stop
   end
 
@@ -74,12 +85,15 @@ describe 'Router Functional Tests' do
     app = TestApp.new('router_test.vcap.me')
     dea = DummyDea.new(@nats_server.uri, '1234')
     dea.register_app(app)
-    app.verify_registered('127.0.0.1', RouterServer.port)
+    app.verify_registered('127.0.0.1', @router.port)
     dea.unregister_app(app)
     # We should be unregistered here..
     # Send out simple request and check request and response
     req = simple_http_request('router_test.cap.me', '/')
-    verify_vcap_404(req, '127.0.0.1', RouterServer.port)
+    # force context switch to avoid a race between unregister processing and
+    # accepting new connections
+    sleep(0.01)
+    verify_vcap_404(req, '127.0.0.1', @router.port)
     app.stop
   end
 
@@ -97,7 +111,7 @@ describe 'Router Functional Tests' do
 
     req = simple_http_request('lb_test.vcap.me', '/')
     for ii in (0...num_requests)
-      TCPSocket.open('127.0.0.1', RouterServer.port) {|rs| rs.send(req, 0) }
+      TCPSocket.open('127.0.0.1', @router.port) {|rs| rs.send(req, 0) }
     end
     sleep(0.25) # Wait here for requests to trip accept state
 
@@ -121,7 +135,7 @@ describe 'Router Functional Tests' do
     vcap_id = app_socket = nil
     app_sockets = apps.collect { |a| a.socket }
 
-    TCPSocket.open('127.0.0.1', RouterServer.port) do |rs|
+    TCPSocket.open('127.0.0.1', @router.port) do |rs|
       rs.send(STICKY_REQUEST, 0)
       ready = IO.select(app_sockets, nil, nil, 1)
       ready[0].should have(1).items
@@ -142,7 +156,7 @@ describe 'Router Functional Tests' do
 
     # Now fire off requests, all should go to same socket as first
     (0...5).each do
-      TCPSocket.open('127.0.0.1', RouterServer.port) do |rs|
+      TCPSocket.open('127.0.0.1', @router.port) do |rs|
         rs.send(sticky_request, 0)
       end
     end
@@ -155,26 +169,29 @@ describe 'Router Functional Tests' do
       dea.unregister_app(app)
     end
 
+    # force context switch to avoid a race between unregister processing and
+    # accepting new connections
+    sleep(0.01)
     # Check that is is gone
-    verify_vcap_404(STICKY_REQUEST, '127.0.0.1', RouterServer.port)
+    verify_vcap_404(STICKY_REQUEST, '127.0.0.1', @router.port)
 
     apps.each {|a| a.stop }
   end
 
   it 'should properly exit when NATS fails to reconnect' do
-    @nats_server.kill_server
-    @nats_server.is_running?.should be_false
+    @nats_server.stop
+    @nats_server.running?.should be_false
     sleep(0.5)
     @router.is_running?.should be_false
   end
 
   it 'should not start with nats not running' do
-    @nats_server.kill_server
-    @nats_server.is_running?.should be_false
-    @router.kill_server
+    @nats_server.stop
+    @nats_server.running?.should be_false
+    @router.stop
     @router.is_running?.should be_false
 
-    @router.start_server
+    @router.start
     sleep(0.5)
     @router.is_running?.should be_false
   end

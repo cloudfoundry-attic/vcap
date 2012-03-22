@@ -1,6 +1,7 @@
 require 'spec_helper'
 
 describe "Requesting a new user token" do
+
   before do
     build_admin_and_user
 
@@ -8,15 +9,29 @@ describe "Requesting a new user token" do
     @user_token_path = create_token_path('email' => @user.email)
   end
 
-  it "returns a 400 response when given invalid JSON" do
-    bad_data = '{{{}}}'
-    post @admin_token_path, nil, headers_for(@admin.email, nil, bad_data)
-    response.status.should == 400
+  shared_examples_for "any request for a new user token" do
+    it "returns a 400 response when given invalid JSON" do
+      bad_data = '{{{}}}'
+      post @admin_token_path, nil, headers_for(@admin.email, nil, bad_data)
+      response.status.should == 400
+    end
+
+    it "always returns a 200 response when admin requests" do
+      post @user_token_path, nil, headers_for(@admin.email, nil, '{}')
+      response.status.should == 200
+    end
   end
 
-  it "always returns a 200 response when admin requests" do
-    post @user_token_path, nil, headers_for(@admin.email, nil, '{}')
-    response.status.should == 200
+  context "using conventional tokens" do
+    it_should_behave_like "any request for a new user token"
+  end
+
+  context "using jwt tokens" do
+    before :all do
+      CloudSpecHelpers.use_jwt_token = true
+    end
+
+    it_should_behave_like "any request for a new user token"
   end
 
   context "When user_expire is specified" do

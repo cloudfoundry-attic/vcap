@@ -44,6 +44,12 @@ class HMExpectedStateHelperDB
     App.where(args).first
   end
 
+  def delete_all
+    App.delete_all
+    User.delete_all
+  end
+
+
   def prepare_tests
 
     [App, User].each {|model| model.reset_column_information}
@@ -97,7 +103,7 @@ class HMExpectedStateHelperDB
   end
 
   def release_resources
-    #database clean-up goes here
+    delete_all
     ActiveRecord::Base.clear_all_connections!
   end
 end

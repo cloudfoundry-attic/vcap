@@ -7,3 +7,9 @@
 [submodule "java"]
 	path = java
 	url = https://github.com/cloudfoundry/vcap-java.git
+[submodule "uaa"]
+	path = uaa
+	url = https://github.com/cloudfoundry/uaa.git
+[submodule "acm"]
+	path = acm
+	url = https://github.com/cloudfoundry/acm.git

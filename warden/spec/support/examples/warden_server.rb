@@ -52,15 +52,15 @@ shared_examples "a warden server" do |container_klass|
     it "should redirect stdout output" do
       reply = client.run(@handle, "echo hi")
       reply[0].should == 0
-      File.read(reply[1]).should == "hi\n"
-      File.read(reply[2]).should == ""
+      reply[1].should == "hi\n"
+      reply[2].should == ""
     end
 
     it "should redirect stderr output" do
       reply = client.run(@handle, "echo hi 1>&2")
       reply[0].should == 0
-      File.read(reply[1]).should == ""
-      File.read(reply[2]).should == "hi\n"
+      reply[1].should == ""
+      reply[2].should == "hi\n"
     end
 
     it "should propagate exit status" do
@@ -182,6 +182,21 @@ shared_examples "a warden server" do |container_klass|
       }.should raise_error(/unknown handle/)
     end
 
+    it "should not crash when container was already destroyed" do
+      # Disconnect the client
+      client.destroy(@handle)
+      client.disconnect
+
+      # Let the grace time pass
+      sleep 1.1
+
+      # Test that the container can no longer be referenced
+      lambda {
+        client.reconnect
+        result = client.run(@handle, "echo")
+      }.should raise_error(/unknown handle/)
+    end
+
     it "doesn't destroy containers when referenced by another client" do
       # Disconnect the client
       client.disconnect
@@ -283,4 +298,125 @@ shared_examples "a warden server" do |container_klass|
     end
   end
 
+  describe "file transfer" do
+
+    before(:each) do
+      @handle = client.create
+      @tmpdir = Dir.mktmpdir
+
+      @outdir = File.join(@tmpdir, 'out')
+      Dir.mkdir(@outdir)
+
+      @sentinel_dir = File.join(@tmpdir, 'sentinel_root')
+      Dir.mkdir(@sentinel_dir)
+
+      @sentinel_path = File.join(@sentinel_dir, 'sentinel')
+      @sentinel_contents = 'testing123'
+      File.open(@sentinel_path, 'w+') {|f| f.write(@sentinel_contents) }
+
+      @sentinel_sym_link_path = File.join(@sentinel_dir, 'sentinel_sym_link')
+      system("ln -s #{@sentinel_path} #{@sentinel_sym_link_path}").should be_true
+
+      @sentinel_hard_link_path = File.join(@sentinel_dir, 'sentinel_hard_link')
+      system("ln #{@sentinel_path} #{@sentinel_hard_link_path}").should be_true
+
+      @relative_sentinel_path = "sentinel_root/sentinel"
+    end
+
+    after(:each) do
+      FileUtils.rm_rf(@tmpdir)
+    end
+
+    it "should allow files to be copied in" do
+      client.copy(@handle, "in", @sentinel_dir, "/tmp").should == "ok"
+      c_path = path_in_container(@handle, File.join("/tmp", @relative_sentinel_path))
+      result = client.run(@handle, "cat #{c_path}")
+      result[0].should == 0
+      result[1].should == @sentinel_contents
+    end
+
+    it "should allow files to be copied out" do
+      create_file_in_container(@handle, "/tmp/sentinel_root/sentinel", @sentinel_contents)
+      client.copy(@handle, "out", "/tmp/sentinel_root", @outdir).should == "ok"
+      File.read(File.join(@outdir, @relative_sentinel_path)).should == @sentinel_contents
+    end
+
+    it "should preserve file permissions" do
+      # Copy in
+      File.chmod(0755, @sentinel_path)
+      client.copy(@handle, "in", @sentinel_dir, "/tmp").should == "ok"
+      c_path = path_in_container(@handle, File.join("/tmp", @relative_sentinel_path))
+      result = client.run(@handle, "stat -c %a #{c_path}")
+      result[0].should == 0
+      result[1].chomp.should == "755"
+
+      # Copy out
+      create_file_in_container(@handle, "/tmp/sentinel_root/sentinel", @sentinel_contents)
+      client.copy(@handle, "out", "/tmp/sentinel_root", @outdir).should == "ok"
+      stats = File.stat(File.join(@outdir, @relative_sentinel_path))
+      stats.mode.should == 33261
+   end
+
+    it "should preserve symlinks" do
+      # Set up identical dir in container to house the copy
+      c_sentinel_dir = path_in_container(@handle, @tmpdir)
+      result = client.run(@handle, "mkdir -p #{c_sentinel_dir}")
+      result[0].should == 0
+
+      # Copy/check in container
+      client.copy(@handle, "in", @sentinel_dir, @tmpdir).should == "ok"
+      c_link_path = path_in_container(@handle, @sentinel_sym_link_path)
+      result = client.run(@handle, "stat -c %F #{c_link_path}")
+      result[0].should == 0
+      result[1].chomp.should == "symbolic link"
+    end
+
+    it "should materialize hardlinks" do
+      # Set up identical dir in container to house the copy
+      c_sentinel_dir = path_in_container(@handle, @tmpdir)
+      result = client.run(@handle, "mkdir -p #{c_sentinel_dir}")
+      result[0].should == 0
+
+      client.copy(@handle, "in", @sentinel_dir, @tmpdir).should == "ok"
+
+      # No hardlinks in container
+      c_sentinel_dir = path_in_container(@handle, @sentinel_dir)
+      result = client.run(@handle, "find #{c_sentinel_dir} -xdev -samefile sentinel")
+      result[0].should == 1
+
+      # File should be materialized
+      c_hardlink_path = path_in_container(@handle, @sentinel_hard_link_path)
+      result = client.run(@handle, "cat #{c_hardlink_path}")
+      result[0].should == 0
+      result[1].chomp.should == @sentinel_contents
+    end
+  end
+
+  def path_in_container(handle, path)
+    if container_klass == Warden::Container::Insecure
+      File.join(container_root, 'insecure', 'instances',
+                handle, "root", path.slice(1, path.length - 1))
+    else
+      path
+    end
+  end
+
+  def create_file_in_container(handle, path, contents, mode=nil)
+    # Create the directory that will house the file
+    base_dir = File.dirname(path)
+    c_base_dir = path_in_container(handle, base_dir)
+    result = client.run(handle, "mkdir -p #{c_base_dir}")
+    result[0].should == 0
+
+    # Create the file
+    c_path = path_in_container(handle, path)
+    result = client.run(handle, "echo -n #{contents} > #{c_path}")
+    result[0].should == 0
+
+    # Set permissions
+    if mode
+      result = client.run(handle, "chmod #{mode} #{c_path}")
+      result[0].should == 0
+    end
+  end
 end

@@ -659,6 +659,157 @@ describe ServicesController do
       end
     end
 
+    describe "#lifecycle_extension" do
+      it 'should return not implemented error when lifecycle is disabled' do
+        begin
+          origin = AppConfig.delete :service_lifecycle
+          %w(create_snapshot enum_snapshots serialized_url import_from_url import_from_data).each do |api|
+            post api.to_sym, :id => 'xxx'
+            response.status.should == 501
+            resp = Yajl::Parser.parse(response.body)
+            resp['description'].include?("not implemented").should == true
+          end
+
+          %w(snapshot_details rollback_snapshot).each do |api|
+            post api.to_sym, :id => 'xxx', :sid => '1'
+            response.status.should == 501
+            resp = Yajl::Parser.parse(response.body)
+            resp['description'].include?("not implemented").should == true
+          end
+
+          get :job_info, :id => 'xxx', :job_id => '1'
+          response.status.should == 501
+          resp = Yajl::Parser.parse(response.body)
+          resp['description'].include?("not implemented").should == true
+        ensure
+          AppConfig[:service_lifecycle] = origin
+        end
+      end
+    end
+
+    describe "#create_snapshot" do
+
+      it 'should return not authorized for unknown users' do
+        request.env['HTTP_AUTHORIZATION'] = UserToken.create('bar@foo.com').encode
+        post :create_snapshot, :id => 'xxx'
+        response.status.should == 403
+      end
+
+      it 'should return not found for unknown ids' do
+        post :create_snapshot, :id => 'xxx'
+        response.status.should == 404
+      end
+    end
+
+    describe "#enum_snapshots" do
+
+      it 'should return not authorized for unknown users' do
+        request.env['HTTP_AUTHORIZATION'] = UserToken.create('bar@foo.com').encode
+        get :enum_snapshots, :id => 'xxx'
+        response.status.should == 403
+      end
+
+      it 'should return not found for unknown ids' do
+        get :enum_snapshots, :id => 'xxx'
+        response.status.should == 404
+      end
+    end
+
+    describe "#snapshot_details" do
+
+      it 'should return not authorized for unknown users' do
+        request.env['HTTP_AUTHORIZATION'] = UserToken.create('bar@foo.com').encode
+        get :snapshot_details, :id => 'xxx' , :sid => 'yyy'
+        response.status.should == 403
+      end
+
+      it 'should return not found for unknown ids' do
+        get :snapshot_details, :id => 'xxx', :sid => 'yyy'
+        response.status.should == 404
+      end
+    end
+
+    describe "#rollback_snapshot" do
+
+      it 'should return not authorized for unknown users' do
+        request.env['HTTP_AUTHORIZATION'] = UserToken.create('bar@foo.com').encode
+        put :rollback_snapshot, :id => 'xxx', :sid => 'yyy'
+        response.status.should == 403
+      end
+
+      it 'should return not found for unknown ids' do
+        put :snapshot_details, :id => 'xxx' , :sid => 'yyy'
+        response.status.should == 404
+      end
+    end
+
+    describe "#serialized_url" do
+
+      it 'should return not authorized for unknown users' do
+        request.env['HTTP_AUTHORIZATION'] = UserToken.create('bar@foo.com').encode
+        get :serialized_url, :id => 'xxx'
+        response.status.should == 403
+      end
+
+      it 'should return not found for unknown ids' do
+        get :serialized_url, :id => 'xxx'
+        response.status.should == 404
+      end
+    end
+
+    describe "#import_from_url" do
+
+      it 'should return not authorized for unknown users' do
+        request.env['HTTP_AUTHORIZATION'] = UserToken.create('bar@foo.com').encode
+        put :import_from_url, :id => 'xxx'
+        response.status.should == 403
+      end
+
+      it 'should return not found for unknown ids' do
+        put_msg :import_from_url, :id => 'xxx' do
+          VCAP::Services::Api::SerializedURL.new(:url  => 'http://api.vcap.me')
+        end
+        response.status.should == 404
+      end
+
+      it 'should return bad request for malformed request' do
+        put_msg :import_from_url, :id => 'xxx' do
+          # supply wrong request
+          VCAP::Services::Api::SerializedData.new(:data => "raw_data")
+        end
+        response.status.should == 400
+      end
+    end
+
+    describe "#import_from_data" do
+
+      it 'should return not authorized for unknown users' do
+        request.env['HTTP_AUTHORIZATION'] = UserToken.create('bar@foo.com').encode
+        put :import_from_data, :id => 'xxx'
+        response.status.should == 403
+      end
+
+      it 'should return not found for unknown ids' do
+        put_msg :import_from_data, :id => 'xxx' do
+          VCAP::Services::Api::SerializedData.new(:data  => 'raw_data')
+        end
+        response.status.should == 404
+      end
+    end
+
+    describe "#job_info" do
+
+      it 'should return not authorized for unknown users' do
+        request.env['HTTP_AUTHORIZATION'] = UserToken.create('bar@foo.com').encode
+        get :job_info, :id => 'xxx', :job_id => 'yyy'
+        response.status.should == 403
+      end
+
+      it 'should return not found for unknown ids' do
+        get :job_info, :id => 'xxx' , :job_id => 'yyy'
+        response.status.should == 404
+      end
+    end
   end
 
   def start_gateway(svc, shim)
@@ -698,6 +849,12 @@ describe ServicesController do
     msg = yield
     request.env['RAW_POST_DATA'] = msg.encode
     post(*args)
+  end
+
+  def put_msg(*args, &blk)
+    msg = yield
+    request.env['RAW_POST_DATA'] = msg.encode
+    put(*args)
   end
 
   def delete_msg(*args, &blk)

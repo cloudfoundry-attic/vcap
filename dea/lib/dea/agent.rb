@@ -73,6 +73,10 @@ module DEA
     # How long to wait in between logging the structure of the apps directory in the event that a du takes excessively long
     APPS_DUMP_INTERVAL = 30*60
 
+
+    DROPLET_FS_PERCENT_USED_THRESHOLD = 95
+    DROPLET_FS_PERCENT_USED_UPDATE_INTERVAL = 2
+
     def initialize(config)
       VCAP::Logging.setup_from_config(config['logging'])
       @logger = VCAP::Logging.logger('dea')
@@ -117,6 +121,13 @@ module DEA
       @db_dir         = File.join(@droplet_dir, 'db')
       @app_state_file = File.join(@db_dir, APP_STATE_FILE)
 
+      # The DEA will no longer respond to discover/start requests once this usage
+      # threshold (in percent) has been exceeded on the filesystem housing the
+      # base_dir.
+      @droplet_fs_percent_used_threshold =
+        config['droplet_fs_percent_used_threshold'] || DROPLET_FS_PERCENT_USED_THRESHOLD
+      @dropet_fs_percent_used = 0
+
       #prevent use of shared directory for droplets even if available.
       @force_http_sharing = config['force_http_sharing']
 
@@ -130,7 +141,8 @@ module DEA
       end
 
       @nats_uri = config['mbus']
-      @heartbeat_interval = config['intervals']['heartbeat']
+      @heartbeat_interval = config['intervals']['heartbeat'] || 10
+      @advertise_interval = config['intervals']['advertise'] || 5
 
       # XXX(mjp) - Ugh, this is needed for VCAP::Component.register(). Find a better solution when time permits.
       @config = config.dup()
@@ -205,6 +217,7 @@ module DEA
       ['TERM', 'INT', 'QUIT'].each { |s| trap(s) { shutdown() } }
       trap('USR2') { evacuate_apps_then_quit() }
 
+
       NATS.on_error do |e|
         @logger.error("EXITING! NATS error: #{e}")
         @logger.error(e)
@@ -219,8 +232,11 @@ module DEA
         @logger.error(e)
       end
 
-      NATS.start(:uri => @nats_uri) do
+      # Calculate how much disk is available before we respond to any messages
+      update_droplet_fs_usage(:blocking => true)
+      @logger.info("Initial usage of droplet fs is: #{@droplet_fs_percent_used}%")
 
+      NATS.start(:uri => @nats_uri) do
         # Register ourselves with the system
         status_config = @config['status'] || {}
         VCAP::Component.register(:type => 'DEA',
@@ -247,23 +263,27 @@ module DEA
         NATS.subscribe("dea.#{uuid}.start") { |msg| process_dea_start(msg) }
         NATS.subscribe('router.start') {  |msg| process_router_start(msg) }
         NATS.subscribe('healthmanager.start') { |msg| process_healthmanager_start(msg) }
+        NATS.subscribe('dea.locate') { |msg|  process_dea_locate(msg) }
 
         # Recover existing application state.
         recover_existing_droplets
         delete_untracked_instance_dirs
 
         EM.add_periodic_timer(@heartbeat_interval) { send_heartbeat }
+        EM.add_periodic_timer(@advertise_interval) { send_advertise }
         EM.add_timer(MONITOR_INTERVAL) { monitor_apps }
         EM.add_periodic_timer(CRASHES_REAPER_INTERVAL) { crashes_reaper }
         EM.add_periodic_timer(VARZ_UPDATE_INTERVAL) { snapshot_varz }
+        EM.add_periodic_timer(DROPLET_FS_PERCENT_USED_UPDATE_INTERVAL) { update_droplet_fs_usage }
 
         NATS.publish('dea.start', @hello_message_json)
+        send_advertise
       end
     end
 
     def send_heartbeat
       return if @droplets.empty? || @shutting_down
-      heartbeat = {:droplets => []}
+      heartbeat = {:droplets => [], :dea => VCAP::Component.uuid }
       @droplets.each_value do |instances|
         instances.each_value do |instance|
           heartbeat[:droplets] << generate_heartbeat(instance)
@@ -272,8 +292,27 @@ module DEA
       NATS.publish('dea.heartbeat', heartbeat.to_json)
     end
 
+    def process_dea_locate(msg)
+      send_advertise
+    end
+
+    def space_available?
+      @num_clients < @max_clients && @reserved_mem < @max_memory && !droplet_fs_usage_threshold_exceeded?
+    end
+
+    def send_advertise
+      return if !space_available? || @shutting_down
+
+      advertise_message = { :id => VCAP::Component.uuid,
+                             :available_memory => @max_memory - @reserved_mem,
+                             :runtimes => @runtimes.keys}
+
+      NATS.publish('dea.advertise', advertise_message.to_json)
+    end
+
+
     def send_single_heartbeat(instance)
-      heartbeat = {:droplets => [generate_heartbeat(instance)]}
+      heartbeat = {:droplets => [generate_heartbeat(instance)], :dea => VCAP::Component.uuid }
       NATS.publish('dea.heartbeat', heartbeat.to_json)
     end
 
@@ -343,6 +382,8 @@ module DEA
         @logger.debug('Ignoring request, shutting down.')
       elsif @num_clients >= @max_clients || @reserved_mem > @max_memory
         @logger.debug('Ignoring request, not enough resources.')
+      elsif droplet_fs_usage_threshold_exceeded?
+        @logger.warn("Droplet FS has exceeded usage threshold, ignoring request")
       else
         # Check that we properly support the runtime requested
         unless runtime_supported? message_json['runtime']
@@ -408,7 +449,9 @@ module DEA
               :credentials => @file_auth,
               :staged => instance[:staged],
               :debug_ip => instance[:debug_ip],
-              :debug_port => instance[:debug_port]
+              :debug_port => instance[:debug_port],
+              :console_ip => instance[:console_ip],
+              :console_port => instance[:console_port]
             }
             if include_stats && instance[:state] == :RUNNING
               response[:stats] = {
@@ -504,6 +547,7 @@ module DEA
       runtime = message_json['runtime']
       framework = message_json['framework']
       debug = message_json['debug']
+      console = message_json['console']
 
       # Limits processing
       mem     = DEFAULT_APP_MEM
@@ -523,6 +567,9 @@ module DEA
         return
       elsif @reserved_mem + mem > @max_memory || @num_clients >= @max_clients
         @logger.info('Do not have room for this client application')
+        return
+      elsif droplet_fs_usage_threshold_exceeded?
+        @logger.warn("Droplet FS usage has exceeded the threshold")
         return
       end
 
@@ -594,8 +641,21 @@ module DEA
           end
         end
 
+        if console
+          console_port = grab_port
+          if console_port
+            instance[:console_ip] = VCAP.local_ip
+            instance[:console_port] = console_port
+          else
+            @logger.warn("Unable to allocate console port for instance#{instance[:log_id]}")
+            stop_droplet(instance)
+            return
+          end
+        end
+
         @logger.info("Starting up instance #{instance[:log_id]} on port:#{instance[:port]} " +
-                     "#{"debuger:" if instance[:debug_port]}#{instance[:debug_port]}")
+                     "#{"debuger:" if instance[:debug_port]}#{instance[:debug_port]}" +
+                     "#{"console:" if instance[:console_port]}#{instance[:console_port]}")
         @logger.debug("Clients: #{@num_clients}")
         @logger.debug("Reserved Memory Usage: #{@reserved_mem} MB of #{@max_memory} MB TOTAL")
 
@@ -644,6 +704,7 @@ module DEA
         exec_operation = proc do |process|
           process.send_data("cd #{instance_dir}\n")
           if @secure || @enforce_ulimit
+            process.send_data("renice 0 $$\n")
             process.send_data("ulimit -m #{mem_kbytes} 2> /dev/null\n")  # ulimit -m takes kb, soft enforce
             process.send_data("ulimit -v 3000000 2> /dev/null\n") # virtual memory at 3G, this will be enforced
             process.send_data("ulimit -n #{num_fds} 2> /dev/null\n")
@@ -840,6 +901,7 @@ module DEA
       instance[:resources_tracked] = true
       @reserved_mem += instance_mem_usage_in_mb(instance)
       @num_clients += 1
+      send_advertise
     end
 
     def remove_instance_resources(instance)
@@ -847,6 +909,7 @@ module DEA
       instance[:resources_tracked] = false
       @reserved_mem -= instance_mem_usage_in_mb(instance)
       @num_clients -= 1
+      send_advertise
     end
 
     def instance_mem_usage_in_mb(instance)
@@ -1088,6 +1151,8 @@ module DEA
       env << "VCAP_APP_PORT='#{instance[:port]}'"
       env << "VCAP_DEBUG_IP='#{instance[:debug_ip]}'"
       env << "VCAP_DEBUG_PORT='#{instance[:debug_port]}'"
+      env << "VCAP_CONSOLE_IP='#{instance[:console_ip]}'"
+      env << "VCAP_CONSOLE_PORT='#{instance[:console_port]}'"
 
       if vars = debug_env(instance)
         @logger.info("Debugger environment variables: #{vars.inspect}")
@@ -1187,12 +1252,17 @@ module DEA
       if instance[:pid] || [:STARTING, :RUNNING].include?(instance[:state])
         instance[:state] = :STOPPED unless instance[:state] == :CRASHED
         instance[:state_timestamp] = Time.now.to_i
-        stop_cmd = File.join(instance[:dir], 'stop')
-        stop_cmd = "su -c #{stop_cmd} #{username}" if @secure
-        stop_cmd = "#{stop_cmd} #{instance[:pid]} 2> /dev/null"
+        stop_script = File.join(instance[:dir], 'stop')
+        insecure_stop_cmd = "#{stop_script} #{instance[:pid]} 2> /dev/null"
+        stop_cmd =
+          if @secure
+            "su -c \"#{insecure_stop_cmd}\" #{username}"
+          else
+            insecure_stop_cmd
+          end
 
         unless (RUBY_PLATFORM =~ /darwin/ and @secure)
-          @logger.debug("Executing stop script: '#{stop_cmd}'")
+          @logger.debug("Executing stop script: '#{stop_cmd}', instance state is #{instance[:state]}")
           # We can't make 'stop_cmd' into EM.system because of a race with
           # 'cleanup_droplet'
           @logger.debug("Stopping instance PID:#{instance[:pid]}")
@@ -1618,7 +1688,7 @@ module DEA
         expanded_exec.strip!
 
         # java prints to stderr, so munch them both..
-        version_check = `#{expanded_exec} #{version_flag} 2>&1`.strip!
+        version_check = `env -i HOME=$HOME #{expanded_exec} #{version_flag} 2>&1`.strip!
         unless $? == 0
           @logger.info("  #{pname} FAILED, executable '#{runtime['executable']}' not found")
           next
@@ -1630,7 +1700,7 @@ module DEA
         if /#{runtime['version']}/ =~ version_check
           # Additional checks should return true
           if runtime['additional_checks']
-            additional_check = `#{runtime['executable']} #{runtime['additional_checks']} 2>&1`
+            additional_check = `env -i HOME=$HOME #{runtime['executable']} #{runtime['additional_checks']} 2>&1`
             unless additional_check =~ /true/i
               @logger.info("  #{pname} FAILED, additional checks failed")
             end
@@ -1664,7 +1734,6 @@ module DEA
       FileUtils.rm_f(test_file)
     end
 
-
     def run_command(cmd)
       outdir = Dir.mktmpdir
       stderr_path = File.join(outdir, 'stderr.log')
@@ -1672,6 +1741,41 @@ module DEA
       stderr = File.read(stderr_path)
       FileUtils.rm_rf(outdir)
       [$?, stdout, stderr]
+    end
+
+    def droplet_fs_usage_threshold_exceeded?
+      @droplet_fs_percent_used > @droplet_fs_percent_used_threshold
+    end
+
+    def update_droplet_fs_usage(opts={})
+      df_cmd = "df #{@droplet_dir}"
+
+      cont = proc do |output, status|
+        raise "Failed executing #{df_cmd}" unless status.success?
+
+        percent_used = parse_df_percent_used(output)
+        raise "Failed parsing df output: #{output}" unless percent_used
+
+        @droplet_fs_percent_used = percent_used
+      end
+
+      if opts[:blocking]
+        output = `#{df_cmd}`
+        cont.call(output, $?)
+      else
+        EM.system(df_cmd, cont)
+      end
+    end
+
+    def parse_df_percent_used(output)
+      fields = output.strip.split(/\s+/)
+      return nil unless fields.count == 13
+
+      if fields[11] =~ /^(\d+)%$/
+        Integer($1)
+      else
+        nil
+      end
     end
 
   end

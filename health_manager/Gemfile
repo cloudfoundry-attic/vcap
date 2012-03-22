@@ -11,8 +11,9 @@ gem 'thin'
 gem 'yajl-ruby', :require => ['yajl', 'yajl/json_gem']
 gem 'logging', '>= 1.5.0'
 
-gem 'vcap_common', '~> 1.0.3'
+gem 'vcap_common', '>= 1.0.6'
 gem 'vcap_logging', :require => ['vcap/logging']
+gem 'cf-uaa-client', '>= 0.0.5'
 
 group :test do
   gem "rspec"

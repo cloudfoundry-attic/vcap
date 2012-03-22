@@ -73,6 +73,15 @@ database_environment: # replaces database.yml
     adapter: <%= node[:ccdb][:adapter] %>
     timeout: 2000
     template: template0 # Required for utf8 encoding
+
+# Enable the use of the uaa
+uaa:
+  enabled: true
+  url: http://uaa.<%= node[:deployment][:domain] %>
+  resource_id: cloud_controller
+  token_secret: <%= node[:uaa][:jwt_secret] %>
+  client_secret: <%= node[:uaa][:cloud_controller][:password] %>
+
 # App staging parameters
 staging:
   max_concurrent_stagers: 10
@@ -113,6 +122,14 @@ runtimes:
     version: 1.9.2
   node:
     version: 0.4.12
+    debug_modes:
+      - run
+      - suspend
+  node06:
+    version: 0.6.8
+    debug_modes:
+      - run
+      - suspend
   java:
     version: 1.6.0
     debug_modes:
@@ -122,5 +139,5 @@ runtimes:
     version: 5.3.[2-6]
   erlangR14B02:
     version: ".* 5.8.3"
-  python26:
-    version: 2.6.5
+  python2:
+    version: 2.[67]

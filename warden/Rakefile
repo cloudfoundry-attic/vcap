@@ -1,6 +1,7 @@
-require "bundler/gem_tasks"
 require "rspec/core/rake_task"
 require "rspec/core/version"
+require "vcap/common"
+require "yaml"
 
 desc "Run all examples"
 RSpec::Core::RakeTask.new(:spec) do |t|
@@ -8,21 +9,35 @@ RSpec::Core::RakeTask.new(:spec) do |t|
 end
 
 desc "Run (or re-run) steps to setup warden"
-task :setup do
+task :setup, :base_dir do |t, args|
+  default_base_dir = File.join(File.dirname(__FILE__), "root/linux/base")
+  args.with_defaults(:base_dir => default_base_dir)
+
   Dir.chdir("src") do
     sh "make clean all"
   end
-  Dir.chdir("root/lxc") do
-    sh "rm -rf 0??-*/{rootfs,union}"
-    sh "ruby setup.rb"
-  end
+
+  sh "sudo -E root/linux/base/setup.sh #{args[:base_dir]}"
 end
 
 namespace :warden do
   desc "Run Warden server"
-  task :start do
+  task :start, :config_path do |t, args|
     require "warden/server"
-    Warden::Server.setup(:logging => {:level => :debug2})
+
+    if args[:config_path]
+      config = VCAP.symbolize_keys(YAML.load_file(args[:config_path]))
+      if config[:server] && config[:server][:container_klass]
+        klass = config[:server][:container_klass]
+        config[:server][:container_klass] = klass.split("::").inject(Kernel) do |prev, cur|
+          prev.const_get(cur)
+        end
+      end
+    else
+      config = {:logging => {:level => :debug2}}
+    end
+
+    Warden::Server.setup(config)
     Warden::Server.run!
   end
 end

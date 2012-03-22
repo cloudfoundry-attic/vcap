@@ -11,10 +11,11 @@ gem 'logging', '>= 1.5.0'
 gem 'vcap_common', :require => ['vcap/common', 'vcap/component']
 gem 'vcap_logging', :require => ['vcap/logging']
 gem 'vcap_staging'
+gem 'cf-uaa-client', '>= 0.0.5'
 
 # For queuing staging tasks
 gem 'em-hiredis'
-gem 'vcap_stager', '~> 0.1.8'
+gem 'vcap_stager', '~> 0.1.11'
 
 # Databases
 gem 'sqlite3'

@@ -1,0 +1,50 @@
+---
+
+pid: /var/vcap/sys/run/uaa.pid
+# NATS message bus URI
+mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
+
+name: UAA
+
+database:
+  url: jdbc:postgresql://<%= node[:uaadb][:host] %>:<%= node[:uaadb][:port] %>/<%= node[:uaadb][:database] %>
+
+jvm_args: -Xmx512m
+spring_profiles: jdbc,postgresql,!legacy
+
+bootstrap:
+  admin:
+    username: marissa
+    password: $2a$10$ikFXo9IFG6zbMbhGcssySOhjDsGPpqzKwsdVOeCvJ7JoWjSQxyfs6
+    given_name: Marissa
+    family_name: Bloggs
+    email: marissa@test.org
+
+cloud_controller:
+  login_url: http://api.vcap.me/users/{username}/tokens
+  client:
+    secret: <%= node[:uaa][:cloud_controller][:secret] %>
+  database:
+    url: jdbc:postgresql://<%= node[:ccdb][:host] %>:<%= node[:ccdb][:port] %>/<%= node[:ccdb][:database] %>
+    username: <%= node[:ccdb][:user] %>
+    password: <%= node[:ccdb][:password] %>
+
+jwt:
+  token:
+    key: <%= node[:uaa][:jwt_secret] %>
+
+app:
+  client:
+    secret: <%= node[:uaa][:app][:secret] %>
+
+my:
+  client:
+    secret: <%= node[:uaa][:my][:secret] %>
+
+scim:
+  client:
+    secret: <%= node[:uaa][:scim][:secret] %>
+
+batch:
+  username: <%= node[:uaa][:batch][:username] %>
+  password: <%= node[:uaa][:batch][:secret] %>

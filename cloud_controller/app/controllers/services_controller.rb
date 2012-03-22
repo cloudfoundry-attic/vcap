@@ -8,7 +8,11 @@ class ServicesController < ApplicationController
 
   before_filter :validate_content_type
   before_filter :require_service_auth_token, :only => [:create, :delete, :update_handle, :list_handles, :list_brokered_services]
-  before_filter :require_user, :only => [:provision, :bind, :bind_external, :unbind, :unprovision]
+  before_filter :require_user, :only => [:provision, :bind, :bind_external, :unbind, :unprovision,
+                                         :create_snapshot, :enum_snapshots, :snapshot_details,:rollback_snapshot,
+                                         :serialized_url, :import_from_url, :import_from_data, :job_info]
+  before_filter :require_lifecycle_extension, :only => [:create_snapshot, :enum_snapshots, :snapshot_details,:rollback_snapshot,
+                                         :serialized_url, :import_from_url, :import_from_data, :job_info]
 
   rescue_from(JsonMessage::Error) {|e| render :status => 400, :json =>  {:errors => e.to_s}}
   rescue_from(ActiveRecord::RecordInvalid) {|e| render :status => 400, :json =>  {:errors => e.to_s}}
@@ -179,6 +183,110 @@ class ServicesController < ApplicationController
     render :json => {}
   end
 
+  # Create a snapshot for service instance
+  #
+  def create_snapshot
+    cfg = ServiceConfig.find_by_user_id_and_name(user.id, params['id'])
+    raise CloudError.new(CloudError::SERVICE_NOT_FOUND) unless cfg
+    raise CloudError.new(CloudError::FORBIDDEN) unless cfg.provisioned_by?(user)
+
+    result = cfg.create_snapshot
+
+    render :json => result
+  end
+
+  # Enumerate all snapshots of the given instance
+  #
+  def enum_snapshots
+    cfg = ServiceConfig.find_by_user_id_and_name(user.id, params['id'])
+    raise CloudError.new(CloudError::SERVICE_NOT_FOUND) unless cfg
+    raise CloudError.new(CloudError::FORBIDDEN) unless cfg.provisioned_by?(user)
+
+    result = cfg.enum_snapshots
+
+    render :json => result
+  end
+
+  # Get snapshot detail information
+  #
+  def snapshot_details
+    cfg = ServiceConfig.find_by_user_id_and_name(user.id, params['id'])
+    raise CloudError.new(CloudError::SERVICE_NOT_FOUND) unless cfg
+    raise CloudError.new(CloudError::FORBIDDEN) unless cfg.provisioned_by?(user)
+
+    result = cfg.snapshot_details params['sid']
+
+    render :json => result
+  end
+
+  # Rollback to a snapshot
+  #
+  def rollback_snapshot
+    cfg = ServiceConfig.find_by_user_id_and_name(user.id, params['id'])
+    raise CloudError.new(CloudError::SERVICE_NOT_FOUND) unless cfg
+    raise CloudError.new(CloudError::FORBIDDEN) unless cfg.provisioned_by?(user)
+
+    result = cfg.rollback_snapshot params['sid']
+
+    render :json => result
+  end
+
+  # Get the url to download serialized data for an instance
+  #
+  def serialized_url
+    cfg = ServiceConfig.find_by_user_id_and_name(user.id, params['id'])
+    raise CloudError.new(CloudError::SERVICE_NOT_FOUND) unless cfg
+    raise CloudError.new(CloudError::FORBIDDEN) unless cfg.provisioned_by?(user)
+
+    result = cfg.serialized_url
+
+    render :json => result
+  end
+
+  # import serialized data to an instance from url
+  #
+  def import_from_url
+    req = VCAP::Services::Api::SerializedURL.decode(request_body)
+
+    cfg = ServiceConfig.find_by_user_id_and_name(user.id, params['id'])
+    raise CloudError.new(CloudError::SERVICE_NOT_FOUND) unless cfg
+    raise CloudError.new(CloudError::FORBIDDEN) unless cfg.provisioned_by?(user)
+
+    result = cfg.import_from_url req
+
+    render :json => result
+  end
+
+  # import serialized data to an instance from request data
+  #
+  def import_from_data
+    max_upload_size = AppConfig[:service_lifecycle][:max_upload_size] || 1
+    max_upload_size = max_upload_size * 1024 * 1024
+    raise CloudError.new(CloudError::BAD_REQUEST) unless request.content_length < max_upload_size
+
+    req = VCAP::Services::Api::SerializedData.decode(request_body)
+
+    cfg = ServiceConfig.find_by_user_id_and_name(user.id, params['id'])
+    raise CloudError.new(CloudError::SERVICE_NOT_FOUND) unless cfg
+    raise CloudError.new(CloudError::FORBIDDEN) unless cfg.provisioned_by?(user)
+
+    result = cfg.import_from_data req
+
+    render :json => result
+  end
+
+  # Get job information
+  #
+  def job_info
+    cfg = ServiceConfig.find_by_user_id_and_name(user.id, params['id'])
+    raise CloudError.new(CloudError::SERVICE_NOT_FOUND) unless cfg
+    raise CloudError.new(CloudError::FORBIDDEN) unless cfg.provisioned_by?(user)
+
+    result = cfg.job_info params['job_id']
+
+    render :json => result
+  end
+
   # Binds a provisioned instance to an app
   #
   def bind
@@ -250,5 +358,9 @@ class ServicesController < ApplicationController
     hdr = VCAP::Services::Api::GATEWAY_TOKEN_HEADER.upcase.gsub(/-/, '_')
     @service_auth_token = request.headers[hdr]
     raise CloudError.new(CloudError::FORBIDDEN) unless @service_auth_token
+  end
+
+  def require_lifecycle_extension
+    raise CloudError.new(CloudError::EXTENSION_NOT_IMPL, "lifecycle") unless AppConfig.has_key?(:service_lifecycle)
   end
 end
