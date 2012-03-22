@@ -11,7 +11,7 @@ class ServicesController < ApplicationController
   before_filter :require_user, :only => [:provision, :bind, :bind_external, :unbind, :unprovision,
                                          :create_snapshot, :enum_snapshots, :snapshot_details,:rollback_snapshot,
                                          :serialized_url, :import_from_url, :import_from_data, :job_info]
-  before_filter :require_lifecycle_extension, :only => [:create_snapshot, :enum_snapshots, :snapshot_details,:rollback_snapshot,
+  before_filter :require_lifecycle_extension, :only => [:create_snapshot, :enum_snapshots, :snapshot_details,:rollback_snapshot, :delete_snapshot,
                                          :serialized_url, :import_from_url, :import_from_data, :job_info]
 
   rescue_from(JsonMessage::Error) {|e| render :status => 400, :json =>  {:errors => e.to_s}}
@@ -227,6 +227,18 @@ class ServicesController < ApplicationController
     raise CloudError.new(CloudError::FORBIDDEN) unless cfg.provisioned_by?(user)
 
     result = cfg.rollback_snapshot params['sid']
+
+    render :json => result
+  end
+
+  # Delete a snapshot
+  #
+  def delete_snapshot
+    cfg = ServiceConfig.find_by_user_id_and_name(user.id, params['id'])
+    raise CloudError.new(CloudError::SERVICE_NOT_FOUND) unless cfg
+    raise CloudError.new(CloudError::FORBIDDEN) unless cfg.provisioned_by?(user)
+
+    result = cfg.delete_snapshot params['sid']
 
     render :json => result
   end
