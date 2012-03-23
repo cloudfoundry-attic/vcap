@@ -159,7 +159,7 @@ class ServicesController < ApplicationController
     req = VCAP::Services::Api::CloudControllerProvisionRequest.decode(request_body)
 
     svc = Service.find_by_label(req.label)
-    raise CloudError.new(CloudError::SERVICE_NOT_FOUND) unless svc && svc.visible_to_user?(user)
+    raise CloudError.new(CloudError::SERVICE_NOT_FOUND) unless svc && svc.visible_to_user?(user, req.plan)
 
     cfg = ServiceConfig.provision(svc, user, req.name, req.plan, req.plan_option)
 

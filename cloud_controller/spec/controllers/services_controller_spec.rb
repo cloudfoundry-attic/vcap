@@ -100,8 +100,8 @@ describe ServicesController do
 
       it 'should update existing offerings' do
         acls = {
-          'users' => ['foo@bar.com'],
           'wildcards' => ['*@foo.com'],
+          'plans' => {'free' => {'users' => ['a@b.com']}}
         }
         svc = Service.create(
           :label => 'foo-bar',
@@ -129,8 +129,8 @@ describe ServicesController do
 
       it 'should support reverting existing offerings to nil' do
         acls = {
-          'users' => ['foo@bar.com'],
           'wildcards' => ['*@foo.com'],
+          'plans' => {'free' => {'users' => ['aaa@bbb.com']}}
         }
         svc = Service.create(
           :label => 'foo-bar',
@@ -384,6 +384,7 @@ describe ServicesController do
       svc.label = "foo-bar"
       svc.url   = "http://localhost:56789"
       svc.token = 'foobar'
+      svc.plans = ['free', 'nonfree']
       svc.save
       svc.should be_valid
       @svc = svc
