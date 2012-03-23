@@ -13,6 +13,12 @@ droplet_fs_percent_used_threshold: 95
 # value of nil, should work in most cases.
 local_route: 127.0.0.1
 
+# debug_route and console_route is also used to choose the right ip address
+# of the host running the DEA. Debuggers (such as STS plugin) connect the ip
+# address resolved by this route.
+debug_route: 127.0.0.1
+console_route: 127.0.0.1
+
 # Port for accessing the files of running applications
 filer_port: 12345
 

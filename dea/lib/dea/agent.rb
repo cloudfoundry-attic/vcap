@@ -100,6 +100,8 @@ module DEA
       @runtimes = config['runtimes']
 
       @local_ip     = VCAP.local_ip(config['local_route'])
+      @debug_ip     = VCAP.local_ip(config['debug_route'])
+      @console_ip   = VCAP.local_ip(config['console_route'])
       @max_memory   = config['max_memory'] # in MB
       @multi_tenant = config['multi_tenant']
       @max_clients  = @multi_tenant ? DEFAULT_MAX_CLIENTS : 1
@@ -631,7 +633,7 @@ module DEA
         if debug
           debug_port = grab_port
           if debug_port
-            instance[:debug_ip] = VCAP.local_ip
+            instance[:debug_ip] = @debug_ip
             instance[:debug_port] = debug_port
             instance[:debug_mode] = debug
           else
@@ -644,7 +646,7 @@ module DEA
         if console
           console_port = grab_port
           if console_port
-            instance[:console_ip] = VCAP.local_ip
+            instance[:console_ip] = @console_ip
             instance[:console_port] = console_port
           else
             @logger.warn("Unable to allocate console port for instance#{instance[:log_id]}")
