@@ -108,10 +108,10 @@ if [ $? != 0 ]; then
   echo "deb http://apt.opscode.com/ `lsb_release -cs`-0.10 main" | sudo tee /etc/apt/sources.list.d/opscode.list
   wget -qO - http://apt.opscode.com/packages@opscode.com.gpg.key | sudo apt-key add -
   echo chef chef/chef_server_url select none | sudo /usr/bin/debconf-set-selections
-  run_cmd apt-get $APT_CONFIG update
+  run_cmd apt-get $APT_CONFIG update -qq
   run_cmd apt-get $APT_CONFIG install -qym chef
 else
-  run_cmd apt-get $APT_CONFIG update
+  run_cmd apt-get $APT_CONFIG update -qq
 fi
 
 run_cmd apt-get $APT_CONFIG install -qym git-core

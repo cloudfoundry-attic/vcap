@@ -1,0 +1,3 @@
+#!/usr/bin/env ruby
+
+exec(File.expand_path("../../../services/mysql/bin/mysql_worker", __FILE__), *ARGV)

@@ -72,11 +72,22 @@ the outside world, and does so over a Unix socket, which is located at
 that either create new containers, modify container state, or run scripts
 inside of a container. The verbs that `warden` responds to are:
 
-* `create`: This creates a new container. In the future this verb may accept an
-  optional configuration parameter. This command returns handle (or name) of
-  the container which is used to identify it. The handle is equal to the
-  hexadecimal representation of its IP address, as acquired from the pool of
-  unused network addresses in the configured subnet.
+* `create [config]`: This creates a new container. The optional `config`
+   parameter is a hash that specifies configuration options used during
+   container creation. The supported configuration options are:
+
+   * `bind_mounts`: If supplied, this specifies a set of paths to be bind mounted
+   inside the container. The value must be a hash of the form:
+   ```
+   "/host/path" => {                  # Path in the host filesystem
+     "path" => "/path/in/container",  # Path in the container
+     "mode" => "ro|rw",               # Optional. Remount the path as ro or rw.
+   ```
+
+   This command returns handle (or name) of the container which is used to
+   identify it. The handle is equal to the hexadecimal representation of its IP
+   address, as acquired from the pool of unused network addresses in the
+   configured subnet.
 
 * `spawn <handle> <script>`: Run the Bash script `<script>` in the context of the
   container identified by `<handle>`. This command returns a job
@@ -114,6 +125,20 @@ inside of a container. The verbs that `warden` responds to are:
   identified by `<handle>` to the network address specified by `<address>`. The
   address may optionally contain a mask to allow a network of addresses, and a
   port to only allow traffic to that specific port.
+
+* `copy <handle> in <src_path> <dst_path>`: Copy the contents at `<src_path>`
+   on the host to `<dst_path>` in the container. File permissions and symbolic
+   links will be preserved, while hardlinks will be materialized. If
+   `<src_path>` contains a trailing `/` only the contents of the directory will
+   be copied. Otherwise, the outermost directory, along with its contents, will
+   be copied. The `vcap` user will own the files in the container.
+
+* `copy <handle> out <src_path> <dst_path> [<owner>]`: Copy the contents at
+   `<src_path>` in the container to `<dst_path>` on the host. Its semantics are
+   identical to `copy <handle> in` except in respect to file ownership. By
+   default, the files on the host will be owned by root. If the `<owner>`
+   argument is supplied (in the form of `<user>:<group>`), files on the host
+   will be chowned to this user/group after the copy has completed.
 
 * `stop <handle>`: Stop processes running inside the container identified by
   the specified handle. Because all processes are taken down, unfinished

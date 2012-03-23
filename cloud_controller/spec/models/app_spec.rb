@@ -56,11 +56,46 @@ describe App do
     end
   end
 
+  describe '#update_staged_package' do
+    let(:app) { App.new }
+
+    before :each do
+      @tmpdir = Dir.mktmpdir
+      AppPackage.stubs(:package_dir).returns(@tmpdir)
+    end
+
+    after :each do
+      FileUtils.rm_rf(@tmpdir)
+    end
+
+    it 'should remove the old package' do
+      old_package = create_test_package(@tmpdir)
+      app.staged_package_hash = old_package[:name]
+
+      new_package = create_test_package(@tmpdir)
+      app.update_staged_package(new_package[:path])
+
+      File.exist?(old_package[:path]).should be_false
+    end
+  end
+
   def create_user(email, pw)
     u = User.new(:email => email)
     u.set_and_encrypt_password(pw)
     u.save
     u.should be_valid
     u
+  end
+
+  def create_test_package(base_dir)
+    name = "test_package#{Time.now.to_f}#{Process.pid}"
+    ret = {
+      :name     => name,
+      :path     => File.join(base_dir, name),
+      :contents => name,
+    }
+    File.open(ret[:path], 'w+') {|f| f.write(ret[:contents]) }
+
+    ret
   end
 end

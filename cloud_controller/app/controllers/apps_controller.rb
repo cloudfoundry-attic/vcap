@@ -43,6 +43,7 @@ class AppsController < ApplicationController
   end
 
   def delete
+    CloudController.logger.info("Deleting app, name=#{@app.name} id=#{@app.id}")
     @app.purge_all_resources!
     @app.destroy
     render :nothing => true, :status => 200
@@ -298,6 +299,7 @@ class AppsController < ApplicationController
     end
 
     app.metadata[:debug] = body_params[:debug] if body_params
+    app.metadata[:console] = body_params[:console] if body_params
 
     # 'app.save' can actually raise an exception, if whatever is
     # invalid happens all the way down at the DB layer.

@@ -12,16 +12,32 @@ module VCAP
   RACK_TEXT_HDR = { 'Content-Type' => 'text/plaintext' }
 
   class Varz
+    def initialize(logger)
+      @logger = logger
+    end
+
     def call(env)
+      @logger.debug "varz access"
       varz = Yajl::Encoder.encode(Component.updated_varz, :pretty => true, :terminator => "\n")
-      [200, { 'Content-Type' => 'application/json' }, varz]
+      [200, { 'Content-Type' => 'application/json', 'Content-Length' => varz.length.to_s }, varz]
+    rescue => e
+      @logger.error "varz error #{e.inspect} #{e.backtrace.join("\n")}"
+      raise e
     end
   end
 
   class Healthz
+    def initialize(logger)
+      @logger = logger
+    end
+
     def call(env)
+      @logger.debug "healthz access"
       healthz = Component.updated_healthz
-      [200, { 'Content-Type' => 'application/json' }, healthz]
+      [200, { 'Content-Type' => 'application/json', 'Content-Length' => healthz.length.to_s }, healthz]
+    rescue => e
+      @logger.error "healthz error #{e.inspect} #{e.backtrace.join("\n")}"
+      raise e
     end
   end
 
@@ -62,17 +78,17 @@ module VCAP
         healthz
       end
 
-      def start_http_server(host, port, auth)
+      def start_http_server(host, port, auth, logger)
         http_server = Thin::Server.new(host, port, :signals => false) do
           Thin::Logging.silent = true
           use Rack::Auth::Basic do |username, password|
             [username, password] == auth
           end
           map '/healthz' do
-            run Healthz.new
+            run Healthz.new(logger)
           end
           map '/varz' do
-            run Varz.new
+            run Varz.new(logger)
           end
         end
         http_server.start!
@@ -91,6 +107,7 @@ module VCAP
         port = opts[:port] || VCAP.grab_ephemeral_port
         nats = opts[:nats] || NATS
         auth = [opts[:user] || VCAP.secure_uuid, opts[:password] || VCAP.secure_uuid]
+        logger = opts[:logger] || Logger.new(nil)
 
         # Discover message limited
         @discover = {
@@ -113,7 +130,7 @@ module VCAP
         raise "EventMachine reactor needs to be running" if !EventMachine.reactor_running?
 
         # Startup the http endpoint for /varz and /healthz
-        start_http_server(host, port, auth)
+        start_http_server(host, port, auth, logger)
 
         # Listen for discovery requests
         nats.subscribe('vcap.component.discover') do |msg, reply|

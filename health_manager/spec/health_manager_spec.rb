@@ -5,25 +5,34 @@ require 'spec_helper'
 
 describe HealthManager do
 
-  def build_user_and_app
+  def build_user
     @user = ::User.find_by_email('test@example.com')
     unless @user
       @user = ::User.new(:email => "test@example.com")
       @user.set_and_encrypt_password('HASHEDPASSWORD')
       @user.save!
     end
+    @user
+  end
 
-    @app = @user.apps.find_by_name('testapp')
-    unless @app
-      @app = ::App.new(:name => "testapp", :owner => @user, :runtime => "ruby19", :framework => "sinatra")
-      @app.package_hash = "f49cf6381e322b147053b74e4500af8533ac1e4c"
-      @app.staged_package_hash = "4db6cf8d1d9949790c7e836f29f12dc37c15b3a9"
-      @app.state = "STARTED"
-      @app.package_state = "STAGED"
-      @app.instances = 3
-      @app.save!
-      @app.set_urls(['http://testapp.vcap.me'])
+  def make_db_app_entry(appname)
+    app = @user.apps.find_by_name(appname)
+    unless app
+      app = ::App.new(:name => appname, :owner => @user, :runtime => "ruby19", :framework => "sinatra")
+      app.package_hash = random_hash
+      app.staged_package_hash = random_hash
+      app.state = "STARTED"
+      app.package_state = "STAGED"
+      app.instances = 3
+      app.save!
     end
+    app
+  end
+
+  def build_app(appname = 'testapp')
+    @app = make_db_app_entry(appname)
+    @app.set_urls(["http://#{appname}.vcap.me"])
+
     @droplet_entry = {
         :last_updated => @app.last_updated - 2, # take off 2 seconds so it looks 'quiescent'
         :state => 'STARTED',
@@ -35,22 +44,38 @@ describe HealthManager do
         :runtime => 'ruby19'
     }
     @hm.update_droplet(@app)
+    @app
+  end
+
+  def random_hash(len=40)
+    res = ""
+    len.times { res << rand(16).to_s(16) }
+    res
+  end
+
+  def build_user_and_app
+    build_user
+    build_app
   end
 
   def should_publish_to_nats(message, payload)
     NATS.should_receive(:publish).with(message, payload.to_json)
   end
 
+  after(:each) do
+    VCAP::Logging.reset
+  end
+
   after(:all) do
-    #::User.destroy_all
-    #::App.destroy_all
+    ::User.destroy_all
+    ::App.destroy_all
   end
 
   before(:each) do
     @hm = HealthManager.new({
       'mbus' => 'nats://localhost:4222/',
       'logging' => {
-        'level' => 'warn',
+        'level' => ENV['LOG_LEVEL'] || 'warn',
       },
       'intervals' => {
         'database_scan' => 1,
@@ -62,7 +87,7 @@ describe HealthManager do
         'stable_state' => -1,
 
                               },
-      'dequeueing_rate' => 0,
+        'dequeueing_rate' => 50,
       'rails_environment' => 'test',
       'database_environment' => {
         'test' => {
@@ -72,9 +97,11 @@ describe HealthManager do
         }
       }
     })
-
     hash = Hash.new {|h,k| h[k] = 0}
     VCAP::Component.stub!(:varz).and_return(hash)
+    ::User.destroy_all
+    ::App.destroy_all
+
     build_user_and_app
   end
 
@@ -89,54 +116,12 @@ describe HealthManager do
     { 'droplets' => droplets }.to_json
   end
 
-  pending "should not do anything when everything is running" do
-    NATS.should_receive(:start).with(:uri => 'nats://localhost:4222/')
-
-    NATS.should_receive(:subscribe).with('dea.heartbeat').and_return { |_, block| @hb_block = block }
-    NATS.should_receive(:subscribe).with('droplet.exited')
-    NATS.should_receive(:subscribe).with('droplet.updated')
-    NATS.should_receive(:subscribe).with('healthmanager.status')
-    NATS.should_receive(:subscribe).with('healthmanager.health')
-    NATS.should_receive(:publish).with('healthmanager.start')
-
-    NATS.should_receive(:subscribe).with('vcap.component.discover')
-    NATS.should_receive(:publish).with('vcap.component.announce', /\{.*\}/)
-
-    EM.run do
-      @hm.stub!(:register_error_handler)
-      @hm.run
-
-      EM.add_periodic_timer(1) do
-        @hb_block.call({:droplets => [
-          {
-            :droplet => @app.id,
-            :version => @app.staged_package_hash,
-            :state => :RUNNING,
-            :instance => 'instance 1',
-            :index => 0
-          },
-          {
-            :droplet => @app.id,
-            :version => @app.staged_package_hash,
-            :state => :RUNNING,
-            :instance => 'instance 2',
-            :index => 1
-          },
-          {
-            :droplet => @app.id,
-            :version => @app.staged_package_hash,
-            :state => :RUNNING,
-            :instance => 'instance 3',
-            :index => 2
-          }
-        ]}.to_json)
-      end
-
-      EM.add_timer(4.5) do
-        EM.stop_event_loop
-      end
+  describe '#perform_quantum' do
+    it 'should be resilient to nil arguments' do
+      @hm.perform_quantum(nil, nil)
     end
   end
+
 
   it "should detect instances that are down and send a START request" do
     stats = { :frameworks => {}, :runtimes => {}, :down => 0 }
@@ -149,6 +134,7 @@ describe HealthManager do
         }
 
     @hm.analyze_app(@app.id, @droplet_entry, stats)
+    @hm.deque_a_batch_of_requests
 
     stats[:down].should == 3
     stats[:frameworks]['sinatra'][:missing_instances].should == 3
@@ -209,7 +195,8 @@ describe HealthManager do
                                                      'instance' => 0,
                                                      'reason' => 'CRASHED',
                                                      'crash_timestamp' => Time.now.to_i
-                                                 }.to_json)
+                                               }.to_json)
+    @hm.deque_a_batch_of_requests
 
     droplet_entry[:versions].should_not be_nil
     version_entry = droplet_entry[:versions][@droplet_entry[:live_version]]
@@ -217,5 +204,69 @@ describe HealthManager do
     index_entry = version_entry[:indices][0]
     index_entry.should_not be_nil
     index_entry[:state].should == 'DOWN'
+  end
+
+  it "should not re-start timer-triggered analysis loop if previous analysis loop is still in progress" do
+
+    n=20
+    apps = []
+
+    n.times { |i|
+      apps << make_db_app_entry("test#{i}")
+    }
+
+    VCAP::Component.varz[:running] = {}
+    @hm.update_from_db
+
+    EM.run do
+
+      @hm.analysis_in_progress?.should be_false
+
+      @hm.analyze_all_apps.should be_true
+
+      @hm.analysis_in_progress?.should be_true
+
+      @hm.analyze_all_apps.should be_false
+
+      EM.add_timer(2) {
+        EM.stop
+      }
+    end
+
+  end
+
+
+  it "should have FIFO behavior for DEA_EVACUATION-triggered restarts" do
+
+    apps = []
+
+    apps << @app
+    apps << build_app('test2')
+    apps << build_app('test3')
+
+    apps.each do |app|
+
+      should_publish_to_nats("cloudcontrollers.hm.requests", {
+                               'droplet' => app.id ,
+                               'op' => 'START',
+                               'last_updated' => app.last_updated.to_i,
+                               'version' => "#{app.staged_package_hash}-#{app.run_count}",
+                               'indices' => [0]
+
+                             }).ordered #CRUCIAL
+    end
+
+
+    apps.each do |app|
+      @hm.process_exited_message({
+                                   'droplet' => app.id,
+                                   'version' => "#{app.staged_package_hash}-#{app.run_count}",
+                                   'index' => 0,
+                                   'instance' => 0,
+                                   'reason' => 'DEA_EVACUATION',
+                                   'crash_timestamp' => Time.now.to_i
+                                 }.to_json)
+    end
+    @hm.deque_a_batch_of_requests
   end
 end

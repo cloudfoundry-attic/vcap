@@ -1,0 +1,4 @@
+#!/usr/bin/env ruby
+# Copyright (c) 2009-2011 VMware, Inc.
+
+exec(File.expand_path("../../uaa/bin/uaa", __FILE__), *ARGV)

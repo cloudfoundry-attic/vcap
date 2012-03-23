@@ -1,22 +1,8 @@
-OPTIMIZATION?=-O0
-DEBUG?=-g -ggdb -rdynamic
-BINS=report_quota runner clone
+default: all
 
-all: $(BINS)
+# Proxy any target to the Makefiles in the per-tool directories
+%:
+	cd clone && $(MAKE) $@
+	cd oom && $(MAKE) $@
 
-clean:
-		rm -f *.o $(BINS)
-
-.PHONY: all clean
-
-report_quota: report_quota.o
-		$(CC) -o $@ $^
-
-runner: runner.o
-		$(CC) -o $@ $^
-
-clone: clone.o
-		$(CC) -o $@ -lutil $^
-
-%.o: %.c
-		$(CC) -c -Wall -D_GNU_SOURCE $(OPTIMIZATION) $(DEBUG) $(CFLAGS) $<
+.PHONY: default
