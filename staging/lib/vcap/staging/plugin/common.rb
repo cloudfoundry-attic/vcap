@@ -201,6 +201,7 @@ class StagingPlugin
         return name if rt_info['default']
       end
     end
+    return nil
   end
 
   # Exits the process with a nonzero status if ARGV does not contain valid
