@@ -1,0 +1,4 @@
+#!/usr/bin/env ruby
+# Copyright (c) 2009-2012 VMware, Inc.
+
+exec(File.expand_path("../../../services/vblob/bin/vblob_node", __FILE__), *ARGV)

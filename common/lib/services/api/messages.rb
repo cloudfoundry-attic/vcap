@@ -26,14 +26,14 @@ module VCAP
         optional :plans,       [String]
         optional :plan_options
         optional :binding_options
-        optional :acls,        {'users' => [String], 'wildcards' => [String]}
+        optional :acls
         optional :active
         optional :timeout,     Integer
       end
 
       class BrokeredServiceOfferingRequest < JsonMessage
         required :label,        SERVICE_LABEL_REGEX
-        required :options,      [{"name" => String, "acls" => {"users" => [String], "wildcards" => [String] } , "credentials" => Hash}]
+        required :options,      [{"name" => String, "credentials" => Hash}]
         optional :description,  String
       end
 
