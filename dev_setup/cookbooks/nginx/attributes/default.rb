@@ -1,12 +1,12 @@
 include_attribute "deployment"
 
-default[:nginx][:version] = "0.8.54"
+default[:nginx][:version] = "1.1.17"
 default[:nginx][:source]  = "http://nginx.org/download/nginx-#{nginx[:version]}.tar.gz"
-default[:nginx][:pcre_source]  = "http://sourceforge.net/projects/pcre/files/pcre/8.12/pcre-8.12.tar.gz"
+default[:nginx][:pcre_source]  = "http://sourceforge.net/projects/pcre/files/pcre/8.21/pcre-8.21.tar.gz"
 default[:nginx][:module_upload_source]  = "http://www.grid.net.ru/nginx/download/nginx_upload_module-2.2.0.tar.gz"
 default[:nginx][:module_headers_more_source]  = "https://github.com/agentzh/headers-more-nginx-module/tarball/v0.15rc3"
 default[:nginx][:module_devel_kit_source]  = "https://github.com/simpl/ngx_devel_kit/tarball/v0.2.17rc2"
-default[:nginx][:module_lua_source]  = "https://github.com/chaoslawful/lua-nginx-module/tarball/v0.3.1rc24"
+default[:nginx][:module_lua_source]  = "https://github.com/chaoslawful/lua-nginx-module/tarball/v0.4.1"
 default[:nginx][:path]    = File.join(node[:deployment][:home], "deploy", "nginx", "nginx-#{nginx[:version]}")
 default[:nginx][:vcap_log] = File.join(node[:deployment][:home], "sys", "log", "vcap.access.log")
 
