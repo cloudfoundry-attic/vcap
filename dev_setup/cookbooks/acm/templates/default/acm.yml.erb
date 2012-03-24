@@ -1,5 +1,6 @@
 ---
 pid: /var/vcap/sys/run/acm.pid
+mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
 name: ACM
 port: 9090
 logging:
