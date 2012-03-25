@@ -20,7 +20,7 @@ module GemfileSupport
     return if packaged_with_bundler_in_deployment_mode?
 
     safe_env = [ "HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY", "C_INCLUDE_PATH", "LIBRARY_PATH" ].map { |e| "#{e}='#{ENV[e]}'" }.join(" ")
-    path     = [ "/bin", "/usr/bin", "/sbin", "/usr/sbin"]
+    path     = [ "/bin", "/usr/bin", "/sbin", "/usr/sbin" ]
     path.unshift(File.dirname(ruby)) if ruby[0] == '/'
 
     safe_env << " PATH='%s'" % [ path.uniq.join(":") ]
@@ -30,7 +30,7 @@ module GemfileSupport
     app_dir  = File.join(destination_directory, 'app')
     ruby_cmd = "env -i #{safe_env} #{ruby}"
 
-    @task = GemfileTask.new(app_dir, library_version, ruby_cmd, base_dir, @staging_uid, @staging_gid)
+    @task = GemfileTask.new(app_dir, library_prefix, library_version, ruby_cmd, base_dir, @staging_uid, @staging_gid)
 
     @task.install
     @task.install_bundler
@@ -42,8 +42,12 @@ module GemfileSupport
     write_bundle_config
   end
 
+  def library_prefix
+    self.ruby_library_prefix
+  end
+
   def library_version
-    environment[:runtime] == "ruby19" ? "1.9.1" : "1.8"
+    self.ruby_library_version
   end
 
   # Can we expect to run this app on Rack?

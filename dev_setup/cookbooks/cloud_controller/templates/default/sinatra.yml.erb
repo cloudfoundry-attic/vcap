@@ -18,6 +18,26 @@ runtimes:
        rails_env: "production"
        bundle_gemfile:
        rack_env: "production"
+  - "jruby18":
+      version: "<%= node[:jruby][:ruby_version] %>"
+      description: "JRuby <%= node[:jruby][:version] %>"
+      executable: "<%= File.join(node[:jruby][:path], "bin", "jruby") %>"
+      ruby_engine: "<%= node[:jruby][:ruby_engine] %>"
+      library_version: "<%= node[:jruby][:library_version] %>"
+      environment:
+       rails_env: "production"
+       bundle_gemfile:
+       rack_env: "production"
+  - "jruby19":
+      version: "<%= node[:jruby19][:ruby_version] %>"
+      description: "JRuby <%= node[:jruby][:version] %> (Ruby <%= node[:jruby19][:ruby_mode] %> mode)"
+      executable: "<%= File.join(node[:jruby][:path], "bin", node[:jruby19][:executable_file]) %>"
+      ruby_engine: "<%= node[:jruby][:ruby_engine] %>"
+      library_version: "<%= node[:jruby19][:library_version] %>"
+      environment:
+       rails_env: "production"
+       bundle_gemfile:
+       rack_env: "production"
 app_servers:
   - "thin":
       description: "Thin"

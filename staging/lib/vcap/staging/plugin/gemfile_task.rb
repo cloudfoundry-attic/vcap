@@ -3,10 +3,11 @@ require "fileutils"
 
 class GemfileTask
 
-  def initialize(app_dir, library_version, ruby_cmd, base_dir, uid=nil, gid=nil)
-    @app_dir         = File.expand_path(app_dir)
-    @library_version = library_version
-    @cache_base_dir  = File.join(base_dir, @library_version)
+  def initialize(app_dir, library_prefix, library_version, ruby_cmd, base_dir, uid=nil, gid=nil)
+    @app_dir          = File.expand_path(app_dir)
+    @library_prefix   = library_prefix
+    @library_version  = library_version
+    @cache_base_dir   = File.join(base_dir, @library_version)
 
     @ruby_cmd = ruby_cmd
     @uid = uid
@@ -180,7 +181,7 @@ class GemfileTask
   end
 
   def installation_directory
-    File.join(@app_dir, 'rubygems', 'ruby', @library_version)
+    File.join(@app_dir, 'rubygems', @library_prefix, @library_version)
   end
 
   def fetch_gems(gems, directory)

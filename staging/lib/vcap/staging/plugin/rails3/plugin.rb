@@ -23,7 +23,7 @@ class Rails3Plugin < StagingPlugin
 
   # Returns a path relative to the 'app' directory.
   def gem_bin_dir
-    "./rubygems/ruby/#{library_version}/bin"
+    "./rubygems/#{library_prefix}/#{library_version}/bin"
   end
 
   def migration_command
@@ -86,8 +86,8 @@ class Rails3Plugin < StagingPlugin
     # PWD here is before we change to the 'app' directory.
     if uses_bundler?
       local_bin_path = File.dirname(runtime['executable'])
-      vars['PATH'] = "$PWD/app/rubygems/ruby/#{library_version}/bin:#{local_bin_path}:/usr/bin:/bin"
-      vars['GEM_PATH'] = vars['GEM_HOME'] = "$PWD/app/rubygems/ruby/#{library_version}"
+      vars['PATH'] = "$PWD/app/rubygems/#{library_prefix}/#{library_version}/bin:#{local_bin_path}:/usr/bin:/bin"
+      vars['GEM_PATH'] = vars['GEM_HOME'] = "$PWD/app/rubygems/#{library_prefix}/#{library_version}"
     end
     vars['RUBYOPT'] = '-I$PWD/ruby -rstdsync'
     vars['DISABLE_AUTO_CONFIG'] = 'mysql:postgresql'

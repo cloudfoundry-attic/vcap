@@ -5,6 +5,8 @@ runtimes:
       version: "1.8.7" # FIXME change to 1.8.7-p334
       description: "Ruby 1.8.7"
       executable: "/usr/bin/ruby"
+      ruby_engine: "ruby"
+      library_version: "1.8"
       default: true
       environment:
        rails_env: "production"
@@ -14,6 +16,28 @@ runtimes:
       version: "1.9.2p180"
       description: "Ruby 1.9.2"
       executable: "ruby"
+      ruby_engine: "ruby"
+      library_version: "1.9.1"
+      environment:
+       rails_env: "production"
+       bundle_gemfile:
+       rack_env: "production"
+  - "jruby18":
+      version: "1.8.7p330"
+      description: "JRuby 1.6.5.1"
+      executable: "/var/vcap/runtimes/jruby-1.6.5.1/bin/jruby"
+      ruby_engine: "jruby"
+      library_version: "1.8"
+      environment:
+       rails_env: "production"
+       bundle_gemfile:
+       rack_env: "production"
+  - "jruby19":
+      version: "1.9.2p136"
+      description: "JRuby 1.6.5.1 (Ruby 1.9 mode)"
+      executable: "/var/vcap/runtimes/jruby-1.6.5.1/bin/jruby19"
+      ruby_engine: "jruby"
+      library_version: "1.9"
       environment:
        rails_env: "production"
        bundle_gemfile:

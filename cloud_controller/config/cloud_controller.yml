@@ -165,6 +165,10 @@ runtimes:
     version: 1.8.7
   ruby19:
     version: 1.9.2
+  jruby18:
+    version: 1.6.5.1
+  jruby19:
+    version: 1.6.5.1
   node:
     version: 0.4.12
     debug_modes:

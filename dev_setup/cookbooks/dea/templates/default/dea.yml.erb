@@ -59,6 +59,22 @@ runtimes:
     additional_checks: "-e 'puts RUBY_PATCHLEVEL >= 180'"
     environment:
 <% end %>
+<% if node[:dea][:runtimes].include?("jruby18") %>
+  jruby18:
+    executable: <%= File.join(node[:jruby][:path], "bin", "jruby") %>
+    version: <%= node[:jruby][:version] %>
+    version_flag: "-e 'puts JRUBY_VERSION'"
+    additional_checks: "-e 'puts RUBY_PATCHLEVEL >= 330'"
+    environment:
+<% end %>
+<% if node[:dea][:runtimes].include?("jruby19") %>
+  jruby19:
+    executable: <%= File.join(node[:jruby][:path], "bin", node[:jruby19][:executable_file]) %>
+    version: <%= node[:jruby][:version] %>
+    version_flag: "-e 'puts JRUBY_VERSION'"
+    additional_checks: "-e 'puts RUBY_PATCHLEVEL >= 136'" # JRuby is on 136 :/
+    environment:
+<% end %>
 <% if node[:dea][:runtimes].include?("node04") %>
   node:
     executable: <%= File.join(node[:node04][:path], "bin", "node") %>

@@ -26,7 +26,7 @@ class SinatraPlugin < StagingPlugin
   def start_command
      sinatra_main = detect_main_file
     if uses_bundler? && autoconfig_enabled?
-      "#{local_runtime} ./rubygems/ruby/#{library_version}/bin/bundle exec #{local_runtime} -rcfautoconfig ./#{sinatra_main} $@"
+      "#{local_runtime} ./rubygems/#{library_prefix}/#{library_version}/bin/bundle exec #{local_runtime} -rcfautoconfig ./#{sinatra_main} $@"
     elsif uses_bundler?
       "#{local_runtime} ./rubygems/ruby/#{library_version}/bin/bundle exec #{local_runtime} ./#{sinatra_main} $@"
     else
@@ -38,8 +38,8 @@ class SinatraPlugin < StagingPlugin
   def startup_script
     vars = environment_hash
     if uses_bundler?
-      vars['PATH'] = "$PWD/app/rubygems/ruby/#{library_version}/bin:$PATH"
-      vars['GEM_PATH'] = vars['GEM_HOME'] = "$PWD/app/rubygems/ruby/#{library_version}"
+      vars['PATH'] = "$PWD/app/rubygems/#{library_prefix}/#{library_version}/bin:$PATH"
+      vars['GEM_PATH'] = vars['GEM_HOME'] = "$PWD/app/rubygems/#{library_prefix}/#{library_version}"
       vars['RUBYOPT'] = "-I$PWD/ruby #{autoconfig_load_path} -rstdsync"
     else
       vars['RUBYOPT'] = "-rubygems -I$PWD/ruby -rstdsync"

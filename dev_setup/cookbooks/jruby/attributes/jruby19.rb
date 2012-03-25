@@ -1,0 +1,5 @@
+include_attribute "deployment"
+default[:jruby19][:ruby_version] = "1.9.2p136"
+default[:jruby19][:executable_file] = "jruby19"
+default[:jruby19][:library_version] = "1.9"
+default[:jruby19][:ruby_mode] = "1.9"
