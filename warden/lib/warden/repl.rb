@@ -131,8 +131,23 @@ EOT
       @client.write(words)
       begin
         raw_result = @client.read.inspect
-        puts raw_result
         command_info[:result] = Yajl::Parser.parse(raw_result)
+        case words[0]
+        when 'create'
+          puts command_info[:result]
+        when 'run'
+          status, stdout, stderr = command_info[:result]
+          puts "exit status: #{status}"
+          puts
+          puts "stdout:"
+          puts stdout
+          puts
+          puts "stderr:"
+          puts stderr
+          puts
+        else
+          puts raw_result
+        end
       rescue  => e
         command_info[:error] = e
         if e.message.match('unknown command')
