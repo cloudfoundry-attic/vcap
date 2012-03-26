@@ -23,8 +23,10 @@ class App < ActiveRecord::Base
 
   AppStates = %w[STOPPED STARTED]
   PackageStates = %w[PENDING STAGED FAILED]
+
   Runtimes = %w[ruby18 ruby19 java node node06 php erlangR14B02 python2]
-  Frameworks = %w[sinatra rack rails3 java_web spring grails node php otp_rebar lift wsgi django unknown]
+  Frameworks = %w[sinatra rack rails3 java_web spring grails node php otp_rebar lift wsgi django standalone unknown]
+
 
   validates_presence_of :name, :framework, :runtime
 
@@ -119,8 +121,9 @@ class App < ActiveRecord::Base
     services = service_bindings(true).map {|sb| sb.for_staging}
     { :services => services,
       :framework => framework,
-      :runtime => runtime,
-      :resources => resource_requirements }
+      :runtime     => runtime,
+      :resources => resource_requirements,
+      :meta => metadata }
   end
 
   def staging_task_properties
@@ -129,7 +132,8 @@ class App < ActiveRecord::Base
       :framework   => framework,
       :runtime     => runtime,
       :resources   => resource_requirements,
-      :environment => environment}
+      :environment => environment,
+      :meta => metadata }
   end
 
   # Returns an array of the URLs that point to this application
