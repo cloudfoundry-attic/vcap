@@ -618,16 +618,18 @@ module DEA
 
       start_operation = lambda do
         @logger.debug('Completed download')
-
-        port = grab_port
-        if port
-          instance[:port] = port
+        if not instance[:uris].empty?
+          port = grab_port
+          if port
+            instance[:port] = port
+          else
+            @logger.warn("Unable to allocate port for instance#{instance[:log_id]}")
+            stop_droplet(instance)
+            return
+          end
         else
-          @logger.warn("Unable to allocate port for instance#{instance[:log_id]}")
-          stop_droplet(instance)
-          return
+          @logger.info("No URIs found for application.  Not assigning a port")
         end
-
         if debug
           debug_port = grab_port
           if debug_port
@@ -709,7 +711,11 @@ module DEA
             process.send_data("umask 077\n")
           end
           app_env.each { |env| process.send_data("export #{env}\n") }
-          process.send_data("./startup -p #{instance[:port]}\n")
+          if instance[:port]
+            process.send_data("./startup -p #{instance[:port]}\n")
+          else
+            process.send_data("./startup\n")
+          end
           process.send_data("exit\n")
         end
 
@@ -729,7 +735,7 @@ module DEA
 
         # Send the start message, which will bind the router, when we have established the
         # connection..
-        detect_port_ready(instance) do |detected|
+        detect_app_ready(instance) do |detected|
           if detected and not instance[:stop_processed]
             @logger.info("Instance #{instance[:log_id]} is ready for connections, notifying system of status")
             instance[:state] = :RUNNING
@@ -914,6 +920,14 @@ module DEA
 
     def grab_port
       VCAP.grab_ephemeral_port
+    end
+
+    def detect_app_ready(instance, &block)
+      if instance[:port]
+        detect_port_ready(instance, &block)
+      else
+        block.call(true)
+      end
     end
 
     def detect_port_ready(instance, &block)
@@ -1150,7 +1164,6 @@ module DEA
           env << "#{k}=#{v}"
         end
       end
-
       return env
     end
 

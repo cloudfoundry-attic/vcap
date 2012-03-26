@@ -21,6 +21,7 @@ default[:cloud_controller][:staging][:java_web] = "java_web.yml"
 default[:cloud_controller][:staging][:php] = "php.yml"
 default[:cloud_controller][:staging][:django] = "django.yml"
 default[:cloud_controller][:staging][:wsgi] = "wsgi.yml"
+default[:cloud_controller][:staging][:standalone] = "standalone.yml"
 
 # Default builtin services
 default[:cloud_controller][:builtin_services] = ["redis", "mongodb", "mysql", "neo4j", "rabbitmq"]
