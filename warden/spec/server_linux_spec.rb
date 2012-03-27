@@ -170,6 +170,9 @@ describe "server implementing Linux containers", :platform => "linux", :needs_ro
       result = client.run(handle, "cat #{new_path}")
       result[0].should == 0
       result[1].should == new_contents
+
+      # Mounts should not appear in /etc/mtab
+      `mount`.should_not match(Regexp.escape(@bind_mount_path))
     end
 
     it "should support bind mounting paths with different permissions" do
@@ -179,6 +182,9 @@ describe "server implementing Linux containers", :platform => "linux", :needs_ro
       result = client.run(handle, "touch #{@bind_mount_path}/test")
       result[0].should == 1
       result[2].should match(/Read-only file system/)
+
+      # Mounts should not appear in /etc/mtab
+      `mount`.should_not match(Regexp.escape(@bind_mount_path))
     end
   end
 end
