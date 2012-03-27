@@ -108,7 +108,10 @@ cat <<-EOS > ssh/ssh_config
 StrictHostKeyChecking yes
 UserKnownHostsFile $(pwd)/ssh/known_hosts
 IdentityFile $(pwd)/ssh/access_key
+ControlPath $(pwd)/ssh/control-%r@%h
 Host container
+HostName ${network_container_ip}
+Host ${id}
 HostName ${network_container_ip}
 EOS
 
