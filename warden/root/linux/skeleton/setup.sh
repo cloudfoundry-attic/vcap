@@ -78,6 +78,8 @@ chroot <<-EOS
 sed -i -e '/^\($\|#\)/d' /etc/ssh/sshd_config
 # Don't allow env vars to propagate over ssh
 sed -i -e '/^AcceptEnv/d' /etc/ssh/sshd_config
+# Don't use dsa host key
+sed -i -e '/^HostKey .*dsa/d' /etc/ssh/sshd_config
 # Pick up authorized keys from /etc/ssh
 echo AuthorizedKeysFile /etc/ssh/authorized_keys/%u >> /etc/ssh/sshd_config
 # Never do DNS lookups
@@ -88,8 +90,6 @@ EOS
 mkdir -p ssh
 ssh-keygen -t rsa -N '' -C "${id}@$(hostname)" -f ssh/ssh_host_rsa_key
 cp ssh/ssh_host_rsa_key* ${target}/etc/ssh/
-ssh-keygen -t dsa -N '' -C "${id}@$(hostname)" -f ssh/ssh_host_dsa_key
-cp ssh/ssh_host_dsa_key* ${target}/etc/ssh/
 
 # Setup access keys for SSH
 ssh-keygen -t rsa -N '' -C '' -f ssh/access_key
