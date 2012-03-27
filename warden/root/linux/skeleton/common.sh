@@ -16,7 +16,10 @@ function chroot() {
 function setup_fs() {
   if [ ! -f fs ]; then
     dd if=/dev/null of=fs bs=1k seek=512k
-    mkfs.ext2 -q -F fs
+
+    # - don't include a journal
+    # - skip initialization of block groups
+    mkfs.ext4 -q -F -O "^has_journal,uninit_bg" fs
   fi
 
   mkdir -p rootfs ${target}
