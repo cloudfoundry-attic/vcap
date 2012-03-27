@@ -101,11 +101,11 @@ module Warden
         # Helper to inject log message
         def set_deferred_success
           if !success?
-            warn "exited with #{exit_status}: #{argv.inspect}"
+            warn "exited with status %d (%.3fs): %s" % [exit_status.to_i, runtime, argv.inspect]
             warn "stdout: #{stdout}"
             warn "stderr: #{stderr}"
           else
-            debug "exited successfully: #{argv.inspect}"
+            debug "exited with status %d (%.3fs): %s" % [exit_status.to_i, runtime, argv.inspect]
           end
 
           super
