@@ -9,7 +9,7 @@ gem "http_parser.rb", :require => "http/parser"
 gem "yajl-ruby", :require => ["yajl", "yajl/json_gem"]
 gem "sinatra"
 
-gem 'vcap_common', '~> 1.0.3'
+gem 'vcap_common', '~> 1.0.9'
 gem 'vcap_logging', :require => ['vcap/logging']
 
 group :test do
