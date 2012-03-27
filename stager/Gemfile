@@ -3,7 +3,6 @@ source :rubygems
 gem 'eventmachine'
 gem 'nats'
 gem 'rake'
-gem 'logging', '= 1.5.2'
 gem 'yajl-ruby', '>= 0.7.9'
 
 gem 'vcap_common', '~> 1.0.8'

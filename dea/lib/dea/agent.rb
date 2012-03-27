@@ -10,7 +10,6 @@ end
 
 require 'fcntl'
 require 'logger'
-require 'logging'
 require 'pp'
 require 'set'
 require 'socket'
