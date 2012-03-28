@@ -51,7 +51,7 @@ describe "server implementing Linux containers", :platform => "linux", :needs_ro
     it 'stops containers in which an oom event occurs' do
       one_mb = 1024 * 1024
       usage = File.read(File.join("/dev/cgroup/", "instance-#{@handle}", "memory.usage_in_bytes"))
-      mem_limit = usage.to_i + 2 * one_mb
+      mem_limit = usage.to_i + 10 * one_mb
       client.limit(@handle, "mem", mem_limit)
 
       # Allocate 20MB, this should OOM and cause the container to be torn down
