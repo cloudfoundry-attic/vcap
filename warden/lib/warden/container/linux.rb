@@ -58,8 +58,8 @@ module Warden
         sh "#{env_command} #{root_path}/create.sh #{handle}", :timeout => nil
         debug "container created"
 
-        create_bind_mount_script
-        debug "wrote bind mount script"
+        write_bind_mount_commands
+        debug "wrote bind mount commands"
 
         sh "#{container_path}/start.sh", :timeout => nil
         debug "container started"
@@ -182,12 +182,20 @@ module Warden
         sh(cmd, :timeout => nil)
       end
 
-      def create_bind_mount_script
-        params = @config.dup
-        script_contents = self.class.bind_mount_script_template.result(binding())
-        script_path = File.join(container_path, "setup-bind-mounts.sh")
-        File.open(script_path, 'w+') {|f| f.write(script_contents) }
-        sh "chmod 0700 #{script_path}"
+      def write_bind_mount_commands
+        File.open(File.join(container_path, "hook-parent-before-clone.sh"), "a") do |file|
+          file.puts
+          file.puts
+
+          @config[:bind_mounts].each do |src_path, dst_path, options|
+            file.puts "mkdir -p #{dst_path}" % [dst_path]
+            file.puts "mount -n --bind #{src_path} #{dst_path}"
+
+            if options[:mode]
+              file.puts "mount -n --bind -o remount,#{options[:mode]} #{src_path} #{dst_path}"
+            end
+          end
+        end
       end
     end
   end
