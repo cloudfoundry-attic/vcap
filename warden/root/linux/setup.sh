@@ -14,3 +14,12 @@ if ! grep -q ${cgroup_path} /proc/mounts; then
 fi
 
 ./net.sh setup
+
+# Make loop devices as needed
+for i in $(seq 0 1023); do
+  file=/dev/loop${i}
+  if [ ! -b ${file} ]; then
+    mknod -m0660 ${file} b 7 ${i}
+    chown root.disk ${file}
+  fi
+done
