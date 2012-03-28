@@ -92,6 +92,10 @@ class HealthManager
     @droplets_analysis = config['intervals']['droplets_analysis'] || 10
     @flapping_death = config['intervals']['flapping_death']
     @flapping_timeout = config['intervals']['flapping_timeout']
+
+    @min_restart_delay = config['intervals']['min_restart_delay'] || 10
+    @max_restart_delay = config['intervals']['max_restart_delay'] || 300
+
     @restart_timeout = config['intervals']['restart_timeout']
     @stable_state = config['intervals']['stable_state']
     @max_db_reconnect_wait = config['intervals']['max_db_reconnect_wait'] || 300 #up to five minutes by default
@@ -99,6 +103,7 @@ class HealthManager
     @database_environment = config['database_environment']
 
     @droplets = {}
+    @pending_restart = {}
     @request_queue = VCAP::PrioritySet.new
 
     configure_database
@@ -310,6 +315,10 @@ class HealthManager
             runtime_stats[:flapping_instances] += 1
           end
 
+          if index_entry[:state] == FLAPPING && !restart_pending?(app_id, index) && now - index_entry[:last_action] > @restart_timeout
+            delayed_restart_flapping_instance(app_id, index, index_entry)
+          end
+
           if index_entry[:state] == DOWN && now - index_entry[:last_action] > @restart_timeout
             @logger.info("Preparing to restart instance (app_id=#{app_id}, index=#{index}). Reason: droplet state is STARTED, but instance state is DOWN.")
             index_entry[:last_action] = now
@@ -480,9 +489,14 @@ class HealthManager
             end
 
             if index_entry[:crashes] > @flapping_death
+              @logger.info("Declaring instance flapping, app_id=#{droplet_id}, index=#{index}.  Current state: #{index_entry[:state]}") unless index_entry[:state] == FLAPPING
+
               index_entry[:state] = FLAPPING
               index_entry[:state_timestamp] = now
-              @logger.info("Giving up on flapping instance (app_id=#{droplet_id}, index=#{index}). Number of crashes: #{index_entry[:crashes]}.")
+
+              unless restart_pending?(droplet_id, index)
+                delayed_restart_flapping_instance(droplet_id, index, index_entry)
+              end
             else
               index_entry[:state] = DOWN
               index_entry[:state_timestamp] = now
@@ -509,6 +523,22 @@ class HealthManager
     end
 
     droplet_entry # return the droplet that we changed. This allows the spec tests to ensure the behaviour is correct.
+  end
+
+  def delayed_restart_flapping_instance(droplet_id, index, index_entry)
+    @pending_restart[droplet_id] ||= {}
+    @pending_restart[droplet_id][index] = true
+
+    restart_delay = [@max_restart_delay, @min_restart_delay << (index_entry[:crashes] - @flapping_death - 1)  ].min
+
+    @logger.info("delayed-restarting flapping instance (app_id=#{droplet_id}, index=#{index}). Delay: #{restart_delay}. Number of crashes: #{index_entry[:crashes]}.")
+    EM.add_timer(restart_delay) do
+      start_instances(droplet_id, [index], false)
+    end
+  end
+
+  def restart_pending?(droplet_id, index)
+    @pending_restart[droplet_id] && @pending_restart[droplet_id][index]
   end
 
   def process_heartbeat_message(message)
@@ -718,9 +748,18 @@ class HealthManager
       queue_request(start_message, high_priority)
     else
       #old behavior: send the message immediately
-      NATS.publish('cloudcontrollers.hm.requests', start_message.to_json)
-      @logger.info("Requesting the start of extra instances: #{start_message}")
+      publish_start_message(start_message)
     end
+  end
+
+  def publish_start_message(start_message)
+
+    if indices_restarting = @pending_restart[start_message[:droplet]]
+      start_message[:indices].each { |i| indices_restarting[i] = false }
+    end
+
+    @logger.info("Requesting the start of missing instances: #{start_message}")
+    NATS.publish('cloudcontrollers.hm.requests', start_message.to_json)
   end
 
   def queue_request(message, high_priority)
@@ -769,10 +808,8 @@ class HealthManager
   def deque_a_batch_of_requests(num_requests=@dequeueing_rate)
     num_requests.times do
       unless @request_queue.empty?
-        #TODO: if STOP requests are also queued, refactor this to be generic, particularly the log message
-        start_message = encode_json(@request_queue.remove)
-        NATS.publish('cloudcontrollers.hm.requests', start_message)
-        @logger.info("Requesting the start of missing instances: #{start_message}")
+        start_message = @request_queue.remove
+        publish_start_message(start_message)
         VCAP::Component.varz[:queue_length] = @request_queue.size
       end
     end
