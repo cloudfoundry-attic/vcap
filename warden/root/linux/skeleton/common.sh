@@ -13,6 +13,20 @@ function chroot() {
   $(which chroot) ${target} env -i /bin/bash
 }
 
+# When the override file /etc/lsb-release exists, try getting codename there.
+# Fall back to executing lsb_release.
+function get_codename() {
+  if [ -r /etc/lsb-release ]; then
+    source /etc/lsb-release
+    if [ -n $DISTRIB_CODENAME ]; then
+      echo $DISTRIB_CODENAME
+      return 0
+    fi
+  else
+    lsb_release -cs
+  fi
+}
+
 function setup_fs() {
   if [ ! -f fs ]; then
     dd if=/dev/null of=fs bs=1k seek=512k
@@ -25,7 +39,7 @@ function setup_fs() {
   mkdir -p rootfs ${target}
   mount -n -o loop fs rootfs
 
-  codename=$(lsb_release -c -s)
+  codename=$(get_codename)
 
   case "${codename}" in
 
