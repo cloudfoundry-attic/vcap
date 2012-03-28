@@ -152,6 +152,8 @@ module Warden
                   %{Must be one of "ro", "rw".}
                 ].join(" ")
             end
+
+            options[:mode] = options.delete("mode")
           end
 
           [src_path, dst_path, options]
@@ -161,7 +163,7 @@ module Warden
         bind_mounts = bind_mounts.compact
 
         # Return sanitized config
-        { "bind_mounts" => bind_mounts }
+        { :bind_mounts => bind_mounts }
       end
 
       def perform_rsync(src_path, dst_path)
