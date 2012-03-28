@@ -121,7 +121,17 @@ module Warden
         @state       = State::Born
         @events      = Set.new
         @limits      = {}
-        @config      = config
+
+        grace_time = Server.container_grace_time
+        grace_time = config.delete("grace_time") if config.has_key?("grace_time")
+
+        begin
+          grace_time = Float(grace_time) unless grace_time.nil?
+        rescue ArgumentError => err
+          raise WardenError.new("Cannot parse grace time from %s." % grace_time.inspect)
+        end
+
+        @config = { :grace_time => grace_time }
 
         on(:before_create) {
           check_state_in(State::Born)
@@ -190,7 +200,7 @@ module Warden
       end
 
       def grace_time
-        @config[:grace_time] || Server.container_grace_time
+        @config[:grace_time]
       end
 
       def cancel_grace_timer
@@ -203,6 +213,8 @@ module Warden
       end
 
       def setup_grace_timer
+        return if grace_time.nil?
+
         debug "grace timer: setup (%.3fs)" % grace_time
 
         @destroy_timer = ::EM.add_timer(grace_time) do
