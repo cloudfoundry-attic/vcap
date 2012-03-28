@@ -25,7 +25,7 @@ function setup_fs() {
   mkdir -p rootfs ${target}
   mount -n -o loop fs rootfs
 
-  codename=$(lsb_release -c -s)
+  codename=$(uname -n)
 
   case "${codename}" in
 
