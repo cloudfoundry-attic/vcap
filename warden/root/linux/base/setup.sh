@@ -102,7 +102,7 @@ EOS
 # Install packages
 chroot <<-EOS
 apt-get update
-# apt-get install -y <list of packages>
+apt-get install -y build-essential
 EOS
 
 # Remove files we don't need or want
