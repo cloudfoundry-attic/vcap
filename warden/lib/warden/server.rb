@@ -209,8 +209,8 @@ module Warden
 
       def process_create(request)
         request.require_arguments { |n| (n == 1) || (n == 2) }
-        container = Server.container_klass.new(self)
-        container.create(request[1] || {})
+        container = Server.container_klass.new(self, request[1] || {})
+        container.create
       end
 
       def process_stop(request)
