@@ -30,6 +30,11 @@ module Warden
         end
       end
 
+      def initialize(resources, config = {})
+        super(resources, config)
+        @config.merge!(sanitize_config(config.dup))
+      end
+
       def env
         env = {
           "id" => handle,
@@ -44,13 +49,11 @@ module Warden
         "env #{env.map { |k, v| "#{k}=#{v}" }.join(" ")}"
       end
 
-      def do_create(config = {})
-        config = sanitize_config(config)
-
+      def do_create
         sh "#{env_command} #{root_path}/create.sh #{handle}", :timeout => nil
         debug "container created"
 
-        create_bind_mount_script(config)
+        create_bind_mount_script
         debug "wrote bind mount script"
 
         sh "#{container_path}/start.sh", :timeout => nil
@@ -172,8 +175,8 @@ module Warden
         sh(cmd, :timeout => nil)
       end
 
-      def create_bind_mount_script(config)
-        params = config.dup
+      def create_bind_mount_script
+        params = @config.dup
         script_contents = self.class.bind_mount_script_template.result(binding())
         script_path = File.join(container_path, "setup-bind-mounts.sh")
         File.open(script_path, 'w+') {|f| f.write(script_contents) }

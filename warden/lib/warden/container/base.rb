@@ -79,10 +79,10 @@ module Warden
         # Override #new to make sure that acquired resources are released when
         # one of the pooled resourced can not be required. Acquiring the
         # necessary resources must be atomic to prevent leakage.
-        def new(conn, options = {})
+        def new(conn, config = {})
           resources = {}
           acquire(resources)
-          instance = super(resources, options)
+          instance = super(resources, config)
           instance.register_connection(conn)
           instance
 
@@ -114,14 +114,14 @@ module Warden
       attr_reader :events
       attr_reader :limits
 
-      def initialize(resources, options = {})
+      def initialize(resources, config = {})
         @resources   = resources
         @connections = ::Set.new
         @jobs        = {}
         @state       = State::Born
         @events      = Set.new
         @limits      = {}
-        @options     = options
+        @config      = config
 
         on(:before_create) {
           check_state_in(State::Born)
@@ -190,7 +190,7 @@ module Warden
       end
 
       def grace_time
-        @options[:grace_time] || Server.container_grace_time
+        @config[:grace_time] || Server.container_grace_time
       end
 
       def cancel_grace_timer
@@ -250,12 +250,12 @@ module Warden
         @container_path ||= File.join(root_path, "instances", handle)
       end
 
-      def create(config={})
+      def create
         debug "entry"
 
         begin
           emit(:before_create)
-          do_create(config)
+          do_create
           emit(:after_create)
 
           handle
