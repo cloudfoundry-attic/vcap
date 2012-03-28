@@ -1,6 +1,15 @@
 ---
 server:
   container_klass: Warden::Container::Linux
+
+  # Wait this long before destroying a container, after the last client
+  # referencing it disconnected. The timer is cancelled when during this
+  # period, another client references the container.
+  #
+  # The grace time can be disabled by setting it to nil:
+  #   container_grace_time: ~
+  container_grace_time: 300
+
   unix_domain_permissions: 0777
 
 logging:
