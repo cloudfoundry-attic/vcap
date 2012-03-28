@@ -5,6 +5,7 @@ $:.unshift File.join(File.dirname(__FILE__), '..', 'lib')
 require 'rubygems'
 require 'rspec'
 require 'health_manager'
+require 'fiber'
 
 module Spec
   module Mocks
