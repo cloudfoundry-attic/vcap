@@ -30,6 +30,11 @@ function debootstrap() {
     fi
   fi
 
+  if [ ! -v http_proxy ]; then
+    eval $(apt-config shell http_proxy Acquire::http::Proxy)
+    export http_proxy
+  fi
+
   ${debootstrap_bin} --verbose --include ${packages} ${suite} ${target} ${mirror}
 }
 
