@@ -82,6 +82,12 @@ echo debconf debconf/frontend select noninteractive |
  debconf-set-selections
 EOS
 
+# Generate and setup default locale (en_US.UTF-8)
+chroot <<-EOS
+locale-gen en_US.UTF-8
+update-locale LANG="en_US.UTF-8"
+EOS
+
 # Install packages
 chroot <<-EOS
 apt-get update
