@@ -13,9 +13,7 @@ if [ -f started ]; then
   exit 1
 fi
 
-export ROOT_PATH=union
-export ASSET_PATH=$(pwd)
-unshare -n ../../../../src/clone/clone
+env -i unshare -n ../../../../src/clone/clone
 
 ifconfig ${network_iface_host} ${network_gateway_ip} netmask ${network_netmask}
 touch started
