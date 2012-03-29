@@ -33,3 +33,7 @@ while ! ssh_running; do
 
   sleep 0.1
 done
+
+# Setup persistent connections into the container
+ssh -o ControlMaster=yes -N -F ssh/ssh_config root@${id} &
+ssh -o ControlMaster=yes -N -F ssh/ssh_config vcap@${id} &
