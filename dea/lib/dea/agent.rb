@@ -144,6 +144,9 @@ module DEA
       @heartbeat_interval = config['intervals']['heartbeat'] || 10
       @advertise_interval = config['intervals']['advertise'] || 5
 
+      # Used for file system service
+      @fss_dir = config['fss_dir']
+
       # XXX(mjp) - Ugh, this is needed for VCAP::Component.register(). Find a better solution when time permits.
       @config = config.dup()
     end
@@ -687,6 +690,12 @@ module DEA
           system("chmod -R g-rwx #{instance_dir}")
         end
 
+        fss = services.select { |svc| svc['vendor'] == 'filesystem' }
+        fss.each do |svc|
+          u = @secure && user[:user]
+          handle_fss_env(svc, u)
+        end
+
         app_env = setup_instance_env(instance, app_env, services)
 
         # Add a bit of overhead here for JVM semantics where request is for heap, not total process.
@@ -1096,6 +1105,30 @@ module DEA
       }
       env_hash[:host] = @local_ip
       env_hash.to_json
+    end
+
+    def handle_fss_env(svc, user=nil)
+      name, host, export = %w{name host export}.map { |key| svc['credentials']['internal'][key] }
+      mountpoint = mount_fss_backend(host, export)
+      path = File.join(mountpoint, name)
+      `chown -R #{user} #{path}` if user
+      svc['credentials'] = {'path' => path}
+      true
+    rescue => e
+      @logger.error("Error on handle_fss_env: #{e}")
+      false
+    end
+
+    def mount_fss_backend(host, export)
+      mountpoint = nil
+      if `mount|grep #{host}` =~ /^.* on (.*) type nfs.*$/
+        mountpoint = $1
+      else
+        mountpoint = File.join(@fss_dir, VCAP.secure_uuid)
+        FileUtils.mkdir_p(mountpoint)
+        `mount -t nfs #{host}:#{export} #{mountpoint}`
+      end
+      mountpoint
     end
 
     def debug_env(instance)
