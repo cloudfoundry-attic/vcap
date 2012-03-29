@@ -83,12 +83,6 @@ module Warden
               self.deny_networks = [config["network"]["deny_networks"]].flatten.compact
             end
 
-            sh *[ %{env},
-                  %{ALLOW_NETWORKS=%s} % self.allow_networks.join(" "),
-                  %{DENY_NETWORKS=%s} % self.deny_networks.join(" "),
-                  %{%s/net.sh} % root_path,
-                  %{setup} ]
-
             # 1k available ports should be "good enough"
             if PortPool.instance.available < 1000
               message = "insufficient non-ephemeral ports available"

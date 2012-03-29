@@ -25,6 +25,11 @@ module Warden
 
           super(config)
 
+          sh *[ %{env},
+            %{ALLOW_NETWORKS=%s} % allow_networks.join(" "),
+            %{DENY_NETWORKS=%s} % deny_networks.join(" "),
+            %{%s/setup.sh} % root_path ]
+
           template_path = File.join(self.root_path, "setup-bind-mounts.erb")
           @bind_mount_script_template = ERB.new(File.read(template_path))
         end
