@@ -10,7 +10,7 @@ and perform any kind of filtering and monitoring on it using `iptables`.
 
 # Concepts
 
-* **host**: machine running `warden` and the containers it spawn.
+* **host**: machine running `warden` and the containers it spawns.
 
 # Containers
 
