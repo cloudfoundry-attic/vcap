@@ -86,13 +86,28 @@ echo AuthorizedKeysFile /etc/ssh/authorized_keys/%u >> /etc/ssh/sshd_config
 echo UseDNS no >> /etc/ssh/sshd_config
 EOS
 
+tmp=$(pwd)/../../tmp/
+mkdir -p ${tmp}
+
 # Setup host keys for SSH
 mkdir -p ssh
-ssh-keygen -t rsa -N '' -C "${id}@$(hostname)" -f ssh/ssh_host_rsa_key
+if [ -f ${tmp}/ssh_host_rsa_key ]; then
+  cp ${tmp}/ssh_host_rsa_key* ssh/
+else
+  ssh-keygen -t rsa -N '' -C "${id}@$(hostname)" -f ssh/ssh_host_rsa_key
+  cp ssh/ssh_host_rsa_key* ${tmp}
+fi
+
 cp ssh/ssh_host_rsa_key* ${target}/etc/ssh/
 
 # Setup access keys for SSH
-ssh-keygen -t rsa -N '' -C '' -f ssh/access_key
+if [ -f ${tmp}/access_key ]; then
+  cp ${tmp}/access_key* ssh/
+else
+  ssh-keygen -t rsa -N '' -C '' -f ssh/access_key
+  cp ssh/access_key* ${tmp}
+fi
+
 mkdir -p ${target}/etc/ssh/authorized_keys
 cat ssh/access_key.pub >> ${target}/etc/ssh/authorized_keys/root
 chmod 644 ${target}/etc/ssh/authorized_keys/root
