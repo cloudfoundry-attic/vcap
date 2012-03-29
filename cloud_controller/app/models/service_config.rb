@@ -140,6 +140,12 @@ class ServiceConfig < ActiveRecord::Base
     result
   end
 
+  def delete_snapshot(sid)
+    endpoint = "#{service.url}/gateway/v1/configurations/#{name}/snapshots/#{sid}"
+    result = perform_gateway_request(:delete_snapshot, endpoint, service.token, :delete, service.timeout, VCAP::Services::Api::Job, empty_msg_class, :service_id => name, :snapshot_id => sid)
+    result
+  end
+
   def serialized_url
     endpoint = "#{service.url}/gateway/v1/configurations/#{name}/serialized/url"
     result = perform_gateway_request(:serialized_url, endpoint, service.token, :get, service.timeout, VCAP::Services::Api::Job, empty_msg_class, :service_id => name)

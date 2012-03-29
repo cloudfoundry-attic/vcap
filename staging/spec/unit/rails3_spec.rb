@@ -15,16 +15,12 @@ describe "A Rails 3 application being staged" do
       start_script.should be_executable_file
       script_body = File.read(start_script)
 
-      # FIXME sunset this by Monday, March 5
-      # The expected string should really stay hardcoded
-      local_bin_path = ENV['VCAP_RUNTIME_RUBY18']? File.dirname(ENV['VCAP_RUNTIME_RUBY18']) : '/usr/bin'
-
       script_body.should == <<-EXPECTED
 #!/bin/bash
 export DISABLE_AUTO_CONFIG="mysql:postgresql"
 export GEM_HOME="$PWD/app/rubygems/ruby/1.8"
 export GEM_PATH="$PWD/app/rubygems/ruby/1.8"
-export PATH="$PWD/app/rubygems/ruby/1.8/bin:#{local_bin_path}:/usr/bin:/bin"
+export PATH="$PWD/app/rubygems/ruby/1.8/bin:/usr/bin:/bin"
 export RACK_ENV="production"
 export RAILS_ENV="production"
 export RUBYOPT="-I$PWD/ruby -rstdsync"
@@ -84,16 +80,13 @@ gem "cf-autoconfig"
         executable = '%VCAP_LOCAL_RUNTIME%'
         start_script = File.join(staged_dir, 'startup')
         script_body = File.read(start_script)
-        # FIXME sunset this by Monday, March 5
-        # The expected string should really stay hardcoded
-        local_bin_path = ENV['VCAP_RUNTIME_RUBY18']? File.dirname(ENV['VCAP_RUNTIME_RUBY18']) : '/usr/bin'
 
         script_body.should == <<-EXPECTED
 #!/bin/bash
 export DISABLE_AUTO_CONFIG="mysql:postgresql"
 export GEM_HOME="$PWD/app/rubygems/ruby/1.8"
 export GEM_PATH="$PWD/app/rubygems/ruby/1.8"
-export PATH="$PWD/app/rubygems/ruby/1.8/bin:#{local_bin_path}:/usr/bin:/bin"
+export PATH="$PWD/app/rubygems/ruby/1.8/bin:/usr/bin:/bin"
 export RACK_ENV="production"
 export RAILS_ENV="production"
 export RUBYOPT="-I$PWD/ruby -rstdsync"

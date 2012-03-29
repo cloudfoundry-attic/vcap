@@ -63,6 +63,11 @@ class VCAP::Services::Api::ServiceGatewayClient
     VCAP::Services::Api::Job.decode(resp.body)
   end
 
+  def delete_snapshot(args)
+    resp = perform_request(Net::HTTP::Delete, "/gateway/v1/configurations/#{args[:service_id]}/snapshots/#{args[:snapshot_id]}")
+    VCAP::Services::Api::Job.decode(resp.body)
+  end
+
   def serialized_url(args)
     resp = perform_request(Net::HTTP::Get, "/gateway/v1/configurations/#{args[:service_id]}/serialized/url")
     VCAP::Services::Api::Job.decode(resp.body)

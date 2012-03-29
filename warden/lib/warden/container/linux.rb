@@ -113,7 +113,7 @@ module Warden
       private
 
       def sanitize_config(config)
-        bind_mounts = config.delete("bind_mounts")
+        bind_mounts = config.delete("bind_mounts") || []
 
         # Raise when it is not an Array
         if !bind_mounts.is_a?(Array)

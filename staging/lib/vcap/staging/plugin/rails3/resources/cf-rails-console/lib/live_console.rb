@@ -82,7 +82,8 @@ class LiveConsole
       conn = io.get_connection
       #This will block until a connection is made or a failure occurs
       if conn.start
-        thread = Thread.new(conn) {
+        #fork a new process for the session to redirect stdout/stderr
+        pid = fork {
           begin
             start_irb = true
             if authenticate && !conn.authenticate
@@ -102,6 +103,7 @@ class LiveConsole
             conn.stop
           end
         }
+        Process.detach(pid)
       end
     }
   end
@@ -166,6 +168,11 @@ module IRB
       @inited = true
     end
 
+    #Redirect stdout and stderr to cover output of Ruby commands like puts
+    $stdout.sync=true
+    $stderr.sync=true
+    $stdout.reopen(io.output)
+    $stderr.reopen(io.output)
     ws = IRB::WorkSpace.new(bind)
 
     @CONF[:PROMPT_MODE] = :DEFAULT

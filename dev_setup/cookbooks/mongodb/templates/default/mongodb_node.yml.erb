@@ -10,7 +10,7 @@ pid: /var/vcap/sys/run/mongodb_node.pid
 max_memory: <%= node[:mongodb_node][:max_memory] %>
 node_id: <%= "mongodb_node_#{node[:mongodb_node][:index]}" %>
 mongod_path: <%= File.join(node[:mongodb][:path], "bin", "mongod") %>
-mongorestore_path: mongorestore
+mongorestore_path: <%= File.join(node[:mongodb][:path], "bin", "mongorestore") %>
 port_range:
   first: 25001
   last: 45000
