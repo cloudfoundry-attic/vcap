@@ -30,6 +30,17 @@ template node[:cloud_controller][:config_file] do
 end
 cf_bundle_install(File.expand_path(File.join(node["cloudfoundry"]["path"], "cloud_controller")))
 
+bash "install staging gem" do
+  cwd File.expand_path(File.join(node["cloudfoundry"]["path"], "staging"))
+  user node[:deployment][:user]
+  code "
+rm vcap_staging-*.gem 2>&1 /dev/null
+#{File.join(node[:ruby][:path], "bin", "gem")} build vcap_staging.gemspec
+#{File.join(node[:ruby][:path], "bin", "gem")} uninstall -f vcap_staging
+#{File.join(node[:ruby][:path], "bin", "gem")} install vcap_staging-*.gem
+rm vcap_staging-*.gem 2>&1 /dev/null"
+end
+
 staging_dir = File.join(node[:deployment][:config_path], "staging")
 node[:cloud_controller][:staging].each_pair do |framework, config|
   template config do
