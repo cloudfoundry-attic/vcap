@@ -275,7 +275,7 @@ describe Warden::Container::Base do
     context "when nil" do
 
       it "should not fire" do
-        @container = initialize_container(new_connection, :grace_time => nil)
+        @container = initialize_container(new_connection, "grace_time" => nil)
 
         em do
           @container.should_not_receive(:fire_grace_timer)
@@ -289,7 +289,7 @@ describe Warden::Container::Base do
     context "when not nil" do
 
       before(:each) do
-        @container = initialize_container(new_connection, :grace_time => 0.02)
+        @container = initialize_container(new_connection, "grace_time" => 0.02)
       end
 
       it "should fire after grace time" do
