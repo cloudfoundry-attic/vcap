@@ -18,12 +18,12 @@ env -i unshare -n ../../../../src/clone/clone
 ifconfig ${network_iface_host} ${network_gateway_ip} netmask ${network_netmask}
 touch started
 
-function ssh_running() {
-  cat console.log | grep "ssh state changed" | tail -n1 | cut -d' ' -f8 | grep running > /dev/null
+function ssh_state() {
+  grep "ssh state changed" console.log | cut -d" " -f8
 }
 
 start=$(date +%s)
-while ! ssh_running; do
+while ! ssh_state | grep -q "spawned"; do
   if [ $(($(date +%s) - ${start})) -gt 5 ]; then
     echo "Timeout waiting for SSH to come up..."
     exit 1
