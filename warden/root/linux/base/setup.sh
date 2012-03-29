@@ -120,7 +120,6 @@ rm -f ${target}/etc/init/dmesg*
 rm -f ${target}/etc/init/network-*
 rm -f ${target}/etc/init/procps*
 rm -f ${target}/etc/init/rcS*
-rm -f ${target}/etc/init/rsyslog*
 
 # Don't run ntpdate when container network comes up
 rm -f ${target}/etc/network/if-up.d/ntpdate
