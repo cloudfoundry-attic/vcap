@@ -38,6 +38,8 @@ EOS
 
 write "etc/hosts" <<-EOS
 127.0.0.1 ${id} localhost
+${network_gateway_ip} gateway
+${network_container_ip} container
 EOS
 
 write "etc/network/interfaces" <<-EOS
@@ -78,6 +80,8 @@ sed -i -e '/^\($\|#\)/d' /etc/ssh/sshd_config
 sed -i -e '/^AcceptEnv/d' /etc/ssh/sshd_config
 # Pick up authorized keys from /etc/ssh
 echo AuthorizedKeysFile /etc/ssh/authorized_keys/%u >> /etc/ssh/sshd_config
+# Never do DNS lookups
+echo UseDNS no >> /etc/ssh/sshd_config
 EOS
 
 # Setup host keys for SSH
