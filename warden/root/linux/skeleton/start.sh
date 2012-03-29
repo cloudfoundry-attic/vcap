@@ -15,7 +15,7 @@ fi
 
 env -i unshare -n ../../../../src/clone/clone
 
-ifconfig ${network_iface_host} ${network_gateway_ip} netmask ${network_netmask}
+ifconfig ${network_host_iface} ${network_host_ip} netmask ${network_netmask}
 touch started
 
 function ssh_state() {

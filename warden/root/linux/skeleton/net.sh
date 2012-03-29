@@ -37,7 +37,7 @@ function setup_filter() {
 
   # Bind instance chain to dispatch chain
   iptables -I ${filter_dispatch_chain} 2 \
-    --in-interface ${network_iface_host} \
+    --in-interface ${network_host_iface} \
     --goto ${filter_instance_chain}
 }
 

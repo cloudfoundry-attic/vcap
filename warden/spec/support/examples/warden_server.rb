@@ -259,7 +259,7 @@ shared_examples "a warden server" do |container_klass|
 
     it "should return its IP address" do
       info = client.info(@handle)
-      info["gateway_ip"].should be
+      info["host_ip"].should be
       info["container_ip"].should be
     end
   end
