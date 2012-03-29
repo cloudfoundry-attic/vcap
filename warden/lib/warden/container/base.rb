@@ -191,8 +191,8 @@ module Warden
         @handle ||= network.to_hex
       end
 
-      def gateway_ip
-        @gateway_ip ||= network + 1
+      def host_ip
+        @host_ip ||= network + 1
       end
 
       def container_ip
@@ -505,7 +505,7 @@ module Warden
           'events' => self.events.to_a,
           'limits' => self.limits,
           'stats'  => {},
-          'gateway_ip' => self.gateway_ip,
+          'host_ip' => self.host_ip,
           'container_ip' => self.container_ip,
         }
       end

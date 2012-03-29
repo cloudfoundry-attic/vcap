@@ -40,7 +40,7 @@ module Warden
       def env
         env = {
           "id" => handle,
-          "network_gateway_ip" => gateway_ip.to_human,
+          "network_host_ip" => host_ip.to_human,
           "network_container_ip" => container_ip.to_human,
           "network_netmask" => self.class.network_pool.netmask.to_human,
         }

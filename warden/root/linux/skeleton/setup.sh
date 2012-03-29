@@ -9,24 +9,20 @@ source ./common.sh
 
 # Defaults for debugging the setup script
 id=${id:-test}
-network_gateway_ip=${network_gateway_ip:-10.0.0.1}
-network_container_ip=${network_container_ip:-10.0.0.2}
 network_netmask=${network_netmask:-255.255.255.252}
-copy_root_password=${copy_root_password:-0}
-
-# These variables are always synthesized from the instance id
-network_iface_host="veth-${id}-0"
-network_iface_container="veth-${id}-1"
+network_host_ip=${network_host_ip:-10.0.0.1}
+network_host_iface="veth-${id}-0"
+network_container_ip=${network_container_ip:-10.0.0.2}
+network_container_iface="veth-${id}-1"
 
 # Write configuration
 cat > config <<-EOS
 id=${id}
-network_gateway_ip=${network_gateway_ip}
-network_container_ip=${network_container_ip}
 network_netmask=${network_netmask}
-copy_root_password=${copy_root_password}
-network_iface_host=${network_iface_host}
-network_iface_container=${network_iface_container}
+network_host_ip=${network_host_ip}
+network_host_iface=${network_host_iface}
+network_container_ip=${network_container_ip}
+network_container_iface=${network_container_iface}
 EOS
 
 setup_fs
@@ -38,16 +34,16 @@ EOS
 
 write "etc/hosts" <<-EOS
 127.0.0.1 ${id} localhost
-${network_gateway_ip} gateway
+${network_host_ip} host
 ${network_container_ip} container
 EOS
 
 write "etc/network/interfaces" <<-EOS
 auto lo
 iface lo inet loopback
-auto ${network_iface_container}
-iface ${network_iface_container} inet static
-  gateway ${network_gateway_ip}
+auto ${network_container_iface}
+iface ${network_container_iface} inet static
+  gateway ${network_host_ip}
   address ${network_container_ip}
   netmask ${network_netmask}
 EOS
