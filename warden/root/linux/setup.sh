@@ -23,3 +23,8 @@ for i in $(seq 0 1023); do
     chown root.disk ${file}
   fi
 done
+
+# Disable AppArmor if possible
+if [ -x /etc/init.d/apparmor ]; then
+  /etc/init.d/apparmor teardown
+fi
