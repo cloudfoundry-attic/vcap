@@ -26,10 +26,10 @@ namespace :warden do
     require "warden/server"
 
     if args[:config_path]
-      config = VCAP.symbolize_keys(YAML.load_file(args[:config_path]))
-      if config[:server] && config[:server][:container_klass]
-        klass = config[:server][:container_klass]
-        config[:server][:container_klass] = klass.split("::").inject(Kernel) do |prev, cur|
+      config = YAML.load_file(args["config_path"])
+      if config["server"] && config["server"]["container_klass"]
+        klass = config["server"]["container_klass"]
+        config["server"]["container_klass"] = klass.split("::").inject(Kernel) do |prev, cur|
           prev.const_get(cur)
         end
       end

@@ -73,19 +73,19 @@ module Warden
           def setup(config = {})
             super(config)
 
-            allow_networks = []
-            if config[:network]
-              allow_networks = [config[:network][:allow_networks]].flatten.compact
+            self.allow_networks = []
+            if config["network"]
+              self.allow_networks = [config["network"]["allow_networks"]].flatten.compact
             end
 
-            deny_networks = []
-            if config[:network]
-              deny_networks = [config[:network][:deny_networks]].flatten.compact
+            self.deny_networks = []
+            if config["network"]
+              self.deny_networks = [config["network"]["deny_networks"]].flatten.compact
             end
 
             sh *[ %{env},
-                  %{ALLOW_NETWORKS=%s} % allow_networks.join(" "),
-                  %{DENY_NETWORKS=%s} % deny_networks.join(" "),
+                  %{ALLOW_NETWORKS=%s} % self.allow_networks.join(" "),
+                  %{DENY_NETWORKS=%s} % self.deny_networks.join(" "),
                   %{%s/net.sh} % root_path,
                   %{setup} ]
 

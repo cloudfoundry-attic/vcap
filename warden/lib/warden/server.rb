@@ -61,11 +61,11 @@ module Warden
 
     def self.setup_server(config = nil)
       config ||= {}
-      @unix_domain_path = config.delete(:unix_domain_path) { default_unix_domain_path }
-      @unix_domain_permissions = config.delete(:unix_domain_permissions) { default_unix_domain_permissions }
-      @container_root = config.delete(:container_root) { default_container_root  }
-      @container_klass = config.delete(:container_klass) { default_container_klass }
-      @container_grace_time = config.delete(:container_grace_time) { default_container_grace_time }
+      @unix_domain_path = config.delete("unix_domain_path") { default_unix_domain_path }
+      @unix_domain_permissions = config.delete("unix_domain_permissions") { default_unix_domain_permissions }
+      @container_root = config.delete("container_root") { default_container_root  }
+      @container_klass = config.delete("container_klass") { default_container_klass }
+      @container_grace_time = config.delete("container_grace_time") { default_container_grace_time }
     end
 
     def self.setup_logger(config = nil)
@@ -75,17 +75,17 @@ module Warden
 
     def self.setup_network(config = nil)
       config ||= {}
-      network_start_address = Network::Address.new(config[:pool_start_address] || "10.254.0.0")
-      network_size = config[:pool_size] || 64
+      network_start_address = Network::Address.new(config["pool_start_address"] || "10.254.0.0")
+      network_size = config["pool_size"] || 64
       network_pool = Pool::NetworkPool.new(network_start_address, network_size)
       container_klass.network_pool = network_pool
     end
 
     def self.setup(config = {})
       @config = config
-      setup_server config[:server]
-      setup_logger config[:logging]
-      setup_network config[:network]
+      setup_server config["server"]
+      setup_logger config["logging"]
+      setup_network config["network"]
     end
 
     def self.run!

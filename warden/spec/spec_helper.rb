@@ -49,9 +49,9 @@ RSpec.configure do |config|
   config.before(:each) do
     config = {
       # Run every logging statement, but discard output
-      :logging => {
-        :level => :debug2,
-        :file  => '/dev/null',
+      "logging" => {
+        "level" => "debug2",
+        "file"  => '/dev/null',
       },
     }
     Warden::Server.setup(config)
