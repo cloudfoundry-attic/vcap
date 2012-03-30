@@ -5,17 +5,15 @@ gem 'rails', '~> 3.0.5'
 # Message bus
 gem 'nats', :require => 'nats/client'
 
-gem 'logging', '>= 1.5.0'
-
 # VCAP common components
 gem 'vcap_common', :require => ['vcap/common', 'vcap/component']
 gem 'vcap_logging', :require => ['vcap/logging']
-gem 'vcap_staging'
+gem 'vcap_staging', '~> 0.1.50'
 gem 'cf-uaa-client', '>= 0.0.5'
 
 # For queuing staging tasks
 gem 'em-hiredis'
-gem 'vcap_stager', '~> 0.1.11'
+gem 'vcap_stager', '~> 0.1.14'
 
 # Databases
 gem 'sqlite3'
