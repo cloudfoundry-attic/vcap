@@ -24,6 +24,28 @@ when "redhat", "centos", "fedora"
   include_recipe "jpackage"
 end
 
-package "maven2" do
-  action :install
+remote_file  File.join("", "tmp", "apache-maven-#{node[:maven][:version]}.tar.gz") do
+  owner node[:deployment][:user]
+  source node[:maven][:source]
+  not_if { ::File.exists?(File.join("", "tmp", "apache-maven-#{node[:maven][:version]}.tar.gz")) }
+end
+
+directory node[:maven][:base] do
+  owner node[:deployment][:user]
+  group node[:deployment][:group]
+  mode "0755"
+  recursive true
+  action :create
+end
+
+bash "Install Maven #{node[:maven][:path]}" do
+  cwd node[:maven][:base]
+  user node[:deployment][:user]
+  tarball = File.join("", "tmp", "apache-maven-#{node[:maven][:version]}.tar.gz")
+  code <<-EOH
+      tar xzf #{tarball}
+  EOH
+  not_if do
+    ::File.exists?(File.join(node[:maven][:path], "bin", "mvn"))
+  end
 end
