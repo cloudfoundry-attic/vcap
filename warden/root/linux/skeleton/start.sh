@@ -33,5 +33,16 @@ while ! ssh_state | grep -q "spawned"; do
 done
 
 # Setup persistent connections into the container
-ssh -o ControlMaster=yes -N -F ssh/ssh_config root@${id} &
-ssh -o ControlMaster=yes -N -F ssh/ssh_config vcap@${id} &
+#
+# -v: Verbose mode.
+# -M: Places the ssh client into "master" mode for connection sharing.
+# -f: Requests ssh to go to background just before command execution.
+# -N: Do not execute a remote command.
+# -F: Specifies an alternative per-user configuration file.
+#
+ssh -v -M -f -N -F ssh/ssh_config root@${id} \
+  1> ssh/control-root@${network_container_ip}.stdout \
+  2> ssh/control-root@${network_container_ip}.stderr
+ssh -v -M -f -N -F ssh/ssh_config vcap@${id} \
+  1> ssh/control-vcap@${network_container_ip}.stdout \
+  2> ssh/control-vcap@${network_container_ip}.stderr
