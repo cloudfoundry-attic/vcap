@@ -22,7 +22,7 @@ fi
 function debootstrap() {
   if [ -d ${target} ]; then
     read -p "Target directory already exists. Erase it? "
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
+    if [[ $REPLY =~ ^[Yy].*$ ]]; then
       rm -rf ${target}
     else
       echo "Aborting..."
