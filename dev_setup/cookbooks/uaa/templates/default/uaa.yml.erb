@@ -10,20 +10,9 @@ database:
   url: jdbc:postgresql://<%= node[:uaadb][:host] %>:<%= node[:uaadb][:port] %>/<%= node[:uaadb][:database] %>
 
 jvm_args: -Xmx512m
-spring_profiles: jdbc,postgresql,!legacy
-
-bootstrap:
-  admin:
-    username: marissa
-    password: $2a$10$ikFXo9IFG6zbMbhGcssySOhjDsGPpqzKwsdVOeCvJ7JoWjSQxyfs6
-    given_name: Marissa
-    family_name: Bloggs
-    email: marissa@test.org
+spring_profiles: postgresql
 
 cloud_controller:
-  login_url: http://api.vcap.me/users/{username}/tokens
-  client:
-    secret: <%= node[:uaa][:cloud_controller][:secret] %>
   database:
     url: jdbc:postgresql://<%= node[:ccdb][:host] %>:<%= node[:ccdb][:port] %>/<%= node[:ccdb][:database] %>
     username: <%= node[:ccdb][:user] %>
@@ -33,18 +22,30 @@ jwt:
   token:
     key: <%= node[:uaa][:jwt_secret] %>
 
-app:
-  client:
-    secret: <%= node[:uaa][:app][:secret] %>
-
-my:
-  client:
-    secret: <%= node[:uaa][:my][:secret] %>
-
-scim:
-  client:
-    secret: <%= node[:uaa][:scim][:secret] %>
-
 batch:
   username: <%= node[:uaa][:batch][:username] %>
-  password: <%= node[:uaa][:batch][:secret] %>
+  password: <%= node[:uaa][:batch][:password] %>
+
+oauth:
+  clients:
+    admin:
+      authorized-grant-types: client_credentials
+      scope: read,write,password
+      authorities: ROLE_CLIENT,ROLE_ADMIN
+      id: admin
+      secret: <%= node[:uaa][:admin][:password] %>
+      resource-ids: scim,password,tokens,clients,openid
+    cloud_controller:
+      authorized-grant-types: client_credentials
+      scope: read,write,password
+      authorities: ROLE_CLIENT,ROLE_ADMIN
+      id: cloud_controller
+      secret: <%= node[:uaa][:cloud_controller][:password] %>
+      resource-ids: scim,password,tokens
+    vmc:
+      authorized-grant-types: implicit
+      scope: read,password
+      authorities: ROLE_UNTRUSTED
+      id: vmc
+      resource-ids: cloud_controller,openid,password
+      redirect-uri: http://uaa.cloudfoundry.com/redirect/vmc
