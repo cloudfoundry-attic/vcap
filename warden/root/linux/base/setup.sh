@@ -30,7 +30,8 @@ function debootstrap() {
     fi
   fi
 
-  if [ ! -v http_proxy ]; then
+  # -v is too new, revert to old trick
+  if [ -z ${http_proxy+X} ]; then
     eval $(apt-config shell http_proxy Acquire::http::Proxy)
     export http_proxy
   fi
