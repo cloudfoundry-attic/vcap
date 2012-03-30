@@ -505,8 +505,8 @@ module Warden
           'events' => self.events.to_a,
           'limits' => self.limits,
           'stats'  => {},
-          'host_ip' => self.host_ip,
-          'container_ip' => self.container_ip,
+          'host_ip' => self.host_ip.to_human,
+          'container_ip' => self.container_ip.to_human,
         }
       end
 
