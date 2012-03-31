@@ -9,7 +9,7 @@ class ServicesController < ApplicationController
   before_filter :validate_content_type
   before_filter :require_service_auth_token, :only => [:create, :delete, :update_handle, :list_handles, :list_brokered_services]
   before_filter :require_user, :only => [:provision, :bind, :bind_external, :unbind, :unprovision,
-                                         :create_snapshot, :enum_snapshots, :snapshot_details,:rollback_snapshot,
+                                         :create_snapshot, :enum_snapshots, :snapshot_details,:rollback_snapshot, :delete_snapshot,
                                          :serialized_url, :import_from_url, :import_from_data, :job_info]
   before_filter :require_lifecycle_extension, :only => [:create_snapshot, :enum_snapshots, :snapshot_details,:rollback_snapshot, :delete_snapshot,
                                          :serialized_url, :import_from_url, :import_from_data, :job_info]
@@ -192,7 +192,7 @@ class ServicesController < ApplicationController
 
     result = cfg.create_snapshot
 
-    render :json => result
+    render :json => result.extract
   end
 
   # Enumerate all snapshots of the given instance
@@ -204,7 +204,7 @@ class ServicesController < ApplicationController
 
     result = cfg.enum_snapshots
 
-    render :json => result
+    render :json => result.extract
   end
 
   # Get snapshot detail information
@@ -216,7 +216,7 @@ class ServicesController < ApplicationController
 
     result = cfg.snapshot_details params['sid']
 
-    render :json => result
+    render :json => result.extract
   end
 
   # Rollback to a snapshot
@@ -228,7 +228,7 @@ class ServicesController < ApplicationController
 
     result = cfg.rollback_snapshot params['sid']
 
-    render :json => result
+    render :json => result.extract
   end
 
   # Delete a snapshot
@@ -240,7 +240,7 @@ class ServicesController < ApplicationController
 
     result = cfg.delete_snapshot params['sid']
 
-    render :json => result
+    render :json => result.extract
   end
 
   # Get the url to download serialized data for an instance
@@ -252,7 +252,7 @@ class ServicesController < ApplicationController
 
     result = cfg.serialized_url
 
-    render :json => result
+    render :json => result.extract
   end
 
   # import serialized data to an instance from url
@@ -266,7 +266,7 @@ class ServicesController < ApplicationController
 
     result = cfg.import_from_url req
 
-    render :json => result
+    render :json => result.extract
   end
 
   # import serialized data to an instance from request data
@@ -284,7 +284,7 @@ class ServicesController < ApplicationController
 
     result = cfg.import_from_data req
 
-    render :json => result
+    render :json => result.extract
   end
 
   # Get job information
@@ -296,7 +296,7 @@ class ServicesController < ApplicationController
 
     result = cfg.job_info params['job_id']
 
-    render :json => result
+    render :json => result.extract
   end
 
   # Binds a provisioned instance to an app
