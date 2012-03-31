@@ -56,6 +56,7 @@ class CloudError < StandardError
   ACCOUNT_TOO_MANY_SERVICES = [504, HTTP_FORBIDDEN, "Too many Services provisioned: %s, you're allowed: %s"]
   EXTENSION_NOT_IMPL = [505, HTTP_NOT_IMPLEMENTED, "Service extension %s is not implemented."]
 
+
   # Account Capacity
   ACCOUNT_NOT_ENOUGH_MEMORY = [600, HTTP_FORBIDDEN, "Not enough memory capacity, you're allowed: %s"]
   ACCOUNT_APPS_TOO_MANY = [601, HTTP_FORBIDDEN, "Too many applications: %s, you're allowed: %s"]
