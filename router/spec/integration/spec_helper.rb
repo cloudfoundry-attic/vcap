@@ -16,6 +16,11 @@ def simple_http_request(host, path, http_version='1.1')
   "GET #{path} HTTP/#{http_version}\r\nUser-Agent: curl/7.19.7 (i486-pc-linux-gnu) libcurl/7.19.7 OpenSSL/0.9.8k zlib/1.2.3.3 libidn/1.15\r\nHost: #{host}\r\nAccept: */*\r\nContent-Length: 11\r\n\r\nhello world"
 end
 
+def simple_http_response(body, http_version='1.1')
+  "HTTP/#{http_version} 200 OK\r\nContent-Type: text/html;charset=utf-8\r\n" +
+  "Content-Length: #{body.length}\r\nConnection: keep-alive\r\n\r\n#{body}"
+end
+
 def parse_http_msg_from_socket(socket)
   parser = Http::Parser.new
   complete = false
@@ -138,6 +143,26 @@ end
 
 def simple_sticky_request(host, path, cookie, http_version='1.1')
   "GET #{path} HTTP/#{http_version}\r\nHost: #{host}\r\nConnection: keep-alive\r\nAccept: application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5\r\nUser-Agent: Mozilla/5.0 (X11; U; Linux i686; en-US) AppleWebKit/534.10 (KHTML, like Gecko) Chrome/8.0.552.237 Safari/534.10\r\nAccept-Encoding: gzip,deflate,sdch\r\nAccept-Language: en-US,en;q=0.8\r\nAccept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.3\r\nCookie: #{cookie}\r\n\r\n"
+end
+
+def chunked_encoded_request(host, path, messages, http_version='1.1')
+  chunks = []
+  chunks << "POST #{path} HTTP/#{http_version}\r\nHost: #{host}\r\nTransfer-Encoding: chunked\r\n\r\n"
+  messages.each do |m|
+    chunks << "#{m.size.to_s(16)}\r\n#{m}\r\n"
+  end
+  chunks << "0\r\n\r\n"
+  chunks
+end
+
+def chunked_encoded_response(messages, http_version='1.1')
+  chunks = []
+  chunks << "HTTP/#{http_version} 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n"
+  messages.each do |m|
+    chunks << "#{m.size.to_s(16)}\r\n#{m}\r\n"
+  end
+  chunks << "0\r\n\r\n"
+  chunks
 end
 
 def healthz_request
@@ -269,6 +294,46 @@ module Integration
         rmsg, rbody = parse_http_msg_from_socket(rs)
         ss.close
         return rmsg
+      end
+    end
+
+    def send_chunked_request(router_host, router_port, messages)
+      chunk_header, chunks = chunked_encoded_request(@uris[0], '/', messages)
+      TCPSocket.open(router_host, router_port) do |rs|
+        rs.send(chunk_header, 0)
+        socket = IO.select([rs], nil, nil, 1)
+        if socket
+          rmsg, rbody = parse_http_msg_from_socket(rs)
+          return [ rmsg, rbody ]
+        end
+
+        chunks.each { |chunk| rs.send(chunk, 0) }
+        IO.select([@socket], nil, nil, 2) # 2 secs timeout
+        ss = @socket.accept
+        msg, body = parse_http_msg_from_socket(ss)
+
+        # Send a response back..
+        ss.send(simple_http_response(body), 0)
+        rmsg, rbody = parse_http_msg_from_socket(rs)
+        ss.close
+        return [ rmsg, rbody ]
+      end
+    end
+
+    def get_chunked_response(router_host, router_port, messages)
+      req = simple_http_request(@uris[0], '/')
+      TCPSocket.open(router_host, router_port) do |rs|
+        rs.send(req, 0)
+        IO.select([@socket], nil, nil, 2) # 2 secs timeout
+        ss = @socket.accept
+        msg, body = parse_http_msg_from_socket(ss)
+
+        # Send a response back..
+        chunks = chunked_encoded_response(messages)
+        chunks.each { |chunk| ss.send(chunk, 0) }
+        rmsg, rbody = parse_http_msg_from_socket(rs)
+        ss.close
+        return [ rmsg, rbody ]
       end
     end
 
