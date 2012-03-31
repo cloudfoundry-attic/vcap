@@ -270,5 +270,21 @@ describe 'Router Integration Tests (require nginx running)' do
     app.stop
   end
 
+  it 'should support chunked encoding response' do
+    app = TestApp.new('chunk.vcap.me')
+    dea = DummyDea.new(@nats_server.uri, '1234')
+    dea.register_app(app, {"component" => "trace", "runtime" => "ruby"})
+
+    # send chunked-encoded message
+    messages = ["hello", ", world", "!"]
+    rmsg, rbody = app.get_chunked_response("127.0.0.1", RouterServer.port, messages)
+
+    rmsg.status_code.should == 200
+    rbody.should == messages.join
+
+    dea.unregister_app(app)
+
+    app.stop
+  end
 
 end
