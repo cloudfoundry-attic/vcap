@@ -11,7 +11,7 @@ module Warden
 
     HELP_MESSAGE =<<-EOT
 ping                          - ping warden
-create                        - create new container
+create [[bind_mount:src,dst,mode]...] - create new container
 destroy <handle>              - shutdown container <handle>
 stop <handle>                 - stop all processes in <handle>
 spawn <handle> cmd            - spawns cmd inside container <handle>, returns #jobid
