@@ -49,7 +49,7 @@ describe VCAP::PriorityQueueFIFO do
           prev = val
           n-=1
         end
-      end.to take_less_than(5).seconds
+      end.to take_less_than(6).seconds
 
       n.should == 1
     end
