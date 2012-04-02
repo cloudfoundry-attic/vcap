@@ -1,7 +1,7 @@
 require "readline"
 require "shellwords"
 require "warden/client"
-require "yajl"
+require "json"
 
 module Warden
   class Repl
@@ -60,18 +60,18 @@ EOT
 
     def container_list
       @client.write(['list'])
-      Yajl::Parser.parse(@client.read.inspect)
+      JSON.parse(@client.read.inspect)
     end
 
     def save_history
-      marshalled = Yajl::Encoder.encode(Readline::HISTORY.to_a)
+      marshalled = Readline::HISTORY.to_a.to_json
       open(@history_path, 'w+') {|f| f.write(marshalled)}
     end
 
     def restore_history
       return unless File.exists? @history_path
       open(@history_path, 'r') do |file|
-        history = Yajl::Parser.parse(file.read)
+        history = JSON.parse(file.read)
         history.map {|line| Readline::HISTORY.push line}
       end
     end
@@ -131,7 +131,10 @@ EOT
       @client.write(words)
       begin
         raw_result = @client.read.inspect
-        command_info[:result] = Yajl::Parser.parse(raw_result)
+        # Brutal hack to work around the fact that JSON refuses
+        # to parse simple strings.
+        x = JSON.parse("[#{raw_result}]")
+        command_info[:result] = x[0]
         case words[0]
         when 'create'
           puts command_info[:result]
