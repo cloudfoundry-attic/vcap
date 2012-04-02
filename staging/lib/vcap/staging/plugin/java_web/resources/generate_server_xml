@@ -35,17 +35,19 @@ TEMPLATE = <<-ERB
 
   <Listener className="org.apache.catalina.core.JasperListener" />
   <Listener className="org.apache.catalina.core.JreMemoryLeakPreventionListener" />
+  <Listener className="org.apache.catalina.mbeans.ServerLifecycleListener" />
   <Listener className="org.apache.catalina.mbeans.GlobalResourcesLifecycleListener" />
 
   <Service name="Catalina">
 
     <Connector port="<%= tomcat_port %>" protocol="HTTP/1.1"
-               connectionTimeout="20000" bindOnInit="false" />
+               connectionTimeout="20000" />
 
     <Engine name="Catalina" defaultHost="localhost">
 
       <Host name="localhost"  appBase="webapps"
-            unpackWARs="true" autoDeploy="true">
+            unpackWARs="true" autoDeploy="true"
+            xmlValidation="false" xmlNamespaceAware="false">
       </Host>
     </Engine>
   </Service>
