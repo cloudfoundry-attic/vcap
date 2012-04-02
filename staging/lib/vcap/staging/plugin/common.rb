@@ -15,9 +15,11 @@ require File.expand_path('../config', __FILE__)
 require File.expand_path('../gemfile_support', __FILE__)
 require File.expand_path('../gemfile_task', __FILE__)
 require File.expand_path('../ruby_autoconfig', __FILE__)
+require File.expand_path('../java_autoconfig', __FILE__)
 require File.expand_path('../gem_cache', __FILE__)
 
 require File.expand_path('../pip_support', __FILE__)
+require File.expand_path('../java_database_support', __FILE__)
 
 # TODO - Separate the common staging helper methods from the 'StagingPlugin' base class, for more clarity.
 # Staging plugins (at least the ones written in Ruby) are expected to subclass this. See ruby/sinatra for a simple example.

@@ -2,13 +2,8 @@ require 'nokogiri'
 require 'fileutils'
 
 class Tomcat
-  AUTOSTAGING_JAR = 'auto-reconfiguration-0.6.2.jar'
   DEFAULT_APP_CONTEXT = "/WEB-INF/applicationContext.xml"
   DEFAULT_SERVLET_CONTEXT_SUFFIX = "-servlet.xml"
-  SERVICE_DRIVER_HASH = {
-      "mysql-5.1" => 'mysql-connector-java-5.1.12-bin.jar',
-      "postgresql-9.0" => 'postgresql-9.0-801.jdbc4.jar'
-  }
 
   def self.resource_dir
     File.join(File.dirname(__FILE__), 'resources')
@@ -167,24 +162,8 @@ class Tomcat
     webapp_config
   end
 
-  def self.copy_jar jar, dest
-    jar_path = File.join(File.dirname(__FILE__), 'resources', jar)
-    FileUtils.mkdir_p dest
-    FileUtils.cp(jar_path, dest)
-  end
-
   def self.get_autostaging_context autostaging_template
     Nokogiri::XML(open(autostaging_template))
-  end
-
-  def self.copy_service_drivers(services, webapp_root)
-    drivers = services.select { |svc|
-      SERVICE_DRIVER_HASH.has_key?(svc[:label])
-    }
-    drivers.each { |driver|
-      driver_dest = File.join(webapp_root, '../../lib')
-      copy_jar SERVICE_DRIVER_HASH[driver[:label]], driver_dest
-    } if drivers
   end
 
   def self.get_web_config (webapp_path)
@@ -195,11 +174,6 @@ class Tomcat
   def self.save_web_config (web_config, webapp_path)
     web_config_file = File.join(webapp_path, 'WEB-INF/web.xml')
     File.open(web_config_file, 'w') {|f| f.write(web_config.to_xml) }
-  end
-
-  def self.copy_autostaging_jar(webapp_path)
-    jar_dest = File.join(webapp_path, 'WEB-INF/lib')
-    copy_jar AUTOSTAGING_JAR, jar_dest
   end
 
   def self.insight_bound? services
