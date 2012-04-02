@@ -13,7 +13,7 @@ node[:postgresql][:host] ||= cf_local_ip
 
 [node[:deployment][:home], File.join(node[:deployment][:home], "deploy"), node[:deployment][:log_path],
  File.join(node[:deployment][:home], "sys", "log"), node[:deployment][:config_path],
- File.join(node[:deployment][:config_path], "staging")].each do |dir|
+ File.join(node[:deployment][:config_path], "staging"), node[:deployment][:setup_cache]].each do |dir|
   directory dir do
     owner node[:deployment][:user]
     group node[:deployment][:group]
