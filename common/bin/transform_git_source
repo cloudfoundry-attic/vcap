@@ -109,7 +109,7 @@ def rewrite_gemfile(gemfile, checkout_dir)
       @options = args.last.is_a?(Hash) ? args.pop : {}
       @version = args
       if @options.delete(:git)
-        @path = checkout_dir.join(@name).expand_path.to_s
+        @path = checkout_dir.join(@name).to_s
       else
         raise ArgumentError, ':git option expected, none found'
       end
