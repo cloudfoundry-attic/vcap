@@ -1,5 +1,5 @@
 module VCAP
   module Staging
-    VERSION = '0.1.48'
+    VERSION = '0.1.50'
   end
 end
