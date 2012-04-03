@@ -32,7 +32,7 @@ end
 
 describe VCAP::Stager do
   before :all do
-    @task_timeout = ENV['VCAP_TEST_TASK_TIMEOUT'] || 5
+    @task_timeout = ENV['VCAP_TEST_TASK_TIMEOUT'] || 10
     # Set this to true if you want to save the output of each component
     @save_logs = ENV['VCAP_TEST_LOG'] == 'true'
     @app_props = {
