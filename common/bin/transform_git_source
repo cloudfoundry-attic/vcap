@@ -100,27 +100,21 @@ end
 # We don't attempt to be a full ruby parser, only rewrite Gemfiles we wrote
 def rewrite_gemfile(gemfile, checkout_dir)
   out = ''
+
   probe = Object.new
   class << probe
-    attr_accessor :checkout_dir
-    attr_reader :name, :version, :options, :path
+    attr_reader :name, :version, :options
     def gem(name, *args)
       @name = name
       @options = args.last.is_a?(Hash) ? args.pop : {}
       @version = args
-      if @options.delete(:git)
-        @path = checkout_dir.join(@name).expand_path.to_s
-      else
+      if ! @options.include?(:git)
         raise ArgumentError, ':git option expected, none found'
       end
     end
-
-    def to_def
-      "gem #{name.inspect}, :path => #{path.inspect}"
-    end
   end
 
-  probe.checkout_dir = checkout_dir
+  relpath = checkout_dir.relative_path_from(gemfile.parent)
   gemfile.each_line do |line|
     case line
     when /^\s*gem.*:git/
@@ -129,7 +123,8 @@ def rewrite_gemfile(gemfile, checkout_dir)
         next
       end
       probe.instance_eval(line)
-      out << "#{probe.to_def}\n"
+      out << "gem #{probe.name.inspect}, :path => #{
+        relpath.join(probe.name).to_s.inspect}\n"
     else
       out << line
     end
