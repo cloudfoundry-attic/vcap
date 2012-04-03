@@ -146,8 +146,9 @@ Incorrect number of arguments! Usage:
     exit 1
   end
 
-  @logger = Logger.new(STDOUT)
+  @logger = Logger.new(STDERR)
   project_dir, checkout_dir = ARGV.map { |x| Pathname.new(x) }
+  ENV['BUNDLE_GEMFILE'] = project_dir.join('Gemfile').to_s
   rewrite_lockfile(project_dir.join('Gemfile.lock'), checkout_dir)
   rewrite_gemfile(project_dir.join('Gemfile'), checkout_dir)
 end
