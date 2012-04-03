@@ -34,10 +34,6 @@ module VCAP
       end
 
       def start_server!
-        if Process.uid != 0
-          puts "Package cache must be run as root."
-          exit 1
-        end
         #XXX matt's logging stuff, disabled till' I figure out how to setup a new
         #formatter for debugging.
         #VCAP::Logging.setup_from_config(@config[:logging])
@@ -51,8 +47,20 @@ module VCAP
         at_exit { clean_directories } #prevent storage leaks.
         setup_pidfile
         listen_port = config[:listen_port]
-        cache_server = VCAP::PackageCache::PackageCacheServer.new(@logger)
-        Thin::Server.start('127.0.0.1', listen_port , cache_server)
+
+        server_params = {:logger => @logger,
+                         :config => @config,
+                         :directories => @directories,
+          }
+
+        server = Thin::Server.new('127.0.0.1', listen_port) do
+           use Rack::CommonLogger
+           map "/" do
+             run VCAP::PackageCache::PackageCacheServer.new(server_params)
+           end
+        end
+        server.threaded = true
+        server.start!
       end
 
       private
@@ -87,10 +95,10 @@ module VCAP
 
       def setup_pidfile
         begin
-          pid_file = VCAP::PidFile.new(@config[:pid_file])
+          pid_file = VCAP::PidFile.new(@config[:pid_filename])
           pid_file.unlink_at_exit
         rescue => e
-          puts "ERROR: Can't create package_cache pid file #{config[:pid_file]}"
+          puts "ERROR: Can't create package_cache pid file #{config[:pid_filename]}"
           exit 1
         end
       end

@@ -7,7 +7,7 @@ describe "A Java web application being staged without a web config" do
   end
 
   it "should fail" do
-    lambda { stage :java_web }.should raise_error
+    lambda { stage(:java_web){} }.should raise_error
   end
 end
 

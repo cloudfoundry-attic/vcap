@@ -1,0 +1,14 @@
+{
+  "name": "uaadb",
+  "default_attributes": {
+    "services" : [ "postgresql" ],
+    "service_components" : ["postgresql_node", "postgresql_backup"]
+  },
+  "override_attributes": {},
+  "json_class": "Chef::Role",
+  "description": "UAA Database",
+  "chef_type": "role",
+  "run_list" : ["recipe[deployment]",
+                "recipe[postgresql]",
+                "recipe[uaadb]"]
+}

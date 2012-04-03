@@ -1,0 +1,22 @@
+---
+capacity: 100
+plan: free
+local_db: sqlite3:/var/vcap/services/rabbit/rabbit_node.db
+base_dir: /var/vcap/services/rabbit/instances
+mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
+index: <%= node[:rabbitmq_node][:index] %>
+logging:
+  level: debug
+pid: /var/vcap/sys/run/rabbit_node.pid
+node_id: <%= "rabbit_node_free_#{node[:rabbitmq_node][:index]}" %>
+migration_nfs: /mnt/vcap
+port_range:
+  first: 10001
+  last: 20000
+admin_port_range:
+  first: 20001
+  last: 30000
+max_clients: 1000
+rabbitmq_log_dir: /var/vcap/services/rabbit/logs
+rabbitmq_server: <%= File.join(node[:rabbitmq][:path], "sbin", "rabbitmq-server") %>
+rabbitmq_start_timeout: 5
