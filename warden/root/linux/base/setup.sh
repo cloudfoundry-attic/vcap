@@ -30,7 +30,13 @@ function debootstrap() {
     fi
   fi
 
-  if [ ! -v http_proxy ]; then
+  # -v is too new, revert to old trick
+  # ${VAR+X} will be
+  #   X     when VAR is unset
+  #   $VAR  otherwise
+  # Only do this heuristic when http_proxy is unset
+  # You can opt out of this by setting http_proxy to nil
+  if [ -z ${http_proxy+X} ]; then
     eval $(apt-config shell http_proxy Acquire::http::Proxy)
     export http_proxy
   fi
