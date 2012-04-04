@@ -76,20 +76,30 @@ def to_lock(specs, platforms, dependencies)
   out
 end
 
-def rewrite_lockfile(lockfile, checkout_dir)
+def rewrite_lockfile(lockfile, checkout_base)
   parser = Bundler::LockfileParser.new(lockfile.read)
 
   candidates = parser.specs.select { |s| Bundler::Source::Git === s.source }
   if candidates.empty?
     @logger.info 'Nothing to see here, move along'
+    return
   end
 
+  gemsrc = parser.sources.find { |s| Bundler::Source::Rubygems === s } ||
+    Bundler::Source::Rubygems.from_lock('remote' => 'http://rubygems.org')
+  lockfile.parent.join('vendor', 'cache').mkpath
   candidates.each do |spec|
     # TODO: shall i sanitize spec.name?
-    checkout(spec, checkout_dir.join(spec.name))
-    spec.source = Bundler::Source::Path.from_lock(
-      'remote' => checkout_dir.join(spec.name).expand_path
-    )
+    checkout_dir = checkout_base.join(spec.name)
+    checkout(spec, checkout_dir)
+    Dir.chdir(checkout_dir) do
+      %x(gem build #{spec.name}.gemspec)
+      gempath = checkout_dir.join("#{spec.name}-#{spec.version}.gem")
+      %x(ln -v #{gempath} -t #{lockfile.parent.join('vendor', 'cache')})
+    end
+    spec.source = gemsrc
+    # make the dependency have "no specified source"
+    parser.dependencies.find { |d| d.name == spec.name }.source = nil
   end
 
   lockfile.open('w') do |f|
@@ -98,29 +108,21 @@ def rewrite_lockfile(lockfile, checkout_dir)
 end
 
 # We don't attempt to be a full ruby parser, only rewrite Gemfiles we wrote
-def rewrite_gemfile(gemfile, checkout_dir)
+def rewrite_gemfile(gemfile, checkout_base)
   out = ''
   probe = Object.new
   class << probe
-    attr_accessor :checkout_dir
     attr_reader :name, :version, :options, :path
     def gem(name, *args)
       @name = name
       @options = args.last.is_a?(Hash) ? args.pop : {}
       @version = args
-      if @options.delete(:git)
-        @path = checkout_dir.join(@name).expand_path.to_s
-      else
+      unless @options.include?(:git)
         raise ArgumentError, ':git option expected, none found'
       end
     end
-
-    def to_def
-      "gem #{name.inspect}, :path => #{path.inspect}"
-    end
   end
 
-  probe.checkout_dir = checkout_dir
   gemfile.each_line do |line|
     case line
     when /^\s*gem.*:git/
@@ -129,7 +131,9 @@ def rewrite_gemfile(gemfile, checkout_dir)
         next
       end
       probe.instance_eval(line)
-      out << "#{probe.to_def}\n"
+      out << "gem #{probe.name.inspect}"
+      out << ", #{probe.version.map(&:inspect).join(', ')}" unless probe.version.empty?
+      out << "\n"
     else
       out << line
     end
@@ -147,8 +151,8 @@ Incorrect number of arguments! Usage:
   end
 
   @logger = Logger.new(STDERR)
-  project_dir, checkout_dir = ARGV.map { |x| Pathname.new(x) }
+  project_dir, checkout_base = ARGV.map { |x| Pathname.new(x).expand_path }
   ENV['BUNDLE_GEMFILE'] = project_dir.join('Gemfile').to_s
-  rewrite_lockfile(project_dir.join('Gemfile.lock'), checkout_dir)
-  rewrite_gemfile(project_dir.join('Gemfile'), checkout_dir)
+  rewrite_lockfile(project_dir.join('Gemfile.lock'), checkout_base)
+  rewrite_gemfile(project_dir.join('Gemfile'), checkout_base)
 end
