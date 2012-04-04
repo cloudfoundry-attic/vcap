@@ -497,6 +497,81 @@ module DEA
       end
     end
 
+    def spawn(cmd, opts, cb = nil)
+      @spawn_cbs ||= {}
+
+      if @spawn_reaper.nil?
+        @spawn_reaper = EM.add_periodic_timer(0.1) do
+          @spawn_cbs.keys.each do |pid|
+            _, status = Process.waitpid2(pid, Process::WNOHANG)
+
+            if status
+              cb = @spawn_cbs.delete(pid)
+              cb.call(nil, status) if cb
+            end
+          end
+        end
+      end
+
+      env = opts.delete(:env)
+      user = opts.delete(:user)
+      sh = "/bin/sh"
+      r, w = IO.pipe
+
+      # su user when specified
+      if user
+        case RUBY_PLATFORM
+        when /linux/
+          sh = "su -s /bin/sh #{user}"
+        when /darwin/
+          sh = "su -m #{user}"
+        else
+          @logger.fatal("Unsupported platform for secure mode: #{RUBY_PLATFORM}")
+          exit 1
+        end
+      end
+
+      pid = fork do
+        # Clear environment variables
+        opts[:unsetenv_others] = true
+
+        # Close non-default file descriptors
+        opts[:close_others] = true
+
+        # Read from pipe
+        opts[:in] = r
+
+        # renice
+        begin
+          Process.setpriority(Process::PRIO_PROCESS, 0, 0)
+        rescue Errno::EACCES
+          # don't care: this process is already pleasant to work with
+        end
+
+        exec(sh, opts)
+      end
+
+      begin
+        # Populate environment by exporting, since sh may need to expand variables
+        env.each do |k, v|
+          w.puts("export %s=%s" % [k, v])
+        end
+
+        w.puts("exec %s" % [cmd])
+
+        r.close
+        w.close
+
+      rescue SystemCallError
+        # Something failed, kill process
+        Process.kill("KILL", pid)
+      end
+
+      @spawn_cbs[pid] = cb
+
+      nil
+    end
+
     def process_dea_stop(message)
       return if @shutting_down
       message_json = JSON.parse(message)
@@ -666,27 +741,6 @@ module DEA
         manifest = {}
         manifest = File.open(manifest_file) { |f| YAML.load(f) } if File.file?(manifest_file)
 
-        prepare_script = File.join(instance_dir, 'prepare')
-        # once EM allows proper close_on_exec we can remove
-        FileUtils.cp(File.expand_path("../../../bin/close_fds", __FILE__), prepare_script)
-        FileUtils.chmod(0700, prepare_script)
-
-        # Secure mode requires a platform-specific shell command.
-        if @secure
-          case RUBY_PLATFORM
-          when /linux/
-            sh_command = "env -i su -s /bin/sh #{user[:user]}"
-          when /darwin/
-            sh_command = "env -i su -m #{user[:user]}"
-          else
-            @logger.fatal("Unsupported platform for secure mode: #{RUBY_PLATFORM}")
-            exit 1
-          end
-        else
-          # In non-secure mode, we simply use 'sh' to execute commands, but still strip the environment
-          sh_command = "env -i /bin/sh"
-        end
-
         if @secure
           system("chown -R #{user[:user]} #{instance_dir}")
           system("chgrp -R #{DEFAULT_SECURE_GROUP} #{instance_dir}")
@@ -704,28 +758,8 @@ module DEA
         disk_limit = ((disk*1024)*2)*2
         disk_limit = one_gb if disk_limit > one_gb
 
-        exec_operation = proc do |process|
-          process.send_data("cd #{instance_dir}\n")
-          if @secure || @enforce_ulimit
-            process.send_data("renice 0 $$\n")
-            process.send_data("ulimit -m #{mem_kbytes} 2> /dev/null\n")  # ulimit -m takes kb, soft enforce
-            process.send_data("ulimit -v 3000000 2> /dev/null\n") # virtual memory at 3G, this will be enforced
-            process.send_data("ulimit -n #{num_fds} 2> /dev/null\n")
-            process.send_data("ulimit -u 512 2> /dev/null\n") # processes/threads
-            process.send_data("ulimit -f #{disk_limit} 2> /dev/null\n") # File size to complete disk usage
-            process.send_data("umask 077\n")
-          end
-          app_env.each { |env| process.send_data("export #{env}\n") }
-          if instance[:port]
-            process.send_data("./startup -p #{instance[:port]}\n")
-          else
-            process.send_data("./startup\n")
-          end
-          process.send_data("exit\n")
-        end
-
         exit_operation = proc do |_, status|
-          @logger.info("#{name} completed running with status = #{status}.")
+          @logger.info("#{name} completed running with status = #{status.inspect}.")
           @logger.info("#{name} uptime was #{Time.now - instance[:start]}.")
           stop_droplet(instance)
         end
@@ -734,7 +768,47 @@ module DEA
         # before we start..
         kill_all_procs_for_user(user) if @secure
 
-        Bundler.with_clean_env { EM.system("#{@dea_ruby} -- #{prepare_script} true #{sh_command}", exec_operation, exit_operation) }
+        spawn_opts = {}
+
+        # Setup environment
+        spawn_opts[:env] = Hash[app_env.map do |e|
+          e.split("=", 2)
+        end]
+
+        # chdir
+        spawn_opts[:chdir] = instance_dir
+
+        if @secure || @enforce_ulimit
+          # Limit RSS (soft enforce)
+          spawn_opts[:rlimit_rss] = mem_kbytes * 1024
+
+          # Limit virtual memory (this will be enforced)
+          spawn_opts[:rlimit_as] = 3 * 1024 * 1024 * 1024
+
+          # Limit file descriptors
+          spawn_opts[:rlimit_nofile] = num_fds
+
+          # Limit processes/threads
+          spawn_opts[:rlimit_nproc] = 512
+
+          # Limit file size
+          spawn_opts[:rlimit_fsize] = disk_limit
+
+          # umask
+          spawn_opts[:umask] = 077
+
+          if @secure
+            spawn_opts[:user] = user[:user]
+          end
+        end
+
+        cmd = File.join(instance_dir, "startup")
+        if instance[:port]
+          cmd << " -p %d" % instance[:port]
+        end
+
+        # spawn it
+        spawn(cmd, spawn_opts, exit_operation)
 
         instance[:staged] = instance_dir.sub("#{@apps_dir}/", '')
 
