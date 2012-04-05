@@ -1,3 +1,10 @@
+GIT
+  remote: git://github.com/cloudfoundry/eventmachine.git
+  revision: 2806c630d8631d5dcf9fb2555f665b829052aabe
+  branch: release-0.12.11-cf
+  specs:
+    eventmachine (0.12.11.cloudfoundry.3)
+
 GEM
   remote: http://rubygems.org/
   specs:
@@ -6,7 +13,6 @@ GEM
       builder (>= 2.1.2)
     daemons (1.1.8)
     diff-lcs (1.1.2)
-    eventmachine (0.12.11.cloudfoundry.3)
     http_parser.rb (0.5.1)
     json_pure (1.6.5)
     nats (0.4.22.beta.8)
@@ -46,7 +52,7 @@ PLATFORMS
 DEPENDENCIES
   bundler (>= 1.0.10)
   ci_reporter
-  eventmachine
+  eventmachine!
   http_parser.rb
   nats
   rake
