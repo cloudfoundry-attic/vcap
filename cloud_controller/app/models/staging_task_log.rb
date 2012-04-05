@@ -6,14 +6,7 @@ class StagingTaskLog
       "staging_task_log:#{app_id}"
     end
 
-    def fetch(app_id, redis=nil)
-      redis ||= @redis
-      key = key_for_id(app_id)
-      result = redis.get(key)
-      result ? StagingTaskLog.new(app_id, result) : nil
-    end
-
-    def fetch_fibered(app_id, timeout=5, redis=nil)
+    def fetch_fibered(app_id, redis=nil, timeout=5)
       redis ||= @redis
       f = Fiber.current
       key = key_for_id(app_id)
@@ -24,7 +17,7 @@ class StagingTaskLog
       get_def = redis.get(key)
       get_def.timeout(timeout)
       get_def.errback do |e|
-        e = VCAP::Stager::TaskResultTimeoutError.new("Timed out fetching result") if e == nil
+        e = VCAP::Stager::StagingTimeoutError.new("Timed out fetching result") if e == nil
         logger.error("Failed fetching result for key '#{key}': #{e}")
         logger.error(e)
         f.resume([false, e])

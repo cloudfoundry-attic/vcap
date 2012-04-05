@@ -5,8 +5,8 @@ module PkgUtil
       name.chomp(File.extname(name))
     end
 
-    def to_package(name)
-      drop_extension(name) + '.tgz'
+    def to_package(name, runtime)
+      drop_extension(name) + "@#{runtime}"  + '.tgz'
     end
   end
 end

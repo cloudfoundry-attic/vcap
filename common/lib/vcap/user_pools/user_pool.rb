@@ -2,7 +2,7 @@ $:.unshift(File.join(File.dirname(__FILE__),'..'))
 $:.unshift(File.dirname(__FILE__))
 require 'user_pool_util'
 require 'user_ops'
-require 'em_run'
+require 'subprocess'
 
 module VCAP
   class UserPool
@@ -12,7 +12,6 @@ module VCAP
     def initialize(name, logger = nil)
       @logger = logger ||  Logger.new(STDOUT)
       UserPoolUtil.init
-      EMRun.init
       @free_users = UserPoolUtil.open_pool(name)
       @busy_users = Hash.new
       @logger.debug("Initialized user pool #{name} with #{@free_users.size} users.")
@@ -32,7 +31,7 @@ module VCAP
     def free_user(user)
       user_name = user[:user_name]
       if @busy_users.has_key?(user_name)
-        VCAP::EMRun.run("pkill -9 -u #{user_name}", 1)
+        VCAP::Subprocess.run("pkill -9 -u #{user_name}", 1)
         @busy_users.delete(user_name)
         @free_users[user_name] = user
         @logger.debug "free()'d user #{user_name}"

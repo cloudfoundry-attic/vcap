@@ -1,4 +1,6 @@
 ---
+capacity: <%= node[:neo4j_node][:capacity] %>
+plan: free
 local_db: sqlite3:/var/vcap/services/neo4j/neo4j_node.db
 mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
 index: <%= node[:neo4j_node][:index] %>
