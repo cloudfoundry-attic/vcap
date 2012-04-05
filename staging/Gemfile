@@ -1,5 +1,10 @@
 source :rubygems
 
+# Ideally, we should be able to declare a gem's dependencies in the one true
+# place, which is the gemspec, but there doesn't seem to be another place where
+# I can override this with git source...
+gem 'eventmachine', :git => 'git://github.com/cloudfoundry/eventmachine.git', :branch => 'release-0.12.11-cf'
+
 gemspec
 group :test do
   gem 'ci_reporter'
