@@ -24,19 +24,20 @@ module GemfileSupport
     path.unshift(File.dirname(ruby)) if ruby[0] == '/'
 
     safe_env << " PATH='%s'" % [ path.uniq.join(":") ]
+    safe_env << " LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8"
     base_dir = StagingPlugin.platform_config["cache"]
 
     app_dir  = File.join(destination_directory, 'app')
     ruby_cmd = "env -i #{safe_env} #{ruby}"
 
-    task = GemfileTask.new(app_dir, library_version, ruby_cmd, base_dir, @staging_uid, @staging_gid)
+    @task = GemfileTask.new(app_dir, library_version, ruby_cmd, base_dir, @staging_uid, @staging_gid)
 
-    task.install
-    task.install_bundler
-    task.remove_gems_cached_in_app
+    @task.install
+    @task.install_bundler
+    @task.remove_gems_cached_in_app
 
-    @rack = task.bundles_rack?
-    @thin = task.bundles_thin?
+    @rack = @task.bundles_rack?
+    @thin = @task.bundles_thin?
 
     write_bundle_config
   end
@@ -59,8 +60,20 @@ module GemfileSupport
     File.exists?(File.join(source_directory, 'Gemfile.lock'))
   end
 
+  def bundles_gem?(gem_name)
+    @task.bundles_gem? gem_name
+  end
+
   def packaged_with_bundler_in_deployment_mode?
     File.directory?(File.join(source_directory, 'vendor', 'bundle', library_version))
+  end
+
+  def install_local_gem(gem_dir,gem_filename,gem_name,gem_version)
+    @task.install_local_gem gem_dir,gem_filename,gem_name,gem_version
+  end
+
+  def install_gems(gems)
+    @task.install_gems gems
   end
 
   # This sets a relative path to the bundle directory, so nothing is confused

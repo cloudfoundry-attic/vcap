@@ -31,33 +31,73 @@ class Service < ActiveRecord::Base
   # Predicate function that returns true if the service is visible to the supplied
   # user. False otherwise.
   #
-  # NB: This is currently a stub. When we implement scoped services it will be filled in.
-  def visible_to_user?(user)
-    (!self.acls || user_in_userlist?(user) || user_match_wildcards?(user))
+  # There are two parts of acls. One is service acls applied to service as a whole
+  # One is plan acls applied to specific service plan.
+  #
+  # A example of acls structure:
+  # acls:
+  #   users:              #service acls
+  #   - foo@bar.com
+  #   - foo1@bar.com
+  #   wildcards:          #service acls
+  #   - *@foo.com
+  #   - *@foo1.com
+  #   plans:
+  #     plan_a:           #plan acls
+  #       users:
+  #       - foo2@foo.com
+  #       wildcards:
+  #       - *@foo1.com
+  #
+  # The following chart shows service visibility:
+  #
+  # P_ACLs\S_ACLs | Empty       | HasACLs                    |
+  #   Empty       | True        | S_ACL(user)                |
+  #   HasACLs     | P_ACL(user) | S_ACL(user) && P_ACL(user) |
+  def visible_to_user?(user, plan=nil)
+    return false if !plans || !user.email
+    return true unless acls
+
+    if !plan
+      plans.each do |p|
+        return true if visible_to_user?(user, p)
+      end
+      return false
+    else
+      # for certain plan, user should match service acls and plan acls
+      p_acls = acls["plans"] && acls["plans"][plan]
+      validate_by_acls?(user, acls) && validate_by_acls?(user, p_acls)
+    end
+  end
+
+  # Return true if acls is empty or user matches user list or wildcards
+  # false otherwise.
+  def validate_by_acls?(user, acl)
+    !acl ||
+    (!acl["users"] && !acl["wildcards"]) ||
+    user_in_userlist?(user, acl["users"]) ||
+    user_match_wildcards?(user, acl["wildcards"])
   end
 
   # Returns true if the user's email is contained in the set of user emails
-  def user_in_userlist?(user)
-    return false if (!self.acls || self.acls['users'].empty? || !user.email)
-    return true if self.acls['users'].empty?
-    Set.new(self.acls['users']).include?(user.email)
+  # false otherwise
+  def user_in_userlist?(user, userlist)
+    userlist && userlist.include?(user.email)
   end
 
-  # Returns true if user matches any of the wildcards, false otherwise.
-  def user_match_wildcards?(user)
-    return false if (!self.acls || self.acls['wildcards'].empty? || !user.email)
-    for wc in self.acls['wildcards']
-      parts = wc.split('*')
-      re_str = parts.map{|p| Regexp.escape(p)}.join('.*')
-      if Regexp.new("^#{re_str}$").match(user.email)
-        return true
-      end
-    end
+  # Returns true if user matches any of the wildcards
+  # false otherwise.
+  def user_match_wildcards?(user, wildcards)
+    wildcards.each do |wc|
+      re_str = Regexp.escape(wc).gsub('\*', '.*?')
+      return true if user.email =~ /^#{re_str}$/
+    end if wildcards
+
     false
   end
 
   # Returns the service represented as a legacy hash
-  def as_legacy
+  def as_legacy(user)
     # Synthesize tier info
     tiers = {}
 
@@ -68,6 +108,7 @@ class Service < ActiveRecord::Base
     end
 
     self.plans.each do |p|
+      next unless visible_to_user?(user, p)
       tiers[p] = {
         :options => {},
         :order   => sort_orders[p],  # XXX - Sort order. Synthesized for now (alphabetical), may want to add support for this to svcs api.

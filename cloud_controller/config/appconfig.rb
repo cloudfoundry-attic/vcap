@@ -4,6 +4,7 @@
 # we are starting in production mode.
 require 'vcap/common'
 require 'vcap/staging/plugin/common'
+require 'openssl'
 
 config_file = ENV['CLOUD_CONTROLLER_CONFIG'] || File.expand_path('../cloud_controller.yml', __FILE__)
 begin
@@ -53,7 +54,12 @@ required = { :external_uri => 'api.vcap.me',
              :default_account_capacity => { :memory => 2048,
                                             :app_uris => 4,
                                             :services => 16,
-                                            :apps => 20 } }
+                                            :apps => 20 },
+             :uaa => { :enabled => 'true',
+                       :url => 'http://uaa.vcap.me',
+                       :resource_id => 'cloud_controller',
+                       :token_secret => 'tokensecret',
+                       :client_secret => 'cloudcontrollerclientsecret'}}
 
 # Does the given hash have at least the keys contained in the default?
 required_keys = Proc.new do |candidate, default|
@@ -88,6 +94,18 @@ env_overrides.each do |cfg_key, env_key|
     AppConfig[cfg_key] = ENV[env_key]
   end
 end
+
+unless AppConfig.key? :new_initial_placement
+  AppConfig[:new_initial_placement] = false
+end
+
+#generate bulk api credentials unless they've been explicitly specified (not that they should)
+unless AppConfig.key? :bulk_api
+  AppConfig[:bulk_api] = { :auth =>
+    { :user => 'bulk_api',
+      :password => VCAP.secure_uuid }}
+end
+
 
 # Check on new style app_uris and map old into new style.
 unless AppConfig.key? :app_uris

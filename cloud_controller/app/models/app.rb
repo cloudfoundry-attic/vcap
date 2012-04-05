@@ -23,8 +23,10 @@ class App < ActiveRecord::Base
 
   AppStates = %w[STOPPED STARTED]
   PackageStates = %w[PENDING STAGED FAILED]
-  Runtimes = %w[ruby18 ruby19 java node php erlangR14B02 python26]
-  Frameworks = %w[sinatra rails3 java_web spring grails node php otp_rebar lift wsgi django unknown]
+
+  Runtimes = %w[ruby18 ruby19 java node node06 php erlangR14B02 python2]
+  Frameworks = %w[sinatra rack rails3 java_web spring grails node php otp_rebar lift wsgi django standalone unknown]
+
 
   validates_presence_of :name, :framework, :runtime
 
@@ -119,8 +121,9 @@ class App < ActiveRecord::Base
     services = service_bindings(true).map {|sb| sb.for_staging}
     { :services => services,
       :framework => framework,
-      :runtime => runtime,
-      :resources => resource_requirements }
+      :runtime     => runtime,
+      :resources => resource_requirements,
+      :meta => metadata }
   end
 
   def staging_task_properties
@@ -129,7 +132,8 @@ class App < ActiveRecord::Base
       :framework   => framework,
       :runtime     => runtime,
       :resources   => resource_requirements,
-      :environment => environment}
+      :environment => environment,
+      :meta => metadata }
   end
 
   # Returns an array of the URLs that point to this application
@@ -521,6 +525,13 @@ class App < ActiveRecord::Base
   end
 
   def update_staged_package(upload_path)
+    # Remove old package if needed
+    if self.staged_package_path
+      CloudController.logger.info("Removing old staged package for" \
+                                  + " app_id=#{self.id} app_name=#{self.name}" \
+                                  + " path=#{self.staged_package_path}")
+      FileUtils.rm_f(self.staged_package_path)
+    end
     self.staged_package_hash = Digest::SHA1.file(upload_path).hexdigest
     FileUtils.mv(upload_path, self.staged_package_path)
   end

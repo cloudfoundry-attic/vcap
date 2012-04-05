@@ -11,7 +11,11 @@ require 'vcap/component'
 require 'vcap/stager'
 
 sleep_interval = 1
-config_file = VCAP::Stager::Config::DEFAULT_CONFIG_PATH
+if ENV["CLOUD_FOUNDRY_CONFIG_PATH"]
+  config_file = File.join(ENV["CLOUD_FOUNDRY_CONFIG_PATH"], "stager.yml")
+else
+  config_file = VCAP::Stager::Config::DEFAULT_CONFIG_PATH
+end
 
 OptionParser.new do |op|
   op.on('-c', '--config [FILENAME]', 'Config filename') do |val|

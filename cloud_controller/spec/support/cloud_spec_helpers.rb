@@ -17,6 +17,16 @@ module CloudSpecHelpers
    {:protocol => "https", :appconfig_enabled => [:https_required_for_admins], :user => "user", :success => true},
    {:protocol => "https", :appconfig_enabled => [:https_required_for_admins], :user => "admin", :success => true}]
 
+  @@use_jwt_token = false
+
+  def self.use_jwt_token
+    @@use_jwt_token
+  end
+
+  def self.use_jwt_token=(use_jwt_token)
+    @@use_jwt_token = use_jwt_token
+  end
+
   # Generate a handy header Hash.
   # At minimum it requires a User or email as the first argument.
   # Optionally, you can pass a second User or email which will be the 'proxy user'.
@@ -26,7 +36,17 @@ module CloudSpecHelpers
     headers = {}
     if user
       email = User === user ? user.email : user.to_s
-      headers['HTTP_AUTHORIZATION'] = UserToken.create(email).encode
+      if @@use_jwt_token
+        token_body = {"resource_ids" => ["cloud_controller"], "foo" => "bar", "email" => email}
+        token_coder = Cloudfoundry::Uaa::TokenCoder.new(AppConfig[:uaa][:resource_id],
+                                                        AppConfig[:uaa][:token_secret])
+        token = token_coder.encode(token_body)
+        AppConfig[:uaa][:enabled] = true
+        headers['HTTP_AUTHORIZATION'] = "bearer #{token}"
+      else
+        AppConfig[:uaa][:enabled] = false
+        headers['HTTP_AUTHORIZATION'] = UserToken.create(email).encode
+      end
     end
     if proxy_user
       proxy_email = User === proxy_user ? proxy_user.email : proxy_user.to_s
@@ -63,6 +83,6 @@ module CloudSpecHelpers
   # Only 'hard-code' names in the specs that are meaningful.
   # If the name doesn't matter in real life, use a random one to indicate that.
   def random_name(length = 7)
-    Digest::SHA1.hexdigest("#{Time.now}-#{rand(1_000)}").slice(0,length)
+    Digest::SHA1.hexdigest("#{Time.now.nsec}-#{rand(1_000_000)}").slice(0,length)
   end
 end

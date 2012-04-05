@@ -1,0 +1,3 @@
+#!/usr/bin/env ruby
+
+exec(File.expand_path("../../../services/mongodb/bin/mongodb_worker", __FILE__), *ARGV)

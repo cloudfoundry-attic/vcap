@@ -10,6 +10,8 @@
 # - cloud_controller
 # - health_manager
 # - dea
+# - uaa
+# - acm
 #
 # services
 # - redis
@@ -390,7 +392,7 @@ module Run
   private
 
   def self.core
-    %w(router cloud_controller dea health_manager)
+    %w(router cloud_controller dea health_manager uaa acm)
   end
 
   def self.services
@@ -538,6 +540,7 @@ class String
   include VcapStringExtensions
 end
 
+$config_dir ||= ENV['CLOUD_FOUNDRY_CONFIG_PATH']
 args = ARGV.dup
 opts_parser = OptionParser.new do |opts|
   opts.on('--port PORT')                           { |port| $port = port.to_i }
@@ -549,6 +552,7 @@ opts_parser = OptionParser.new do |opts|
   opts.on('--noprompt', '-n')                      { $noprompt = true }
 end
 args = opts_parser.parse!(args)
+ENV['CLOUD_FOUNDRY_CONFIG_PATH'] = $config_dir
 
 DIR = $vcap_dir || File.expand_path("../../../bin", __FILE__)
 

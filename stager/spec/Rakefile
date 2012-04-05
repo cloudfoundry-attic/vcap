@@ -7,6 +7,8 @@ require 'bundler'
 Bundler.setup(:default, :test)
 
 require 'rspec/core/rake_task'
+require 'ci/reporter/rake/rspec'
+ENV['CI_REPORTS'] = File.expand_path('reports', File.dirname(__FILE__))
 
 RSpec::Core::RakeTask.new(:spec) do |t|
   t.pattern = '**/*_spec.rb'
@@ -15,3 +17,4 @@ end
 
 task :default => [:spec]
 
+task 'ci:spec' => ['ci:setup:rspec', :spec]
