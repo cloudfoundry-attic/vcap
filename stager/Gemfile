@@ -1,6 +1,6 @@
 source :rubygems
 
-gem 'eventmachine'
+gem 'eventmachine', :git => 'git://github.com/cloudfoundry/eventmachine.git', :branch => 'release-0.12.11-cf'
 gem 'nats'
 gem 'rake'
 gem 'yajl-ruby', '>= 0.7.9'
