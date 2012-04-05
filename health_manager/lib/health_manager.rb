@@ -115,6 +115,10 @@ class HealthManager
     end
   end
 
+  def now
+    Time.now.to_i
+  end
+
   def encode_json(obj = {})
     Yajl::Encoder.encode(obj)
   end
@@ -136,7 +140,7 @@ class HealthManager
   end
 
   def run
-    @started = Time.now.to_i
+    @started = now
     NATS.on_error do |e|
       @logger.error("NATS problem, #{e}")
       @logger.error(e)
@@ -227,7 +231,7 @@ class HealthManager
   end
 
   def analyze_app(app_id, droplet_entry, stats)
-    now = Time.now.to_i
+
     update_timestamp = droplet_entry[:last_updated]
     quiescent = (now - update_timestamp) > @stable_state
     if APP_STABLE_STATES.include?(droplet_entry[:state]) && quiescent
@@ -440,7 +444,6 @@ class HealthManager
 
   def process_exited_message(message)
     VCAP::Component.varz[:droplet_exited_msgs_received] += 1
-    now = Time.now.to_i
 
     exit_message = parse_json(message)
     droplet_id = exit_message['droplet']
@@ -458,17 +461,13 @@ class HealthManager
       end
 
       if version == droplet_entry[:live_version] && index >= 0 && index < droplet_entry[:instances]
-        unless version_entry
-          version_entry = droplet_entry[:versions][version] = create_version_entry
-        end
 
-        unless index_entry
-          index_entry = version_entry[:indices][index] = create_index_entry
-          index_entry[:instance] = instance
-        end
+        version_entry = droplet_entry[:versions][version] ||= create_version_entry
 
-        if index_entry[:instance].nil? || index_entry[:instance] == instance ||
-            !RUNNING_STATES.include?(index_entry[:state])
+        index_entry = version_entry[:indices][index] ||= create_index_entry
+        index_entry[:instance] ||= instance
+
+        if index_entry[:instance] == instance || !RUNNING_STATES.include?(index_entry[:state])
           if RESTART_REASONS.include?(exit_message['reason'])
             if index_entry[:crash_timestamp] > 0 && now - index_entry[:crash_timestamp] > @flapping_timeout
               index_entry[:crashes] = 0
@@ -482,11 +481,11 @@ class HealthManager
 
             if index_entry[:crashes] > @flapping_death
               index_entry[:state] = FLAPPING
-              index_entry[:state_timestamp] = Time.now.to_i
+              index_entry[:state_timestamp] = now
               @logger.info("Giving up on flapping instance (app_id=#{droplet_id}, index=#{index}). Number of crashes: #{index_entry[:crashes]}.")
             else
               index_entry[:state] = DOWN
-              index_entry[:state_timestamp] = Time.now.to_i
+              index_entry[:state_timestamp] = now
               index_entry[:last_action] = now
 
               high_priority = (exit_message['reason'] == DEA_EVACUATION)
@@ -503,7 +502,7 @@ class HealthManager
 
       if exit_message['reason'] == CRASHED
         droplet_entry[:crashes][instance] = {
-          :timestamp => Time.now.to_i,
+          :timestamp => now,
           :crash_timestamp => exit_message['crash_timestamp']
         }
       end
@@ -523,33 +522,26 @@ class HealthManager
         result << droplet_entry
         state = heartbeat['state']
         if RUNNING_STATES.include?(state)
-          version_entry = droplet_entry[:versions][heartbeat['version']]
-          unless version_entry
-            version_entry = droplet_entry[:versions][heartbeat['version']] = create_version_entry
-          end
-
-          index_entry = version_entry[:indices][heartbeat['index']]
-          unless index_entry
-            index_entry = version_entry[:indices][heartbeat['index']] = create_index_entry
-          end
+          version_entry = droplet_entry[:versions][heartbeat['version']] ||= create_version_entry
+          index_entry = version_entry[:indices][heartbeat['index']] ||= create_index_entry
 
           if index_entry[:state] == RUNNING && index_entry[:instance] != instance
             stop_instances(droplet_id, [instance])
           else
             index_entry[:instance] = instance
-            index_entry[:timestamp] = Time.now.to_i
+            index_entry[:timestamp] = now
             index_entry[:state] = state.to_s
             index_entry[:state_timestamp] = heartbeat['state_timestamp']
           end
         elsif state == CRASHED
           droplet_entry[:crashes][instance] = {
-            :timestamp => Time.now.to_i,
+            :timestamp => now,
             :crash_timestamp => heartbeat['state_timestamp']
           }
         end
       else
-        instance_uptime = Time.now.to_i - heartbeat['state_timestamp']
-        health_manager_uptime = Time.now.to_i - @started
+        instance_uptime = now - heartbeat['state_timestamp']
+        health_manager_uptime = now - @started
         threshold = @database_scan * 2
 
         if health_manager_uptime > threshold && instance_uptime > threshold
@@ -698,11 +690,8 @@ class HealthManager
   def update_droplet(droplet)
     return true unless droplet
 
-    droplet_entry = @droplets[droplet.id]
-    unless droplet_entry
-      droplet_entry = create_droplet_entry
-      @droplets[droplet.id] = droplet_entry
-    end
+    droplet_entry = @droplets[droplet.id] ||= create_droplet_entry
+
     entry_updated = droplet_entry[:last_updated] != droplet.last_updated
 
     droplet_entry[:instances] = droplet.instances
@@ -736,7 +725,7 @@ class HealthManager
 
   def queue_request(message, high_priority)
     #the priority is higher for older items, to de-prioritize flapping items
-    priority = Time.now.to_i - message[:last_updated]
+    priority = now - message[:last_updated]
     priority = 0 if priority < 0 #avoid timezone drama
     priority = INFINITE_PRIORITY if high_priority
     key = message.clone
