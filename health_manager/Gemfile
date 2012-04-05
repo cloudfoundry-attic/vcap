@@ -2,7 +2,7 @@ source "http://rubygems.org"
 
 gem 'bundler', '>= 1.0.10'
 gem 'nats', :require => 'nats/client'
-gem 'eventmachine'
+gem 'eventmachine', :git => 'git://github.com/cloudfoundry/eventmachine.git', :branch => 'release-0.12.11-cf'
 gem 'em-http-request', '~> 1.0.0.beta.3', :require => 'em-http'
 
 gem 'rack', :require => ["rack/utils", "rack/mime"]
