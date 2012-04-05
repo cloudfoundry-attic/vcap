@@ -1,61 +1,30 @@
 ENV["BUNDLE_GEMFILE"] = File.expand_path("../../cloud_controller/Gemfile", __FILE__)
-require 'rake'
+require 'rspec/core/rake_task'
 require 'ci/reporter/rake/rspec'
 
-desc "Run specs"
-
-# TODO - Add back in 'prepare_test_db' when tests are re-enabled
-task "spec" => ["bundler:install:test","test:spec"]
+ENV['RAILS_ENV'] = 'test'
+ENV['RACK_ENV'] = 'test'
 
 # FIXME - This does not honor the test db set in
 # config/health_manager.yml
 # TODO HACK FAIL
 task "prepare_test_db" do
-  ENV['RAILS_ENV'] = 'test'
   cc_root = File.expand_path("../../cloud_controller", __FILE__)
   Dir.chdir(cc_root) do
     ruby "-S rake RAILS_ENV=test db:migrate >/dev/null 2>/dev/null"
   end
 end
 
-desc "Run specs producing results for CI"
-task "ci" => ["ci:spec"]
+reports_dir = File.expand_path("spec_reports")
 
-desc "Run specs using RCov"
-task "spec:rcov" => ["bundler:install:test", "test:spec:rcov"]
+ENV['CI_REPORTS'] = reports_dir
 
-namespace "bundler" do
-  desc "Install gems"
-  task "install" do
-    sh("bundle install")
-  end
-
-  desc "Install gems for test"
-  task "install:test" do
-    sh("bundle install --without development production")
-  end
-
-  desc "Install gems for production"
-  task "install:production" do
-    sh("bundle install --without development test")
-  end
-
-  desc "Install gems for development"
-  task "install:development" do
-    sh("bundle install --without test production")
-  end
-end
-
-namespace "test" do
-  task "spec" do |t|
-    sh("cd spec && rake spec")
-  end
-
- task "spec:rcov" do |t|
-    sh("cd spec && rake spec:rcov")
-  end
+RSpec::Core::RakeTask.new do |t|
+  t.pattern = "spec/**/*_spec.rb"
+  t.rspec_opts = ["--format", "documentation", "--colour"]
 end
 
 namespace :ci do
+  desc "Run specs producing results for CI"
   task "spec" => ["ci:setup:rspec", "^spec"]
 end
