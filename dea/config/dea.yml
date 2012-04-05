@@ -2,6 +2,11 @@
 # Base directory where all applications are staged and hosted
 base_dir: /var/vcap.local/dea
 
+# The DEA will no longer respond to discover/start requests once
+# this usage threshold (in percent) has been exceeded on the filesystem housing
+# the base_dir.
+droplet_fs_percent_used_threshold: 95
+
 # Local_route is the IP address of a well known server on your network, it
 # is used to choose the right ip address (think of hosts that have multiple nics
 # and IP addresses assigned to them) of the host running the DEA. Default
@@ -16,6 +21,7 @@ mbus: nats://localhost:4222/
 intervals:
   # Time interval between heartbeats sent to the Health Manager
   heartbeat: 10
+  advertise: 5
 logging:
   level: debug
 
@@ -58,6 +64,21 @@ runtimes:
     version: 0.4.12
     version_flag: '-v'
     environment:
+    debug_env:
+      run:
+        - NODE_ARGS="--debug=$VCAP_DEBUG_PORT"
+      suspend:
+        - NODE_ARGS="--debug-brk=$VCAP_DEBUG_PORT"
+  node06:
+    executable: node
+    version: 0.6.8
+    version_flag: '-v'
+    environment:
+    debug_env:
+      run:
+        - NODE_ARGS="--debug=$VCAP_DEBUG_PORT"
+      suspend:
+        - NODE_ARGS="--debug-brk=$VCAP_DEBUG_PORT"
   java:
     executable: java
     version: 1.6.0
@@ -78,7 +99,7 @@ runtimes:
     version: ".* 5.8.3"
     version_flag: '-version'
     environment:
-  python26:
+  python2:
     executable: python
     version: 2.6.5
     version_flag: '--version'

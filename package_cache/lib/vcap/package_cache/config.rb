@@ -1,10 +1,11 @@
 require 'vcap/config'
+require 'vcap/json_schema'
 
 module VCAP module PackageCache end end
 
 # Config template for stager
 class VCAP::PackageCache::Config < VCAP::Config
-  DEFAULT_CONFIG_PATH = File.expand_path('../../../../config/dev.yml', __FILE__)
+  DEFAULT_CONFIG_PATH = File.expand_path('../../../../config/package_cache.yml', __FILE__)
 
   define_schema do
     {
@@ -16,8 +17,15 @@ class VCAP::PackageCache::Config < VCAP::Config
       },
 
       :base_dir              => String,     # where all package cache stuff lives.
-      :pid_file              => String,     # where our pid file lives.
-      :purge_cache_on_startup => String     # true/false, blow away cache or not.
+      :pid_filename          => String,     # where our pid file lives.
+      :purge_cache_on_startup => VCAP::JsonSchema::BoolSchema.new,     # true/false, blow away cache or not.
+      :runtimes => {
+        :gem => {
+          optional(:ruby18)   => String,      # path to ruby 1.8 executable.
+          optional(:ruby19)   => String,      # path to ruby 1.9 executable.
+        },
+      },
+
     }
   end
 
@@ -29,25 +37,17 @@ class VCAP::PackageCache::Config < VCAP::Config
     end
 
     private
-
-    def to_boolean(field_name, str)
-      if /true/.match(str) != nil
-        true
-      elsif /false$/.match(str) != nil
-        false
-      else
-        raise "invalid config file entry #{field_name}, expected true or false"
-      end
-    end
-
     def normalize_config(config)
-      base_dir = config[:base_dir]
-      raise "base_dir: #{base_dir} does not exists." if not Dir.exists?(base_dir)
+      config[:runtimes].each { |k,v|
+        path = v.values[0]
+        field = v.keys[0]
+        raise "\nInvalid runtime #{path} for parameter #{field}."\
+              "\nPlease ensure #{path} points to an executable for the #{field} runtime."\
+              if not File.executable?(path)
+      }
 
       log_level = config[:logging][:level]
       raise "invalid log level #{log_level}." if not %w[debug info warn error debug fatal].include?(log_level)
-
-      config[:purge_cache_on_startup] = to_boolean(:purge_cache_on_startup.to_s, config[:purge_cache_on_startup])
     end
   end
 end

@@ -18,7 +18,10 @@ args = ARGV.dup
 
 if args.length > 2
   begin
-    args[2] = Yajl::Parser.parse(args[2], :symbolize_keys => true)
+    File.open(args[2], "r") { |f|
+      env_json = f.read
+      args[2] = Yajl::Parser.parse(env_json, :symbolize_keys => true)
+    }
   rescue => e
     puts "ERROR DECODING ENVIRONMENT: #{e}"
     exit 1

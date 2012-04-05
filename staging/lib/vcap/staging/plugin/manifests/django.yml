@@ -1,7 +1,7 @@
 ---
 name: "django"
 runtimes:
-  - "python26":
+  - "python2":
       version: "2.6.5"
       description: "Python 2.6.5"
       executable: python

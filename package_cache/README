@@ -18,9 +18,12 @@ remote), or copying it from the inbox directory (if it is local).
 -once fetched, the source package is built in a sandboxed context, and the resulting built contents are
  archived and stored in the cache.
 
--the name of the built package in the cache is a function of where it came from, remote packages
-are stored by their cannonical name plus a .tgz extension e.g. thin (1.2.11)
-would be stored as thin-1.2.11.tgz in the cache.
+-the name of the built package in the cache is a function of where it came
+from, remote packages are stored by their cannonical name plus a .tgz extension
+e.g. thin (1.2.11) would be stored as thin-1.2.11.tgz in the cache.
+
+-With the addition of support for building with different runtimes, the name
+ now includes the runtime it was build for i.e. thin-1.2.11@ruby18.tgz
 
 -local packages are stored by the SHA1 hash of their contents plus a .tgz extension.
 

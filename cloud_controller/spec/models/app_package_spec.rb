@@ -194,14 +194,14 @@ describe AppPackage do
 
   def create_zip(zip_name, file_count, file_size=1024)
     total_size = file_count * file_size
-    file_paths = []
+    files = []
     file_count.times do |ii|
       tf = Tempfile.new("ziptest_#{ii}")
-      file_paths << tf.path
+      files << tf
       tf.write("A" * file_size)
       tf.close
     end
-    system("zip #{zip_name} #{file_paths.join(' ')}").should be_true
+    system("zip #{zip_name} #{files.map(&:path).join(' ')}").should be_true
     total_size
   end
 end

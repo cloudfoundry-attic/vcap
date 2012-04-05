@@ -37,6 +37,11 @@ task :spec => ['bundler:install:test'] do
   sh('cd spec && rake spec')
 end
 
+task 'ci:spec' do
+  desc 'Run tests for CI'
+  sh('cd spec && rake ci:spec')
+end
+
 namespace 'bundler' do
   task 'install' do
     sh('bundle install')

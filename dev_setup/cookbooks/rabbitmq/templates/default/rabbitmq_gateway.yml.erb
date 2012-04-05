@@ -1,0 +1,23 @@
+---
+cloud_controller_uri: <%= node[:cloud_controller][:service_api_uri] %>
+service:
+  name: rabbitmq
+  version: "2.4"
+  description: "RabbitMQ message queue"
+  plans: ["free"]
+  tags: ["rabbitmq", "rabitmq-2.4", "message-queue", "amqp"]
+  timeout: 15
+host: localhost
+index: 0
+token: <%= node[:rabbitmq_node][:token] %>
+mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
+pid: /var/vcap/sys/run/rabbit_gateway.pid
+logging:
+  level: debug
+plan_management:
+  plans:
+    free:
+      low_water: 10
+      high_water: 180
+      #allow_over_provisioning: false
+node_timeout: 10
