@@ -1,3 +1,10 @@
+GIT
+  remote: git://github.com/cloudfoundry/eventmachine.git
+  revision: 2806c630d8631d5dcf9fb2555f665b829052aabe
+  branch: release-0.12.11-cf
+  specs:
+    eventmachine (0.12.11.cloudfoundry.3)
+
 GEM
   remote: http://rubygems.org/
   specs:
@@ -58,7 +65,6 @@ GEM
       eventmachine
     erubis (2.6.6)
       abstract (>= 1.0.0)
-    eventmachine (0.12.11.cloudfoundry.3)
     hiredis (0.3.2)
     http_parser.rb (0.5.1)
     i18n (0.5.0)
@@ -160,7 +166,7 @@ DEPENDENCIES
   em-hiredis
   em-http-request (~> 1.0.0.beta.3)
   em-redis (~> 0.3.0)
-  eventmachine
+  eventmachine!
   mocha
   mysql2 (>= 0.2.6)
   nats

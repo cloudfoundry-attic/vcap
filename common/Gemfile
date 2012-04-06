@@ -1,5 +1,6 @@
 source "http://rubygems.org"
 
+gem 'eventmachine', :git => 'git://github.com/cloudfoundry/eventmachine.git', :branch => 'release-0.12.11-cf'
 gemspec
 
 group :spec do

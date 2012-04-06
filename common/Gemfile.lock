@@ -1,3 +1,10 @@
+GIT
+  remote: git://github.com/cloudfoundry/eventmachine.git
+  revision: 2806c630d8631d5dcf9fb2555f665b829052aabe
+  branch: release-0.12.11-cf
+  specs:
+    eventmachine (0.12.11.cloudfoundry.3)
+
 PATH
   remote: .
   specs:
@@ -19,7 +26,6 @@ GEM
       escape_utils
       eventmachine (>= 0.12.9)
     escape_utils (0.2.4)
-    eventmachine (0.12.11.cloudfoundry.3)
     json_pure (1.6.5)
     nats (0.4.22.beta.8)
       daemons (>= 1.1.4)
@@ -48,6 +54,7 @@ PLATFORMS
 
 DEPENDENCIES
   em-http-request
+  eventmachine!
   rake (~> 0.9.2)
   rspec
   vcap_common!
