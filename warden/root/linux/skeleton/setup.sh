@@ -59,14 +59,17 @@ useradd -mU -s /bin/bash vcap
 fi
 EOS
 
-# Fake udev upstart triggers
-write "etc/init/fake-udev.conf" <<-EOS
-start on startup
-script
-  /sbin/initctl emit stopped JOB=udevtrigger --no-wait
-  /sbin/initctl emit started JOB=udev --no-wait
-end script
-EOS
+# Copy override directory
+cp -r override/* ${target}/
+
+# Remove things we don't use
+rm -rf ${target}/etc/init.d
+rm -rf ${target}/etc/rc*
+rm -f ${target}/etc/init/control-alt-delete.conf
+rm -f ${target}/etc/init/rc.conf
+rm -f ${target}/etc/init/rc-sysinit.conf
+rm -f ${target}/etc/init/cron*
+rm -f ${target}/etc/network/if-up.d/openssh*
 
 # Modify sshd_config
 chroot <<-EOS
