@@ -13,6 +13,8 @@ if [ -f started ]; then
   exit 1
 fi
 
+./net.sh setup
+
 env -i unshare -n ../../../../src/clone/clone
 
 ifconfig ${network_host_iface} ${network_host_ip} netmask ${network_netmask}
