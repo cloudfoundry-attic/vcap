@@ -1,7 +1,7 @@
 VMware's Cloud Application Platform
 ===================================
 
-Copyright (c) 2009-2011 VMware, Inc.
+Copyright (c) 2009-2012 VMware, Inc.
 
 What is Cloud Foundry?
 ----------------------
