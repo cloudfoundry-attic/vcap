@@ -81,6 +81,7 @@ uaa:
   resource_id: cloud_controller
   token_secret: <%= node[:uaa][:jwt_secret] %>
   client_secret: <%= node[:uaa][:cloud_controller][:password] %>
+  token_creation_email_filter: [vmware.com, rbcon.com]
 
 # App staging parameters
 staging:
