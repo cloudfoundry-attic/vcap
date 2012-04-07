@@ -38,8 +38,8 @@ module CloudSpecHelpers
       email = User === user ? user.email : user.to_s
       if @@use_jwt_token
         token_body = {"resource_ids" => ["cloud_controller"], "foo" => "bar", "email" => email}
-        token_coder = Cloudfoundry::Uaa::TokenCoder.new(AppConfig[:uaa][:resource_id],
-                                                        AppConfig[:uaa][:token_secret])
+        token_coder = CF::UAA::TokenCoder.new(AppConfig[:uaa][:resource_id],
+                                              AppConfig[:uaa][:token_secret])
         token = token_coder.encode(token_body)
         AppConfig[:uaa][:enabled] = true
         headers['HTTP_AUTHORIZATION'] = "bearer #{token}"
