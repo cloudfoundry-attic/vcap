@@ -20,8 +20,7 @@ $:.unshift(File.dirname(__FILE__))
 
 require 'router/const'
 require 'router/router'
-require 'router/app_connection'
-require 'router/client_connection'
+require 'router/router_uls_server'
 require 'router/utils'
 
 config_path = ENV["CLOUD_FOUNDRY_CONFIG_PATH"] || File.join(File.dirname(__FILE__), '../config')
@@ -112,8 +111,8 @@ EM.run do
 
   begin
     # TCP/IP Socket
-    Router.server = EM.start_server(inet, port, ClientConnection, false) if inet && port
-    Router.local_server = EM.start_server(fn, nil, ClientConnection, true) if fn
+    Router.server = Thin::Server.start(inet, port, RouterULSServer) if inet && port
+    Router.local_server = Thin::Server.start(fn, RouterULSServer) if fn
   rescue => e
     Router.log.fatal "Problem starting server, #{e}"
     exit
@@ -149,6 +148,7 @@ EM.run do
 
   # Setup some of our varzs..
   VCAP::Component.varz[:requests] = 0
+  VCAP::Component.varz[:bad_requests] = 0
   VCAP::Component.varz[:latency] = VCAP::RollingMetric.new(60)
   VCAP::Component.varz[:responses_2xx] = 0
   VCAP::Component.varz[:responses_3xx] = 0
@@ -183,4 +183,3 @@ EM.run do
   end
 
 end
-
