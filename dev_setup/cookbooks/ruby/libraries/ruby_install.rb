@@ -81,4 +81,3 @@ end
 class Chef::Recipe
   include RubyInstall
 end
-
