@@ -86,10 +86,10 @@ function run_cmd () {
 
 # Check if we have access to the web
 which wget > /dev/null
-if [ $? == 0 ]; then
+if [ $? -eq 0 ]; then
   echo "Checking web connectivity."
   wget -q -T 2 -t 2 -O - http://api.cloudfoundry.com/info | grep "Cloud Application Platform" > /dev/null
-  if [ $? != 0 ]; then
+  if [ $? -ne 0 ]; then
     echo "Giving up. Cannot connect to the web. Check your proxy settings if you are behind a proxy."
     exit 1
   fi
