@@ -4,10 +4,10 @@ module NodeInstall
       package pkg
     end
 
-    remote_file File.join("", "tmp", "node-v#{node_version}.tar.gz") do
+    remote_file File.join(node[:deployment][:setup_cache], "node-v#{node_version}.tar.gz") do
       owner node[:deployment][:user]
       source node_source
-      not_if { ::File.exists?(File.join("", "tmp", "node-v#{node_version}.tar.gz")) }
+      checksum node[:node][:checksums][node_version]
     end
 
 
