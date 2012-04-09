@@ -8,10 +8,10 @@ module RubyInstall
       package pkg
     end
 
-    remote_file File.join("", "tmp", "ruby-#{ruby_version}.tar.gz") do
+    remote_file File.join(node[:deployment][:setup_cache], "ruby-#{ruby_version}.tar.gz") do
       owner node[:deployment][:user]
       source ruby_source
-      not_if { ::File.exists?(File.join("", "tmp", "ruby-#{ruby_version}.tar.gz")) }
+      checksum node[:ruby][:checksums][ruby_version]
     end
 
     directory ruby_path do
