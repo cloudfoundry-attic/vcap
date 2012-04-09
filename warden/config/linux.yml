@@ -14,3 +14,10 @@ server:
 
 logging:
   level: debug2
+
+network:
+  # Use this /30 network as offset for the network pool.
+  pool_start_address: 10.254.0.0
+
+  # Pool this many /30 networks.
+  pool_size: 256
