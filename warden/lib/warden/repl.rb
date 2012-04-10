@@ -11,7 +11,7 @@ module Warden
 
     HELP_MESSAGE =<<-EOT
 ping                          - ping warden
-create [MOUNT MOUNT ...]      - create container, optionally bind mount.
+create [OPTION OPTION ...]    - create container, optionally pass options.
 destroy <handle>              - shutdown container <handle>
 stop <handle>                 - stop all processes in <handle>
 spawn <handle> cmd            - spawns cmd inside container <handle>, returns #jobid
@@ -27,8 +27,13 @@ help                          - show help message
 
 ---
 
-MOUNT syntax is  bind_mount:/hostpath,/containerpath,rw | ro
-e.g. create bind_mount:/tmp/,/home/vcap/tmp,ro
+The OPTION argument for `create` can be one of:
+  * bind_mount:HOST_PATH,CONTAINER_PATH,ro|rw
+      e.g. create bind_mount:/tmp/,/home/vcap/tmp,ro
+  * grace_time:SECONDS
+      e.g. create grace_time:300
+  * disk_size_mb:SIZE
+      e.g. create disk_size_mb:512
 
 Please see README.md for more details.
 EOT
@@ -87,12 +92,19 @@ EOT
       return config if args.nil?
 
       args.each do |arg|
-        if arg =~ /^bind_mount:(.*)/
-          src, dst, mode = $1.split(",")
+        head, tail = arg.split(":", 2)
+
+        case head
+        when "bind_mount"
+          src, dst, mode = tail.split(",")
           config["bind_mounts"] ||= []
           config["bind_mounts"].push [src, dst, { "mode" => mode }]
+        when "grace_time"
+          config["grace_time"] = tail
+        when "disk_size_mb"
+          config["disk_size_mb"] = tail
         else
-          raise "Unknown argument: #{arg}"
+          raise "Unknown argument: #{head}"
         end
       end
 

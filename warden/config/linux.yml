@@ -10,6 +10,14 @@ server:
   #   container_grace_time: ~
   container_grace_time: 300
 
+  # Specifies the size of the container's private scratch disk.
+  #
+  # Clients can be forced to specify this setting by setting the
+  # server-wide variable to an invalid value:
+  #   container_disk_size_mb: invalid
+  #
+  # container_disk_size_mb: 512
+
   unix_domain_permissions: 0777
 
 logging:

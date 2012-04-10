@@ -59,6 +59,14 @@ module Warden
       @container_grace_time
     end
 
+    def self.default_container_disk_size_mb
+      512
+    end
+
+    def self.container_disk_size_mb
+      @container_disk_size_mb
+    end
+
     def self.setup_server(config = nil)
       config ||= {}
       @unix_domain_path = config.delete("unix_domain_path") { default_unix_domain_path }
@@ -66,6 +74,7 @@ module Warden
       @container_root = config.delete("container_root") { default_container_root  }
       @container_klass = config.delete("container_klass") { default_container_klass }
       @container_grace_time = config.delete("container_grace_time") { default_container_grace_time }
+      @container_disk_size_mb = config.delete("container_disk_size_mb") { default_container_disk_size_mb }
     end
 
     def self.setup_logger(config = nil)

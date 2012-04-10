@@ -213,6 +213,11 @@ element must be of the form:
 ]
 ```
 
+#### `disk_size_mb`
+
+If specified, this setting overrides the default size of the container's
+scratch filesystem. The value is expected to be an integer number.
+
 ### `spawn HANDLE SCRIPT`
 
 Run the script `SCRIPT` in the container identified by `HANDLE`.
