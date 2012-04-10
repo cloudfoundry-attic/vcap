@@ -20,7 +20,6 @@ run <handle>  cmd             - short hand for link(spawn(cmd)) i.e. runs cmd, b
 list                          - list containers
 info <handle>                 - show metadata for container <handle>
 limit <handle> mem  [<value>] - set or get the memory limit for the container (in bytes)
-limit <handle> disk [<value>] - set or get the disk limit for the container (in 1k blocks)
 net <handle> #in              - forward port #in on external interface to container <handle>
 net <handle> #out <address[/mask][:port]> - allow traffic from the container <handle> to address <address>
 copy <handle> <in|out> <src path> <dst path> [ownership opts] - Copy files/directories in and out of the container

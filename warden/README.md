@@ -231,7 +231,7 @@ containing its `STDOUT` and a string containing its `STDERR`. These
 elements may be `null` when they cannot be determined (e.g. the
 script couldn't be executed, was killed, etc.).
 
-### `limit HANDLE (mem|disk) [VALUE]`
+### `limit HANDLE (mem) [VALUE]`
 
 Set or get resource limits for the container identified by `HANDLE`.
 
@@ -242,11 +242,6 @@ The following resources can be limited:
   exceeds this limit, one or more of its processes will be killed by the
   kernel. Additionally, the warden will be notified that an OOM happened
   and it subsequently tears down the container.
-
-* The disk space limit is specified in the number of blocks. It is
-  enforced by means of a disk space quota for the user associated with
-  the container. When a container exceeds this limit, the warden will be
-  notified and it subsequently tears down the container.
 
 ### `net HANDLE in`
 
