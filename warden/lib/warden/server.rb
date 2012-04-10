@@ -100,6 +100,9 @@ module Warden
           # This is intentionally blocking. We do not want to start accepting
           # connections before permissions have been set on the socket.
           FileUtils.chmod(unix_domain_permissions, unix_domain_path)
+
+          # Let the world know Warden is ready for action.
+          Logger.logger.info("Listening on #{unix_domain_path}, and ready for action.")
         end
 
         f.resume
