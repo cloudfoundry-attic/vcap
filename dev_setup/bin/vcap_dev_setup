@@ -85,6 +85,12 @@ function run_cmd () {
 }
 
 # Check if we have access to the web
+run_cmd apt-get $APT_CONFIG install -qym wget
+if [ $? -ne 0]; then
+  echo "Can't install prerequisite: wget"
+  exit 1
+fi
+
 which wget > /dev/null
 if [ $? -eq 0 ]; then
   echo "Checking web connectivity."
