@@ -240,7 +240,7 @@ The following resources can be limited:
 * The memory limit is specified in number of bytes. It is enforced using
   the control group associated with the container. When a container
   exceeds this limit, one or more of its processes will be killed by the
-  kernel. Additionally, the warden will be notified that an OOM happened
+  kernel. Additionally, the Warden will be notified that an OOM happened
   and it subsequently tears down the container.
 
 ### `net HANDLE in`
