@@ -139,7 +139,7 @@ GEM
       yajl-ruby (~> 0.8.3)
     vcap_logging (1.0.0)
     vcap_stager (0.1.14)
-    vcap_staging (0.1.50)
+    vcap_staging (0.1.51)
       nokogiri (>= 1.4.4)
       rake
       rspec
@@ -180,5 +180,5 @@ DEPENDENCIES
   vcap_common
   vcap_logging
   vcap_stager (~> 0.1.14)
-  vcap_staging (~> 0.1.50)
+  vcap_staging (~> 0.1.51)
   yajl-ruby (~> 0.8.3)
