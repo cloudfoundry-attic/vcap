@@ -1,6 +1,7 @@
 require 'spec_helper'
 
 CLOUD_APPLICATION_CONTEXT_INITIALIZER = 'org.cloudfoundry.reconfiguration.spring.CloudApplicationContextInitializer'
+CLOUD_APP_ANNOTATION_CONFIG_CLASS = 'org.cloudfoundry.reconfiguration.spring.web.CloudAppAnnotationConfigAutoReconfig'
 
 describe "A Spring application being staged" do
   before do
@@ -556,13 +557,377 @@ describe "A Spring web application being staged with 2 Spring DispatcherServlets
   end
 end
 
-def assert_context_param staged_dir, param_name, param_value
+describe "A Spring web application being staged using an AnnotationConfigWebApplicationContext in its web config and a contextConfigLocation of 'foo' specified" do
+  before(:all) do
+    app_fixture :spring_annotation_context_config_foo
+  end
+
+  it "should have the 'foo' context precede the AnnotationConfigWebApplicationContext in the 'contextConfigLocation' param-value" do
+    stage :spring do |staged_dir|
+      web_config_file = File.join(staged_dir, 'tomcat/webapps/ROOT/WEB-INF/web.xml')
+      web_config = Nokogiri::XML(open(web_config_file))
+      init_param_name_node = web_config.xpath("//context-param[contains(normalize-space(param-name), normalize-space('contextConfigLocation'))]")
+      init_param_name_node.length.should_not == 0
+
+      init_param_value_node = init_param_name_node.xpath("param-value")
+      init_param_value_node.length.should_not == 0
+
+      init_param_value = init_param_value_node.first.content
+      foo_index = init_param_value.index('foo')
+      foo_index.should_not == nil
+
+      auto_reconfiguration_context_index = init_param_value.index(CLOUD_APP_ANNOTATION_CONFIG_CLASS)
+      auto_reconfiguration_context_index.should_not == nil
+
+      auto_reconfiguration_context_index.should > foo_index + "foo".length
+      auto_reconfiguration_context_index.should < foo_index + 5
+
+    end
+  end
+
+  it "should have a 'contextInitializerClasses' context-param with only the CloudApplicationContextInitializer" do
+    stage :spring do |staged_dir|
+      assert_context_param staged_dir, 'contextInitializerClasses', CLOUD_APPLICATION_CONTEXT_INITIALIZER
+    end
+  end
+
+  it "should have the auto reconfiguration jar in the webapp lib path" do
+    stage :spring do |staged_dir|
+      auto_reconfig_jar_relative_path = "tomcat/webapps/ROOT/WEB-INF/lib/#{AUTOSTAGING_JAR}"
+      auto_reconfiguration_jar_path = File.join(staged_dir, auto_reconfig_jar_relative_path)
+      File.exist?(auto_reconfiguration_jar_path).should == true
+    end
+  end
+
+end
+
+describe "A Spring web application being staged using an AnnotationConfigWebApplicationContext in its web config and a contextConfigLocation of 'foo' specified plus has a servlet init-param using an AnnotationConfigWebApplicationContext and a contextConfigLocation of 'bar'" do
+  before(:all) do
+    app_fixture :spring_annotation_context_config_and_servletcontext
+  end
+
+  it "should have the 'foo' context precede the AnnotationConfigWebApplicationContext in the 'contextConfigLocation' param-value" do
+    stage :spring do |staged_dir|
+      web_config_file = File.join(staged_dir, 'tomcat/webapps/ROOT/WEB-INF/web.xml')
+      web_config = Nokogiri::XML(open(web_config_file))
+      init_param_name_node = web_config.xpath("//context-param[contains(normalize-space(param-name), normalize-space('contextConfigLocation'))]")
+      init_param_name_node.length.should_not == 0
+
+      init_param_value_node = init_param_name_node.xpath("param-value")
+      init_param_value_node.length.should_not == 0
+
+      init_param_value = init_param_value_node.first.content
+      foo_index = init_param_value.index('foo')
+      foo_index.should_not == nil
+
+      auto_reconfiguration_context_index = init_param_value.index(CLOUD_APP_ANNOTATION_CONFIG_CLASS)
+      auto_reconfiguration_context_index.should_not == nil
+
+      auto_reconfiguration_context_index.should > foo_index + "foo".length
+      auto_reconfiguration_context_index.should < foo_index + 5
+
+    end
+  end
+
+  it "should have the 'bar' context precede the AnnotationConfigWebApplicationContext in the DispatcherServlet's 'contextConfigLocation' param-value" do
+    stage :spring do |staged_dir|
+      web_config_file = File.join(staged_dir, 'tomcat/webapps/ROOT/WEB-INF/web.xml')
+      web_config = Nokogiri::XML(open(web_config_file))
+      init_param_name_node = web_config.xpath("//init-param[contains(normalize-space(param-name), normalize-space('contextConfigLocation'))]")
+      init_param_name_node.length.should_not == 0
+
+      init_param_value_node = init_param_name_node.xpath("param-value")
+      init_param_value_node.length.should_not == 0
+
+      init_param_value = init_param_value_node.first.content
+      bar_index = init_param_value.index('bar')
+      bar_index.should_not == nil
+
+      auto_reconfiguration_context_index = init_param_value.index(CLOUD_APP_ANNOTATION_CONFIG_CLASS)
+      auto_reconfiguration_context_index.should_not == nil
+
+      auto_reconfiguration_context_index.should > bar_index + "bar".length
+      auto_reconfiguration_context_index.should < bar_index + 5
+
+    end
+  end
+
+  it "should have a 'contextInitializerClasses' context-param with only the CloudApplicationContextInitializer" do
+    stage :spring do |staged_dir|
+      assert_context_param staged_dir, 'contextInitializerClasses', CLOUD_APPLICATION_CONTEXT_INITIALIZER
+    end
+  end
+
+  it "should have the auto reconfiguration jar in the webapp lib path" do
+    stage :spring do |staged_dir|
+      auto_reconfig_jar_relative_path = "tomcat/webapps/ROOT/WEB-INF/lib/#{AUTOSTAGING_JAR}"
+      auto_reconfiguration_jar_path = File.join(staged_dir, auto_reconfig_jar_relative_path)
+      File.exist?(auto_reconfiguration_jar_path).should == true
+    end
+  end
+
+end
+
+describe "A Spring web application being staged using a namespace and an AnnotationConfigWebApplicationContext in its web config and a contextConfigLocation of 'foo' specified plus has a servlet init-param using an AnnotationConfigWebApplicationContext and a contextConfigLocation of 'bar'" do
+  before(:all) do
+    app_fixture :spring_annotation_context_config_and_servletcontext_ns
+  end
+
+  it "should have the 'foo' context precede the AnnotationConfigWebApplicationContext in the 'contextConfigLocation' param-value" do
+    stage :spring do |staged_dir|
+      web_config_file = File.join(staged_dir, 'tomcat/webapps/ROOT/WEB-INF/web.xml')
+      web_config = Nokogiri::XML(open(web_config_file))
+      init_param_name_node = web_config.xpath("//xmlns:context-param[contains(normalize-space(xmlns:param-name), normalize-space('contextConfigLocation'))]")
+      init_param_name_node.length.should_not == 0
+
+      init_param_value_node = init_param_name_node.xpath("xmlns:param-value")
+      init_param_value_node.length.should_not == 0
+
+      init_param_value = init_param_value_node.first.content
+      foo_index = init_param_value.index('foo')
+      foo_index.should_not == nil
+
+      auto_reconfiguration_context_index = init_param_value.index(CLOUD_APP_ANNOTATION_CONFIG_CLASS)
+      auto_reconfiguration_context_index.should_not == nil
+
+      auto_reconfiguration_context_index.should > foo_index + "foo".length
+      auto_reconfiguration_context_index.should < foo_index + 5
+
+    end
+  end
+
+  it "should have the 'bar' context precede the AnnotationConfigWebApplicationContext in the DispatcherServlet's 'contextConfigLocation' param-value" do
+    stage :spring do |staged_dir|
+      web_config_file = File.join(staged_dir, 'tomcat/webapps/ROOT/WEB-INF/web.xml')
+      web_config = Nokogiri::XML(open(web_config_file))
+      init_param_name_node = web_config.xpath("//xmlns:init-param[contains(normalize-space(xmlns:param-name), normalize-space('contextConfigLocation'))]")
+      init_param_name_node.length.should_not == 0
+
+      init_param_value_node = init_param_name_node.xpath("xmlns:param-value")
+      init_param_value_node.length.should_not == 0
+
+      init_param_value = init_param_value_node.first.content
+      bar_index = init_param_value.index('bar')
+      bar_index.should_not == nil
+
+      auto_reconfiguration_context_index = init_param_value.index(CLOUD_APP_ANNOTATION_CONFIG_CLASS)
+      auto_reconfiguration_context_index.should_not == nil
+
+      auto_reconfiguration_context_index.should > bar_index + "bar".length
+      auto_reconfiguration_context_index.should < bar_index + 5
+
+    end
+  end
+
+  it "should have a 'contextInitializerClasses' context-param with only the CloudApplicationContextInitializer" do
+    stage :spring do |staged_dir|
+      assert_context_param staged_dir, 'contextInitializerClasses', CLOUD_APPLICATION_CONTEXT_INITIALIZER, "xmlns:"
+    end
+  end
+
+  it "should have the auto reconfiguration jar in the webapp lib path" do
+    stage :spring do |staged_dir|
+      auto_reconfig_jar_relative_path = "tomcat/webapps/ROOT/WEB-INF/lib/#{AUTOSTAGING_JAR}"
+      auto_reconfiguration_jar_path = File.join(staged_dir, auto_reconfig_jar_relative_path)
+      File.exist?(auto_reconfiguration_jar_path).should == true
+    end
+  end
+
+end
+
+describe "A Spring web application being staged using an AnnotationConfigWebApplicationContext in its web config and a dispatcher servlet that does not have a default servlet 'init-param' config" do
+  before(:all) do
+    app_fixture :spring_annotation_context_config_and_servletcontext_empty
+  end
+
+  it "should have the 'foo' context precede the AnnotationConfigWebApplicationContext in the 'contextConfigLocation' param-value" do
+    stage :spring do |staged_dir|
+      web_config_file = File.join(staged_dir, 'tomcat/webapps/ROOT/WEB-INF/web.xml')
+      web_config = Nokogiri::XML(open(web_config_file))
+      init_param_name_node = web_config.xpath("//context-param[contains(normalize-space(param-name), normalize-space('contextConfigLocation'))]")
+      init_param_name_node.length.should_not == 0
+
+      init_param_value_node = init_param_name_node.xpath("param-value")
+      init_param_value_node.length.should_not == 0
+
+      init_param_value = init_param_value_node.first.content
+      foo_index = init_param_value.index('foo')
+      foo_index.should_not == nil
+
+      auto_reconfiguration_context_index = init_param_value.index(CLOUD_APP_ANNOTATION_CONFIG_CLASS)
+      auto_reconfiguration_context_index.should_not == nil
+
+      auto_reconfiguration_context_index.should > foo_index + "foo".length
+      auto_reconfiguration_context_index.should < foo_index + 5
+
+    end
+  end
+
+  it "should have a init-param in its web config after staging" do
+    stage :spring do |staged_dir|
+      web_config_file = File.join(staged_dir, 'tomcat/webapps/ROOT/WEB-INF/web.xml')
+      File.exist?(web_config_file).should == true
+
+      web_config = Nokogiri::XML(open(web_config_file))
+      init_param_node =  web_config.xpath("//init-param")
+      init_param_node.length.should_not == 0
+    end
+  end
+
+  it "should have the default servlet context precede the auto-reconfiguration context in the DispatcherServlet's 'contextConfigLocation' param-value" do
+    stage :spring do |staged_dir|
+      web_config_file = File.join(staged_dir, 'tomcat/webapps/ROOT/WEB-INF/web.xml')
+      web_config = Nokogiri::XML(open(web_config_file))
+      init_param_name_node = web_config.xpath("//init-param[contains(normalize-space(param-name), normalize-space('contextConfigLocation'))]")
+      init_param_name_node.length.should_not == 0
+
+      init_param_value_node = init_param_name_node.xpath("param-value")
+      init_param_value_node.length.should_not == 0
+
+      init_param_value = init_param_value_node.first.content
+      dispatcher_servlet_index = init_param_value.index('/WEB-INF/dispatcher-servlet.xml')
+      dispatcher_servlet_index.should_not == nil
+
+      auto_reconfiguration_context_index = init_param_value.index('classpath:META-INF/cloud/cloudfoundry-auto-reconfiguration-context.xml')
+      auto_reconfiguration_context_index.should_not == nil
+
+      auto_reconfiguration_context_index.should > dispatcher_servlet_index + "/WEB-INF/dispatcher-servlet.xml".length
+
+    end
+  end
+
+  it "should have a 'contextInitializerClasses' context-param with only the CloudApplicationContextInitializer" do
+    stage :spring do |staged_dir|
+      assert_context_param staged_dir, 'contextInitializerClasses', CLOUD_APPLICATION_CONTEXT_INITIALIZER
+    end
+  end
+
+  it "should have the auto reconfiguration jar in the webapp lib path" do
+    stage :spring do |staged_dir|
+      auto_reconfig_jar_relative_path = "tomcat/webapps/ROOT/WEB-INF/lib/#{AUTOSTAGING_JAR}"
+      auto_reconfiguration_jar_path = File.join(staged_dir, auto_reconfig_jar_relative_path)
+      File.exist?(auto_reconfiguration_jar_path).should == true
+    end
+  end
+
+end
+
+describe "A Spring web application being staged with a context-param but without a 'contextConfigLocation' param-name in its web config and using a dispatcher servlet that does have an 'init-param' config with an AnnotationConfigWebApplicationContext" do
+  before(:all) do
+    app_fixture :spring_annotation_context_config_empty_with_servletcontext
+  end
+
+  it "should have a 'contextConfigLocation' where the default application context precedes the auto-reconfiguration context" do
+    stage :spring do |staged_dir|
+      web_config_file = File.join(staged_dir, 'tomcat/webapps/ROOT/WEB-INF/web.xml')
+      web_config = Nokogiri::XML(open(web_config_file))
+      context_param_name_node = web_config.xpath("//context-param[contains(normalize-space(param-name), normalize-space('contextConfigLocation'))]")
+      context_param_name_node.length.should_not == 0
+
+      context_param_value_node = context_param_name_node.first.xpath("param-value")
+      context_param_value_node.length.should_not == 0
+
+      context_param_value = context_param_value_node.first.content
+      default_context_index = context_param_value.index('/WEB-INF/applicationContext.xml')
+      default_context_index.should_not == nil
+
+      auto_reconfiguration_context_index = context_param_value.index('classpath:META-INF/cloud/cloudfoundry-auto-reconfiguration-context.xml')
+      auto_reconfiguration_context_index.should_not == nil
+
+      auto_reconfiguration_context_index.should > default_context_index + "/WEB-INF/applicationContext.xml".length
+    end
+  end
+
+  it "should have the 'bar' context precede the AnnotationConfigWebApplicationContext in the DispatcherServlet's 'contextConfigLocation' param-value" do
+    stage :spring do |staged_dir|
+      web_config_file = File.join(staged_dir, 'tomcat/webapps/ROOT/WEB-INF/web.xml')
+      web_config = Nokogiri::XML(open(web_config_file))
+      init_param_name_node = web_config.xpath("//init-param[contains(normalize-space(param-name), normalize-space('contextConfigLocation'))]")
+      init_param_name_node.length.should_not == 0
+
+      init_param_value_node = init_param_name_node.xpath("param-value")
+      init_param_value_node.length.should_not == 0
+
+      init_param_value = init_param_value_node.first.content
+      bar_index = init_param_value.index('bar')
+      bar_index.should_not == nil
+
+      auto_reconfiguration_context_index = init_param_value.index(CLOUD_APP_ANNOTATION_CONFIG_CLASS)
+      auto_reconfiguration_context_index.should_not == nil
+
+      auto_reconfiguration_context_index.should > bar_index + "bar".length
+      auto_reconfiguration_context_index.should < bar_index + 5
+
+    end
+  end
+
+  it "should have a 'contextInitializerClasses' context-param with only the CloudApplicationContextInitializer" do
+    stage :spring do |staged_dir|
+      assert_context_param staged_dir, 'contextInitializerClasses', CLOUD_APPLICATION_CONTEXT_INITIALIZER
+    end
+  end
+
+  it "should have the auto reconfiguration jar in the webapp lib path" do
+    stage :spring do |staged_dir|
+      auto_reconfig_jar_relative_path = "tomcat/webapps/ROOT/WEB-INF/lib/#{AUTOSTAGING_JAR}"
+      auto_reconfiguration_jar_path = File.join(staged_dir, auto_reconfig_jar_relative_path)
+      File.exist?(auto_reconfiguration_jar_path).should == true
+    end
+  end
+
+end
+
+describe "A Spring web application being staged using an AnnotationConfigWebApplicationContext in its servlet init-param and a contextConfigLocation of 'bar' specified" do
+  before(:all) do
+    app_fixture :spring_annotation_servletcontext_no_context_config
+  end
+
+  it "should have the 'bar' context precede the AnnotationConfigWebApplicationContext in the DispatcherServlet's 'contextConfigLocation' param-value" do
+    stage :spring do |staged_dir|
+      web_config_file = File.join(staged_dir, 'tomcat/webapps/ROOT/WEB-INF/web.xml')
+      web_config = Nokogiri::XML(open(web_config_file))
+      init_param_name_node = web_config.xpath("//init-param[contains(normalize-space(param-name), normalize-space('contextConfigLocation'))]")
+      init_param_name_node.length.should_not == 0
+
+      init_param_value_node = init_param_name_node.xpath("param-value")
+      init_param_value_node.length.should_not == 0
+
+      init_param_value = init_param_value_node.first.content
+      bar_index = init_param_value.index('bar')
+      bar_index.should_not == nil
+
+      auto_reconfiguration_context_index = init_param_value.index(CLOUD_APP_ANNOTATION_CONFIG_CLASS)
+      auto_reconfiguration_context_index.should_not == nil
+
+      auto_reconfiguration_context_index.should > bar_index + "bar".length
+      auto_reconfiguration_context_index.should < bar_index + 5
+
+    end
+  end
+
+  it "should have a 'contextInitializerClasses' context-param with only the CloudApplicationContextInitializer" do
+    stage :spring do |staged_dir|
+      assert_context_param staged_dir, 'contextInitializerClasses', CLOUD_APPLICATION_CONTEXT_INITIALIZER
+    end
+  end
+
+  it "should have the auto reconfiguration jar in the webapp lib path" do
+    stage :spring do |staged_dir|
+      auto_reconfig_jar_relative_path = "tomcat/webapps/ROOT/WEB-INF/lib/#{AUTOSTAGING_JAR}"
+      auto_reconfiguration_jar_path = File.join(staged_dir, auto_reconfig_jar_relative_path)
+      File.exist?(auto_reconfiguration_jar_path).should == true
+    end
+  end
+
+end
+
+def assert_context_param staged_dir, param_name, param_value, prefix=""
   web_config_file = File.join(staged_dir, 'tomcat/webapps/ROOT/WEB-INF/web.xml')
   web_config = Nokogiri::XML(open(web_config_file))
-  context_param_name_node = web_config.xpath("//context-param[contains(normalize-space(param-name), normalize-space('#{param_name}'))]")
+  context_param_name_node = web_config.xpath("//#{prefix}context-param[contains(normalize-space(#{prefix}param-name), normalize-space('#{param_name}'))]")
   context_param_name_node.length.should_not == 0
 
-  context_param_value_node = context_param_name_node.first.xpath("param-value")
+  context_param_value_node = context_param_name_node.first.xpath("#{prefix}param-value")
   context_param_value_node.length.should_not == 0
 
   context_param_value = context_param_value_node.first.content
