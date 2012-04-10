@@ -8,7 +8,6 @@ require 'vcap/package_cache/server'
 require 'vcap/package_cache/debug_formatter'
 require 'thin'
 require 'vcap/logging'
-require 'logger'
 
 
 module VCAP
@@ -34,13 +33,8 @@ module VCAP
       end
 
       def start_server!
-        #XXX matt's logging stuff, disabled till' I figure out how to setup a new
-        #formatter for debugging.
-        #VCAP::Logging.setup_from_config(@config[:logging])
-        #@logger = VCAP::Logging.logger('pcache')
-        @logger = Logger.new(STDOUT)
-        @logger.formatter = DebugFormatter.new
-        #@logger.level = Logger::INFO
+        VCAP::Logging.setup_from_config(@config[:logging])
+        @logger = VCAP::Logging.logger('package_cache')
         install_directories
         clean_directories
         purge_directory!(@directories['cache']) if @config[:purge_cache_on_startup]
