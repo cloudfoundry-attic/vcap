@@ -1,20 +1,18 @@
 require 'tmpdir'
+require 'logger'
+require 'run'
 
 module VCAP module PackageCache end end
 
 class VCAP::PackageCache::Builder
-  def initialize(user, build_root, logger = nil)
+  def initialize(user, build_root, runtimes, logger = nil)
     raise "invalid build_root" if not Dir.exists?(build_root)
     @logger = logger || Logger.new(STDOUT)
     @user = user
+    @runtimes = runtimes
     @build_dir = Dir.mktmpdir(nil, build_root)
-    grant_ownership(@build_dir)
     @package_path = nil
-  end
-
-  def grant_ownership(path)
-    File.chown(@user[:uid], @user[:gid], path)
-    File.chmod(0700, path)
+    Run.init(@logger)
   end
 
   def import_package_src(package_src)
@@ -22,7 +20,6 @@ class VCAP::PackageCache::Builder
     @src_name = File.basename(package_src)
     @src_path = File.join(@build_dir, @src_name)
     File.rename(package_src, @src_path)
-    grant_ownership(@src_path)
     @logger.debug("successfully imported #{@src_name}")
   end
 

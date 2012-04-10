@@ -59,12 +59,29 @@ runtimes:
     additional_checks: "-e 'puts RUBY_PATCHLEVEL >= 180'"
     environment:
 <% end %>
-<% if node[:dea][:runtimes].include?("nodejs") %>
+<% if node[:dea][:runtimes].include?("node04") %>
   node:
-    executable: <%= File.join(node[:nodejs][:path], "bin", "node") %>
+    executable: <%= File.join(node[:node04][:path], "bin", "node") %>
     version: 0.4.12
     version_flag: '-v'
     environment:
+    debug_env:
+      run:
+        - NODE_ARGS="--debug=$VCAP_DEBUG_PORT"
+      suspend:
+        - NODE_ARGS="--debug-brk=$VCAP_DEBUG_PORT"
+<% end %>
+<% if node[:dea][:runtimes].include?("node06") %>
+  node06:
+    executable: <%= File.join(node[:node06][:path], "bin", "node") %>
+    version: 0.6.8
+    version_flag: '-v'
+    environment:
+    debug_env:
+      run:
+        - NODE_ARGS="--debug=$VCAP_DEBUG_PORT"
+      suspend:
+        - NODE_ARGS="--debug-brk=$VCAP_DEBUG_PORT"
 <% end %>
 <% if node[:dea][:runtimes].include?("java") %>
   java:
@@ -90,5 +107,12 @@ runtimes:
     executable: <%= File.join(node[:php][:path], "bin", "php") %>
     version: 5.3.[2-6]
     version_flag: '-vn'
+    environment:
+<% end %>
+<% if node[:dea][:runtimes].include?("python2") %>
+  python2:
+    executable: python
+    version: 2.[5-7]
+    version_flag: '--version'
     environment:
 <% end %>

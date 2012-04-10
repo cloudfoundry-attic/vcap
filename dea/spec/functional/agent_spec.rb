@@ -2,6 +2,7 @@
 require File.join(File.dirname(__FILE__), 'spec_helper')
 
 require 'digest/sha1'
+require 'erb'
 require 'fileutils'
 require 'nats/client'
 require 'uri'
@@ -63,12 +64,13 @@ describe 'DEA Agent' do
       'pid'          => File.join(@run_dir, 'dea.pid'),
       'runtimes'     => {
         'ruby18' => {
-          'executable'        => '/usr/bin/ruby',
+          'executable'        => ENV["VCAP_TEST_DEA_RUBY18"] || '/usr/bin/ruby1.8',
           'version'           => '1.8.7',
           'version_flag'      => "-e 'puts RUBY_VERSION'"
         }
       },
       'disable_dir_cleanup' => true,
+      'droplet_fs_percent_used_threshold' => 100, # don't fail if a developer's machine is almost full
     }
     @dea_config_file = File.join(@run_dir, 'dea.config')
     File.open(@dea_config_file, 'w') {|f| YAML.dump(@dea_cfg, f) }
@@ -138,6 +140,11 @@ describe 'DEA Agent' do
       send_request(@nats_server.uri, 'dea.discover', disc_msg).should_not be_nil
     end
 
+    it 'should respond to a locate message' do
+      send_request(@nats_server.uri, 'dea.locate', {})
+      receive_message(@nats_server.uri, 'dea.advertise').should_not be_nil
+    end
+
     it 'should start a droplet when requested' do
       droplet_info = start_droplet(@nats_server.uri, @droplet)
       droplet_info.should_not be_nil
@@ -204,7 +211,7 @@ describe 'DEA Agent' do
     ret = nil
     em_run_with_timeout do
       NATS.start(:uri => uri) do
-        NATS.subscribe('dea.heartbeat') do |msg|
+        NATS.subscribe(subj) do |msg|
           ret = msg
           EM.stop
         end
@@ -263,19 +270,28 @@ describe 'DEA Agent' do
     staging_dir = File.join(base_dir, 'staging')
     FileUtils.mkdir(staging_dir)
     File.exists?(staging_dir).should be_true
-    {'start_tcpserver.rb' => 'startup',
-      'stop_tcpserver.rb' => 'stop',
+    {'start_tcpserver.erb' => 'startup',
     }.each do |src, dst|
       src = File.join(File.dirname(__FILE__), src)
       dst = File.join(staging_dir, dst)
-      FileUtils.cp(src, dst)
+      render_control_script(src, dst)
       FileUtils.chmod(0755, dst)
       File.exists?(dst).should be_true
     end
-    system("tar czf #{bundlename} -C #{staging_dir} startup -C #{staging_dir} stop")
+    system("tar czf #{bundlename} -C #{staging_dir} startup")
     File.exists?(bundlename).should be_true
     FileUtils.rm_rf(staging_dir)
     File.exists?(staging_dir).should be_false
+  end
+
+  def render_control_script(template_path, dst_path)
+    dea_ruby_path = ENV['VCAP_TEST_DEA_RUBY18']
+    template_contents = File.read(template_path)
+    template = ERB.new(template_contents)
+    rendered = template.result(binding())
+    File.open(dst_path, 'w+') do |f|
+      f.write(rendered)
+    end
   end
 
   def droplet_for_bundle(bundle_filename)

@@ -1,27 +1,61 @@
 #!/usr/bin/env ruby
+ENV['BUNDLE_GEMFILE'] ||= File.expand_path("../../Gemfile", __FILE__)
+$LOAD_PATH.unshift(File.expand_path("../../lib", __FILE__))
 
-require "shellwords"
-require "warden/client"
+require "bundler"
+Bundler.setup
 
-include Shellwords
+require "optparse"
 
-def prompt(str)
-  STDOUT.print "%s> " % str
-  STDOUT.flush
-  STDIN.gets
-end
+require "warden/repl"
 
-client = Warden::Client.new("/tmp/warden.sock")
-client.connect
+options = {}
+OptionParser.new do |op|
+  op.banner = <<-EOT
+Usage: warden-repl [options]
+Runs an interactive REPL by default.
 
-loop do
-  line = prompt("warden")
-  break unless line
+EOT
+  op.on("-c COMMAND", "Run COMMAND non-interactively") do |command|
+    options[:command] = command
+  end
 
-  words = shellwords(line)
-  next if words.empty?
+  op.on("-x", "Writes each command preceded by a '+' to stdout before executing") do
+    options[:trace] = true
+  end
 
-  # Issue command
-  client.write(words)
-  STDOUT.puts client.read.inspect
+  op.on("-e",
+        "Only applicable to -c. If a multi-command string is supplied, exit" \
+        + " after the first unsuccessful command.") do
+    options[:errexit] = true
+  end
+end.parse!
+
+repl = Warden::Repl.new(options)
+
+if options[:command]
+  commands = options[:command].split("\n")
+  exit_status = nil
+  commands.each do |command|
+    command_info = repl.process_line(command)
+
+    exit_status =
+      if !command_info
+        0
+      elsif command_info[:error]
+        1
+      elsif command_info[:name] == "run"
+        Integer(command_info[:result][0] || 1)
+      else
+        0
+      end
+
+    if (exit_status != 0) && options[:errexit]
+      break
+    end
+  end
+  exit(exit_status)
+else
+  trap('INT') { exit }
+  repl.run
 end

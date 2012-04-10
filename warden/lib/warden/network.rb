@@ -9,11 +9,11 @@ module Warden
       include Comparable
 
       def <=>(other)
-        v <=> other.v
+        v <=> Octets.new(other).v
       end
 
       def eql?(other)
-        v == other.v
+        v == Octets.new(other).v
       end
 
       def hash

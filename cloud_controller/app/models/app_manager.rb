@@ -89,6 +89,7 @@ class AppManager
 
         AppManager.secure_staging_dir(job[:user], job[:staging_dir])
         AppManager.secure_staging_dir(job[:user], job[:exploded_dir])
+        AppManager.secure_staging_dir(job[:user], job[:work_dir])
       end
 
       Bundler.with_clean_env do
@@ -117,6 +118,7 @@ class AppManager
             ensure
               FileUtils.rm_rf(job[:staging_dir])
               FileUtils.rm_rf(job[:exploded_dir])
+              FileUtils.rm_rf(job[:work_dir]) if job[:work_dir]
             end
           end.resume
 
@@ -136,11 +138,15 @@ class AppManager
   end
 
   def run_staging_command(script, exploded_dir, staging_dir, env_json)
+    work_dir = Dir.mktmpdir
+    plugin_env_path = File.join(work_dir, 'plugin_env.json')
+    File.open(plugin_env_path, 'w') {|f| f.write(env_json) }
     job = {
       :app => @app,
-      :cmd => "#{script} #{exploded_dir} #{staging_dir} #{env_json} #{AppManager.staging_manifest_directory}",
+      :cmd => "#{script} #{exploded_dir} #{staging_dir} #{plugin_env_path} #{AppManager.staging_manifest_directory}",
       :staging_dir => staging_dir,
-      :exploded_dir => exploded_dir
+      :exploded_dir => exploded_dir,
+      :work_dir => work_dir
     }
 
     CloudController.logger.debug("Queueing staging command #{job[:cmd]}", :tags => [:staging])
@@ -194,11 +200,12 @@ class AppManager
         message = start_message.dup
         message[:executableUri] = download_app_uri(message[:executableUri])
         message[:debug] = @app.metadata[:debug]
+        message[:console] = @app.metadata[:console]
         (index...max_to_start).each do |i|
           message[:index] = i
           dea_id = find_dea_for(message)
+          json = Yajl::Encoder.encode(message)
           if dea_id
-            json = Yajl::Encoder.encode(message)
             CloudController.logger.debug("Sending start message #{json} to DEA #{dea_id}")
             NATS.publish("dea.#{dea_id}.start", json)
           else
@@ -287,15 +294,15 @@ class AppManager
     end
 
     runtime = nil
+
     manifest['runtimes'].each do |hash|
       runtime ||= hash[app.runtime]
     end
-
     unless runtime
       raise CloudError.new(CloudError::APP_INVALID_RUNTIME, app.runtime, app.framework)
     end
 
-    env_json = Yajl::Encoder.encode(app.staging_environment)
+    env_json = app.staging_environment
 
     app_source_dir = Dir.mktmpdir
     app.explode_into(app_source_dir)
@@ -368,7 +375,9 @@ class AppManager
             :state => instance_json[:state],
             :since => instance_json[:state_timestamp],
             :debug_ip => instance_json[:debug_ip],
-            :debug_port => instance_json[:debug_port]
+            :debug_port => instance_json[:debug_port],
+            :console_ip => instance_json[:console_ip],
+            :console_port => instance_json[:console_port]
           }
         end
       end
@@ -440,6 +449,7 @@ class AppManager
     ['http://', "#{CloudController.bind_address}:#{CloudController.external_port}", path].join
   end
 
+
   # start_instance involves several moving pieces, from sending requests for help to the
   # dea_pool, to sending the actual start messages. In addition, many of these can be
   # triggered by one update call, so we simply queue them for the next go around through
@@ -452,8 +462,8 @@ class AppManager
         message[:executableUri] = download_app_uri(message[:executableUri])
         message[:index] = index
         dea_id = find_dea_for(message)
+        json = Yajl::Encoder.encode(message)
         if dea_id
-          json = Yajl::Encoder.encode(message)
           CloudController.logger.debug("Sending start message #{json} to DEA #{dea_id}")
           NATS.publish("dea.#{dea_id}.start", json)
         else
@@ -465,18 +475,22 @@ class AppManager
   end
 
   def find_dea_for(message)
-    find_dea_message = {
-      :droplet => message[:droplet],
-      :limits => message[:limits],
-      :name => message[:name],
-      :runtime => message[:runtime],
-      :sha => message[:sha1]
-    }
-    json_msg = Yajl::Encoder.encode(find_dea_message)
-    result = NATS.timed_request('dea.discover', json_msg, :timeout => 2).first
-    return nil if result.nil?
-    CloudController.logger.debug "Received #{result.inspect} in response to dea.discover request"
-    Yajl::Parser.parse(result, :symbolize_keys => true)[:id]
+    if AppConfig[:new_initial_placement]
+     DEAPool.find_dea(message)
+    else
+      find_dea_message = {
+        :droplet => message[:droplet],
+        :limits => message[:limits],
+        :name => message[:name],
+        :runtime => message[:runtime],
+        :sha => message[:sha1]
+      }
+      json_msg = Yajl::Encoder.encode(find_dea_message)
+      result = NATS.timed_request('dea.discover', json_msg, :timeout => 2).first
+      return nil if result.nil?
+      CloudController.logger.debug "Received #{result.inspect} in response to dea.discover request"
+      Yajl::Parser.parse(result, :symbolize_keys => true)[:id]
+    end
   end
 
   def stop_instances(indices)

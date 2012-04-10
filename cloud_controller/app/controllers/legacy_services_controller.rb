@@ -54,7 +54,7 @@ class LegacyServicesController < ApplicationController
     # Legacy api fell back to matching by vendor if no version matched
     svc ||= ::Service.find_by_name(req.vendor)
 
-    raise CloudError.new(CloudError::SERVICE_NOT_FOUND) unless svc && svc.visible_to_user?(user)
+    raise CloudError.new(CloudError::SERVICE_NOT_FOUND) unless svc && svc.visible_to_user?(user, req.tier)
 
     plan_option = nil
     if req.options && req.options['plan_option']

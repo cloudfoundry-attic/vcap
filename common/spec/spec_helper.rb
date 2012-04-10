@@ -13,6 +13,17 @@ require "vcap/process_utils"
 require "vcap/config"
 require "vcap/priority_queue"
 require 'vcap/quota'
+require 'benchmark'
+
+RSpec::Matchers.define :take_less_than do |n|
+  chain :seconds do; end
+  match do |block|
+    @elapsed = Benchmark.realtime do
+      block.call
+    end
+    @elapsed <= n
+  end
+end
 
 RSpec.configure do |c|
   # declare an exclusion filter
