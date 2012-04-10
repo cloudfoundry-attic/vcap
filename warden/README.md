@@ -59,7 +59,7 @@ Isolation is achieved by namespacing kernel resources that would
 otherwise be shared. The intended level of isolation is set such that
 multiple containers present on the same host should not be aware of each
 others presence. This means that these containers are given (among
-others) their own PID (Process ID) namespace, network namespace and
+others) their own PID (Process ID) namespace, network namespace, and
 mount namespace.
 
 Resource control is done by using [Control Groups][cgroups]. Every
