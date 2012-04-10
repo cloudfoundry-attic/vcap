@@ -3,6 +3,10 @@
       <param-name>contextConfigLocation</param-name>
       <param-value>classpath:META-INF/cloud/cloudfoundry-auto-reconfiguration-context.xml</param-value>
   </context-param>
+  <context-param>
+      <param-name>contextConfigLocationAnnotationConfig</param-name>
+      <param-value>org.cloudfoundry.reconfiguration.spring.web.CloudAppAnnotationConfigAutoReconfig</param-value>
+  </context-param>
 
   <context-param>
     <param-name>contextInitializerClasses</param-name>
@@ -15,6 +19,10 @@
       <init-param>
           <param-name>contextConfigLocation</param-name>
           <param-value>classpath:META-INF/cloud/cloudfoundry-auto-reconfiguration-context.xml</param-value>
+      </init-param>
+      <init-param>
+	      <param-name>contextConfigLocationAnnotationConfig</param-name>
+	      <param-value>org.cloudfoundry.reconfiguration.spring.web.CloudAppAnnotationConfigAutoReconfig</param-value>
       </init-param>
       <load-on-startup>1</load-on-startup>
   </servlet>  
