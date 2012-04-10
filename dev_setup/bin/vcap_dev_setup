@@ -86,7 +86,7 @@ function run_cmd () {
 
 # Check if we have access to the web
 run_cmd apt-get $APT_CONFIG install -qym wget
-if [ $? -ne 0]; then
+if [ $? -ne 0 ]; then
   echo "Can't install prerequisite: wget"
   exit 1
 fi
@@ -104,7 +104,7 @@ fi
 # Install chef
 if ! (apt-cache policy | grep opscode); then
   echo "deb http://apt.opscode.com/ `lsb_release -cs`-0.10 main" | sudo tee /etc/apt/sources.list.d/opscode.list
-  wget -qO - http://apt.opscode.com/packages@opscode.com.gpg.key | sudo apt-key add -
+  sudo apt-key adv --keyserver keyserver.ubuntu.com --recv 83EF826A
   echo chef chef/chef_server_url select none | sudo /usr/bin/debconf-set-selections
 fi
 run_cmd apt-get $APT_CONFIG update -qq
