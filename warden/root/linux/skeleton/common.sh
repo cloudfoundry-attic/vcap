@@ -18,8 +18,8 @@ function chroot() {
 function get_codename() {
   if [ -r /etc/lsb-release ]; then
     source /etc/lsb-release
-    if [ -n $DISTRIB_CODENAME ]; then
-      echo $DISTRIB_CODENAME
+    if [ -n "${DISTRIB_CODENAME}" ]; then
+      echo ${DISTRIB_CODENAME}
       return 0
     fi
   else
