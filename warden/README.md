@@ -9,6 +9,50 @@ isolated environments. These isolated environments -- or _containers_ --
 can be limited in terms of CPU usage, memory usage, disk usage, and
 network access. As of writing, the only supported OS is Linux.
 
+## Getting Started
+
+This short guide assumes Ruby 1.9 and Bundler are already available.
+
+#### Install the right kernel
+
+If you are running Ubuntu 10.04 (Lucid), make sure the backported Natty
+kernel is installed. After installing, reboot the system before
+continuing.
+
+```
+sudo apt-get install -y linux-image-generic-lts-backport-natty
+```
+
+#### Install dependencies
+
+```
+sudo apt-get install -y build-essential debootstrap
+```
+
+#### Setup Warden
+
+Run the setup routine, which compiles the C code bundled with Warden and
+sets up the base file system for Linux containers.
+
+```
+sudo bundle exec rake setup
+```
+
+**NOTE**: if `sudo` complains that `bundle` cannot be found, try `sudo
+env PATH=$PATH` to pass your current `PATH` to the `sudo` environment.
+
+#### Run Warden
+
+```
+sudo bundle exec rake warden:start[config/linux.yml]
+```
+
+#### Interact with Warden
+
+```
+bundle exec bin/warden-repl
+```
+
 ## Implementation for Linux
 
 Isolation is achieved by namespacing kernel resources that would
