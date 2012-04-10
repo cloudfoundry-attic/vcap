@@ -92,7 +92,7 @@ This is implemented by using `aufs` on Ubuntu versions from 10.04 up to
 
 The read-only filesystem contains the minimal set of Ubuntu packages and
 Warden-specific modifications common to all containers. The read-write
-filesystem store files overriding container-specific settings when
+filesystem stores files overriding container-specific settings when
 necessary. Because all writes are applied to the read-write filesystem,
 containers can share the same read-only base filesystem.
 
