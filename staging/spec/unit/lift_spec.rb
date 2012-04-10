@@ -13,7 +13,7 @@ describe "A Lift application being staged without a web.xml in its web config wi
   end
 
   it "should be fail the staging" do
-    lambda { stage :lift }.should raise_error("Web application staging failed: web.xml not found")
+    lambda { stage(:lift){} }.should raise_error("Web application staging failed: web.xml not found")
   end
 end
 
@@ -23,7 +23,7 @@ describe "A Lift application being staged without a LiftFilter in its web config
   end
 
   it "should fail the staging" do
-    lambda { stage :lift }.should raise_error("Scala / Lift application staging failed: no LiftFilter class found in web.xml")
+    lambda { stage(:lift){} }.should raise_error("Scala / Lift application staging failed: no LiftFilter class found in web.xml")
   end
 end
 

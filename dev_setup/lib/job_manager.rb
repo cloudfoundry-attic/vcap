@@ -15,8 +15,12 @@ class JobManager
   CF = "cloudfoundry"
   HM = "health_manager"
   DEA = "dea"
+  UAA = "uaa"
+  UAADB = "uaadb"
+  ACM = "acm"
+  ACMDB = "acmdb"
 
-  SERVICES = ["redis", "mysql", "mongodb", "neo4j"]
+  SERVICES = ["redis", "mysql", "mongodb", "neo4j", "rabbitmq"]
   SERVICES_NODE = SERVICES.map do |service|
     "#{service}_node"
   end
@@ -29,13 +33,13 @@ class JobManager
   end
 
   # All supported jobs
-  JOBS = [ALL, NATS, ROUTER, CF, CC, HM, DEA, CCDB] + SERVICES_NODE + SERVICES_GATEWAY
+  JOBS = [ALL, NATS, ROUTER, CF, CC, HM, DEA, CCDB, UAA, UAADB, ACM, ACMDB] + SERVICES_NODE + SERVICES_GATEWAY
   SYSTEM_JOB = [CF]
 
   # List of the required properties for jobs
   INSTALLED_JOB_PROPERTIES = {NATS => ["host"], CC => ["service_api_uri", "builtin_services"],
                               CCDB => ["host"]}
-  INSTALL_JOB_PROPERTIES = {CC => ["builtin_services"], MYSQL_NODE => ["index"], MONGODB_NODE => ["index"], REDIS_NODE => ["index"], NEO4J_NODE => ["index"]}
+  INSTALL_JOB_PROPERTIES = {CC => ["builtin_services"], MYSQL_NODE => ["index"], MONGODB_NODE => ["index"], REDIS_NODE => ["index"], NEO4J_NODE => ["index"], RABBITMQ_NODE => ["index"]}
 
   # Dependency between JOBS and  components that are consumed by "vcap_dev" when cf is started or
   # stopped
@@ -49,7 +53,7 @@ class JobManager
     SERVICE_GATEWAY_RUN_COMPONENTS[gateway] = gateway
   end
 
-  RUN_COMPONENTS = {ROUTER => ROUTER, CC => CC, HM => HM, DEA => DEA}.update(SERVICE_NODE_RUN_COMPONENTS).update(SERVICE_GATEWAY_RUN_COMPONENTS)
+  RUN_COMPONENTS = {ROUTER => ROUTER, CC => CC, HM => HM, DEA => DEA, UAA => UAA, ACM => ACM}.update(SERVICE_NODE_RUN_COMPONENTS).update(SERVICE_GATEWAY_RUN_COMPONENTS)
 
   class << self
     if defined?(Rake::DSL)

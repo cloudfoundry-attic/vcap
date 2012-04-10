@@ -62,19 +62,9 @@ To install ssh:
     sudo apt-get install openssh-server
 
 #### Step 2: run the automated setup process
-Run the install script. It'll ask for your sudo password at the
-beginning and towards the end. The entire process takes ~1 hour, so just
-keep a loose eye on it.
-
-     sudo apt-get install curl
-     bash < <(curl -s -k -B https://raw.github.com/cloudfoundry/vcap/master/setup/install)
-
-_**Experimental**_ Or, instead of the above steps, try the new Chef based
-installation.  Note: the Chef based setup will eventually replace the
-vcap_setup based install above.  The Chef recipies don't cover all frameworks
-and runtimes supported by the traditional installation method, e.g. Erlang
-isn't supported yet, but it will soon.  At that point, the vcap_setup based
-installer will be removed from the source tree.
+Run the install script. It'll ask for your sudo password at the beginning and
+towards the end. The entire process takes about half an hour, so just keep a
+loose eye on it.
 
      sudo apt-get install curl
      bash < <(curl -s -k -B https://raw.github.com/cloudfoundry/vcap/master/dev_setup/bin/vcap_dev_setup)
@@ -85,14 +75,7 @@ the following steps
 
 #### Step 3: start the system
 
-    cd ~/cloudfoundry/vcap
-    bin/vcap start
-    bin/vcap tail  # see aggregate logs
-
-_**Experimental**_ if you used the new Chef based installer in step 2:
-
-    cd ~/cloudfoundry/vcap
-    dev_setup/bin/vcap_dev start
+    ~/cloudfoundry/vcap/dev_setup/bin/vcap_dev start
 
 #### Step 4: *Optional, mac/linux users only*, create a local ssh tunnel
 
@@ -144,7 +127,13 @@ Testing your setup
 ------------------
 
 Once the system is installed, you can run the following command Basic System
-Validation Tests (BVT) to ensure that major functionality is working.
+Validation Tests (BVT) to ensure that major functionality is working. BVTs
+require additional dependencies of Maven and the JDK, which can be installed
+with:
+
+    sudo apt-get install default-jdk maven2
+
+Now that you have the necessary dependencies, you can run the BVTs:
 
     cd cloudfoundry/vcap
     cd tests && bundle package; bundle install && cd ..

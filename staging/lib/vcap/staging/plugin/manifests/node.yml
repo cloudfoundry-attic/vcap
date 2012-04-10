@@ -6,6 +6,10 @@ runtimes:
       description: 'Node.js'
       executable: node
       default: true
+  - node06:
+      version: '0.6.8'
+      description: 'Node.js'
+      executable: node
 app_servers:
 detection:
   - "*.js": '.'

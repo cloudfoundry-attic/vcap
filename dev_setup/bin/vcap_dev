@@ -53,8 +53,9 @@ unless File.exists?(File.join(deployment_info["cloudfoundry_path"], "bin", "vcap
 end
 
 ruby_bin_dir = deployment_info["ruby_bin_dir"]
+maven_bin_dir = deployment_info["maven_bin_dir"]
 gemdir = `#{File.join(ruby_bin_dir, "gem")} environment gemdir`.split("\n")[0]
-ENV["PATH"] = "#{ruby_bin_dir}:#{File.join(gemdir, "bin")}:#{ENV["PATH"]}"
+ENV["PATH"] = "#{ruby_bin_dir}:#{File.join(gemdir, "bin")}:#{maven_bin_dir}:#{ENV["PATH"]}"
 
 if vcap_components["components"].include?("cloud_controller")
   puts "Setting up cloud controller environment"

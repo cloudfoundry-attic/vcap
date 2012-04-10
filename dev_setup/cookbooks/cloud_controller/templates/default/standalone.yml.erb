@@ -1,0 +1,55 @@
+---
+name: "standalone"
+runtimes:
+  - "python2":
+      version: "2.6.5"
+      description: <%= "Python #{node[:python2][:version]}" %>
+      executable: python
+      environment:
+        path: /usr/bin:$PATH
+  - "java":
+      description: "Java 6"
+      version: "1.6"
+      executable: "java"
+      environment:
+        path: /usr/bin:$PATH
+  - node:
+      version: '0.4.12'
+      description: 'Node.js'
+      executable: <%= File.join(node[:node04][:path], "bin", "node") %>
+      environment:
+        path: <%= File.join(node[:node04][:path], "bin") %>:$PATH
+  - node06:
+      version: '0.6.8'
+      description: 'Node.js'
+      executable: <%= File.join(node[:node06][:path], "bin", "node") %>
+      environment:
+        path: <%= File.join(node[:node06][:path], "bin") %>:$PATH
+  - erlangR14B02:
+      version: 'R14B02'
+      description: 'Erlang R14B02'
+      executable: <%= File.join(node[:erlang][:path], "bin", "erl") %>
+      environment:
+        path: <%= File.join(node[:erlang][:path], "bin") %>:$PATH
+  - "php":
+      description: "PHP 5"
+      version: "5.3"
+      executable: "php"
+      environment:
+        path: /usr/bin:$PATH
+  - "ruby18":
+      version: "1.8.7" # FIXME change to 1.8.7-p334
+      description: "Ruby 1.8.7"
+      executable: "<%= File.join(node[:ruby18][:path], "bin", "ruby") %>"
+      environment:
+        path: <%= File.join(node[:ruby18][:path], "bin") %>:$PATH
+        bundle_gemfile:
+  - "ruby19":
+      version: "1.9.2p180"
+      description: "Ruby 1.9.2"
+      executable: "<%= File.join(node[:ruby][:path], "bin", "ruby") %>"
+      environment:
+        path: <%= File.join(node[:ruby][:path], "bin") %>:$PATH
+        bundle_gemfile:
+
+# vim: filetype=yaml
