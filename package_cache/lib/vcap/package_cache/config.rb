@@ -39,14 +39,9 @@ class VCAP::PackageCache::Config < VCAP::Config
 
     def normalize_config(config)
       config[:runtimes].each { |runtime, path|
-        if path[0] != '/'
-          path = `which #{path}`.chop
-          config[:runtimes][runtime] = path
-          puts "runtime #{runtime} resolved to #{path}."
-        else
-          puts "runtime #{runtime} using #{path}."
-        end
-
+        path = `which #{path}`.chop
+        config[:runtimes][runtime] = path
+        puts "runtime #{runtime} resolved to #{path}."
         raise "\nInvalid path #{path} for runtime #{runtime}." unless File.executable?(path)
       }
 
