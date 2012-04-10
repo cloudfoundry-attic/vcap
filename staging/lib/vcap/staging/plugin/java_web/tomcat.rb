@@ -2,9 +2,10 @@ require 'nokogiri'
 require 'fileutils'
 
 class Tomcat
-  AUTOSTAGING_JAR = 'auto-reconfiguration-0.6.2.jar'
+  AUTOSTAGING_JAR = 'auto-reconfiguration-0.6.4.jar'
   DEFAULT_APP_CONTEXT = "/WEB-INF/applicationContext.xml"
   DEFAULT_SERVLET_CONTEXT_SUFFIX = "-servlet.xml"
+  ANNOTATION_CONTEXT_CLASS = "org.springframework.web.context.support.AnnotationConfigWebApplicationContext"
   SERVICE_DRIVER_HASH = {
       "mysql-5.1" => 'mysql-connector-java-5.1.12-bin.jar',
       "postgresql-9.0" => 'postgresql-9.0-801.jdbc4.jar'
@@ -27,6 +28,19 @@ class Tomcat
     webapp_path
   end
 
+  def self.get_namespace_prefix(webapp_config)
+    name_space = webapp_config.root.namespace
+    if name_space
+      if name_space.prefix
+        prefix = name_space.prefix
+      else
+        prefix = "xmlns:"
+      end
+    else
+      prefix = ''
+    end
+  end
+
   # The staging modifications that are common to one or more framework plugins e.g. ['spring' & 'grails'
   # requiring autostaging context_param & autostaging servlet updates and 'spring', 'grails' & 'lift'
   # requiring the copying of the autostaging jar etc] are handled below to avoid duplication.
@@ -46,10 +60,22 @@ class Tomcat
     autostaging_context_param_node = autostaging_context.xpath("//context-param[param-name='contextConfigLocation']").first
     autostaging_context_param_name_node = autostaging_context_param_node.xpath("param-name").first
     autostaging_context_param_name = autostaging_context_param_name_node.content.strip
-    autostaging_context_param_value_node = autostaging_context_param_node.xpath("param-value").first
+    autostaging_context_param_value_xml_node = autostaging_context.xpath("//context-param/param-value").first
+    prefix = get_namespace_prefix(webapp_config)
+    autostaging_context_param_anno_node = autostaging_context.xpath("//context-param[param-name='contextConfigLocationAnnotationConfig']").first
+    if autostaging_context_param_anno_node
+      autostaging_context_param_value_anno_node = autostaging_context_param_anno_node.xpath("param-value").first
+    else
+      autostaging_context_param_value_anno_node = nil
+    end
+    cc = webapp_config.xpath("//#{prefix}context-param[contains(normalize-space(#{prefix}param-name), normalize-space('contextClass'))]")
+    if autostaging_context_param_value_anno_node && cc.xpath("#{prefix}param-value").text == ANNOTATION_CONTEXT_CLASS
+      autostaging_context_param_value_node = autostaging_context_param_value_anno_node
+    else
+      autostaging_context_param_value_node = autostaging_context_param_value_xml_node
+    end
     autostaging_context_param_value = autostaging_context_param_value_node.content
 
-    prefix = webapp_config.root.namespace ? "xmlns:" : ''
     context_param_nodes =  webapp_config.xpath("//#{prefix}context-param")
     if (context_param_nodes != nil && context_param_nodes.length > 0)
       context_param_node = webapp_config.xpath("//#{prefix}context-param[contains(normalize-space(#{prefix}param-name), normalize-space('#{autostaging_context_param_name}'))]").first
@@ -85,10 +111,22 @@ class Tomcat
     autostaging_servlet_class = autostaging_context.xpath("//servlet-class").first.content.strip
     autostaging_init_param_name_node = autostaging_context.xpath("//servlet/init-param/param-name").first
     autostaging_init_param_name = autostaging_init_param_name_node.content.strip
-    autostaging_init_param_value_node = autostaging_context.xpath("//servlet/init-param/param-value").first
+    autostaging_init_param_value_xml_node = autostaging_context.xpath("//servlet/init-param/param-value").first
+    autostaging_init_param_anno_node = autostaging_context.xpath("//servlet/init-param[param-name='contextConfigLocationAnnotationConfig']").first
+    if autostaging_init_param_anno_node
+      autostaging_init_param_value_anno_node = autostaging_init_param_anno_node.xpath("param-value").first
+    else
+      autostaging_init_param_value_anno_node = nil
+    end
+    prefix = get_namespace_prefix(webapp_config)
+    cc = webapp_config.xpath("//#{prefix}servlet/init-param[contains(normalize-space(#{prefix}param-name), normalize-space('contextClass'))]")
+    if autostaging_init_param_value_anno_node && cc.xpath("#{prefix}param-value").text == ANNOTATION_CONTEXT_CLASS
+      autostaging_init_param_value_node = autostaging_init_param_value_anno_node
+    else
+      autostaging_init_param_value_node = autostaging_init_param_value_xml_node
+    end
     autostaging_init_param_value = autostaging_init_param_value_node.content
 
-    prefix = webapp_config.root.namespace ? "xmlns:" : ''
     dispatcher_servlet_nodes = webapp_config.xpath("//#{prefix}servlet[contains(normalize-space(#{prefix}servlet-class), normalize-space('#{autostaging_servlet_class}'))]")
     if (dispatcher_servlet_nodes != nil && !dispatcher_servlet_nodes.empty?)
       dispatcher_servlet_nodes.each do |dispatcher_servlet_node|
