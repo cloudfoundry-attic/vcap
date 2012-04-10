@@ -6,8 +6,13 @@ server:
   # referencing it disconnected. The timer is cancelled when during this
   # period, another client references the container.
   #
+  # Clients can be forced to specify this setting by setting the
+  # server-wide variable to an invalid value:
+  #   container_grace_time: invalid
+  #
   # The grace time can be disabled by setting it to nil:
   #   container_grace_time: ~
+  #
   container_grace_time: 300
 
   # Specifies the size of the container's private scratch disk.
