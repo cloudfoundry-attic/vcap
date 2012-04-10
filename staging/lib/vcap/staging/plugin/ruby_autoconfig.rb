@@ -2,7 +2,7 @@ module RubyAutoconfig
   include GemfileSupport
 
   AUTO_CONFIG_GEM_NAME= 'cf-autoconfig'
-  AUTO_CONFIG_GEM_VERSION= '0.0.2'
+  AUTO_CONFIG_GEM_VERSION= '0.0.3'
   #TODO Ideally we get transitive deps from cf-autoconfig gem, but this is no easy task
   #w/out downloading them every time
   AUTO_CONFIG_GEM_DEPS = [ ['cf-runtime', '0.0.1'], ['crack', '0.3.1'] ]
