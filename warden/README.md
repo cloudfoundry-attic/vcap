@@ -213,6 +213,13 @@ element must be of the form:
 ]
 ```
 
+#### `grace_time`
+
+If specified, this setting overrides the default time of a container not
+being referenced by any client until it is destroyed. The value can
+either be the number of seconds as floating point number or integer, or
+the `null` value to completely disable the grace time.
+
 #### `disk_size_mb`
 
 If specified, this setting overrides the default size of the container's
