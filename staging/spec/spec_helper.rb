@@ -5,6 +5,8 @@ require File.expand_path('../support/staging_spec_helpers', __FILE__)
 
 MANIFEST_DIR = File.expand_path('../../lib/vcap/staging/plugin/manifests', __FILE__)
 
+AUTO_CONFIG_GEM_VERSION = '0.0.3'
+
 # Created as needed, removed at the end of the spec run.
 # Allows us to override staging paths.
 STAGING_TEMP = Dir.mktmpdir
