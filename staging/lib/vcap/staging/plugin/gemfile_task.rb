@@ -83,6 +83,7 @@ class GemfileTask
   # Each dependency is a gem [name, version] pair;
   # e.g. ['thin', '1.2.10']
   def install_gems(gems)
+    puts "***** #{gems}"
     missing = [ ]
 
     blessed_gems_dir = File.join(@cache_base_dir, "blessed_gems")
