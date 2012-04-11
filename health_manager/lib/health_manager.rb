@@ -90,13 +90,13 @@ class HealthManager
     @database_scan = config['intervals']['database_scan']
     @droplet_lost = config['intervals']['droplet_lost']
     @droplets_analysis = config['intervals']['droplets_analysis'] || 10
-    @flapping_death = config['intervals']['flapping_death'] || 2
-    @flapping_timeout = config['intervals']['flapping_timeout'] || 1000
+    @flapping_death = config['intervals']['flapping_death'] || 1
+    @flapping_timeout = config['intervals']['flapping_timeout'] || 500
 
     @min_restart_delay = config['intervals']['min_restart_delay'] || 60
     @max_restart_delay = config['intervals']['max_restart_delay'] || 480
 
-    @giveup_crash_number = config['intervals']['giveup_crash_number'] || 6 # Use -1 to never give up!
+    @giveup_crash_number = config['intervals']['giveup_crash_number'] || 4 # Use -1 to never give up!
 
     @restart_timeout = config['intervals']['restart_timeout']
     @stable_state = config['intervals']['stable_state']
