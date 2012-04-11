@@ -448,6 +448,20 @@ describe ServicesController do
 
         stop_gateway(gw_pid)
       end
+
+      it 'should fail to provision with invalid uri service name' do
+        shim = ServiceProvisionerStub.new
+        shim.stubs(:provision_service).returns({:data => {}, :service_id => 'foo', :credentials => {}})
+        gw_pid = start_gateway(@svc, shim)
+        post_msg :provision do
+          VCAP::Services::Api::CloudControllerProvisionRequest.new(
+            :label => 'foo-bar',
+            :name  => '[',
+            :plan  => 'free')
+        end
+        response.status.should == 400
+        stop_gateway(gw_pid)
+      end
     end
 
     describe "#bind" do
