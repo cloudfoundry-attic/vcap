@@ -746,6 +746,12 @@ class HealthManager
 
   def start_instances(droplet_id, indices, high_priority = false)
     droplet_entry = @droplets[droplet_id]
+
+    if droplet_entry.nil?
+      @logger.info("droplet #{droplet_id} went away, aborting start_instances")
+      return
+    end
+
     start_message = {
       :droplet => droplet_id,
       :op => :START,
