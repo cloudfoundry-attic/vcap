@@ -288,6 +288,7 @@ class AppsController < ApplicationController
     update_app_mem(app)
     update_app_env(app)
     update_app_staging(app)
+    update_app_name(app)
     delta_instances = update_app_instances(app)
 
     changed = app.changed
@@ -349,6 +350,11 @@ class AppsController < ApplicationController
     manager.update_uris if update_app_uris(app)
 
     yield(app) if block_given?
+  end
+
+  def update_app_name(app)
+    return unless body_params && body_params[:name]
+    app.name = body_params[:name]
   end
 
   def update_app_mem(app)
