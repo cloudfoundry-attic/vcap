@@ -4,7 +4,14 @@ module RubyInstall
     bundler_version = node[:rubygems][:bundler][:version]
     rake_version = node[:rubygems][:rake][:version]
 
-    %w[ build-essential libssl-dev zlib1g-dev libreadline5-dev libxml2-dev libpq-dev].each do |pkg|
+    packages = %w[ build-essential libssl-dev zlib1g-dev libxml2-dev libpq-dev]
+    if node.platform == 'ubuntu' && node.platform_version.to_f >= 11.10
+      packages << 'libreadline6-dev'
+    else
+      packages << 'libreadline5-dev'
+    end
+
+    packages.each do |pkg|
       package pkg
     end
 
