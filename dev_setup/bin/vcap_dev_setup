@@ -118,6 +118,8 @@ if [ ! -d $CLOUDFOUNDRY_HOME/vcap ]; then
     echo "Unable to clone cloudfoundry repo."
     exit 1
   fi
+else
+  (cd $CLOUDFOUNDRY_HOME/vcap && rake bundler:reset || find -type d -name .bundle -exec rm -rf {} \; )
 fi
 
 
