@@ -84,6 +84,16 @@ function run_cmd () {
   fi
 }
 
+function clear_bundler_settings () {
+  # Do we have a Bundler problem?
+  find $CLOUDFOUNDRY_HOME/vcap -type d -name .bundle | grep -Fq .bundle || return 0
+  if [ "$ALL" != true ]; then
+    read -p "Remembered Bundler options could cause you troubles, do you want me to clear them for you? [Y/n]"
+    [[ $REPLY =~ ^[nN] ]] && return 0
+  fi
+  (cd $CLOUDFOUNDRY_HOME/vcap && rake bundler:reset || find -type d -name .bundle -exec rm -rf {} \; )
+}
+
 # Check if we have access to the web
 run_cmd apt-get $APT_CONFIG install -qym wget
 if [ $? -ne 0 ]; then
@@ -118,6 +128,8 @@ if [ ! -d $CLOUDFOUNDRY_HOME/vcap ]; then
     echo "Unable to clone cloudfoundry repo."
     exit 1
   fi
+else
+  clear_bundler_settings
 fi
 
 
