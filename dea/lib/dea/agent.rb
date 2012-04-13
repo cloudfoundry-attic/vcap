@@ -20,6 +20,8 @@ require 'yaml'
 require 'em-http'
 require 'nats/client'
 require 'thin'
+require 'sys/filesystem'
+include Sys
 
 require 'vcap/common'
 require 'vcap/component'
@@ -1773,33 +1775,25 @@ module DEA
     end
 
     def update_droplet_fs_usage(opts={})
-      df_cmd = "df #{@droplet_dir}"
+      fs_proc = Proc.new do
+        begin
+          fs = Filesystem.stat(@droplet_dir)
+          [:success, fs]
+        rescue => e
+          [:error, e]
+        end
+      end
 
-      cont = proc do |output, status|
-        raise "Failed executing #{df_cmd}" unless status.success?
-
-        percent_used = parse_df_percent_used(output)
-        raise "Failed parsing df output: #{output}" unless percent_used
-
-        @droplet_fs_percent_used = percent_used
+      cont = Proc.new do |status, fs|
+        raise "Failed executing Filesystem.stat for #{@droplet_dir}: #{fs.message}" unless status == :success
+        @droplet_fs_percent_used = Integer((fs.blocks - fs.blocks_free) / fs.blocks * 100).round
       end
 
       if opts[:blocking]
-        output = `#{df_cmd}`
-        cont.call(output, $?)
+        status, fs = fs_proc.call
+        cont.call(status, fs)
       else
-        EM.system(df_cmd, cont)
-      end
-    end
-
-    def parse_df_percent_used(output)
-      fields = output.strip.split(/\s+/)
-      return nil unless fields.count == 13
-
-      if fields[11] =~ /^(\d+)%$/
-        Integer($1)
-      else
-        nil
+        EM.defer(fs_proc, cont)
       end
     end
 
