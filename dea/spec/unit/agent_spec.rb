@@ -134,52 +134,19 @@ describe 'DEA Agent' do
     end
   end
 
-  describe '#parse_df_percent_used' do
+  describe '#update_droplet_fs_usage' do
     it 'should return the disk usage percentage as an integer' do
       agent = make_test_agent
-      df_output = []
-      # Normal case
-      df_output << <<-EOT
-Filesystem           1K-blocks      Used Available Use% Mounted on
-/dev/sda1            147550696  83840896  56214632  60% /
-EOT
-
-      # FS causes wrapping (seen on QA system)
-      df_output << <<-EOT
-Filesystem           1K-blocks      Used Available Use% Mounted on
-/dev/mapper/rootvg-rootvol
-                      63051516  36117788  23735124  60% /
-EOT
-      df_output.each do |out|
-        agent.parse_df_percent_used(out).should == 60
-      end
+      agent.update_droplet_fs_usage(:blocking => true)
+      agent.instance_variable_get(:@droplet_fs_percent_used).should be_kind_of(Integer)
     end
 
-    it 'should return nil on unexpected/malformed input' do
+    it 'should raise exception if droplet_dir does not exists' do
       agent = make_test_agent
-      invalid_output = []
-      # Internal usage only calls with a single path, so we only
-      # expect two lines
-      invalid_output << <<-EOT
-Filesystem           1K-blocks      Used Available Use% Mounted on
-/dev/sda1            147550696  83840896  56214632  60% /
-/dev/sda1            147550696  83840896  56214632  60% /
-EOT
-
-      # Extra fields
-      invalid_output << <<-EOT
-Filesystem           1K-blocks      Used Available Use% Mounted on
-/dev/sda1            147550696  83840896  56214632  60% / f f
-EOT
-
-      # Missing fields
-      invalid_output << <<-EOT
-Filesystem           1K-blocks      Used Available Use% Mounted on
-/dev/sda1            147550696  83840896
-EOT
-      invalid_output.each do |out|
-        agent.parse_df_percent_used(out).should == nil
-      end
+      agent.instance_variable_set(:@droplet_dir, "/dea_dummy_dir")
+      expect {
+        agent.update_droplet_fs_usage(:blocking => true)
+      }.to raise_exception
     end
   end
 
