@@ -1774,10 +1774,10 @@ module DEA
     end
 
     def parse_df_percent_used(output)
-      fields = output.strip.split(/\s+/)
-      return nil unless fields.count == 13
+      fields = output.split("\n", 2)[1].strip.split(/\s+/)
+      return nil unless fields.count == 6
 
-      if fields[11] =~ /^(\d+)%$/
+      if fields[4] =~ /^(\d+)%$/
         Integer($1)
       else
         nil

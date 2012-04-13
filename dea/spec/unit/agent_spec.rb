@@ -150,6 +150,12 @@ Filesystem           1K-blocks      Used Available Use% Mounted on
 /dev/mapper/rootvg-rootvol
                       63051516  36117788  23735124  60% /
 EOT
+
+      # Different language
+      df_output << <<-EOT
+S.ficheros         Bloques de 1K   Usado    Dispon Uso% Montado en
+/dev/sda1            147550696  83840896  56214632  60% /
+EOT
       df_output.each do |out|
         agent.parse_df_percent_used(out).should == 60
       end
