@@ -26,7 +26,8 @@ bash "Install Erlang" do
   cwd File.join("", "tmp")
   user node[:deployment][:user]
   code <<-EOH
-  tar xvzf otp_src_#{node[:erlang][:version]}.tar.gz
+  tar xvzf #{File.join(node[:deployment][:setup_cache],
+    "otp_src_#{node[:erlang][:version]}.tar.gz") }
   cd otp_src_#{node[:erlang][:version]}
   #{File.join(".", "configure")} --prefix=#{node[:erlang][:path]} --disable-hipe
   make

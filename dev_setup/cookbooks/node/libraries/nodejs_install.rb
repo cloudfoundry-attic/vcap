@@ -23,7 +23,8 @@ module NodeInstall
       cwd File.join("", "tmp")
       user node[:deployment][:user]
       code <<-EOH
-      tar xzf node-v#{node_version}.tar.gz
+      tar xzf #{File.join(node[:deployment][:setup_cache],
+        "node-v#{node_version}.tar.gz") }
       cd node-v#{node_version}
       ./configure --prefix=#{node_path}
       make
