@@ -4,7 +4,8 @@ module NodeInstall
       package pkg
     end
 
-    remote_file File.join(node[:deployment][:setup_cache], "node-v#{node_version}.tar.gz") do
+    tarball_path = File.join(node[:deployment][:setup_cache], "node-v#{node_version}.tar.gz")
+    remote_file tarball_path do
       owner node[:deployment][:user]
       source node_source
       checksum node[:node][:checksums][node_version]
@@ -22,7 +23,7 @@ module NodeInstall
       cwd File.join("", "tmp")
       user node[:deployment][:user]
       code <<-EOH
-      tar xzf node-v#{node_version}.tar.gz
+      tar xzf #{tarball_path}
       cd node-v#{node_version}
       ./configure --prefix=#{node_path}
       make
