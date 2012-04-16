@@ -15,18 +15,6 @@ module Warden
           base.extend(ClassMethods)
         end
 
-        def initialize(*args)
-          super(*args)
-
-          on(:after_create) {
-            sh "#{container_path}/net.sh setup"
-          }
-
-          on(:before_destroy) {
-            sh "#{container_path}/net.sh teardown"
-          }
-        end
-
         def do_net_in
           port = PortPool.acquire
 
@@ -73,21 +61,15 @@ module Warden
           def setup(config = {})
             super(config)
 
-            allow_networks = []
-            if config[:network]
-              allow_networks = [config[:network][:allow_networks]].flatten.compact
+            self.allow_networks = []
+            if config["network"]
+              self.allow_networks = [config["network"]["allow_networks"]].flatten.compact
             end
 
-            deny_networks = []
-            if config[:network]
-              deny_networks = [config[:network][:deny_networks]].flatten.compact
+            self.deny_networks = []
+            if config["network"]
+              self.deny_networks = [config["network"]["deny_networks"]].flatten.compact
             end
-
-            sh *[ %{env},
-                  %{ALLOW_NETWORKS=%s} % allow_networks.join(" "),
-                  %{DENY_NETWORKS=%s} % deny_networks.join(" "),
-                  %{%s/net.sh} % root_path,
-                  %{setup} ]
 
             # 1k available ports should be "good enough"
             if PortPool.instance.available < 1000

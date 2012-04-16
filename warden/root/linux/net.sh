@@ -10,6 +10,10 @@ filter_instance_prefix="warden-instance-"
 nat_prerouting_chain="warden-prerouting"
 nat_instance_prefix="warden-instance-"
 
+# Default ALLOW_NETWORKS/DENY_NETWORKS to empty
+ALLOW_NETWORKS=${ALLOW_NETWORKS:-}
+DENY_NETWORKS=${DENY_NETWORKS:-}
+
 function teardown_filter() {
   # Prune dispatch chain
   iptables -S ${filter_dispatch_chain} 2> /dev/null |

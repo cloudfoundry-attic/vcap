@@ -132,9 +132,16 @@ int start(void *data) {
 }
 
 int parent_setup_helper(clone_helper_t *h) {
+  char buf[1024];
   int rv;
 
-  h->new_root_path = getenv("ROOT_PATH");
+  if (getcwd(buf, sizeof(buf)) == NULL) {
+    fprintf(stderr, "getcwd: %s\n", strerror(errno));
+    goto err;
+  }
+
+  h->new_root_path = malloc(sizeof(buf));
+  snprintf(h->new_root_path, sizeof(buf), "%s/%s", buf, "union");
   if (h->new_root_path == NULL) {
     fprintf(stderr, "ROOT_PATH not specified\n");
     goto err;
@@ -146,7 +153,8 @@ int parent_setup_helper(clone_helper_t *h) {
     goto err;
   }
 
-  h->asset_path = getenv("ASSET_PATH");
+  h->asset_path = malloc(sizeof(buf));
+  snprintf(h->asset_path, sizeof(buf), "%s", buf);
   if (h->asset_path == NULL) {
     fprintf(stderr, "ASSET_PATH not specified\n");
     goto err;

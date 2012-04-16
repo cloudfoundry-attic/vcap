@@ -256,46 +256,79 @@ describe Warden::Container::Base do
 
   context "grace timer" do
 
-    before(:each) do
-      @container = initialize_container(new_connection, :grace_time => 0.02)
-    end
+    context "when unspecified" do
 
-    it "should fire after grace time" do
-      em do
-        @container.should_receive(:fire_grace_timer)
-        @container.setup_grace_timer
+      it "should fire after server-wide grace time" do
+        Warden::Server.should_receive(:container_grace_time).and_return(0.02)
 
-        ::EM.add_timer(0.03) { done }
-      end
-    end
+        @container = initialize_container(new_connection)
 
-    it "should not fire when timer is cancelled" do
-      em do
-        @container.should_not_receive(:fire_grace_timer)
-        @container.setup_grace_timer
-
-        ::EM.add_timer(0.01) { @container.cancel_grace_timer }
-        ::EM.add_timer(0.03) { done }
-      end
-    end
-
-    context "when fired" do
-
-      it "should destroy container" do
         em do
-          @container.should_receive(:destroy)
+          @container.should_receive(:fire_grace_timer)
+          @container.setup_grace_timer
+
+          ::EM.add_timer(0.03) { done }
+        end
+      end
+    end
+
+    context "when nil" do
+
+      it "should not fire" do
+        @container = initialize_container(new_connection, "grace_time" => nil)
+
+        em do
+          @container.should_not_receive(:fire_grace_timer)
+          @container.setup_grace_timer
+
+          ::EM.add_timer(0.03) { done }
+        end
+      end
+    end
+
+    context "when not nil" do
+
+      before(:each) do
+        @container = initialize_container(new_connection, "grace_time" => 0.02)
+      end
+
+      it "should fire after grace time" do
+        em do
+          @container.should_receive(:fire_grace_timer)
           @container.setup_grace_timer
 
           ::EM.add_timer(0.03) { done }
         end
       end
 
-      it "should ignore any WardenError raised by destroy" do
+      it "should not fire when timer is cancelled" do
         em do
-          @container.should_receive(:destroy).and_raise(Warden::WardenError.new("failure"))
+          @container.should_not_receive(:fire_grace_timer)
           @container.setup_grace_timer
 
+          ::EM.add_timer(0.01) { @container.cancel_grace_timer }
           ::EM.add_timer(0.03) { done }
+        end
+      end
+
+      context "when fired" do
+
+        it "should destroy container" do
+          em do
+            @container.should_receive(:destroy)
+            @container.setup_grace_timer
+
+            ::EM.add_timer(0.03) { done }
+          end
+        end
+
+        it "should ignore any WardenError raised by destroy" do
+          em do
+            @container.should_receive(:destroy).and_raise(Warden::WardenError.new("failure"))
+            @container.setup_grace_timer
+
+            ::EM.add_timer(0.03) { done }
+          end
         end
       end
     end

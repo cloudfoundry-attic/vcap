@@ -256,6 +256,12 @@ shared_examples "a warden server" do |container_klass|
       info = client.info(@handle)
       info["state"].should == "active"
     end
+
+    it "should return its IP address" do
+      info = client.info(@handle)
+      info["host_ip"].should be
+      info["container_ip"].should be
+    end
   end
 
   describe "when stopped" do

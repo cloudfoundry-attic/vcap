@@ -9,11 +9,10 @@ gem 'rack', :require => ["rack/utils", "rack/mime"]
 gem 'rake'
 gem 'thin'
 gem 'yajl-ruby', :require => ['yajl', 'yajl/json_gem']
-gem 'logging', '>= 1.5.0'
 
-gem 'vcap_common', '>= 1.0.6'
+gem 'vcap_common', '>= 1.0.10'
 gem 'vcap_logging', :require => ['vcap/logging']
-gem 'cf-uaa-client', '>= 0.0.5'
+gem 'cf-uaa-client', '>= 0.0.8'
 
 group :test do
   gem "rspec"

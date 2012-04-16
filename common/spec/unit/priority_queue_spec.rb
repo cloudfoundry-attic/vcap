@@ -38,7 +38,7 @@ describe VCAP::PriorityQueueFIFO do
 
   describe 'high volume' do
     it 'should be able to accept a bunch of random values and return them in non-increasing order' do
-      n  = 100_000
+      n  = (ENV['VCAP_TEST_PQUEUE_LOAD'] || 100_000).to_i
       n.times { val = rand ; @q.insert val,val }
       prev = @q.remove
 
@@ -49,7 +49,7 @@ describe VCAP::PriorityQueueFIFO do
           prev = val
           n-=1
         end
-      end.to take_less_than(5).seconds
+      end.to take_less_than(6).seconds
 
       n.should == 1
     end

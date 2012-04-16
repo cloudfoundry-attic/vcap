@@ -32,19 +32,19 @@ shared_context :warden_server do
       Signal.trap("TERM") { exit }
 
       Warden::Server.setup \
-        :server => {
-          :unix_domain_path => unix_domain_path,
-          :container_root => container_root,
-          :container_klass => container_klass,
-          :container_grace_time => 1 },
-        :network => {
-          :pool_start_address => start_address,
-          :pool_size => 64,
-          :allow_networks => "4.2.2.3/32",
-          :deny_networks => "4.2.2.0/24" },
-        :logging => {
-          :level => :debug,
-          :file => File.expand_path("../../../tmp/warden.log", __FILE__) }
+        "server" => {
+          "unix_domain_path" => unix_domain_path,
+          "container_root" => container_root,
+          "container_klass" => container_klass,
+          "container_grace_time" => 1 },
+        "network" => {
+          "pool_start_address" => start_address,
+          "pool_size" => 64,
+          "allow_networks" => "4.2.2.3/32",
+          "deny_networks" => "4.2.2.0/24" },
+        "logging" => {
+          "level" => "debug",
+          "file" => File.expand_path("../../../tmp/warden.log", __FILE__) }
 
       colored_test_name = "\033[37;1m%s\033[0m" % example.metadata[:full_description]
       Warden::Logger.logger.info colored_test_name

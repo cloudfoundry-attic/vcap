@@ -19,10 +19,10 @@ echo ${PID} > tasks
 
 popd > /dev/null
 
-echo ${PPID} >> ${ASSET_PATH}/ppid
+echo ${PPID} >> ppid
 
-ip link add name ${network_iface_host} type veth peer name ${network_iface_container}
-ip link set ${network_iface_host} netns 1
-ip link set ${network_iface_container} netns ${PID}
+ip link add name ${network_host_iface} type veth peer name ${network_container_iface}
+ip link set ${network_host_iface} netns 1
+ip link set ${network_container_iface} netns ${PID}
 
 exit 0

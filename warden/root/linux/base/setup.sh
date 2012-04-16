@@ -22,12 +22,23 @@ fi
 function debootstrap() {
   if [ -d ${target} ]; then
     read -p "Target directory already exists. Erase it? "
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
+    if [[ $REPLY =~ ^[Yy].*$ ]]; then
       rm -rf ${target}
     else
       echo "Aborting..."
       exit 1
     fi
+  fi
+
+  # -v is too new, revert to old trick
+  # ${VAR+X} will be
+  #   X     when VAR is unset
+  #   $VAR  otherwise
+  # Only do this heuristic when http_proxy is unset
+  # You can opt out of this by setting http_proxy to nil
+  if [ -z ${http_proxy+X} ]; then
+    eval $(apt-config shell http_proxy Acquire::http::Proxy)
+    export http_proxy
   fi
 
   ${debootstrap_bin} --verbose --include ${packages} ${suite} ${target} ${mirror}
@@ -82,10 +93,16 @@ echo debconf debconf/frontend select noninteractive |
  debconf-set-selections
 EOS
 
+# Generate and setup default locale (en_US.UTF-8)
+chroot <<-EOS
+locale-gen en_US.UTF-8
+update-locale LANG="en_US.UTF-8"
+EOS
+
 # Install packages
 chroot <<-EOS
 apt-get update
-# apt-get install -y <list of packages>
+apt-get install -y build-essential
 EOS
 
 # Remove files we don't need or want
@@ -114,7 +131,6 @@ rm -f ${target}/etc/init/dmesg*
 rm -f ${target}/etc/init/network-*
 rm -f ${target}/etc/init/procps*
 rm -f ${target}/etc/init/rcS*
-rm -f ${target}/etc/init/rsyslog*
 
 # Don't run ntpdate when container network comes up
 rm -f ${target}/etc/network/if-up.d/ntpdate

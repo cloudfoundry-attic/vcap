@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 
 set -o nounset
 set -o errexit
@@ -37,7 +37,7 @@ function setup_filter() {
 
   # Bind instance chain to dispatch chain
   iptables -I ${filter_dispatch_chain} 2 \
-    --in-interface ${network_iface_host} \
+    --in-interface ${network_host_iface} \
     --goto ${filter_instance_chain}
 }
 
@@ -63,6 +63,11 @@ function setup_nat() {
   iptables -t nat -A ${nat_prerouting_chain} \
     --jump ${nat_instance_chain}
 }
+
+# Lock execution
+mkdir -p ../../tmp
+exec 3> ../../tmp/$(basename "${0}").lock
+flock -x -w 10 3
 
 case "${1}" in
   "setup")

@@ -61,6 +61,11 @@ module StagingSpecHelpers
       runtime.each do |name, attrs|
         if ENV["VCAP_RUNTIME_#{name.upcase}"]
           attrs['executable'] = ENV["VCAP_RUNTIME_#{name.upcase}"]
+          # When we aren't doing anything patchlevel specific, the runtime
+          # version can be overridden here
+          if ENV["VCAP_RUNTIME_#{name.upcase}_VER"]
+            attrs['version'] = ENV["VCAP_RUNTIME_#{name.upcase}_VER"]
+          end
         end
       end
     end

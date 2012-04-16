@@ -1,7 +1,7 @@
 require "readline"
 require "shellwords"
 require "warden/client"
-require "yajl"
+require "json"
 
 module Warden
   class Repl
@@ -11,7 +11,7 @@ module Warden
 
     HELP_MESSAGE =<<-EOT
 ping                          - ping warden
-create                        - create new container
+create [OPTION OPTION ...]    - create container, optionally pass options.
 destroy <handle>              - shutdown container <handle>
 stop <handle>                 - stop all processes in <handle>
 spawn <handle> cmd            - spawns cmd inside container <handle>, returns #jobid
@@ -20,11 +20,21 @@ run <handle>  cmd             - short hand for link(spawn(cmd)) i.e. runs cmd, b
 list                          - list containers
 info <handle>                 - show metadata for container <handle>
 limit <handle> mem  [<value>] - set or get the memory limit for the container (in bytes)
-limit <handle> disk [<value>] - set or get the disk limit for the container (in 1k blocks)
 net <handle> #in              - forward port #in on external interface to container <handle>
 net <handle> #out <address[/mask][:port]> - allow traffic from the container <handle> to address <address>
 copy <handle> <in|out> <src path> <dst path> [ownership opts] - Copy files/directories in and out of the container
 help                          - show help message
+
+---
+
+The OPTION argument for `create` can be one of:
+  * bind_mount:HOST_PATH,CONTAINER_PATH,ro|rw
+      e.g. create bind_mount:/tmp/,/home/vcap/tmp,ro
+  * grace_time:SECONDS
+      e.g. create grace_time:300
+  * disk_size_mb:SIZE
+      e.g. create disk_size_mb:512
+
 Please see README.md for more details.
 EOT
 
@@ -60,18 +70,18 @@ EOT
 
     def container_list
       @client.write(['list'])
-      Yajl::Parser.parse(@client.read.inspect)
+      JSON.parse(@client.read.inspect)
     end
 
     def save_history
-      marshalled = Yajl::Encoder.encode(Readline::HISTORY.to_a)
+      marshalled = Readline::HISTORY.to_a.to_json
       open(@history_path, 'w+') {|f| f.write(marshalled)}
     end
 
     def restore_history
       return unless File.exists? @history_path
       open(@history_path, 'r') do |file|
-        history = Yajl::Parser.parse(file.read)
+        history = JSON.parse(file.read)
         history.map {|line| Readline::HISTORY.push line}
       end
     end
@@ -82,12 +92,19 @@ EOT
       return config if args.nil?
 
       args.each do |arg|
-        if arg =~ /^bind_mount:(.*)/
-          src, dst, mode = $1.split(",")
+        head, tail = arg.split(":", 2)
+
+        case head
+        when "bind_mount"
+          src, dst, mode = tail.split(",")
           config["bind_mounts"] ||= []
           config["bind_mounts"].push [src, dst, { "mode" => mode }]
+        when "grace_time"
+          config["grace_time"] = tail
+        when "disk_size_mb"
+          config["disk_size_mb"] = tail
         else
-          raise "Unknown argument: #{arg}"
+          raise "Unknown argument: #{head}"
         end
       end
 
@@ -131,7 +148,10 @@ EOT
       @client.write(words)
       begin
         raw_result = @client.read.inspect
-        command_info[:result] = Yajl::Parser.parse(raw_result)
+        # Brutal hack to work around the fact that JSON refuses
+        # to parse simple strings.
+        x = JSON.parse("[#{raw_result}]")
+        command_info[:result] = x[0]
         case words[0]
         when 'create'
           puts command_info[:result]

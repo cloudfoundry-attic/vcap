@@ -51,7 +51,7 @@ describe "server implementing Linux containers", :platform => "linux", :needs_ro
     it 'stops containers in which an oom event occurs' do
       one_mb = 1024 * 1024
       usage = File.read(File.join("/dev/cgroup/", "instance-#{@handle}", "memory.usage_in_bytes"))
-      mem_limit = usage.to_i + 2 * one_mb
+      mem_limit = usage.to_i + 10 * one_mb
       client.limit(@handle, "mem", mem_limit)
 
       # Allocate 20MB, this should OOM and cause the container to be torn down
@@ -170,6 +170,9 @@ describe "server implementing Linux containers", :platform => "linux", :needs_ro
       result = client.run(handle, "cat #{new_path}")
       result[0].should == 0
       result[1].should == new_contents
+
+      # Mounts should not appear in /etc/mtab
+      `mount`.should_not match(Regexp.escape(@bind_mount_path))
     end
 
     it "should support bind mounting paths with different permissions" do
@@ -179,6 +182,27 @@ describe "server implementing Linux containers", :platform => "linux", :needs_ro
       result = client.run(handle, "touch #{@bind_mount_path}/test")
       result[0].should == 1
       result[2].should match(/Read-only file system/)
+
+      # Mounts should not appear in /etc/mtab
+      `mount`.should_not match(Regexp.escape(@bind_mount_path))
+    end
+  end
+
+  describe "disk_size_mb" do
+
+    include_context :server_linux
+
+    it "should raise if an invalid size is specified" do
+      expect do
+        handle = client.create(:disk_size_mb => "invalid")
+      end.to raise_error(/to be an integer/i)
+    end
+
+    it "should support specifying disk size" do
+      handle = client.create(:disk_size_mb => 128)
+      result = client.run(handle, "df / | tail -n1 | awk '{ print $2 }'")
+      result[0].should == 0
+      result[1].to_i.should be_within(8 * 1024).of(128 * 1024)
     end
   end
 end

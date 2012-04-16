@@ -1,7 +1,36 @@
 ---
 server:
   container_klass: Warden::Container::Linux
+
+  # Wait this long before destroying a container, after the last client
+  # referencing it disconnected. The timer is cancelled when during this
+  # period, another client references the container.
+  #
+  # Clients can be forced to specify this setting by setting the
+  # server-wide variable to an invalid value:
+  #   container_grace_time: invalid
+  #
+  # The grace time can be disabled by setting it to nil:
+  #   container_grace_time: ~
+  #
+  container_grace_time: 300
+
+  # Specifies the size of the container's private scratch disk.
+  #
+  # Clients can be forced to specify this setting by setting the
+  # server-wide variable to an invalid value:
+  #   container_disk_size_mb: invalid
+  #
+  # container_disk_size_mb: 512
+
   unix_domain_permissions: 0777
 
 logging:
   level: debug2
+
+network:
+  # Use this /30 network as offset for the network pool.
+  pool_start_address: 10.254.0.0
+
+  # Pool this many /30 networks.
+  pool_size: 256

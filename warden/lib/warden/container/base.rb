@@ -79,10 +79,10 @@ module Warden
         # Override #new to make sure that acquired resources are released when
         # one of the pooled resourced can not be required. Acquiring the
         # necessary resources must be atomic to prevent leakage.
-        def new(conn, options = {})
+        def new(conn, config = {})
           resources = {}
           acquire(resources)
-          instance = super(resources, options)
+          instance = super(resources, config)
           instance.register_connection(conn)
           instance
 
@@ -114,14 +114,24 @@ module Warden
       attr_reader :events
       attr_reader :limits
 
-      def initialize(resources, options = {})
+      def initialize(resources, config = {})
         @resources   = resources
         @connections = ::Set.new
         @jobs        = {}
         @state       = State::Born
         @events      = Set.new
         @limits      = {}
-        @options     = options
+
+        grace_time = Server.container_grace_time
+        grace_time = config.delete("grace_time") if config.has_key?("grace_time")
+
+        begin
+          grace_time = Float(grace_time) unless grace_time.nil?
+        rescue ArgumentError => err
+          raise WardenError.new("Cannot parse grace time from %s." % grace_time.inspect)
+        end
+
+        @config = { :grace_time => grace_time }
 
         on(:before_create) {
           check_state_in(State::Born)
@@ -181,8 +191,8 @@ module Warden
         @handle ||= network.to_hex
       end
 
-      def gateway_ip
-        @gateway_ip ||= network + 1
+      def host_ip
+        @host_ip ||= network + 1
       end
 
       def container_ip
@@ -190,7 +200,7 @@ module Warden
       end
 
       def grace_time
-        @options[:grace_time] || Server.container_grace_time
+        @config[:grace_time]
       end
 
       def cancel_grace_timer
@@ -203,6 +213,8 @@ module Warden
       end
 
       def setup_grace_timer
+        return if grace_time.nil?
+
         debug "grace timer: setup (%.3fs)" % grace_time
 
         @destroy_timer = ::EM.add_timer(grace_time) do
@@ -250,12 +262,12 @@ module Warden
         @container_path ||= File.join(root_path, "instances", handle)
       end
 
-      def create(config={})
+      def create
         debug "entry"
 
         begin
           emit(:before_create)
-          do_create(config)
+          do_create
           emit(:after_create)
 
           handle
@@ -493,6 +505,8 @@ module Warden
           'events' => self.events.to_a,
           'limits' => self.limits,
           'stats'  => {},
+          'host_ip' => self.host_ip.to_human,
+          'container_ip' => self.container_ip.to_human,
         }
       end
 
