@@ -31,6 +31,13 @@ shared_examples "a warden server" do |container_klass|
     handle.should match(/^[0-9a-f]{8}$/i)
   end
 
+  it "should stays alive after seeing invalid json" do
+    ::UNIXSocket.open unix_domain_path do |sock|
+      sock.write "yada yada\n"
+    end
+    client.ping.should == "pong"
+  end
+
   it "allows destroying a container" do
     handle = client.create
 
