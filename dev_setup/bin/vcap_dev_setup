@@ -91,7 +91,7 @@ function clear_bundler_settings () {
     read -p "Remembered Bundler options could cause you troubles, do you want me to clear them for you? [Y/n]"
     [[ $REPLY =~ ^[nN] ]] && return 0
   fi
-  (cd $CLOUDFOUNDRY_HOME/vcap && rake bundler:reset || find -type d -name .bundle -prune -exec rm -r {} \; )
+  (cd $CLOUDFOUNDRY_HOME/vcap && find -type d -name .bundle -prune -exec rm -r {} \; )
 }
 
 # Check if we have access to the web
