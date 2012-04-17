@@ -34,7 +34,7 @@ class App < ActiveRecord::Base
 
   # TODO - Update vmc client to use reasonable strings for these.
   validates_inclusion_of :framework, :in => Frameworks
-  validates_inclusion_of :runtime, :in => Runtimes
+  validates_inclusion_of :runtime, :in => Runtimes & AppConfig[:runtimes].keys
   validates_inclusion_of :state, :in => AppStates
   validates_inclusion_of :package_state, :in => PackageStates
 
