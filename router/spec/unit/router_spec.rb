@@ -57,6 +57,13 @@ describe Router do
       droplet[:clients].should == {}
     end
 
+    it 'should allow looking up uppercase uri' do
+      Router.register_droplet('foo.vcap.me', '10.0.1.22', 2222, {})
+      droplets = Router.lookup_droplet('FOO.VCAP.ME')
+      droplets.should be_instance_of Array
+      droplets.should have(1).items
+    end
+
     it 'should count droplets independent of URL' do
       Router.register_droplet('foo.vcap.me', '10.0.1.22', 2222, {})
       Router.register_droplet('foo.vcap.me', '10.0.1.22', 2224, {})

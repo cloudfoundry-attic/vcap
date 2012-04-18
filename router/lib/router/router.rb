@@ -159,7 +159,7 @@ class Router
     end
 
     def lookup_droplet(url)
-      @droplets[url]
+      @droplets[url.downcase]
     end
 
     def register_droplet(url, host, port, tags)

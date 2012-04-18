@@ -71,6 +71,9 @@ def validate_recv_msg_against_send(send_msg, send_body, recv_msg, recv_body)
       val.split(',').each do |cookie|
         (recv_msg.headers["Set-Cookie"].include? cookie).should == true
       end
+    elsif hdr == "Host"
+      # nginx will rewrite uppercase host to lowercase
+      val.downcase.should == recv_msg.headers[hdr]
     else
       val.should == recv_msg.headers[hdr]
     end
@@ -252,7 +255,9 @@ module Integration
     # Simple check that the app can be queried via the router
     def verify_registered(router_host, router_port)
       for uri in @uris
+        # verify both original uri and uppercase uri
         verify_path_registered(uri, '/', router_host, router_port)
+        verify_path_registered(uri.upcase, '/', router_host, router_port)
       end
     end
 
