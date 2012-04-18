@@ -6,7 +6,7 @@ class Router
   class << self
     attr_reader   :log, :notfound_redirect, :session_key, :trace_key, :client_inactivity_timeout
     attr_accessor :server, :local_server, :timestamp, :shutting_down
-    attr_accessor :client_connection_count, :app_connection_count, :outstanding_request_count
+    attr_accessor :client_connection_count
     attr_accessor :inet, :port
 
     alias :shutting_down? :shutting_down
@@ -17,7 +17,7 @@ class Router
 
     def config(config)
       @droplets = {}
-      @client_connection_count = @app_connection_count = @outstanding_request_count = 0
+      @client_connection_count = 0
       VCAP::Logging.setup_from_config(config['logging'] || {})
       @log = VCAP::Logging.logger('router')
       if config['404_redirect']
@@ -120,14 +120,12 @@ class Router
 
     def connection_stats
       tc = EM.connection_count
-      ac = Router.app_connection_count
       cc = Router.client_connection_count
-      "Connections: [Clients: #{cc}, Apps: #{ac}, Total: #{tc}]"
+      "Connections: [uls Clients: #{cc}, Total: #{tc}]"
     end
 
     def log_connection_stats
       tc = EM.connection_count
-      ac = Router.app_connection_count
       cc = Router.client_connection_count
       log.info connection_stats
     end
@@ -139,7 +137,9 @@ class Router
       c.key = @session_key
       e = c.update(Marshal.dump(token))
       e << c.final
-      [e].pack('m0').gsub("\n",'')
+      session = [e].pack('m0').gsub("\n",'')
+      droplet[:session] = session
+      session
     end
 
     def decrypt_session_cookie(key)
@@ -154,8 +154,12 @@ class Router
       nil
     end
 
+    def get_session_cookie(droplet)
+      droplet[:session] || generate_session_cookie(droplet)
+    end
+
     def lookup_droplet(url)
-      @droplets[url]
+      @droplets[url.downcase]
     end
 
     def register_droplet(url, host, port, tags)

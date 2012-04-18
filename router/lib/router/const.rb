@@ -2,22 +2,23 @@
 # HTTP Header processing
 HOST_HEADER            = 'Host'.freeze
 CONNECTION_HEADER      = 'Connection'.freeze
-REAL_IP_HEADER         = 'X-Real_IP'.freeze
-HTTP_HEADERS_END       = "\r\n\r\n".freeze
-HTTP_HEADERS_END_SIZE  = HTTP_HEADERS_END.bytesize
 KEEP_ALIVE             = 'keep-alive'.freeze
-SET_COOKIE_HEADER      = 'Set-Cookie'.freeze
-COOKIE_HEADER          = 'Cookie'.freeze
-CR_LF                  = "\r\n".freeze
 
-STICKY_SESSIONS        = /(JSESSIONID)/i
-
-VCAP_SESSION_ID        = '__VCAP_ID__'.freeze
-VCAP_COOKIE            = /__VCAP_ID__=([^;]+)/
+#STICKY_SESSIONS        = /(JSESSIONID)/i
 
 VCAP_BACKEND_HEADER    = 'X-Vcap-Backend'
 VCAP_ROUTER_HEADER     = 'X-Vcap-Router'
 VCAP_TRACE_HEADER      = 'X-Vcap-Trace'
+
+ULS_HOST_QUERY         = :"host"
+ULS_STATS_UPDATE       = :"stats"
+ULS_REQUEST_TAGS       = :"request_tags"
+ULS_RESPONSE_STATUS    = :"response_codes"
+ULS_RESPONSE_SAMPLES   = :"response_samples"
+ULS_RESPONSE_LATENCY   = :"response_latency"
+ULS_BACKEND_ADDR       = :"backend_addr"
+ULS_ROUTER_IP          = :"router_ip"
+ULS_STICKY_SESSION     = :"sticky_session"
 
 # Max Connections to Pool
 MAX_POOL = 32
@@ -29,7 +30,12 @@ START_SWEEPER     = 30  # Timer to publish router.start for refreshing state
 CHECK_SWEEPER     = 30  # Check time for watching health of registered droplet
 MAX_AGE_STALE     = 120 # Max stale age, unregistered if older then 2 minutes
 
-# 404 Response
-ERROR_404_RESPONSE="HTTP/1.1 404 Not Found\r\nConnection: close\r\n\r\n" +
-                   "VCAP ROUTER: 404 - DESTINATION NOT FOUND\r\n".freeze
+# 200 Response
+HTTP_200_RESPONSE = "HTTP/1.1 200 OK\r\n\r\n".freeze
 
+# 400 Response
+ERROR_400_RESPONSE = "HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n".freeze
+
+# 404 Response
+ERROR_404_RESPONSE = "HTTP/1.1 404 Not Found\r\nConnection: close\r\n\r\n" +
+                     "VCAP ROUTER: 404 - DESTINATION NOT FOUND\r\n".freeze
