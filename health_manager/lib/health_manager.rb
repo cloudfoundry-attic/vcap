@@ -318,7 +318,7 @@ class HealthManager
           end
 
           if index_entry[:state] == FLAPPING && !restart_pending?(app_id, index) && now - index_entry[:last_action] > @restart_timeout
-            delay_or_giveup_restart_of_flapping_instance(app_id, index, index_entry)
+            delay_or_giveup_restart_of_flapping_instance(app_id, index, index_entry, true)
           end
 
           if index_entry[:state] == DOWN && now - index_entry[:last_action] > @restart_timeout
@@ -527,12 +527,13 @@ class HealthManager
     droplet_entry # return the droplet that we changed. This allows the spec tests to ensure the behaviour is correct.
   end
 
-  def delay_or_giveup_restart_of_flapping_instance(droplet_id, index, index_entry)
+  def delay_or_giveup_restart_of_flapping_instance(droplet_id, index, index_entry, giveup_quietly = false)
 
     index_entry[:last_action] = now #regardless of whether real action is omitted or delayed, a decision timestamp is needed
 
     if @giveup_crash_number > 0 && index_entry[:crashes] > @giveup_crash_number
-      @logger.info("giving up on flapping instance (app_id=#{droplet_id}, index=#{index}). Number of crashes: #{index_entry[:crashes]}.")
+      @logger.info("given up on flapping instance (app_id=#{droplet_id}, index=#{index}). " +
+                   "Number of crashes: #{index_entry[:crashes]}.") unless giveup_quietly
     else
       @pending_restart[droplet_id] ||= {}
       @pending_restart[droplet_id][index] = true
@@ -542,7 +543,7 @@ class HealthManager
       @logger.info("delayed-restarting flapping instance (app_id=#{droplet_id}, index=#{index}). Delay: #{restart_delay}. Number of crashes: #{index_entry[:crashes]}.")
       EM.add_timer(restart_delay) do
         index_entry[:last_action] = now
-        start_instances(droplet_id, [index], false)
+        start_instances(droplet_id, [index], false, true)
       end
     end
   end
@@ -744,7 +745,7 @@ class HealthManager
     entry_updated
   end
 
-  def start_instances(droplet_id, indices, high_priority = false)
+  def start_instances(droplet_id, indices, high_priority = false, flapping = false)
     droplet_entry = @droplets[droplet_id]
 
     if droplet_entry.nil?
@@ -759,6 +760,8 @@ class HealthManager
       :version => droplet_entry[:live_version],
       :indices => indices
     }
+
+    start_message[:flapping] = true if flapping
 
     if queue_requests?
       queue_request(start_message, high_priority)
