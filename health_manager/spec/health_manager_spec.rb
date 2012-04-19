@@ -134,14 +134,14 @@ describe HealthManager do
     }
   end
 
-  def make_restart_message
-    {
+  def make_restart_message(options = {})
+    m = {
       'droplet' => @app.id,
       'op' => 'START',
       'last_updated' => @app.last_updated.to_i,
       'version' => "#{@app.staged_package_hash}-#{@app.run_count}",
       'indices' => [0]
-    }
+    }.merge(options)
   end
 
   def get_live_index(droplet_entry,index)
@@ -239,7 +239,7 @@ describe HealthManager do
   def ensure_flapping_delayed_restart(delay)
     in_em_with_fiber do |f|
 
-      should_publish_to_nats "cloudcontrollers.hm.requests", make_restart_message
+      should_publish_to_nats "cloudcontrollers.hm.requests", make_restart_message('flapping' => true)
 
       @hm.process_heartbeat_message(make_heartbeat_message([0], "RUNNING").to_json)
       droplet_entry = @hm.process_exited_message(make_crashed_message.to_json)
