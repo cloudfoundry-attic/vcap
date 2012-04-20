@@ -161,6 +161,10 @@ module Warden
       def receive_line(line = nil)
         object = Yajl::Parser.parse(line)
         receive_request(object)
+      rescue Yajl::ParseError => e
+        send_error e.message
+        close_connection_after_writing
+        debug "Disconnected client after error parsing request: #{e}"
       end
 
       def receive_request(req = nil)
