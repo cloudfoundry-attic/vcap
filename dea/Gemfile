@@ -10,8 +10,8 @@ gem 'rake'
 gem 'thin'
 gem 'yajl-ruby', :require => ['yajl', 'yajl/json_gem']
 
-gem 'vcap_common', '~> 1.0.8'
-gem 'vcap_logging', :require => ['vcap/logging']
+gem 'vcap_common', '~> 1.0.8', :git => 'https://github.com/d/vcap-common.git'
+gem 'vcap_logging', :require => ['vcap/logging'], :git => 'https://github.com/cloudfoundry/common.git'
 
 group :test do
   gem "rspec"
