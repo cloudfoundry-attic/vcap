@@ -10,9 +10,9 @@ gem 'rake'
 gem 'thin'
 gem 'yajl-ruby', :require => ['yajl', 'yajl/json_gem']
 
-gem 'vcap_common', '>= 1.0.10'
-gem 'vcap_logging', :require => ['vcap/logging']
-gem 'cf-uaa-client', '>= 0.0.6'
+gem 'vcap_common', '>= 1.0.10', :git => 'git://github.com/d/vcap-common.git'
+gem 'vcap_logging', :require => ['vcap/logging'], :git => 'git://github.com/cloudfoundry/common.git', :ref => 'a07c8ac0'
+gem 'cf-uaa-client', '>= 0.0.6', :git => 'git://github.com/cloudfoundry/uaa.git', :ref => '86e9b686'
 
 group :test do
   gem "rspec"
