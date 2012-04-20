@@ -164,7 +164,7 @@ module Warden
       rescue Yajl::ParseError => e
         send_error e.message
         close_connection_after_writing
-        debug "Disconnected clinet after error parsing request: #{e}"
+        debug "Disconnected client after error parsing request: #{e}"
       end
 
       def receive_request(req = nil)
