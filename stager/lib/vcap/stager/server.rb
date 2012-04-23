@@ -6,7 +6,6 @@ require 'vcap/json_schema'
 require 'vcap/logging'
 
 require 'vcap/stager/task'
-require 'vcap/stager/task_manager'
 
 module VCAP
   module Stager
