@@ -19,11 +19,11 @@ describe VCAP::Stager::TaskResult do
 
   describe '.decode' do
     it 'should decode encoded task results' do
-      tr = VCAP::Stager::TaskResult.new('xxx', 'yyy', VCAP::Stager::AppDownloadError.new)
+      tr = VCAP::Stager::TaskResult.new('xxx', 'yyy', VCAP::Stager::TaskError.new)
       dec_tr = VCAP::Stager::TaskResult.decode(tr.encode)
       dec_tr.task_id.should == tr.task_id
       dec_tr.task_log.should == tr.task_log
-      dec_tr.error.class.should == VCAP::Stager::AppDownloadError
+      dec_tr.error.class.should == VCAP::Stager::TaskError
     end
   end
 end

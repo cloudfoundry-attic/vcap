@@ -14,12 +14,19 @@ end
 #
 #
 class VCAP::Stager::TaskLogger
-  attr_reader :public_log
+  attr_reader :public_log, :phase
 
   def initialize(vcap_logger=nil)
     @vcap_logger   = vcap_logger
     @public_log    = ''
     @public_logger = make_public_logger(@public_log)
+    @phase = nil
+  end
+
+  def phase=(phase)
+    @phase = phase
+    info(phase)
+    nil
   end
 
   def method_missing(method, *args, &blk)
