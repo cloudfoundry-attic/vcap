@@ -675,7 +675,7 @@ module DEA
         if @secure
           case RUBY_PLATFORM
           when /linux/
-            sh_command = "env -i su -s /bin/sh #{user[:user]}"
+            sh_command = "env -i su -s /bin/bash #{user[:user]}"
           when /darwin/
             sh_command = "env -i su -m #{user[:user]}"
           else
