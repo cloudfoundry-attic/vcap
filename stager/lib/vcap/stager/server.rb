@@ -31,41 +31,57 @@ class VCAP::Stager::Server
     end
   end
 
-  def initialize(nats_uri, task_mgr, config={})
-    @nats_uri  = nats_uri
-    @nats_conn = nil
-    @task_mgr  = nil
-    @channels  = []
-    @config    = config
-    @task_mgr  = task_mgr
-    @logger    = VCAP::Logging.logger('vcap.stager.server')
+  def initialize(nats_uri, thread_pool, user_manager, config={})
+    @nats_uri    = nats_uri
+    @nats_conn   = nil
+    @channels    = []
+    @config      = config
+    @task_config = create_task_config(config, user_manager)
+    @logger      = VCAP::Logging.logger('vcap.stager.server')
+    @thread_pool = thread_pool
+    @user_manager = user_manager
+    @shutdown_thread = nil
   end
 
   def run
-    install_error_handlers()
-    install_signal_handlers()
+    install_error_handlers
+
+    install_signal_handlers
+
+    @thread_pool.start
+
     EM.run do
       @nats_conn = NATS.connect(:uri => @nats_uri) do
-        VCAP::Stager::Task.set_defaults(:nats => @nats_conn)
         VCAP::Component.register(:type   => 'Stager',
                                  :index  => @config[:index],
                                  :host   => VCAP.local_ip(@config[:local_route]),
                                  :config => @config,
                                  :nats   => @nats_conn)
-        setup_channels()
-        @task_mgr.varz = VCAP::Component.varz
+
+        setup_channels
+
         @logger.info("Server running")
       end
     end
   end
 
   # Stops receiving new tasks, waits for existing tasks to finish, then stops.
+  #
+  # NB: This is called from a signal handler, so be sure to wrap all EM
+  #     interaction with EM.next_tick.
   def shutdown
-    @logger.info("Shutdown initiated, waiting for remaining #{@task_mgr.num_tasks} task(s) to finish")
-    @channels.each {|c| c.close }
-    @task_mgr.on_idle do
-      @logger.info("All tasks completed. Exiting!")
-      EM.stop
+    num_tasks = @thread_pool.num_active_tasks + @thread_pool.num_queued_tasks
+    @logger.info("Shutdown initiated.")
+    @logger.info("Waiting for remaining #{num_tasks} task(s) to finish.")
+
+    @channels.each do |c|
+      EM.next_tick { c.close }
+    end
+
+    @shutdown_thread = Thread.new do
+      # Blocks until all threads have finished
+      @thread_pool.shutdown
+      EM.next_tick { EM.stop }
     end
   end
 
@@ -86,8 +102,8 @@ class VCAP::Stager::Server
   end
 
   def install_signal_handlers
-    trap('USR2') { shutdown() }
-    trap('INT')  { shutdown() }
+    trap('USR2') { shutdown }
+    trap('INT')  { shutdown }
   end
 
   def setup_channels
@@ -101,12 +117,58 @@ class VCAP::Stager::Server
   def add_task(task_msg)
     begin
       @logger.debug("Decoding task '#{task_msg}'")
-      task = VCAP::Stager::Task.decode(task_msg)
+
+      request = Yajl::Parser.parse(task_msg)
     rescue => e
       @logger.warn("Failed decoding '#{task_msg}': #{e}")
       @logger.warn(e)
       return
     end
-    @task_mgr.add_task(task)
+
+    @thread_pool.enqueue { execute_request(request) }
+
+    @logger.info("Enqueued request #{request}")
+
+    nil
+  end
+
+  def execute_request(request)
+    task = VCAP::Stager::Task.new(request, @task_config)
+
+    result = nil
+    begin
+      task.perform
+
+      result = VCAP::Stager::TaskResult.new(task.task_id, task.log)
+
+      @logger.info("Task #{task.task_id} succeeded")
+    rescue VCAP::Stager::TaskError => te
+      @logger.warn("Task #{task.task_id} failed: #{te}")
+
+      result = VCAP::Stager::TaskResult.new(task.task_id, task.log, te)
+    rescue Exception => e
+      @logger.error("Unexpected exception: #{e}")
+      @logger.error(e)
+
+      raise e
+    end
+
+    EM.next_tick { @nats_conn.publish(request["notify_subj"], result.encode) }
+
+    nil
+  end
+
+  def create_task_config(server_config, user_manager)
+    task_config = {
+      :ruby_path => server_config[:ruby_path],
+      :run_plugin_path => server_config[:run_plugin_path],
+      :secure_user_manager => user_manager,
+    }
+
+    if server_config[:dirs]
+      task_config[:manifest_root] = server_config[:dirs][:manifests]
+    end
+
+    task_config
   end
 end
