@@ -1,9 +1,8 @@
-#
 # Cookbook Name:: deployment
 # Recipe:: default
 #
-# Copyright 2011, VMware
-#
+# Copyright 2012, VMware
+# vim: ts=2 sw=2 sts=2 et
 
 node[:nats_server][:host] ||= cf_local_ip
 node[:ccdb][:host] ||= cf_local_ip
@@ -11,9 +10,13 @@ node[:acmdb][:host] ||= cf_local_ip
 node[:uaadb][:host] ||= cf_local_ip
 node[:postgresql][:host] ||= cf_local_ip
 
-[node[:deployment][:home], File.join(node[:deployment][:home], "deploy"), node[:deployment][:log_path],
- File.join(node[:deployment][:home], "sys", "log"), node[:deployment][:config_path],
- File.join(node[:deployment][:config_path], "staging")].each do |dir|
+[
+  node[:deployment][:home], File.join(node[:deployment][:home], "deploy"),
+  node[:deployment][:log_path], File.join(node[:deployment][:home], "sys", "log"),
+  node[:deployment][:config_path],
+  File.join(node[:deployment][:config_path], "staging"),
+  node[:deployment][:setup_cache],
+].each do |dir|
   directory dir do
     owner node[:deployment][:user]
     group node[:deployment][:group]

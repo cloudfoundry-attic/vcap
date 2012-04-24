@@ -187,4 +187,22 @@ describe "server implementing Linux containers", :platform => "linux", :needs_ro
       `mount`.should_not match(Regexp.escape(@bind_mount_path))
     end
   end
+
+  describe "disk_size_mb" do
+
+    include_context :server_linux
+
+    it "should raise if an invalid size is specified" do
+      expect do
+        handle = client.create(:disk_size_mb => "invalid")
+      end.to raise_error(/to be an integer/i)
+    end
+
+    it "should support specifying disk size" do
+      handle = client.create(:disk_size_mb => 128)
+      result = client.run(handle, "df / | tail -n1 | awk '{ print $2 }'")
+      result[0].should == 0
+      result[1].to_i.should be_within(8 * 1024).of(128 * 1024)
+    end
+  end
 end

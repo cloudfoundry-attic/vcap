@@ -33,7 +33,7 @@ GEM
     arel (2.0.9)
     bcrypt-ruby (2.1.4)
     builder (2.1.2)
-    cf-uaa-client (0.0.6)
+    cf-uaa-client (0.0.8)
       em-http-request (= 1.0.0.beta.3)
       eventmachine
       json_pure
@@ -139,7 +139,7 @@ GEM
       yajl-ruby (~> 0.8.3)
     vcap_logging (1.0.0)
     vcap_stager (0.1.14)
-    vcap_staging (0.1.50)
+    vcap_staging (0.1.51)
       nokogiri (>= 1.4.4)
       rake
       rspec
@@ -154,7 +154,7 @@ PLATFORMS
 DEPENDENCIES
   SystemTimer (~> 1.2)
   bcrypt-ruby (~> 2.1.4)
-  cf-uaa-client (>= 0.0.6)
+  cf-uaa-client (>= 0.0.8)
   ci_reporter
   delorean
   em-hiredis
@@ -180,5 +180,5 @@ DEPENDENCIES
   vcap_common
   vcap_logging
   vcap_stager (~> 0.1.14)
-  vcap_staging (~> 0.1.50)
+  vcap_staging (~> 0.1.51)
   yajl-ruby (~> 0.8.3)

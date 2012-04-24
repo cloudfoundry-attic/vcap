@@ -99,6 +99,7 @@ uaa:
   resource_id: cloud_controller
   token_secret: tokensecret
   client_secret: cloudcontrollerclientsecret
+  token_creation_email_filter: [vmware.com, rbcon.com]
 
 # App staging parameters
 staging:

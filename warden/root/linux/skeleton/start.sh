@@ -13,6 +13,8 @@ if [ -f started ]; then
   exit 1
 fi
 
+./net.sh setup
+
 env -i unshare -n ../../../../src/clone/clone
 
 ifconfig ${network_host_iface} ${network_host_ip} netmask ${network_netmask}
@@ -23,13 +25,13 @@ function ssh_state() {
 }
 
 start=$(date +%s)
-while ! ssh_state | grep -q "spawned"; do
+while ! ssh_state | grep -q "running"; do
   if [ $(($(date +%s) - ${start})) -gt 5 ]; then
     echo "Timeout waiting for SSH to come up..."
     exit 1
   fi
 
-  sleep 0.1
+  sleep 0.02
 done
 
 # Setup persistent connections into the container

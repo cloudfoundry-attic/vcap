@@ -84,12 +84,28 @@ function run_cmd () {
   fi
 }
 
+function clear_bundler_settings () {
+  # Do we have a Bundler problem?
+  find $CLOUDFOUNDRY_HOME/vcap -type d -name .bundle | grep -Fq .bundle || return 0
+  if [ "$ALL" != true ]; then
+    read -p "Remembered Bundler options could cause you troubles, do you want me to clear them for you? [Y/n]"
+    [[ $REPLY =~ ^[nN] ]] && return 0
+  fi
+  (cd $CLOUDFOUNDRY_HOME/vcap && find -type d -name .bundle -prune -exec rm -r {} \; )
+}
+
 # Check if we have access to the web
+run_cmd apt-get $APT_CONFIG install -qym wget
+if [ $? -ne 0 ]; then
+  echo "Can't install prerequisite: wget"
+  exit 1
+fi
+
 which wget > /dev/null
-if [ $? == 0 ]; then
+if [ $? -eq 0 ]; then
   echo "Checking web connectivity."
   wget -q -T 2 -t 2 -O - http://api.cloudfoundry.com/info | grep "Cloud Application Platform" > /dev/null
-  if [ $? != 0 ]; then
+  if [ $? -ne 0 ]; then
     echo "Giving up. Cannot connect to the web. Check your proxy settings if you are behind a proxy."
     exit 1
   fi
@@ -98,7 +114,7 @@ fi
 # Install chef
 if ! (apt-cache policy | grep opscode); then
   echo "deb http://apt.opscode.com/ `lsb_release -cs`-0.10 main" | sudo tee /etc/apt/sources.list.d/opscode.list
-  wget -qO - http://apt.opscode.com/packages@opscode.com.gpg.key | sudo apt-key add -
+  sudo apt-key adv --keyserver keyserver.ubuntu.com --recv 83EF826A
   echo chef chef/chef_server_url select none | sudo /usr/bin/debconf-set-selections
 fi
 run_cmd apt-get $APT_CONFIG update -qq
@@ -107,11 +123,13 @@ run_cmd apt-get $APT_CONFIG install -qym chef
 run_cmd apt-get $APT_CONFIG install -qym git-core
 [ -d $CLOUDFOUNDRY_HOME ] || mkdir $CLOUDFOUNDRY_HOME
 if [ ! -d $CLOUDFOUNDRY_HOME/vcap ]; then
-   (cd $CLOUDFOUNDRY_HOME && git clone $VCAP_REPO && cd vcap && git submodule update --init && git checkout $VCAP_REPO_BRANCH)
-    if [ $? != 0 ]; then
-      echo "Unable to clone cloudfoundry repo."
-      exit 1
-    fi
+  (cd $CLOUDFOUNDRY_HOME && git clone $VCAP_REPO && cd vcap && git submodule update --init && git checkout $VCAP_REPO_BRANCH)
+  if [ $? != 0 ]; then
+    echo "Unable to clone cloudfoundry repo."
+    exit 1
+  fi
+else
+  clear_bundler_settings
 fi
 
 
