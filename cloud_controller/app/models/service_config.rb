@@ -134,9 +134,16 @@ class ServiceConfig < ActiveRecord::Base
     handle_lifecycle_error(e)
   end
 
-  def serialized_url
+  def serialized_url(sid)
     client = VCAP::Services::Api::ServiceGatewayClient.new(service.url, service.token, service.timeout)
-    client.serialized_url(:service_id => name)
+    client.serialized_url(:service_id => name, :snapshot_id => sid)
+  rescue => e
+    handle_lifecycle_error(e)
+  end
+
+  def create_serialized_url(sid)
+    client = VCAP::Services::Api::ServiceGatewayClient.new(service.url, service.token, service.timeout)
+    client.create_serialized_url(:service_id => name, :snapshot_id => sid)
   rescue => e
     handle_lifecycle_error(e)
   end

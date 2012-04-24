@@ -243,14 +243,25 @@ class ServicesController < ApplicationController
     render :json => result.extract
   end
 
-  # Get the url to download serialized data for an instance
+  # Create serialized url for service snapshot
   #
+  def create_serialized_url
+    cfg = ServiceConfig.find_by_user_id_and_name(user.id, params['id'])
+    raise CloudError.new(CloudError::SERVICE_NOT_FOUND) unless cfg
+    raise CloudError.new(CloudError::FORBIDDEN) unless cfg.provisioned_by?(user)
+
+    result = cfg.create_serialized_url params['sid']
+
+    render :json => result.extract
+  end
+
+  # Get the url to download serialized data for an instance
   def serialized_url
     cfg = ServiceConfig.find_by_user_id_and_name(user.id, params['id'])
     raise CloudError.new(CloudError::SERVICE_NOT_FOUND) unless cfg
     raise CloudError.new(CloudError::FORBIDDEN) unless cfg.provisioned_by?(user)
 
-    result = cfg.serialized_url
+    result = cfg.serialized_url params['sid']
 
     render :json => result.extract
   end

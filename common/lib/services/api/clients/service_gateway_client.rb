@@ -103,9 +103,14 @@ module VCAP::Services::Api
       Job.decode(resp)
     end
 
-    def serialized_url(args)
-      resp = perform_request(:get, "/gateway/v1/configurations/#{args[:service_id]}/serialized/url")
+    def create_serialized_url(args)
+      resp = perform_request(:post, "/gateway/v1/configurations/#{args[:service_id]}/serialized/url/snapshots/#{args[:snapshot_id]}")
       Job.decode(resp)
+    end
+
+    def serialized_url(args)
+      resp = perform_request(:get, "/gateway/v1/configurations/#{args[:service_id]}/serialized/url/snapshots/#{args[:snapshot_id]}")
+      SerializedURL.decode(resp)
     end
 
     def import_from_url(args)
@@ -167,10 +172,10 @@ module VCAP::Services::Api
         begin
           # try to decode the response
           err = ServiceErrorResponse.decode(body)
-          raise ErrorResponse.new(code, err)
         rescue => e
           raise UnexpectedResponse, "Can't decode gateway response. status code:#{code}, response body:#{body}"
         end
+        raise ErrorResponse.new(code, err)
       end
     end
   end
