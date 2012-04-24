@@ -665,14 +665,14 @@ describe ServicesController do
       it 'should return not implemented error when lifecycle is disabled' do
         begin
           origin = AppConfig.delete :service_lifecycle
-          %w(create_snapshot enum_snapshots serialized_url import_from_url import_from_data).each do |api|
+          %w(create_snapshot enum_snapshots import_from_url import_from_data).each do |api|
             post api.to_sym, :id => 'xxx'
             response.status.should == 501
             resp = Yajl::Parser.parse(response.body)
             resp['description'].include?("not implemented").should == true
           end
 
-          %w(snapshot_details rollback_snapshot delete_snapshot).each do |api|
+          %w(snapshot_details rollback_snapshot delete_snapshot serialized_url create_serialized_url ).each do |api|
             post api.to_sym, :id => 'xxx', :sid => '1'
             response.status.should == 501
             resp = Yajl::Parser.parse(response.body)
@@ -921,12 +921,44 @@ describe ServicesController do
 
       it 'should return not authorized for unknown users' do
         request.env['HTTP_AUTHORIZATION'] = UserToken.create('bar@foo.com').encode
-        get :serialized_url, :id => 'xxx'
+        get :serialized_url, :id => 'xxx', :sid => '1'
         response.status.should == 403
       end
 
       it 'should return not found for unknown ids' do
-        get :serialized_url, :id => 'xxx'
+        get :serialized_url, :id => 'xxx', :sid => '1'
+        response.status.should == 404
+      end
+
+      it 'should get serialized url' do
+        url = "http://api.vcap.me"
+        snapshot_id = "abc"
+        serialized_url = VCAP::Services::Api::SerializedURL.new(:url  => url)
+        VCAP::Services::Api::ServiceGatewayClient.any_instance.stubs(:serialized_url).with(:service_id => @cfg.name, :snapshot_id => snapshot_id ).returns serialized_url
+
+        get :serialized_url, :id => @cfg.name, :sid => snapshot_id
+        response.status.should == 200
+        resp = Yajl::Parser.parse(response.body)
+        resp["url"].should == url
+      end
+    end
+
+    describe "#create_serialized_url" do
+      before :each do
+        cfg = ServiceConfig.new(:name => 'lifecycle', :alias => 'bar', :service => @svc, :user => @user)
+        cfg.save
+        cfg.should be_valid
+        @cfg = cfg
+      end
+
+      it 'should return not authorized for unknown users' do
+        request.env['HTTP_AUTHORIZATION'] = UserToken.create('bar@foo.com').encode
+        post :create_serialized_url, :id => 'xxx', :sid => '1'
+        response.status.should == 403
+      end
+
+      it 'should return not found for unknown ids' do
+        post :create_serialized_url, :id => 'xxx', :sid => '1'
         response.status.should == 404
       end
 
@@ -938,9 +970,10 @@ describe ServicesController do
           :start_time => "1"
           }.to_json
         )
-        VCAP::Services::Api::ServiceGatewayClient.any_instance.stubs(:serialized_url).with(:service_id => @cfg.name).returns job
+        snapshot_id = "abc"
+        VCAP::Services::Api::ServiceGatewayClient.any_instance.stubs(:create_serialized_url).with(:service_id => @cfg.name, :snapshot_id => snapshot_id).returns job
 
-        get :serialized_url, :id => @cfg.name
+        post :create_serialized_url, :id => @cfg.name, :sid => snapshot_id
         response.status.should == 200
         resp = Yajl::Parser.parse(response.body)
         resp["job_id"].should == "abc"
