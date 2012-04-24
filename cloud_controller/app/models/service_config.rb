@@ -92,8 +92,8 @@ class ServiceConfig < ActiveRecord::Base
   def handle_lifecycle_error(e)
     CloudController.logger.error("Error talking to gateway: #{e}")
     CloudController.logger.error(e)
-    if e.is_a? VCAP::Services::Api::ServiceGatewayClient::NotFoundResponse
-      raise CloudError.new([e.error.code, CloudError::HTTP_NOT_FOUND, e.error.description])
+    if e.is_a? VCAP::Services::Api::ServiceGatewayClient::ErrorResponse
+      raise CloudError.new([e.error.code, e.status, e.error.description])
     else
       raise CloudError.new(CloudError::SERVICE_GATEWAY_ERROR)
     end
@@ -134,9 +134,16 @@ class ServiceConfig < ActiveRecord::Base
     handle_lifecycle_error(e)
   end
 
-  def serialized_url
+  def serialized_url(sid)
     client = VCAP::Services::Api::ServiceGatewayClient.new(service.url, service.token, service.timeout)
-    client.serialized_url(:service_id => name)
+    client.serialized_url(:service_id => name, :snapshot_id => sid)
+  rescue => e
+    handle_lifecycle_error(e)
+  end
+
+  def create_serialized_url(sid)
+    client = VCAP::Services::Api::ServiceGatewayClient.new(service.url, service.token, service.timeout)
+    client.create_serialized_url(:service_id => name, :snapshot_id => sid)
   rescue => e
     handle_lifecycle_error(e)
   end

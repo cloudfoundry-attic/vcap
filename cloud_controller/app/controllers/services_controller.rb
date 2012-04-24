@@ -10,9 +10,9 @@ class ServicesController < ApplicationController
   before_filter :require_service_auth_token, :only => [:create, :delete, :update_handle, :list_handles, :list_brokered_services]
   before_filter :require_user, :only => [:provision, :bind, :bind_external, :unbind, :unprovision,
                                          :create_snapshot, :enum_snapshots, :snapshot_details,:rollback_snapshot, :delete_snapshot,
-                                         :serialized_url, :import_from_url, :import_from_data, :job_info]
+                                         :serialized_url, :create_serialized_url, :import_from_url, :import_from_data, :job_info]
   before_filter :require_lifecycle_extension, :only => [:create_snapshot, :enum_snapshots, :snapshot_details,:rollback_snapshot, :delete_snapshot,
-                                         :serialized_url, :import_from_url, :import_from_data, :job_info]
+                                         :serialized_url, :create_serialized_url, :import_from_url, :import_from_data, :job_info]
 
   rescue_from(JsonMessage::Error) {|e| render :status => 400, :json =>  {:errors => e.to_s}}
   rescue_from(ActiveRecord::RecordInvalid) {|e| render :status => 400, :json =>  {:errors => e.to_s}}
@@ -243,14 +243,25 @@ class ServicesController < ApplicationController
     render :json => result.extract
   end
 
-  # Get the url to download serialized data for an instance
+  # Create serialized url for service snapshot
   #
+  def create_serialized_url
+    cfg = ServiceConfig.find_by_user_id_and_name(user.id, params['id'])
+    raise CloudError.new(CloudError::SERVICE_NOT_FOUND) unless cfg
+    raise CloudError.new(CloudError::FORBIDDEN) unless cfg.provisioned_by?(user)
+
+    result = cfg.create_serialized_url params['sid']
+
+    render :json => result.extract
+  end
+
+  # Get the url to download serialized data for an instance
   def serialized_url
     cfg = ServiceConfig.find_by_user_id_and_name(user.id, params['id'])
     raise CloudError.new(CloudError::SERVICE_NOT_FOUND) unless cfg
     raise CloudError.new(CloudError::FORBIDDEN) unless cfg.provisioned_by?(user)
 
-    result = cfg.serialized_url
+    result = cfg.serialized_url params['sid']
 
     render :json => result.extract
   end
