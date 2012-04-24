@@ -11,7 +11,7 @@ gem 'thin'
 gem 'yajl-ruby', :require => ['yajl', 'yajl/json_gem']
 
 gem 'vcap_common', '>= 1.0.10'
-gem 'vcap_logging', :require => ['vcap/logging']
+gem "vcap_logging", "~> 1.0.0", :git => 'git://github.com/cloudfoundry/common.git'
 gem 'cf-uaa-client', '>= 0.0.8'
 
 group :test do
