@@ -23,10 +23,8 @@ class App < ActiveRecord::Base
 
   AppStates = %w[STOPPED STARTED]
   PackageStates = %w[PENDING STAGED FAILED]
-
-  Runtimes = %w[ruby18 ruby19 java node node06 php erlangR14B02 python2]
-  Frameworks = %w[sinatra rack rails3 java_web spring grails node php otp_rebar lift wsgi django standalone unknown]
-
+  Runtimes = %w[ruby18 ruby19 java node node06 php erlangR14B02 python2 iis]
+  Frameworks = %w[sinatra rack rails3 java_web spring grails node php otp_rebar lift wsgi django standalone dotNet unknown]
 
   validates_presence_of :name, :framework, :runtime
 
@@ -34,7 +32,7 @@ class App < ActiveRecord::Base
 
   # TODO - Update vmc client to use reasonable strings for these.
   validates_inclusion_of :framework, :in => Frameworks
-  validates_inclusion_of :runtime, :in => Runtimes
+  validates_inclusion_of :runtime, :in => Runtimes & AppConfig[:runtimes].keys.map(&:to_s)
   validates_inclusion_of :state, :in => AppStates
   validates_inclusion_of :package_state, :in => PackageStates
 
