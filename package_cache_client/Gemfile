@@ -1,5 +1,9 @@
 source :rubygems
 
+gem 'eventmachine', :git => 'git://github.com/cloudfoundry/eventmachine.git', :branch => 'release-0.12.11-cf'
+gem 'vcap_common', :git => 'git://github.com/d/vcap-common.git'
+gem 'vcap_logging', :git => 'git://github.com/cloudfoundry/common.git', :ref => 'a07c8ac0'
+
 gemspec
 
 group :test do
