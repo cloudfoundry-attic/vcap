@@ -65,7 +65,6 @@ describe VCAP::Component do
         options[:config] = {
           :mbus => 'nats://user:pass@localhost:4223',
           :keys => 'sekret!keys',
-          :mysql => { :user => 'derek', :password => 'sekret!' },
           :password => 'crazy',
           :database_environment => { :stuff => 'should not see' }
         }
