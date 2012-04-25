@@ -1,6 +1,7 @@
 GIT
   remote: git://github.com/cloudfoundry/common.git
   revision: a07c8ac0cb5c2f738366a07eb9e3766a1f69e8dc
+  ref: a07c8ac0
   specs:
     vcap_logging (1.0.0)
       rake
@@ -26,10 +27,9 @@ GIT
 
 GIT
   remote: git://github.com/d/vcap-staging.git
-  revision: f7e096d0d0ed0476e8fdacd60a83f34f24cf9156
-  ref: f7e096d0
+  revision: 6a0ead996c37b9a6c22b4740efba3c286914d680
   specs:
-    vcap_staging (0.1.50)
+    vcap_staging (0.1.51)
       nokogiri (>= 1.4.4)
       rake
       rspec
@@ -91,6 +91,6 @@ DEPENDENCIES
   sinatra
   vcap_common (~> 1.0.8)!
   vcap_logging (>= 0.1.3)!
-  vcap_staging (~> 0.1.49)!
+  vcap_staging (~> 0.1.51)!
   webmock
   yajl-ruby (>= 0.7.9)

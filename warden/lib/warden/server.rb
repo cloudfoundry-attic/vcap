@@ -59,6 +59,14 @@ module Warden
       @container_grace_time
     end
 
+    def self.default_container_disk_size_mb
+      512
+    end
+
+    def self.container_disk_size_mb
+      @container_disk_size_mb
+    end
+
     def self.setup_server(config = nil)
       config ||= {}
       @unix_domain_path = config.delete("unix_domain_path") { default_unix_domain_path }
@@ -66,6 +74,7 @@ module Warden
       @container_root = config.delete("container_root") { default_container_root  }
       @container_klass = config.delete("container_klass") { default_container_klass }
       @container_grace_time = config.delete("container_grace_time") { default_container_grace_time }
+      @container_disk_size_mb = config.delete("container_disk_size_mb") { default_container_disk_size_mb }
     end
 
     def self.setup_logger(config = nil)
@@ -100,6 +109,9 @@ module Warden
           # This is intentionally blocking. We do not want to start accepting
           # connections before permissions have been set on the socket.
           FileUtils.chmod(unix_domain_permissions, unix_domain_path)
+
+          # Let the world know Warden is ready for action.
+          Logger.logger.info("Listening on #{unix_domain_path}, and ready for action.")
         end
 
         f.resume
@@ -149,6 +161,10 @@ module Warden
       def receive_line(line = nil)
         object = Yajl::Parser.parse(line)
         receive_request(object)
+      rescue Yajl::ParseError => e
+        send_error e.message
+        close_connection_after_writing
+        debug "Disconnected client after error parsing request: #{e}"
       end
 
       def receive_request(req = nil)

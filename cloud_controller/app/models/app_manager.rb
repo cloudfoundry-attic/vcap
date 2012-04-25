@@ -174,6 +174,8 @@ class AppManager
       end
       CloudController.logger.debug("[HealthManager] Starting #{indices.length} missing instances for app: #{app.id}")
       # FIXME - Check capacity
+
+      message[:flapping] = true if payload[:flapping]
       indices.each { |i| start_instance(message, i) }
     when /STOP/i
       # If HM detects older versions, let's clean up here versus suppressing

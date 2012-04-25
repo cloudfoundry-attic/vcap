@@ -15,14 +15,16 @@ GIT
 
 GIT
   remote: git://github.com/cloudfoundry/uaa.git
-  revision: 4606074c5e6295cc1d999413d748c42412c338c0
-  ref: 4606074c
+  revision: 28b2643024a63ff7ccbd3977c76eccfb1cfbd001
+  branch: squiggly_greater
   specs:
-    cf-uaa-client (0.0.6)
-      em-http-request (= 1.0.0.beta.3)
+    cf-uaa-client (0.0.9)
+      em-http-request (~> 1.0.0.beta.3)
       eventmachine
+      interact
       json_pure
       rest-client
+      thor
 
 GIT
   remote: git://github.com/d/vcap-common.git
@@ -43,10 +45,10 @@ GIT
 
 GIT
   remote: git://github.com/d/vcap-staging.git
-  revision: f7e096d0d0ed0476e8fdacd60a83f34f24cf9156
-  ref: f7e096d0
+  revision: 6a0ead996c37b9a6c22b4740efba3c286914d680
+  branch: master
   specs:
-    vcap_staging (0.1.50)
+    vcap_staging (0.1.51)
       nokogiri (>= 1.4.4)
       rake
       rspec
@@ -112,6 +114,7 @@ GEM
     hiredis (0.3.2)
     http_parser.rb (0.5.1)
     i18n (0.5.0)
+    interact (0.4.2)
     json_pure (1.6.5)
     mail (2.2.15)
       activesupport (>= 2.3.6)
@@ -189,7 +192,7 @@ PLATFORMS
 DEPENDENCIES
   SystemTimer (~> 1.2)
   bcrypt-ruby (~> 2.1.4)
-  cf-uaa-client (>= 0.0.6)!
+  cf-uaa-client (~> 0.0.9)!
   ci_reporter
   delorean
   em-hiredis
@@ -214,6 +217,6 @@ DEPENDENCIES
   uuidtools (~> 2.1.2)
   vcap_common!
   vcap_logging!
-  vcap_stager!
-  vcap_staging (~> 0.1.50)!
+  vcap_stager (~> 0.1.14)!
+  vcap_staging (~> 0.1.51)!
   yajl-ruby (~> 0.8.3)

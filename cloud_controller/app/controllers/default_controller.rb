@@ -12,7 +12,6 @@ class DefaultController < ApplicationController
     }
     if uaa_enabled?
       info[:authorization_endpoint] = AppConfig[:uaa][:url]
-      info[:authenticationEndpoint] = AppConfig[:uaa][:url] # obsolete, can be removed after this release
     end
     # If there is a logged in user, give out additional information
     if user

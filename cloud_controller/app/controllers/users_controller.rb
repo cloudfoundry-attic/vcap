@@ -9,7 +9,7 @@ class UsersController < ApplicationController
   def create
     if uaa_enabled?
       begin
-        user_account = Cloudfoundry::Uaa::UserAccount.new(AppConfig[:uaa][:url], UaaToken.access_token)
+        user_account = CF::UAA::UserAccount.new(AppConfig[:uaa][:url], UaaToken.access_token)
         user_account.async = true
         user_account.trace = true
         user_account.logger = CloudController.logger
@@ -34,7 +34,7 @@ class UsersController < ApplicationController
   def delete
     if uaa_enabled?
       begin
-        user_account = Cloudfoundry::Uaa::UserAccount.new(AppConfig[:uaa][:url], UaaToken.access_token)
+        user_account = CF::UAA::UserAccount.new(AppConfig[:uaa][:url], UaaToken.access_token)
         user_account.async = true
         user_account.trace = true
         user_account.logger = CloudController.logger
@@ -68,7 +68,7 @@ class UsersController < ApplicationController
   def update
     if uaa_enabled?
       begin
-        user_account = Cloudfoundry::Uaa::UserAccount.new(AppConfig[:uaa][:url], UaaToken.access_token)
+        user_account = CF::UAA::UserAccount.new(AppConfig[:uaa][:url], UaaToken.access_token)
         user_account.async = true
         user_account.trace = true
         user_account.logger = CloudController.logger

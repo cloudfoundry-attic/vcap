@@ -15,11 +15,11 @@ GIT
 
 GIT
   remote: git://github.com/cloudfoundry/uaa.git
-  revision: 86e9b6863645a30c0a0a73017d81ca32654af263
-  ref: 86e9b686
+  revision: 28b2643024a63ff7ccbd3977c76eccfb1cfbd001
+  branch: squiggly_greater
   specs:
-    cf-uaa-client (0.0.8)
-      em-http-request (= 1.0.0.beta.3)
+    cf-uaa-client (0.0.9)
+      em-http-request (~> 1.0.0.beta.3)
       eventmachine
       interact
       json_pure
@@ -88,7 +88,7 @@ PLATFORMS
 
 DEPENDENCIES
   bundler (>= 1.0.10)
-  cf-uaa-client (>= 0.0.6)!
+  cf-uaa-client (>= 0.0.8)!
   ci_reporter
   em-http-request (~> 1.0.0.beta.3)
   eventmachine!

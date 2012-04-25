@@ -10,6 +10,8 @@ if [ ! -f started ]; then
   exit 1
 fi
 
+./net.sh teardown
+
 # Disallow new logins for the vcap user and kill running processes
 ssh -F ssh/ssh_config root@container <<EOS
 chsh -s /bin/false vcap

@@ -1,4 +1,8 @@
+require File.expand_path('../npm_support/npm_support', __FILE__)
+
 class NodePlugin < StagingPlugin
+  include NpmSupport
+
   # TODO - Is there a way to avoid this without some kind of 'register' callback?
   # e.g. StagingPlugin.register('sinatra', __FILE__)
   def framework
@@ -9,6 +13,8 @@ class NodePlugin < StagingPlugin
     Dir.chdir(destination_directory) do
       create_app_directories
       copy_source_files
+      read_configs
+      compile_node_modules
       create_startup_script
       create_stop_script
     end
@@ -32,14 +38,19 @@ class NodePlugin < StagingPlugin
     generate_stop_script(vars)
   end
 
-  # detect start script from package.json
-  def package_json_start
+  def read_configs
     package = File.join(destination_directory, 'app', 'package.json')
     if File.exists? package
-      json = Yajl::Parser.parse(File.new(package, 'r'))
-      if scripts = json["scripts"] and start = scripts["start"]
-        start.sub(/^\s*node\s+/, "")
-      end
+      @package_config = Yajl::Parser.parse(File.new(package, 'r'))
+    end
+  end
+
+  # detect start script from package.json
+  def package_json_start
+    if @package_config.is_a?(Hash) &&
+        @package_config["scripts"].is_a?(Hash) &&
+        @package_config["scripts"]["start"]
+      @package_config["scripts"]["start"].sub(/^\s*node\s+/, "")
     end
   end
 

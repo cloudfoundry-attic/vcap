@@ -82,9 +82,10 @@ describe HealthManager do
         'database_scan' => 1,
         'droplet_lost' => 300,
         'droplets_analysis' => 0.5,
-        'flapping_death' => @flapping_death = 3,
+        'flapping_death' => @flapping_death = 2,
         'min_restart_delay' => @min_restart_delay = 1,
-        'max_restart_delay' => @max_restart_delay = 4,
+        'max_restart_delay' => @max_restart_delay = 3,
+        'giveup_crash_number' => @giveup_crash_number = 5,
         'flapping_timeout' => 5,
         'restart_timeout' => 2,
         'stable_state' => -1,
@@ -133,14 +134,14 @@ describe HealthManager do
     }
   end
 
-  def make_restart_message
-    {
+  def make_restart_message(options = {})
+    m = {
       'droplet' => @app.id,
       'op' => 'START',
       'last_updated' => @app.last_updated.to_i,
       'version' => "#{@app.staged_package_hash}-#{@app.run_count}",
       'indices' => [0]
-    }
+    }.merge(options)
   end
 
   def get_live_index(droplet_entry,index)
@@ -218,11 +219,12 @@ describe HealthManager do
 
     delay = @min_restart_delay
 
-    3.times {
+    (@giveup_crash_number - @flapping_death).times {
       ensure_flapping_delayed_restart(delay)
       delay *= 2
       delay = @max_restart_delay if delay > @max_restart_delay
     }
+    ensure_gaveup_restarting
   end
 
   def ensure_non_flapping_restart
@@ -237,7 +239,7 @@ describe HealthManager do
   def ensure_flapping_delayed_restart(delay)
     in_em_with_fiber do |f|
 
-      should_publish_to_nats "cloudcontrollers.hm.requests", make_restart_message
+      should_publish_to_nats "cloudcontrollers.hm.requests", make_restart_message('flapping' => true)
 
       @hm.process_heartbeat_message(make_heartbeat_message([0], "RUNNING").to_json)
       droplet_entry = @hm.process_exited_message(make_crashed_message.to_json)
@@ -261,6 +263,14 @@ describe HealthManager do
         f.resume
       end
     end
+  end
+
+  def ensure_gaveup_restarting
+    @hm.process_heartbeat_message(make_heartbeat_message([0], "RUNNING").to_json)
+    droplet_entry = @hm.process_exited_message(make_crashed_message.to_json)
+    get_live_index(droplet_entry,0)[:state].should == 'FLAPPING'
+    get_live_index(droplet_entry,0)[:crashes].should > @giveup_crash_number
+    @hm.restart_pending?(@app.id, 0).should be_false
   end
 
   def in_em_with_fiber
