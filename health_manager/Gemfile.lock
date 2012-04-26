@@ -1,9 +1,8 @@
 GIT
   remote: git://github.com/cloudfoundry/common.git
-  revision: a07c8ac0cb5c2f738366a07eb9e3766a1f69e8dc
-  ref: a07c8ac0
+  revision: e36886a189b82f880a5aa3e9169712d5d9048a88
   specs:
-    vcap_logging (1.0.0)
+    vcap_logging (1.0.1)
       rake
 
 GIT
