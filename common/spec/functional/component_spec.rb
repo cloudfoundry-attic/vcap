@@ -65,8 +65,8 @@ describe VCAP::Component do
         options[:config] = {
           :mbus => 'nats://user:pass@localhost:4223',
           :keys => 'sekret!keys',
-          :mysql => { :user => 'derek', :password => 'sekret!' },
           :password => 'crazy',
+          :pass => 'crazy',
           :database_environment => { :stuff => 'should not see' }
         }
         VCAP::Component.register(options)
@@ -81,10 +81,10 @@ describe VCAP::Component do
         options[:config] = {
           :mbus => 'nats://user:pass@localhost:4223',
           :keys => 'sekret!keys',
-          :mysql => { :user => 'derek', :password => 'sekret!' },
           :password => 'crazy',
+          :pass => 'crazy',
           :database_environment => { :stuff => 'should not see' },
-          :this_is_ok => { :password => 'sekret!', :mysql => 'sekret!', :test => 'ok'}
+          :this_is_ok => { :password => 'sekret!', :pass => 'sekret!', :test => 'ok'}
         }
         VCAP::Component.register(options)
         done
@@ -98,20 +98,22 @@ describe VCAP::Component do
         options[:config] = {
           :mbus => 'nats://user:pass@localhost:4223',
           :keys => 'sekret!keys',
-          :mysql => { :user => 'derek', :password => 'sekret!' },
+          :mysql => { :user => 'derek', :password => 'sekret!', :pass => 'sekret!' },
           :password => 'crazy',
+          :pass => 'crazy',
           :database_environment => { :stuff => 'should not see' },
-          :this_is_ok => { :password => 'sekret!', :mysql => 'sekret!', :test => 'ok'}
+          :this_is_ok => { :password => 'sekret!', :pass => 'sekret!', :mysql => 'sekret!', :test => 'ok'}
         }
         VCAP::Component.register(options)
 
         options.should include(:config => {
           :mbus => 'nats://user:pass@localhost:4223',
           :keys => 'sekret!keys',
-          :mysql => { :user => 'derek', :password => 'sekret!' },
+          :mysql => { :user => 'derek', :password => 'sekret!', :pass => 'sekret!' },
           :password => 'crazy',
+          :pass => 'crazy',
           :database_environment => { :stuff => 'should not see' },
-          :this_is_ok => { :password => 'sekret!', :mysql => 'sekret!', :test => 'ok'}
+          :this_is_ok => { :password => 'sekret!', :pass => 'sekret!', :mysql => 'sekret!', :test => 'ok'}
         })
         done
       end
