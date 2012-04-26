@@ -92,9 +92,11 @@ def rewrite_lockfile(lockfile, checkout_base)
     # TODO: shall i sanitize spec.name?
     checkout_dir = checkout_base.join(spec.name)
     checkout(spec, checkout_dir)
-    Dir.chdir(checkout_dir) do
+    # TODO error handling
+    gem_dir = Pathname.glob("#{checkout_dir}/**/#{spec.name}.gemspec")[0].parent
+    Dir.chdir(gem_dir) do |dir|
       %x(gem build #{spec.name}.gemspec)
-      gempath = checkout_dir.join("#{spec.name}-#{spec.version}.gem")
+      gempath = gem_dir.join("#{spec.name}-#{spec.version}.gem")
       %x(ln -v #{gempath} -t #{lockfile.parent.join('vendor', 'cache')})
     end
     spec.source = gemsrc
