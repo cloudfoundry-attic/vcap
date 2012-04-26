@@ -25,8 +25,8 @@ class NpmCache
 
   def get(name, version)
     dir = File.join(@cached_dir, name, version)
-    return nil unless File.exists?(File.join(dir, ".done"))
     package_path = File.join(dir, "package")
-    return package_path if File.directory?(package_path)
+    return nil unless File.directory?(package_path)
+    return package_path
   end
 end
