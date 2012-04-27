@@ -39,12 +39,24 @@ intervals:
   # Time to wait before starting analysis for stopped applications.
   droplet_lost:         30
   # Interval between scans for analysis of applications.
-  droplets_analysis:    10
+  droplets_analysis:    20
   # An application is deemed to be flapping if it is found to be in a crashed
   # state (after a restart following every crash) for more than "flapping_death"
   # number of times in an interval that is "flapping_timeout" long.
-  flapping_death:        3
-  flapping_timeout:    180
+  flapping_death:        1
+  flapping_timeout:    500
+
+  #once instance is declared flapping, its restarts will be delayed,
+  #starting with the value of min_restart_delay but not exceeding the
+  #value of max_restart_delay
+  min_restart_delay:    60
+  max_restart_delay:   480
+
+  #if total number of crashes exceeds this value, the attempts to
+  #restart a flapping instance are stopped. Use -1 to never give up on
+  #restarts
+  giveup_crash_number:   4
+
   # Time to wait before trying to restart an application after a crash is
   # detected
   restart_timeout:      20

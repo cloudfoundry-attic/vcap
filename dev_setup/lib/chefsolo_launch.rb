@@ -17,12 +17,14 @@ script_dir = File.expand_path(File.dirname(__FILE__))
 cloudfoundry_home = Deployment.get_cloudfoundry_home
 cloudfoundry_domain = Deployment.get_cloudfoundry_domain
 deployment_spec = File.expand_path(File.join(script_dir, "..", DEPLOYMENT_DEFAULT_SPEC))
+chef_log_level = 'info'
 
 args = ARGV.dup
 opts_parser = OptionParser.new do |opts|
   opts.on('--config CONFIG_FILE', '-c CONFIG_FILE') { |file| deployment_spec = File.expand_path(file.to_s) }
   opts.on('--dir CLOUDFOUNDRY_HOME', '-d CLOUDFOUNDRY_HOME') { |dir| cloudfoundry_home = File.expand_path(dir.to_s) }
   opts.on('--domain CLOUDFOUNDRY_DOMAIN', '-D CLOUDFOUNDRY_DOMAIN') { |domain| cloudfoundry_domain = domain }
+  opts.on('--log_level LEVEL', '-l LEVEL') { |level| chef_log_level = level }
 end
 args = opts_parser.parse!(args)
 
@@ -114,7 +116,7 @@ Dir.mktmpdir do |tmpdir|
         end
       end
     end
-    exec("sudo env #{proxy_env.join(" ")} chef-solo -c #{File.join(tmpdir, "solo.rb")} -j #{json_attribs} -l debug")
+    exec("sudo env #{proxy_env.join(" ")} chef-solo -c #{File.join(tmpdir, "solo.rb")} -j #{json_attribs} -l #{chef_log_level}")
   end
 
   pid, status = Process.waitpid2(id)

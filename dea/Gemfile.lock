@@ -1,9 +1,28 @@
 GIT
+  remote: git://github.com/cloudfoundry/common.git
+  revision: e36886a189b82f880a5aa3e9169712d5d9048a88
+  specs:
+    vcap_logging (1.0.1)
+      rake
+
+GIT
   remote: git://github.com/cloudfoundry/eventmachine.git
   revision: 2806c630d8631d5dcf9fb2555f665b829052aabe
   branch: release-0.12.11-cf
   specs:
     eventmachine (0.12.11.cloudfoundry.3)
+
+GIT
+  remote: git://github.com/d/vcap-common.git
+  revision: 9673dcedf0c2daf46e3592a8f9b30538c5dc7b56
+  ref: 9673dced
+  specs:
+    vcap_common (1.0.8)
+      eventmachine (~> 0.12.11.cloudfoundry.3)
+      nats (~> 0.4.22.beta.8)
+      posix-spawn (~> 0.3.6)
+      thin (~> 1.3.1)
+      yajl-ruby (~> 0.8.3)
 
 GEM
   remote: http://rubygems.org/
@@ -44,14 +63,6 @@ GEM
       daemons (>= 1.0.9)
       eventmachine (>= 0.12.6)
       rack (>= 1.0.0)
-    vcap_common (1.0.8)
-      eventmachine (~> 0.12.11.cloudfoundry.3)
-      nats (~> 0.4.22.beta.8)
-      posix-spawn (~> 0.3.6)
-      thin (~> 1.3.1)
-      yajl-ruby (~> 0.8.3)
-    vcap_logging (1.0.0)
-      rake
     yajl-ruby (0.8.3)
 
 PLATFORMS
@@ -68,6 +79,6 @@ DEPENDENCIES
   rcov
   rspec
   thin
-  vcap_common (~> 1.0.8)
-  vcap_logging
+  vcap_common (~> 1.0.8)!
+  vcap_logging!
   yajl-ruby

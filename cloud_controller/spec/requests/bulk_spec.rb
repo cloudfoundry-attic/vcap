@@ -114,6 +114,19 @@ describe "bulk_api" do
         results.should_not be_nil
       end
 
+      it "returns results that are valid json" do
+        get_apps
+        results.each { |res|
+          res.should be_a_kind_of Array
+          res.size.should == 2
+          res.last.should be_a_kind_of Hash
+          res.last["id"].should_not be_nil
+          res.last["framework"].should == 'sinatra'
+        }
+
+      end
+
+
       it "respects the batch_size parameter" do
         [3,5].each { |size|
           get_apps :batch_size=>size

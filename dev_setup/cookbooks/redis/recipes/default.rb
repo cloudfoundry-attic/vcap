@@ -1,7 +1,7 @@
-remote_file File.join("", "tmp", "redis-#{node[:redis][:version]}.tar.gz") do
+remote_file File.join(node[:deployment][:setup_cache], "redis-#{node[:redis][:version]}.tar.gz") do
   owner node[:deployment][:user]
   source "http://redis.googlecode.com/files/redis-#{node[:redis][:version]}.tar.gz"
-  not_if { ::File.exists?(File.join("", "tmp", "redis-#{node[:redis][:version]}.tar.gz")) }
+  checksum node[:redis][:checksum]
 end
 
 directory "#{node[:redis][:path]}" do
@@ -24,7 +24,7 @@ bash "Install Redis" do
   cwd File.join("", "tmp")
   user node[:deployment][:user]
   code <<-EOH
-  tar xzf redis-#{node[:redis][:version]}.tar.gz
+  tar xzf #{File.join(node[:deployment][:setup_cache], "redis-#{node[:redis][:version]}.tar.gz")}
   cd redis-#{node[:redis][:version]}
   make
   cd src

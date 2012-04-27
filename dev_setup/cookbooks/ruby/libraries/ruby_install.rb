@@ -8,10 +8,11 @@ module RubyInstall
       package pkg
     end
 
-    remote_file File.join("", "tmp", "ruby-#{ruby_version}.tar.gz") do
+    tarball_path = File.join(node[:deployment][:setup_cache], "ruby-#{ruby_version}.tar.gz")
+    remote_file tarball_path do
       owner node[:deployment][:user]
       source ruby_source
-      not_if { ::File.exists?(File.join("", "tmp", "ruby-#{ruby_version}.tar.gz")) }
+      checksum node[:ruby][:checksums][ruby_version]
     end
 
     directory ruby_path do
@@ -26,7 +27,7 @@ module RubyInstall
       cwd File.join("", "tmp")
       user node[:deployment][:user]
       code <<-EOH
-      tar xzf ruby-#{ruby_version}.tar.gz
+      tar xzf #{tarball_path}
       cd ruby-#{ruby_version}
       ./configure --disable-pthread --prefix=#{ruby_path}
       make

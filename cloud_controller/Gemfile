@@ -6,14 +6,14 @@ gem 'rails', '~> 3.0.5'
 gem 'nats', :require => 'nats/client'
 
 # VCAP common components
-gem 'vcap_common', :require => ['vcap/common', 'vcap/component']
-gem 'vcap_logging', :require => ['vcap/logging']
-gem 'vcap_staging', '~> 0.1.50'
-gem 'cf-uaa-client', '>= 0.0.6'
+gem 'vcap_common', :require => ['vcap/common', 'vcap/component'], :git => 'git://github.com/d/vcap-common.git'
+gem 'vcap_logging', :require => ['vcap/logging'], :git => 'git://github.com/cloudfoundry/common.git'
+gem 'vcap_staging', '~> 0.1.51', :git => 'git://github.com/d/vcap-staging.git', :branch => 'master'
+gem 'cf-uaa-client', '~> 0.0.9', :git => 'git://github.com/cloudfoundry/uaa.git', :branch => 'squiggly_greater'
 
 # For queuing staging tasks
 gem 'em-hiredis'
-gem 'vcap_stager', '~> 0.1.14'
+gem 'vcap_stager', '~> 0.1.14', :git => 'git://github.com/d/vcap-stager.git'
 
 # Databases
 gem 'sqlite3'

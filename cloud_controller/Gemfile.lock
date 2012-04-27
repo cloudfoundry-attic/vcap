@@ -1,9 +1,59 @@
 GIT
+  remote: git://github.com/cloudfoundry/common.git
+  revision: e36886a189b82f880a5aa3e9169712d5d9048a88
+  specs:
+    vcap_logging (1.0.1)
+      rake
+
+GIT
   remote: git://github.com/cloudfoundry/eventmachine.git
   revision: 2806c630d8631d5dcf9fb2555f665b829052aabe
   branch: release-0.12.11-cf
   specs:
     eventmachine (0.12.11.cloudfoundry.3)
+
+GIT
+  remote: git://github.com/cloudfoundry/uaa.git
+  revision: 28b2643024a63ff7ccbd3977c76eccfb1cfbd001
+  branch: squiggly_greater
+  specs:
+    cf-uaa-client (0.0.9)
+      em-http-request (~> 1.0.0.beta.3)
+      eventmachine
+      interact
+      json_pure
+      rest-client
+      thor
+
+GIT
+  remote: git://github.com/d/vcap-common.git
+  revision: 506e4682f51ae3270aa0f231cebd78b99974e0e9
+  specs:
+    vcap_common (1.0.10)
+      eventmachine (~> 0.12.11.cloudfoundry.3)
+      nats (~> 0.4.22.beta.8)
+      posix-spawn (~> 0.3.6)
+      thin (~> 1.3.1)
+      yajl-ruby (~> 0.8.3)
+
+GIT
+  remote: git://github.com/d/vcap-stager.git
+  revision: 44977b28fd419686fd5b4881b20f4ed9d90ee12d
+  specs:
+    vcap_stager (0.1.14)
+
+GIT
+  remote: git://github.com/d/vcap-staging.git
+  revision: 6a0ead996c37b9a6c22b4740efba3c286914d680
+  branch: master
+  specs:
+    vcap_staging (0.1.51)
+      nokogiri (>= 1.4.4)
+      rake
+      rspec
+      uuidtools (~> 2.1.2)
+      vcap_common (~> 1.0.8)
+      yajl-ruby (>= 0.7.9)
 
 GEM
   remote: http://rubygems.org/
@@ -40,11 +90,6 @@ GEM
     arel (2.0.9)
     bcrypt-ruby (2.1.4)
     builder (2.1.2)
-    cf-uaa-client (0.0.6)
-      em-http-request (= 1.0.0.beta.3)
-      eventmachine
-      json_pure
-      rest-client
     chronic (0.6.4)
     ci_reporter (1.6.4)
       builder (>= 2.1.2)
@@ -68,6 +113,7 @@ GEM
     hiredis (0.3.2)
     http_parser.rb (0.5.1)
     i18n (0.5.0)
+    interact (0.4.2)
     json_pure (1.6.5)
     mail (2.2.15)
       activesupport (>= 2.3.6)
@@ -137,21 +183,6 @@ GEM
       polyglot (>= 0.3.1)
     tzinfo (0.3.26)
     uuidtools (2.1.2)
-    vcap_common (1.0.10)
-      eventmachine (~> 0.12.11.cloudfoundry.3)
-      nats (~> 0.4.22.beta.8)
-      posix-spawn (~> 0.3.6)
-      thin (~> 1.3.1)
-      yajl-ruby (~> 0.8.3)
-    vcap_logging (1.0.0)
-    vcap_stager (0.1.14)
-    vcap_staging (0.1.50)
-      nokogiri (>= 1.4.4)
-      rake
-      rspec
-      uuidtools (~> 2.1.2)
-      vcap_common (~> 1.0.8)
-      yajl-ruby (>= 0.7.9)
     yajl-ruby (0.8.3)
 
 PLATFORMS
@@ -160,7 +191,7 @@ PLATFORMS
 DEPENDENCIES
   SystemTimer (~> 1.2)
   bcrypt-ruby (~> 2.1.4)
-  cf-uaa-client (>= 0.0.6)
+  cf-uaa-client (~> 0.0.9)!
   ci_reporter
   delorean
   em-hiredis
@@ -183,8 +214,8 @@ DEPENDENCIES
   sqlite3
   thin
   uuidtools (~> 2.1.2)
-  vcap_common
-  vcap_logging
-  vcap_stager (~> 0.1.14)
-  vcap_staging (~> 0.1.50)
+  vcap_common!
+  vcap_logging!
+  vcap_stager (~> 0.1.14)!
+  vcap_staging (~> 0.1.51)!
   yajl-ruby (~> 0.8.3)

@@ -1,18 +1,18 @@
-#
 # Cookbook Name:: erlang
 # Recipe:: default
 #
-# Copyright 2011, VMware
+# Copyright 2012, VMware
 #
 #
 %w[ build-essential libncurses5-dev openssl libssl-dev ].each do |pkg|
   package pkg
 end
 
-remote_file File.join("", "tmp", "otp_src_#{node[:erlang][:version]}.tar.gz") do
+tarball_path = File.join(node[:deployment][:setup_cache], "otp_src_#{node[:erlang][:version]}.tar.gz")
+remote_file tarball_path do
   owner node[:deployment][:user]
   source node[:erlang][:source]
-  not_if { ::File.exists?(File.join("", "tmp", "otp_src_#{node[:erlang][:version]}.tar.gz")) }
+  checksum "849d050b59821e9f2831fee2e3267d84b410eee860a55f6fc9320cc00b5205bd"
 end
 
 directory node[:erlang][:path] do
@@ -27,7 +27,7 @@ bash "Install Erlang" do
   cwd File.join("", "tmp")
   user node[:deployment][:user]
   code <<-EOH
-  tar xvzf otp_src_#{node[:erlang][:version]}.tar.gz
+  tar xvzf #{tarball_path}
   cd otp_src_#{node[:erlang][:version]}
   #{File.join(".", "configure")} --prefix=#{node[:erlang][:path]} --disable-hipe
   make

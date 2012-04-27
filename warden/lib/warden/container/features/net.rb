@@ -15,18 +15,6 @@ module Warden
           base.extend(ClassMethods)
         end
 
-        def initialize(*args)
-          super(*args)
-
-          on(:after_create) {
-            sh "#{container_path}/net.sh setup"
-          }
-
-          on(:before_destroy) {
-            sh "#{container_path}/net.sh teardown"
-          }
-        end
-
         def do_net_in
           port = PortPool.acquire
 
