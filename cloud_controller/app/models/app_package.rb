@@ -27,7 +27,7 @@ class AppPackage
       dir = unpack_upload
       synchronize_pool_with(dir)
       path = AppPackage.repack_app_in(dir, tmpdir, :zip)
-      zip_path = save_package(path) if path
+      sha1 = save_package(path) if path
     end
   ensure
     FileUtils.rm_rf(tmpdir)
@@ -101,11 +101,16 @@ class AppPackage
     self.class.package_dir
   end
 
+  def package_path
+    File.join(package_dir, "app_#{@app.id}")
+  end
+
   def save_package(path)
-    sha1 = Digest::SHA1.file(path).hexdigest
-    new_path = File.join(package_dir, sha1)
-    FileUtils.mv(path, new_path)
-    new_path
+    AppPackage.blocking_defer do
+      sha1 = Digest::SHA1.file(path).hexdigest
+      FileUtils.mv(path, package_path)
+      sha1
+    end
   end
 
   # Verifies that the recreated droplet size is less than the

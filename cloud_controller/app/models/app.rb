@@ -332,8 +332,11 @@ class App < ActiveRecord::Base
   def purge_droplets
     # Clean up the packages/droplets
     unless self.package_hash.nil?
+      # GC apps stored using sha1 of zipfile as basename.
       app_package = File.join(AppPackage.package_dir, self.package_hash)
       FileUtils.rm_f(app_package)
+
+      FileUtils.rm_f(AppPackage.new(self, nil).package_path)
     end
     unless self.staged_package_hash.nil?
       staged_package = File.join(AppPackage.package_dir, self.staged_package_hash)
@@ -350,11 +353,16 @@ class App < ActiveRecord::Base
   # Passed an instance of AppPackage.
   # We don't want this to block, so mark as pending and schedule work.
   def latest_bits_from(app_package)
-    zipfile_path = app_package.to_zip # resulting filename is the SHA1 of the file.
-    sha1 = File.basename(zipfile_path)
+    sha1 = app_package.to_zip
+
     # We are not pending if the bits have not changed.
     unless package_hash == sha1
-      # Remove old one
+      # Remove old one.
+      #
+      # NB: This is no longer required, as app packages names are now
+      #     (4/26/2012) immutable. Consequently, saving a new package will
+      #     replace the old one. This is left to GC packages that were
+      #     created prior to this change.
       unless self.package_hash.nil?
         app_package = File.join(AppPackage.package_dir, self.package_hash)
         FileUtils.rm_f(app_package)
@@ -477,7 +485,7 @@ class App < ActiveRecord::Base
 
   def unstaged_package_path
     if package_hash
-      File.join(AppPackage.package_dir, package_hash)
+      AppPackage.new(self, nil).package_path
     end
   end
 
