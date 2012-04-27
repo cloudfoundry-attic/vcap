@@ -102,22 +102,30 @@ class StagingController < ApplicationController
     app = App.find_by_id(params[:id])
     raise CloudError.new(CloudError::APP_NOT_FOUND) unless app
 
-    path = app.unstaged_package_path
-    unless path && File.exists?(path)
+    unless path = app.unstaged_package_path
+      CloudController.logger.error("app_id=#{app.id} has no package")
+      raise CloudError.new(CloudError::APP_NOT_FOUND)
+    end
+
+    unless found = File.exist?(path)
+      # Handle the case where the app exists at the old location: the sha1
+      # of its zipfile.
+      path = app.legacy_unstaged_package_path
+      found = File.exist?(path)
+    end
+
+    unless found
       CloudController.logger.error("Couldn't find package path for app_id=#{app.id} (stager=#{request.remote_ip})", :tags => [:staging])
       raise CloudError.new(CloudError::APP_NOT_FOUND)
     end
+
     CloudController.logger.debug("Stager (#{request.remote_ip}) requested app_id=#{app.id} @ path=#{path}", :tags => [:staging])
 
-    if path && File.exists?(path)
-      if CloudController.use_nginx
-        response.headers['X-Accel-Redirect'] = '/droplets/' + File.basename(path)
-        render :nothing => true, :status => 200
-      else
-        send_file path
-      end
+    if CloudController.use_nginx
+      response.headers['X-Accel-Redirect'] = '/droplets/' + File.basename(path)
+      render :nothing => true, :status => 200
     else
-      raise CloudError.new(CloudError::APP_NOT_FOUND)
+      send_file path
     end
   end
 
