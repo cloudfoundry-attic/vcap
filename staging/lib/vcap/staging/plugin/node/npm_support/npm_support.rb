@@ -1,9 +1,9 @@
 require "logger"
 require "fileutils"
 
-require File.expand_path('../npm_cache', __FILE__)
-require File.expand_path('../npm_package', __FILE__)
-require File.expand_path('../npm_helper', __FILE__)
+require File.expand_path("../npm_cache", __FILE__)
+require File.expand_path("../npm_package", __FILE__)
+require File.expand_path("../npm_helper", __FILE__)
 
 module NpmSupport
 

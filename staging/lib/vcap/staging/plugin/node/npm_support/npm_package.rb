@@ -64,9 +64,9 @@ class NpmPackage
       FileUtils.rm_rf(tmp_dir)
     end
 
-    install_dir = File.join(tmp_dir, 'install')
-    npm_tmp_dir = File.join(tmp_dir, 'tmp')
-    npm_cache_dir = File.join(tmp_dir, 'cache')
+    install_dir = File.join(tmp_dir, "install")
+    npm_tmp_dir = File.join(tmp_dir, "tmp")
+    npm_cache_dir = File.join(tmp_dir, "cache")
 
     begin
       Dir.mkdir(install_dir)
