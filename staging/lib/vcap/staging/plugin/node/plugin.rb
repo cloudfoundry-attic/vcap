@@ -1,12 +1,12 @@
-require File.expand_path('../npm_support/npm_support', __FILE__)
+require File.expand_path("../npm_support/npm_support", __FILE__)
 
 class NodePlugin < StagingPlugin
   include NpmSupport
 
   # TODO - Is there a way to avoid this without some kind of 'register' callback?
-  # e.g. StagingPlugin.register('sinatra', __FILE__)
+  # e.g. StagingPlugin.register("sinatra", __FILE__)
   def framework
-    'node'
+    "node"
   end
 
   def stage_application
@@ -39,9 +39,9 @@ class NodePlugin < StagingPlugin
   end
 
   def read_configs
-    package = File.join(destination_directory, 'app', 'package.json')
+    package = File.join(destination_directory, "app", "package.json")
     if File.exists? package
-      @package_config = Yajl::Parser.parse(File.new(package, 'r'))
+      @package_config = Yajl::Parser.parse(File.new(package, "r"))
     end
   end
 

@@ -32,7 +32,7 @@ class NpmHelper
 
   def rebuild_cmd(where)
     "#{npm_cmd} rebuild --prefix #{where} --production true " +
-    "--color false --loglevel error"
+    "--color false --loglevel error --registry http://registry.npmjs.org/"
   end
 
   def install_cmd(package, where, cache_dir, tmp_dir, uid, gid)
@@ -40,7 +40,8 @@ class NpmHelper
     cmd += "--color false --loglevel error --non-global true --force true "
     cmd += "--user #{uid} " if uid
     cmd += "--group #{gid} " if gid
-    cmd += "--cache #{cache_dir} --tmp #{tmp_dir} --node_version #{@node_version}"
+    cmd += "--cache #{cache_dir} --tmp #{tmp_dir} --node_version #{@node_version} "
+    cmd += "--registry http://registry.npmjs.org/"
   end
 
   def versioner_cmd(package_link)
