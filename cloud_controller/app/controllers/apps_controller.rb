@@ -134,11 +134,7 @@ class AppsController < ApplicationController
     @app.lock_version += 1
     manager = AppManager.new(@app)
     if @app.needs_staging?
-      if user.uses_new_stager?
-        stage_app(@app)
-      else
-        manager.stage
-      end
+      stage_app(@app)
     end
     manager.stop_all
     manager.started
@@ -318,11 +314,7 @@ class AppsController < ApplicationController
     manager = AppManager.new(app)
 
     if app.needs_staging?
-      if user.uses_new_stager?
-        stage_app(app)
-      else
-        manager.stage
-      end
+      stage_app(app)
     end
 
     if changed.include?('state')
