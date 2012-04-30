@@ -148,6 +148,11 @@ module VCAP
       class SerializedData < JsonMessage
         required :data,  String
       end
+
+      class ServiceErrorResponse < JsonMessage
+        required :code, Integer
+        required :description, String
+      end
     end
   end
 end
