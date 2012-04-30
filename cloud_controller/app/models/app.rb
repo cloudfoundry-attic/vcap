@@ -494,7 +494,14 @@ class App < ActiveRecord::Base
   end
 
   def explode_into(exploded_dir)
-    zipfile = File.join(AppPackage.package_dir, package_hash)
+    zipfile = nil
+
+    if self.unstaged_package_path && File.exist?(self.unstaged_package_path)
+      zipfile = self.unstaged_package_path
+    else
+      zipfile = self.legacy_unstaged_package_path
+    end
+
     cmd = "unzip -q -d #{exploded_dir} #{zipfile}"
     if system(cmd)
       yield exploded_dir if block_given?
