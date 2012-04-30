@@ -23,19 +23,6 @@ describe Router do
     before :each do
       clear_router
     end
-
-    it 'should set up a session key' do
-      Router.session_key.should be
-    end
-
-    it 'should set a default client inactivity timeout' do
-      Router.client_inactivity_timeout.should be
-    end
-
-    it 'should respect a client_inactivity_timeout key when supplied' do
-      Router.config('client_inactivity_timeout' => 30)
-      Router.client_inactivity_timeout.should == 30
-    end
   end
 
   describe 'Router.register_droplet' do
@@ -68,6 +55,13 @@ describe Router do
       droplet[:host].should == '10.0.1.22'
       droplet[:port].should == 2222
       droplet[:clients].should == {}
+    end
+
+    it 'should allow looking up uppercase uri' do
+      Router.register_droplet('foo.vcap.me', '10.0.1.22', 2222, {})
+      droplets = Router.lookup_droplet('FOO.VCAP.ME')
+      droplets.should be_instance_of Array
+      droplets.should have(1).items
     end
 
     it 'should count droplets independent of URL' do
@@ -136,27 +130,6 @@ describe Router do
       Router.unregister_droplet('foo.vcap.me', '10.0.1.22', 2222)
       VCAP::Component.varz[:droplets].should == 0
       VCAP::Component.varz[:urls].should == 0
-    end
-  end
-
-  describe 'Router.session_keys' do
-    before :each do
-      clear_router
-    end
-
-    it 'should properly encrypt and decrypt session keys' do
-      Router.register_droplet('foo.vcap.me', '10.0.1.22', 2222, {})
-      droplets = Router.lookup_droplet('foo.vcap.me')
-      droplets.should have(1).items
-      droplet = droplets.first
-      key = Router.generate_session_cookie(droplet)
-      key.should be
-      droplet_array = Router.decrypt_session_cookie(key)
-      droplet_array.should be_instance_of Array
-      droplet_array.should have(3).items
-      droplet_array[0].should == droplet[:url]
-      droplet_array[1].should == droplet[:host]
-      droplet_array[2].should == droplet[:port]
     end
   end
 
