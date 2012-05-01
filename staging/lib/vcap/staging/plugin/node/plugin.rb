@@ -14,7 +14,6 @@ class NodePlugin < StagingPlugin
       create_app_directories
       copy_source_files
       read_configs
-      compile_node_modules
       create_startup_script
       create_stop_script
     end
