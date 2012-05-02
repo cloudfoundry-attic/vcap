@@ -17,7 +17,7 @@ class StagingTaskLog
       get_def = redis.get(key)
       get_def.timeout(timeout)
       get_def.errback do |e|
-        e = VCAP::Stager::StagingTimeoutError.new("Timed out fetching result") if e == nil
+        e = CloudError.new(CloudError::SYSTEM_ERROR, "Timed out fetching result") if e == nil
         logger.error("Failed fetching result for key '#{key}': #{e}")
         logger.error(e)
         f.resume([false, e])
