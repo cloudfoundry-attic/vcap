@@ -2,17 +2,16 @@ require "fileutils"
 
 class NpmPackage
 
-  def initialize(name, version, modules_dir, secure_uid, secure_gid,
+  def initialize(name, version, where, secure_uid, secure_gid,
                  npm_helper, logger, cache)
     @name  = name.chomp
     @version = version.chomp
-    @resolved_version = nil
     @npm_helper = npm_helper
     @secure_uid = secure_uid
     @secure_gid = secure_gid
     @logger = logger
     @cache = cache
-    @modules_dir = modules_dir
+    @dst_dir = File.join(where, "node_modules", @name)
   end
 
   def install
@@ -21,42 +20,58 @@ class NpmPackage
       return nil
     end
 
-    resolved = resolved_version_data
-
-    unless resolved.is_a?(Hash) && resolved["version"]
-      log_name = @version.empty? ? @name : "#{@name}@#{@version}"
-      @logger.warn("Failed getting the requested package: #{log_name}")
-      return nil
-    end
-
-    @resolved_version = resolved["version"]
-
-    cached = @cache.get(@name, @resolved_version)
+    cached = @cache.get(@name, @version)
     if cached
-      copy_to_app(cached)
+      return @dst_dir if copy_to_dst(cached)
 
     else
-      installed = safe_install
-      if installed
-        copy_to_app(installed)
+      @registry_data = get_registry_data
 
-        @cache.put(installed, @name, @resolved_version)
+      unless @registry_data.is_a?(Hash) && @registry_data["version"]
+        log_name = @version.empty? ? @name : "#{@name}@#{@version}"
+        @logger.warn("Failed getting the requested package: #{log_name}")
+        return nil
+      end
+
+      installed = fetch_build
+
+      if installed
+        cached = @cache.put(installed, @name, @registry_data["version"])
+        return @dst_dir if copy_to_dst(cached)
       end
     end
   end
 
-  def copy_to_app(source)
-    return unless source && File.exist?(source)
-    dst_dir = File.join(@modules_dir, @name)
-    FileUtils.rm_rf(dst_dir)
-    FileUtils.mkdir_p(dst_dir)
-    `cp -a #{source}/* #{dst_dir}`
+  def fetch(source, where)
+    Dir.chdir(where) do
+      fetched_tarball = "package.tgz"
+      cmd = "wget --quiet --retry-connrefused --connect-timeout=5 " +
+        "--no-check-certificate --output-document=#{fetched_tarball} #{source}"
+      `#{cmd}`
+      return unless $?.exitstatus == 0
+
+      package_dir = File.join(where, "package")
+      FileUtils.mkdir_p(package_dir)
+
+      fetched_path = File.join(where, fetched_tarball)
+      `tar xzf #{fetched_path} --directory=#{package_dir} --strip-components=1 2>&1`
+      return unless $?.exitstatus == 0
+
+      File.exists?(package_dir) ? package_dir : nil
+    end
+  end
+
+  def copy_to_dst(source)
+    return unless source && File.exists?(source)
+    FileUtils.rm_rf(@dst_dir)
+    FileUtils.mkdir_p(@dst_dir)
+    `cp -a #{source}/* #{@dst_dir}`
     $?.exitstatus == 0
   end
 
   # This is done in a similar to ruby gems way until PackageCache is available
 
-  def safe_install
+  def fetch_build
     tmp_dir = Dir.mktmpdir
     at_exit do
       user = `whoami`.chomp
@@ -64,18 +79,8 @@ class NpmPackage
       FileUtils.rm_rf(tmp_dir)
     end
 
-    install_dir = File.join(tmp_dir, "install")
-    npm_tmp_dir = File.join(tmp_dir, "tmp")
-    npm_cache_dir = File.join(tmp_dir, "cache")
-
-    begin
-      Dir.mkdir(install_dir)
-      Dir.mkdir(npm_tmp_dir)
-      Dir.mkdir(npm_cache_dir)
-    rescue => e
-      @logger.error("Failed creating npm install directories: #{e}")
-      return nil
-    end
+    package_dir = fetch(@registry_data["source"], tmp_dir)
+    return unless package_dir
 
     if @secure_uid
       chown_cmd = "sudo /bin/chown -R #{@secure_uid}:#{@secure_gid} #{tmp_dir} 2>&1"
@@ -87,10 +92,8 @@ class NpmPackage
       end
     end
 
-    package_link = "#{@name}@#{@resolved_version}"
+    cmd = @npm_helper.build_cmd(package_dir)
 
-    cmd = @npm_helper.install_cmd(package_link, install_dir, npm_cache_dir,
-                                  npm_tmp_dir, @secure_uid, @secure_gid)
     if @secure_uid
       cmd ="sudo -u '##{@secure_uid}' sg #{secure_group} -c \"cd #{tmp_dir} && #{cmd}\" 2>&1"
     else
@@ -120,13 +123,12 @@ class NpmPackage
       @logger.debug("Failed chowning #{tmp_dir} to #{me}") if $?.exitstatus != 0
     end
 
-    package_dir = File.join(install_dir, "node_modules", @name)
-
     return package_dir if child_status == 0
-
   end
 
-  def resolved_version_data
+  def get_registry_data
+    # TODO: 1. make direct request, we need only tarball source
+    # 2. replicate npm registry database
     package_link = "#{@name}@\"#{@version}\""
     output = `#{@npm_helper.versioner_cmd(package_link)} 2>&1`
     if $?.exitstatus != 0 || output.empty?
