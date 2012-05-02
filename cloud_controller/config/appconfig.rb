@@ -205,6 +205,8 @@ if (AppConfig[:staging][:new_stager_percent] || AppConfig[:staging][:new_stager_
   exit 1
 end
 
+AppConfig[:staging][:queue] ||= "staging"
+
 if AppConfig[:bootstrap_users]
   unless AppConfig[:bootstrap_users].kind_of?(Array)
     $stderr.puts "List of bootstrap users must be an array"

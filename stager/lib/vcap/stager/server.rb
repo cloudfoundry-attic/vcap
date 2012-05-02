@@ -61,7 +61,10 @@ class VCAP::Stager::Server
     @shutdown_thread = Thread.new do
       # Blocks until all threads have finished
       @thread_pool.shutdown
-      EM.next_tick { EM.stop }
+      EM.next_tick do
+        EM.stop
+        @logger.info("Shutdown complete")
+      end
     end
   end
 
@@ -88,10 +91,13 @@ class VCAP::Stager::Server
 
   def setup_subscriptions
     @config[:queues].each do |q|
-      sq = "vcap.stager.#{q}"
-      @sids << @nats_conn.subscribe(sq, :queue => sq) do |msg, reply_to|
-        add_task(msg)
+      @sids << @nats_conn.subscribe(q, :queue => q) do |msg, reply_to|
+        @thread_pool.enqueue { execute_request(msg, reply_to) }
+
+        @logger.info("Enqueued request #{msg}")
       end
+
+      @logger.info("Subscribed to #{q}")
     end
   end
 
@@ -101,38 +107,37 @@ class VCAP::Stager::Server
     @sids = []
   end
 
-  def add_task(task_msg)
+  def execute_request(encoded_request, reply_to)
     begin
-      @logger.debug("Decoding task '#{task_msg}'")
+      @logger.debug("Decoding request '#{encoded_request}'")
 
-      request = Yajl::Parser.parse(task_msg)
+      request = Yajl::Parser.parse(encoded_request)
     rescue => e
-      @logger.warn("Failed decoding '#{task_msg}': #{e}")
+      @logger.warn("Failed decoding '#{encoded_request}': #{e}")
       @logger.warn(e)
       return
     end
 
-    @thread_pool.enqueue { execute_request(request) }
-
-    @logger.info("Enqueued request #{request}")
-
-    nil
-  end
-
-  def execute_request(request)
     task = VCAP::Stager::Task.new(request, @task_config)
 
     result = nil
     begin
       task.perform
 
-      result = VCAP::Stager::TaskResult.new(task.task_id, task.log)
+      result = {
+        "task_id"  => task.task_id,
+        "task_log" => task.log,
+      }
 
       @logger.info("Task #{task.task_id} succeeded")
     rescue VCAP::Stager::TaskError => te
       @logger.warn("Task #{task.task_id} failed: #{te}")
 
-      result = VCAP::Stager::TaskResult.new(task.task_id, task.log, te)
+      result = {
+        "task_id"  => task.task_id,
+        "task_log" => task.log,
+        "error"    => te.to_s,
+      }
     rescue Exception => e
       @logger.error("Unexpected exception: #{e}")
       @logger.error(e)
@@ -140,7 +145,9 @@ class VCAP::Stager::Server
       raise e
     end
 
-    EM.next_tick { @nats_conn.publish(request["notify_subj"], result.encode) }
+    encoded_result = Yajl::Encoder.encode(result)
+
+    EM.next_tick { @nats_conn.publish(reply_to, encoded_result) }
 
     nil
   end
