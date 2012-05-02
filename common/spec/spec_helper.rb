@@ -13,6 +13,8 @@ require "vcap/process_utils"
 require "vcap/config"
 require "vcap/priority_queue"
 require 'vcap/quota'
+require 'services/api/clients/service_gateway_client'
+require 'services/api/async_requests'
 require 'benchmark'
 
 RSpec::Matchers.define :take_less_than do |n|
