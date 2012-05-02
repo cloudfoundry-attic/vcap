@@ -13,27 +13,10 @@ module VCAP
 end
 
 class VCAP::Stager::Server
-  class Channel
-    def initialize(nats_conn, subject, &blk)
-      @nats_conn = nats_conn
-      @subject   = subject
-      @sid       = nil
-      @receiver  = blk
-    end
-
-    def open
-      @sid = @nats_conn.subscribe(@subject, :queue => @subject) {|msg| @receiver.call(msg) }
-    end
-
-    def close
-      @nats_conn.unsubscribe(@sid)
-    end
-  end
-
   def initialize(nats_uri, thread_pool, user_manager, config={})
     @nats_uri    = nats_uri
     @nats_conn   = nil
-    @channels    = []
+    @sids        = []
     @config      = config
     @task_config = create_task_config(config, user_manager)
     @logger      = VCAP::Logging.logger('vcap.stager.server')
@@ -57,7 +40,7 @@ class VCAP::Stager::Server
                                  :config => @config,
                                  :nats   => @nats_conn)
 
-        setup_channels
+        setup_subscriptions
 
         @logger.info("Server running")
       end
@@ -73,9 +56,7 @@ class VCAP::Stager::Server
     @logger.info("Shutdown initiated.")
     @logger.info("Waiting for remaining #{num_tasks} task(s) to finish.")
 
-    @channels.each do |c|
-      EM.next_tick { c.close }
-    end
+    EM.next_tick { teardown_subscriptions }
 
     @shutdown_thread = Thread.new do
       # Blocks until all threads have finished
@@ -105,12 +86,19 @@ class VCAP::Stager::Server
     trap('INT')  { shutdown }
   end
 
-  def setup_channels
-    for qn in @config[:queues]
-      channel = Channel.new(@nats_conn, "vcap.stager.#{qn}") {|msg| add_task(msg) }
-      channel.open
-      @channels << channel
+  def setup_subscriptions
+    @config[:queues].each do |q|
+      sq = "vcap.stager.#{q}"
+      @sids << @nats_conn.subscribe(sq, :queue => sq) do |msg, reply_to|
+        add_task(msg)
+      end
     end
+  end
+
+  def teardown_subscriptions
+    @sids.each { |sid| @nats_conn.unsubscribe(sid) }
+
+    @sids = []
   end
 
   def add_task(task_msg)
