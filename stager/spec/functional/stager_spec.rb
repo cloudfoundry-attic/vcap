@@ -1,6 +1,7 @@
 require 'spec_helper'
 
 require 'vcap/spec/forked_component/nats_server'
+require 'vcap/stager/client'
 
 describe VCAP::Stager do
   before :all do
@@ -51,13 +52,11 @@ describe VCAP::Stager do
         "properties"   => @app_props,
         "download_uri" => DummyHandler.app_download_uri(@http_server, app_name),
         "upload_uri"   => DummyHandler.droplet_upload_uri(@http_server, app_name),
-        "notify_subj"  => "staging.result",
       }
 
       task_result = wait_for_task_result(@nats_server.uri, request)
 
-      task_result.should_not be_nil
-      task_result.was_success?.should be_true
+      task_result["error"].should be_nil
     end
   end
 
@@ -95,15 +94,24 @@ describe VCAP::Stager do
   end
 
   def wait_for_task_result(nats_uri, request)
-    task_result = nil
+    ret = nil
+
     NATS.start(:uri => nats_uri) do
-      EM.add_timer(@task_timeout) { NATS.stop }
-      NATS.subscribe(request["notify_subj"]) do |msg|
-        task_result = VCAP::Stager::TaskResult.decode(msg)
+      client = VCAP::Stager::Client::EmAware.new(NATS.client, "staging")
+
+      deferrable = client.stage(request, 30)
+
+      deferrable.callback do |r|
+        ret = r
         NATS.stop
       end
-      VCAP::Stager::Task.new(request).enqueue('staging')
+
+      deferrable.errback do |e|
+        ret = { "error" => e }
+        NATS.stop
+      end
     end
-    task_result
+
+    ret
   end
 end

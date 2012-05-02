@@ -142,7 +142,7 @@ class VCAP::Stager::Task
       if res[:timed_out]
         emsg = "Staging timed out after #{@max_staging_duration} seconds."
       else
-        emsg = "Staging plugin failed: #{res[:stdout]}"
+        emsg = "Staging plugin failed: #{res[:stderr]}"
       end
 
       task_logger.warn(emsg)
