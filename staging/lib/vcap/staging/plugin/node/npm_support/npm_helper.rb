@@ -2,11 +2,13 @@ class NpmHelper
 
   attr_accessor :npm_version
 
-  def initialize(node_path, node_version, npm_path)
+  def initialize(node_path, node_version, npm_path, uid, gid)
     @node_path = node_path
     @node_version = node_version
     @npm_path = npm_path
     @npm_version = get_npm_version
+    @uid = uid
+    @gid = gid
   end
 
   def get_npm_version
@@ -30,18 +32,20 @@ class NpmHelper
     end
   end
 
-  def rebuild_cmd(where)
-    "#{npm_cmd} rebuild --prefix #{where} --production true " +
-    "--color false --loglevel error"
+  def npm_flags
+    cmd = "--production true --color false --loglevel error --non-global true --force true"
+    cmd += " --user #{@uid}" if @uid
+    cmd += " --group #{@gid}" if @gid
   end
 
-  def install_cmd(package, where, cache_dir, tmp_dir, uid, gid)
-    cmd = "#{npm_cmd} install #{package} --prefix #{where} --production true "
-    cmd += "--color false --loglevel error --non-global true --force true "
-    cmd += "--user #{uid} " if uid
-    cmd += "--group #{gid} " if gid
-    cmd += "--cache #{cache_dir} --tmp #{tmp_dir} --node_version #{@node_version} "
-    cmd += "--registry http://registry.npmjs.org/"
+  def build_cmd(where)
+    "#{npm_cmd} build #{where} #{npm_flags}"
+  end
+
+  def install_cmd(package, where, cache_dir, tmp_dir)
+    "#{npm_cmd} install #{package} --prefix #{where} #{npm_flags} " +
+      "--cache #{cache_dir} --tmp #{tmp_dir} --node_version #{@node_version} " +
+      "--registry http://registry.npmjs.org/"
   end
 
   def versioner_cmd(package_link)

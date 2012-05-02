@@ -82,5 +82,13 @@ module StagingSpecHelpers
     end
     FileUtils.rm_r(source_tempdir) if source_tempdir
   end
+
+  def runtime_staging_config(framework, runtime)
+    StagingPlugin.manifests[framework]["runtimes"].each do |runtime_info|
+      runtime_info.each do |name, attrs|
+        return attrs if name == runtime
+      end
+    end
+  end
 end
 

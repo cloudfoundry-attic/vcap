@@ -7,24 +7,27 @@ require File.expand_path("../npm_helper", __FILE__)
 
 module NpmSupport
 
-  # If there is no dependencies config in package.json don't do anything
-  # For each dependency:
-  # - Resolve its version (Fail if not possible)
+  # If there is no npm-shwrinkwrap.json file don't do anything
+  # If user has node_modules folder and config option "ignoreNodeModules"
+  # in cloudfoundry.json is not set don't do anything
+  # Otherwise, install node modules according to shwrinkwrap.json tree
+  #
+  # For each dependency in shrinkwrap tree recursively:
   # - Get from cache by name & version
-  # - If not in cache, run npm install, put in cache
+  # - If not in cache, fetch it, run npm rebuild, put in cache
 
   def compile_node_modules
-    # npm install support only if dependencies provided in package.json
-    @dependencies = get_dependencies
-    return unless @dependencies.is_a?(Hash)
-
     # npm provided?
-    return nil unless runtime["npm"]
-    @npm_helper = NpmHelper.new(runtime["executable"], runtime["version"], runtime["npm"])
+    return unless runtime["npm"]
+
+    @dependencies = get_dependencies
+    return unless should_install_packages?
+
+    @npm_helper = NpmHelper.new(runtime["executable"], runtime["version"], runtime["npm"],
+                                @secure_uid, @secure_gid)
     return unless @npm_helper.npm_version
 
     @app_dir = File.expand_path(File.join(destination_directory, "app"))
-    @app_modules_dir = File.join(@app_dir, "node_modules")
 
     setup_logger
 
@@ -32,20 +35,37 @@ module NpmSupport
     cache_dir  = File.join(cache_base_dir, "node_modules", library_version)
     @cache = NpmCache.new(cache_dir, @logger)
 
-    install_packages
+    @logger.info("Installing dependencies. Node version #{runtime["version"]}")
+    install_packages(@dependencies, @app_dir)
   end
 
-  def install_packages
-    @logger.info("Installing dependencies. Node version #{runtime["version"]}")
-    @dependencies.each do |name, version|
-      package = NpmPackage.new(name, version, @app_modules_dir, @staging_uid,
+  def should_install_packages?
+    return unless @dependencies
+
+    return true if @vcap_config["ignoreNodeModules"]
+
+    user_packages_dir = File.join(destination_directory, "app", "node_modules")
+    !File.exists?(user_packages_dir)
+  end
+
+  def install_packages(dependencies, where)
+    dependencies.each do |name, props|
+      package = NpmPackage.new(name, props["version"], where, @staging_uid,
                                @staging_gid, @npm_helper, @logger, @cache)
-      package.install
+      installed_dir = package.install
+      if installed_dir && props["dependencies"].is_a?(Hash)
+        install_packages(props["dependencies"], installed_dir)
+      end
     end
   end
 
   def get_dependencies
-    @package_config["dependencies"] if @package_config.is_a?(Hash)
+    shrinkwrap_file = File.join(destination_directory, "app", "npm-shrinkwrap.json")
+    return unless File.exists?(shrinkwrap_file)
+    shrinkwrap_config = Yajl::Parser.parse(File.new(shrinkwrap_file, "r"))
+    if shrinkwrap_config.is_a?(Hash) && shrinkwrap_config["dependencies"].is_a?(Hash)
+      shrinkwrap_config["dependencies"]
+    end
   end
 
   def library_version

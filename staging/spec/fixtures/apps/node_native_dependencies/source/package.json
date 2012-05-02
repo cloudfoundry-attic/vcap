@@ -1,7 +1,0 @@
-{
-  "name" : "node_native_dependecies",
-  "version": "0.1.0",
-  "dependencies" : {
-    "bcrypt" : "" // to test native dependencies
-  }
-}
