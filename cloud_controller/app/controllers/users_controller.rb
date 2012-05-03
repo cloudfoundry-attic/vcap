@@ -11,7 +11,7 @@ class UsersController < ApplicationController
       begin
         user_account = CF::UAA::UserAccount.new(AppConfig[:uaa][:url], UaaToken.access_token)
         user_account.async = true
-        user_account.trace = true
+        user_account.debug = true
         user_account.logger = CloudController.logger
         user = user_account.create(body_params[:email], body_params[:password], body_params[:email])
 
@@ -36,7 +36,7 @@ class UsersController < ApplicationController
       begin
         user_account = CF::UAA::UserAccount.new(AppConfig[:uaa][:url], UaaToken.access_token)
         user_account.async = true
-        user_account.trace = true
+        user_account.debug = true
         user_account.logger = CloudController.logger
         user_account.delete_by_name(params['email'])
       rescue => e
@@ -70,7 +70,7 @@ class UsersController < ApplicationController
       begin
         user_account = CF::UAA::UserAccount.new(AppConfig[:uaa][:url], UaaToken.access_token)
         user_account.async = true
-        user_account.trace = true
+        user_account.debug = true
         user_account.logger = CloudController.logger
         user_account.change_password_by_name(user.email, body_params[:password])
 
