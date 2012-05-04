@@ -81,6 +81,14 @@ class Component
     Run.services.include? name
   end
 
+  def is_optional?
+    optional_components_regex = /(memcached|neo4j)/
+
+    skip_optional_components = ENV['CLOUD_FOUNDRY_SKIP_OPTIONAL'] == "1"
+    skip_optional_components &= name =~ optional_components_regex
+    skip_optional_components
+  end
+
   def exists?
     File.exists? @path
   end
@@ -439,7 +447,8 @@ module Run
     args = Run.expand_args(args)
     components = args.map do |arg|
       component = Component.new(arg)
-      component if component.exists?
+      STDOUT.puts "Skipping #{component.name}" if component.is_optional?
+      component if (component.exists? && !component.is_optional?)
     end.compact
     STDERR.puts "Don't know how to process '#{args.inspect}' \?\?" if components.empty?
     components
