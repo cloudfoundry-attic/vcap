@@ -97,7 +97,7 @@ def rewrite_lockfile(lockfile, checkout_base)
     Dir.chdir(gem_dir) do |dir|
       %x(gem build #{spec.name}.gemspec)
       gempath = gem_dir.join("#{spec.name}-#{spec.version}.gem")
-      %x(ln -v #{gempath} -t #{lockfile.parent.join('vendor', 'cache')})
+      FileUtils.link([gempath.to_s], lockfile.parent.join('vendor', 'cache').to_s, :verbose => true)
     end
     spec.source = gemsrc
     # make the dependency have "no specified source"
