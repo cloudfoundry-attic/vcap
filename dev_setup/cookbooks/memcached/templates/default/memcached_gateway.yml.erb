@@ -1,0 +1,15 @@
+---
+cloud_controller_uri: <%= node[:cloud_controller][:service_api_uri] %>
+service:
+  name: memcached
+  version: "1.4"
+  description: "Memcached high-performance, distributed memory object caching system"
+  plans: ['free']
+  tags: ['memcached', 'memcached-1.4', 'key-value', 'cache']
+host: localhost
+index: 0
+token: <%= node[:memcached_node][:token] %>
+mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
+pid: /var/vcap/sys/run/memcached_service.pid
+logging:
+  level: debug

@@ -81,6 +81,13 @@ class Component
     Run.services.include? name
   end
 
+  DEFAULT_CLOUD_FOUNDRY_EXCLUDED_COMPONENTS = '["memcached_node", "memcached_gateway", "neo4j_node", "neo4j_gateway"]'
+
+  def is_excluded?
+    return if ENV['CLOUD_FOUNDRY_EXCLUDE_COMPONENTS'] != "1"
+    Yajl::Parser.parse(DEFAULT_CLOUD_FOUNDRY_EXCLUDED_COMPONENTS).include?(name)
+  end
+
   def exists?
     File.exists? @path
   end
@@ -439,7 +446,8 @@ module Run
     args = Run.expand_args(args)
     components = args.map do |arg|
       component = Component.new(arg)
-      component if component.exists?
+      STDOUT.puts "Skipping excluded component: #{component.name}" if component.is_excluded?
+      component if (component.exists? && !component.is_excluded?)
     end.compact
     STDERR.puts "Don't know how to process '#{args.inspect}' \?\?" if components.empty?
     components

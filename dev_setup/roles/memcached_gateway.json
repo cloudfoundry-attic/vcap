@@ -1,0 +1,11 @@
+{
+  "name": "memcached_gateway",
+  "override_attributes": {},
+  "json_class": "Chef::Role",
+  "description": "Memcached services gateway",
+  "chef_type": "role",
+  "run_list" : [ "recipe[deployment]",
+                 "recipe[essentials]",
+                 "recipe[ruby]",
+                 "recipe[memcached::gateway]"]
+}
