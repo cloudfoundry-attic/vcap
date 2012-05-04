@@ -32,15 +32,20 @@ else
   puts "Targeting default deployment \"#{options["name"]}\""
 end
 
-if ARGV[0].nil? || !%w[start stop restart tail status].include?(ARGV[0].downcase)
-    STDERR.puts "Usage: #{$0} [-n deployment_name] [-d cloudfoundry_home_dir] [start|stop|restart|tail|status]"
+command = ARGV[0] ? ARGV[0].downcase : nil
+
+if command.nil? || !%w[start stop restart tail status].include?(command)
+  STDERR.puts "Usage: #{$0} [-n deployment_name] [-d cloudfoundry_home_dir] [start|stop|restart|tail|status] [COMPONENT]"
     exit 1
 end
+
+ARGV.shift
+vcap_components = ARGV.empty? ? nil : {"components"=> ARGV}
 
 deployment_config_path = Deployment.get_config_path(options["name"], options["home"])
 
 begin
-  vcap_components = JSON.parse(File.read(Deployment.get_vcap_config_file(deployment_config_path)))
+  vcap_components ||= JSON.parse(File.read(Deployment.get_vcap_config_file(deployment_config_path)))
   deployment_info = JSON.parse(File.read(Deployment.get_deployment_info_file(deployment_config_path)))
 rescue => e
   STDERR.puts "#{e.inspect}. Could not parse deployment config files . Please check your deployment."
@@ -88,4 +93,4 @@ vcap_path = File.join(deployment_info["cloudfoundry_path"], "bin")
 vcap_launch = File.join(script_dir, "vcap")
 
 puts "Using cloudfoundry config from #{deployment_config_path}"
-exec_cmd("#{ruby_binary} #{vcap_launch} #{ARGV[0].downcase} #{vcap_components["components"].join(" ")} -c #{deployment_config_path} -v #{vcap_path} -l #{deployment_info["deployment_log_path"]}")
+exec_cmd("#{ruby_binary} #{vcap_launch} #{command} #{vcap_components["components"].join(" ")} -c #{deployment_config_path} -v #{vcap_path} -l #{deployment_info["deployment_log_path"]}")
