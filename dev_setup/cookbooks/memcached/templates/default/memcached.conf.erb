@@ -1,0 +1,12 @@
+daemonize no
+pidfile <%= File.join(node[:memcached][:path], "var", "memcached.pid") %>
+port <%= node[:memcached][:port] %>
+timeout 300
+loglevel notice
+logfile stdout
+databases 16
+dir <%= File.join(node[:memcached][:path], "var") %>
+requirepass <%= node[:memcached][:password] %>
+maxclients 0
+maxmemory-policy noeviction
+appendonly no
