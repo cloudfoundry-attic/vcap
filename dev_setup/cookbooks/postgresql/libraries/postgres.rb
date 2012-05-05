@@ -1,6 +1,6 @@
 module CloudFoundryPostgres
   def cf_pg_update_hba_conf(db, user)
-    case node['platform']
+    case node.platform
     when "ubuntu"
       ruby_block "Update PostgreSQL config" do
         block do
@@ -23,7 +23,7 @@ module CloudFoundryPostgres
   end
 
   def cf_pg_setup_db(db, user, passwd)
-    case node['platform']
+    case node.platform
     when "ubuntu"
       bash "Setup PostgreSQL database #{db}" do
         user "postgres"

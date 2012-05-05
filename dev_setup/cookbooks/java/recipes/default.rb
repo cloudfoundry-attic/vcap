@@ -7,7 +7,7 @@
 #
 package "python-software-properties"
 
-case node['platform']
+case node.platform
 when "ubuntu"
   package 'default-jdk'
 # FIXME: add other major distro support

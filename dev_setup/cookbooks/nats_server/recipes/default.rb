@@ -20,7 +20,7 @@ directory nats_config_dir do
   notifies :restart, "service[nats_server]"
 end
 
-case node['platform']
+case node.platform
 when "ubuntu"
   template "nats_server" do
     path File.join("", "etc", "init.d", "nats_server")

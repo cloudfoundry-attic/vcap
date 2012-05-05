@@ -6,7 +6,7 @@
 #
 #
 
-case node['platform']
+case node.platform
 when "ubuntu"
   package "mysql-client"
 

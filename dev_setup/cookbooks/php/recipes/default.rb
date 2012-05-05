@@ -6,7 +6,7 @@
 # Copyright 2011, AppFog
 #
 
-case node['platform']
+case node.platform
 when "ubuntu"
   %w[
     libpcre3

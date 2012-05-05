@@ -10,7 +10,7 @@
   package pkg
 end
 
-case node['platform']
+case node.platform
 when "ubuntu"
   ruby_block "postgresql_conf_update" do
     block do

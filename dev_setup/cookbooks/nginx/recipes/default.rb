@@ -14,7 +14,7 @@ lua_source = node[:lua][:source]
 lua_path = node[:lua][:path]
 lua_module_path = node[:lua][:module_path]
 
-case node['platform']
+case node.platform
 when "ubuntu"
 
   %w[ build-essential].each do |pkg|
