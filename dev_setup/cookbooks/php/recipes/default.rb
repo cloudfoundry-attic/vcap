@@ -67,4 +67,6 @@ when "ubuntu"
     mode "0600"
   end
 
+else
+  Chef::Log.error("Installation of php not supported on this platform.")
 end
