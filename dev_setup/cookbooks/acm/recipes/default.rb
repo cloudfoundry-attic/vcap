@@ -23,4 +23,4 @@ template "acm.yml" do
   mode 0644
 end
 
-cf_bundle_install(File.expand_path(File.join(node["cloudfoundry"]["path"], "acm")))
+cf_bundle_install(File.expand_path(File.join(node[:cloudfoundry][:path], "acm")))
