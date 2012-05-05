@@ -5,4 +5,6 @@ description      "Installs/Configures UAA"
 long_description IO.read(File.join(File.dirname(__FILE__), 'README.rdoc'))
 version          "0.0.1"
 
-depends          "uaadb"
+%w{ cloudfoundry deployment uaadb }.each do |cb|
+  depends cb
+end
