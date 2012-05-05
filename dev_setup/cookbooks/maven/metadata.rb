@@ -5,7 +5,7 @@ description      "Installs/Configures maven"
 long_description IO.read(File.join(File.dirname(__FILE__), 'README.rdoc'))
 version          "0.10.0"
 
-%w{ java }.each do |cb|
+%w{ deployment java }.each do |cb|
   depends cb
 end
 
