@@ -6,7 +6,7 @@
 #
 #
 
-case node['platform']
+case node.platform
 when "ubuntu"
   package "erlang-nox"
 
@@ -24,7 +24,7 @@ when "ubuntu"
     end
   end
 
-  directory "#{node[:rabbitmq][:path]}" do
+  directory node[:rabbitmq][:path] do
     owner node[:deployment][:user]
     group node[:deployment][:user]
     mode "0755"

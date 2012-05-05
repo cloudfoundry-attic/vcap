@@ -22,7 +22,7 @@ node[:dea][:runtimes].each do |runtime|
   when "python2"
     include_recipe "python"
   else
-    include_recipe "#{runtime}"
+    include_recipe runtime
   end
 end
 

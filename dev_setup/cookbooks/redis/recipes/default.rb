@@ -4,7 +4,7 @@ remote_file File.join(node[:deployment][:setup_cache], "redis-#{node[:redis][:ve
   checksum node[:redis][:checksum]
 end
 
-directory "#{node[:redis][:path]}" do
+directory node[:redis][:path] do
   owner node[:deployment][:user]
   group node[:deployment][:user]
   mode "0755"
