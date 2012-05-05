@@ -19,11 +19,6 @@
 
 include_recipe "java"
 
-case node.platform
-when "redhat", "centos", "fedora"
-  include_recipe "jpackage"
-end
-
 remote_file  File.join("", "tmp", "apache-maven-#{node[:maven][:version]}.tar.gz") do
   owner node[:deployment][:user]
   source node[:maven][:source]
