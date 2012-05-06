@@ -1014,7 +1014,7 @@ module DEA
       pending = @downloads_pending[sha1]
       @downloads_pending.delete(sha1)
       unless pending.nil? || pending.empty?
-        pending.each { |f| f.resume }
+        pending.each { |f| f.resume(tgz_file) }
       end
     end
 
@@ -1060,7 +1060,17 @@ module DEA
           if pending = @downloads_pending[sha1]
             @logger.debug("Waiting on another download already in progress")
             pending << Fiber.current
-            Fiber.yield
+            downloaded = Fiber.yield
+
+            # When dir cleanup is enabled, randomize tgz_file name, create a hard link
+            # to the downloaded bits, so that each droplet owns a copy of hard link of
+            # the original file. Then deleting its own copy won't affect other droplets.
+            # The tgz_file will be deleted after it is decompressed.
+            unless @disable_dir_cleanup
+              tgz_file += '.' + rand(100000).to_s
+              @logger.debug("tgz_file #{tgz_file} linked to #{downloaded}")
+              File.link(downloaded, tgz_file) rescue @logger.warn('Failed link')
+            end
           else
             download_app_bits(bits_uri, sha1, tgz_file)
           end
