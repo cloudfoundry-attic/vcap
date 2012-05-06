@@ -1014,7 +1014,7 @@ module DEA
       pending = @downloads_pending[sha1]
       @downloads_pending.delete(sha1)
       unless pending.nil? || pending.empty?
-        pending.each { |f| f.resume }
+        pending.each { |f| f.resume(tgz_file) }
       end
     end
 
@@ -1044,6 +1044,11 @@ module DEA
       if File.exist?(tgz_file)
         @logger.debug('Found staged bits in local cache.')
       else
+        # When dir cleanup is enabled, randomize tgz_file name, so that each droplet
+        # owns a copy of hard link of the original file. Then deleting its own copy
+        # won't affect other droplets.
+        tgz_file += '.' + rand(100000).to_s unless @disable_dir_cleanup
+
         # If we have a shared volume from the CloudController we can see the bits
         # directly, just link into our staged version.
         if File.exist?(bits_file) and not @force_http_sharing
@@ -1060,7 +1065,13 @@ module DEA
           if pending = @downloads_pending[sha1]
             @logger.debug("Waiting on another download already in progress")
             pending << Fiber.current
-            Fiber.yield
+            downloaded = Fiber.yield
+
+            # Create hard link when it is necessary
+            unless downloaded == tgz_file
+              @logger.debug("tgz_file #{tgz_file} linked to #{downloaded}")
+              File.link(downloaded, tgz_file) rescue @logger.warn('Failed link')
+            end
           else
             download_app_bits(bits_uri, sha1, tgz_file)
           end
