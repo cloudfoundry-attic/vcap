@@ -104,7 +104,7 @@ class AppsController < ApplicationController
     app = App.find_by_id(params[:id])
     raise CloudError.new(CloudError::APP_NOT_FOUND) unless app && (app.staged_package_hash == params[:hash])
 
-    path = app.staged_package_path
+    path = app.resolve_staged_package_path
     if path && File.exists?(path)
       if CloudController.use_nginx
         response.headers['X-Accel-Redirect'] = '/droplets/' + File.basename(path)
