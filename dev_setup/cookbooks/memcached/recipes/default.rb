@@ -1,3 +1,9 @@
+remote_file File.join("", "tmp", "libevent-#{node[:libevent][:version]}-stable.tar.gz") do
+  owner node[:deployment][:user]
+  source "https://github.com/downloads/libevent/libevent/libevent-#{node[:libevent][:version]}-stable.tar.gz"
+  not_if { ::File.exists?(File.join("", "tmp", "libevent-#{node[:libevent][:version]}-stable.tar.gz")) }
+end
+
 remote_file File.join("", "tmp", "memcached-#{node[:memcached][:version]}.tar.gz") do
   owner node[:deployment][:user]
   source "http://memcached.googlecode.com/files/memcached-#{node[:memcached][:version]}.tar.gz"
@@ -20,17 +26,42 @@ end
   end
 end
 
+bash "Compile libevent" do
+  cwd File.join("", "tmp")
+  user node[:deployment][:user]
+  code <<-EOH
+  tar xzf libevent-#{node[:libevent][:version]}-stable.tar.gz
+  cd libevent-#{node[:libevent][:version]}-stable
+  ./configure --prefix=`pwd`/tmp
+  make
+  EOH
+  not_if do
+    ::File.exists?(File.join(node[:memcached][:path], "bin", "memcached"))
+  end
+end
+
+bash "Install and configure sasldb" do
+  user node[:deployment][:user]
+  code <<-EOH
+  sudo apt-get install sasl2-bin libsasl2-dev -y   
+  echo "Update config file to start saslauthd..."
+  sed -e 's/START=no/START=yes/' /etc/default/saslauthd > /tmp/saslauthd
+  sudo cp /tmp/saslauthd /etc/default/saslauthd
+  echo "Create dummy user and then chown the created sasldb file..."
+  /etc/init.d/saslauthd start
+  echo "password" | saslpasswd2 -c -a test testuser -p
+  echo "Chown /etc/sasldb2 file..."
+  sudo chown #{node[:deployment][:user]} /etc/sasldb2
+  EOH
+end
+
 bash "Install memcached" do
   cwd File.join("", "tmp")
-  user node[:deployment][:inuser]
+  user node[:deployment][:user]
   code <<-EOH
-
-  # TODO: check if lib event is installed
-  # TODO: check and install saslauthd and configure /etc/sasldb if required
-
   tar xzf memcached-#{node[:memcached][:version]}.tar.gz
   cd memcached-#{node[:memcached][:version]}
-  ./configure --enable-sasl
+  ./configure --enable-sasl --with-libevent=../libevent-#{node[:libevent][:version]}-stable/tmp
   make
   cp memcached #{File.join(node[:memcached][:path], "bin")}
   EOH
