@@ -5,6 +5,9 @@ module Warden
 
   class Client
 
+    class Error       < StandardError; end
+    class ServerError < Error; end
+
     attr_reader :path
 
     def initialize(path)
@@ -43,7 +46,7 @@ module Warden
 
       # Raise error replies
       if object["type"] == "error"
-        raise ::StandardError.new(payload)
+        raise Warden::Client::ServerError.new(payload)
       end
 
       payload

@@ -144,10 +144,10 @@ describe Warden::Client do
       client.should_not be_connected
     end
 
-    it "should raise StandardError on error payloads" do
+    it "should raise Warden::Client::ServerError on error payloads" do
       expect do
         client.error
-      end.to raise_error(::StandardError)
+      end.to raise_error(Warden::Client::ServerError)
 
       # This should not affect the connection
       client.should be_connected
