@@ -311,8 +311,10 @@ class App < ActiveRecord::Base
       FileUtils.rm_f(self.unstaged_package_path)
     end
     unless self.staged_package_hash.nil?
-      staged_package = File.join(AppPackage.package_dir, self.staged_package_hash)
-      FileUtils.rm_f(staged_package)
+      # GC droplets stored using sha1 of contents as identifier
+      FileUtils.rm_f(self.legacy_staged_package_path)
+
+      FileUtils.rm_f(self.staged_package_path)
     end
   end
 
@@ -450,7 +452,25 @@ class App < ActiveRecord::Base
 
   def staged_package_path
     if staged_package_hash
+      File.join(AppPackage.package_dir, "droplet_#{self.id}")
+    end
+  end
+
+  def legacy_staged_package_path
+    if staged_package_hash
       File.join(AppPackage.package_dir, staged_package_hash)
+    end
+  end
+
+  def resolve_staged_package_path
+    if staged_package_hash
+      if File.exist?(self.staged_package_path)
+        self.staged_package_path
+      elsif File.exist?(self.legacy_staged_package_path)
+        self.legacy_staged_package_path
+      else
+        nil
+      end
     end
   end
 
@@ -517,13 +537,18 @@ class App < ActiveRecord::Base
   end
 
   def update_staged_package(upload_path)
-    # Remove old package if needed
-    if self.staged_package_path
-      CloudController.logger.info("Removing old staged package for" \
-                                  + " app_id=#{self.id} app_name=#{self.name}" \
-                                  + " path=#{self.staged_package_path}")
-      FileUtils.rm_f(self.staged_package_path)
+    # Remove old packages if needed
+    [:legacy_staged_package_path, :staged_package_path].each do |getter|
+      path = self.send(getter)
+
+      if path
+        CloudController.logger.info("Removing old staged package for" \
+                                    + " app_id=#{self.id} app_name=#{self.name}" \
+                                    + " path=#{path}")
+        FileUtils.rm_f(path)
+      end
     end
+
     self.staged_package_hash = Digest::SHA1.file(upload_path).hexdigest
     FileUtils.mv(upload_path, self.staged_package_path)
   end
