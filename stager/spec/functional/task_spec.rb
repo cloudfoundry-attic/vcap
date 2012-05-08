@@ -1,6 +1,9 @@
 require "spec_helper"
 
 describe VCAP::Stager::Task do
+
+  let(:plugin_runner) { VCAP::Stager::PluginRunner::UserBased.new }
+
   describe "#perform" do
     before :each do
       @work_dir = Dir.mktmpdir
@@ -58,7 +61,7 @@ describe VCAP::Stager::Task do
       app_name = "sinatra_trivial"
       app_path = zip_app(@work_dir, app_name)
       request = create_request(app_name)
-      task = VCAP::Stager::Task.new(request)
+      task = VCAP::Stager::Task.new(request, plugin_runner)
 
       task.perform.should be_nil
 
@@ -67,7 +70,7 @@ describe VCAP::Stager::Task do
   end
 
   def expect_error(request, matcher)
-    task = VCAP::Stager::Task.new(request)
+    task = VCAP::Stager::Task.new(request, plugin_runner)
     expect do
       task.perform
     end.to raise_error(matcher)

@@ -1,4 +1,3 @@
-require "nats/client"
 require "uri"
 require "yajl"
 
@@ -8,7 +7,6 @@ require "vcap/stager/process_runner"
 require "vcap/stager/task_error"
 require "vcap/stager/task_logger"
 require "vcap/stager/workspace"
-require "vcap/staging/plugin/common"
 
 module VCAP
   module Stager
@@ -17,30 +15,21 @@ end
 
 class VCAP::Stager::Task
   MAX_STAGING_DURATION = 120
-  RUN_PLUGIN_PATH = File.expand_path('../../../../bin/run_plugin', __FILE__)
 
   attr_reader :task_id
 
-  def initialize(request, opts = {})
-    @nats         = opts[:nats] || NATS
-    @task_id      = VCAP.secure_uuid
-    @logger       = VCAP::Logging.logger("vcap.stager.task")
-    @task_logger  = VCAP::Stager::TaskLogger.new(@logger)
-    @request      = request
-    @user_manager = opts[:secure_user_manager]
-    @runner       = opts[:runner] || VCAP::Stager::ProcessRunner.new(@logger)
-    @manifest_dir = opts[:manifest_root] || StagingPlugin::DEFAULT_MANIFEST_ROOT
-    @ruby_path    = opts[:ruby_path] || "ruby"
-    @run_plugin_path = opts[:run_plugin_path] || RUN_PLUGIN_PATH
+  def initialize(request, plugin_runner, opts = {})
+    @task_id       = VCAP.secure_uuid
+    @logger        = VCAP::Logging.logger("vcap.stager.task")
+    @task_logger   = VCAP::Stager::TaskLogger.new(@logger)
+    @request       = request
+    @plugin_runner = plugin_runner
+    @runner        = opts[:runner] || VCAP::Stager::ProcessRunner.new(@logger)
     @max_staging_duration = opts[:max_staging_duration] || MAX_STAGING_DURATION
   end
 
   def log
     @task_logger.public_log
-  end
-
-  def enqueue(queue)
-    @nats.publish("vcap.stager.#{queue}", Yajl::Encoder.encode(@request))
   end
 
   # Attempts to stage the application and upload the result to the specified
@@ -59,7 +48,17 @@ class VCAP::Stager::Task
     unpack_app(app_path, workspace.unstaged_dir)
 
     @task_logger.info("Staging application")
-    stage_app(workspace.unstaged_dir, workspace.staged_dir, @task_logger)
+    res = @plugin_runner.stage(@request["properties"],
+                               workspace.unstaged_dir,
+                               workspace.staged_dir,
+                               :timeout => @max_staging_duration)
+
+    @task_logger.info("Staging plugin log:")
+    res[:log].split(/\n/).each { |l| @task_logger.info(l.chomp) }
+
+    if res[:error]
+      raise VCAP::Stager::TaskError.new(res[:error])
+    end
 
     @task_logger.info("Creating droplet")
     droplet_path = File.join(workspace.root_dir, "droplet.tgz")
@@ -103,58 +102,6 @@ class VCAP::Stager::Task
     unless res[:status].success?
       raise VCAP::Stager::TaskError.new("Failed unpacking app")
     end
-  end
-
-  # Stages the application into the supplied directory.
-  def stage_app(src_dir, dst_dir, task_logger)
-    plugin_config = {
-      "source_dir"   => src_dir,
-      "dest_dir"     => dst_dir,
-      "environment"  => @request["properties"],
-      "manifest_dir" => @manifest_dir,
-    }
-
-    secure_user = nil
-    if @user_manager
-      secure_user = @user_manager.checkout_user
-
-      plugin_config["secure_user"] = {
-        "uid" => secure_user[:uid],
-        "gid" => secure_user[:gid],
-      }
-    end
-
-    plugin_config_file = Tempfile.new("plugin_config")
-    StagingPlugin::Config.to_file(plugin_config, plugin_config_file.path)
-
-    cmd = [@ruby_path, @run_plugin_path,
-           @request["properties"]["framework"],
-           plugin_config_file.path].join(" ")
-
-    res = @runner.run_logged(cmd,
-                             :max_staging_duration => @max_staging_duration)
-
-    capture_staging_log(dst_dir, task_logger)
-
-    # Staging failed, log the error and abort
-    unless res[:status].success?
-      emsg = nil
-      if res[:timed_out]
-        emsg = "Staging timed out after #{@max_staging_duration} seconds."
-      else
-        emsg = "Staging plugin failed: #{res[:stderr]}"
-      end
-
-      task_logger.warn(emsg)
-
-      raise VCAP::Stager::TaskError.new(emsg)
-    end
-
-    nil
-  ensure
-    plugin_config_file.unlink if plugin_config_file
-
-    return_secure_user(secure_user) if secure_user
   end
 
   def create_droplet(staged_dir, droplet_path)
@@ -216,45 +163,5 @@ class VCAP::Stager::Task
     end
 
     nil
-  end
-
-  # Appends the staging log (if any) to the user visible log
-  def capture_staging_log(staged_dir, task_logger)
-    staging_log_path = File.join(staged_dir, "logs", "staging.log")
-
-    return unless File.exist?(staging_log_path)
-
-    File.open(staging_log_path, "r") do |sl|
-      begin
-        while line = sl.readline
-          line.chomp!
-          task_logger.info(line)
-        end
-      rescue EOFError
-      end
-    end
-
-    nil
-  end
-
-  # Returns a secure user to the pool and kills any processes belonging to
-  # said user.
-  def return_secure_user(user)
-    @logger.info("Returning user #{user} to pool")
-
-    cmd = "sudo -u '##{user[:uid]}' pkill -9 -U #{user[:uid]}"
-    kres = @runner.run_logged(cmd)
-    # 0 : >=1 process matched
-    # 1 : no process matched
-    # 2 : error
-    if kres[:status].exitstatus < 2
-      @user_manager.return_user(user)
-
-      true
-    else
-      @logger.warn("Failed killing processes for user #{user}")
-
-      false
-    end
   end
 end
