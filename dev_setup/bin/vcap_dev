@@ -77,6 +77,12 @@ if vcap_components["components"].include?("cloud_controller")
   vcap_components["components"].unshift(vcap_components["components"].delete("cloud_controller"))
 end
 
+if vcap_components["components"].include?("uaa")
+  puts "Setting up the uaa environment"
+  ENV["CLOUD_CONTROLLER_CONFIG_PATH"]=deployment_config_path
+  ENV["UAA_TOMCAT"]=File.join(deployment_config_path, "../deploy/uaa-tomcat/")
+end
+
 # Set both http_proxy and HTTP_PROXY
 %w(http_proxy https_proxy no_proxy).each do |var|
   ENV[var] = ENV[var] || ENV[var.upcase] unless ENV[var.upcase].nil?
