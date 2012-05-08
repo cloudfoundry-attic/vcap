@@ -13,8 +13,11 @@ template "uaa.yml" do
   mode 0644
 end
 
-bash "Grab dependencies for UAA" do
+bash "Build and Deploy UAA" do
   user node[:deployment][:user]
-  cwd "#{node[:cloudfoundry][:path]}/uaa"
-  code "#{node[:maven][:path]}/bin/mvn install -U -DskipTests=true"
+  code <<-EOH
+    cd #{node[:cloudfoundry][:path]}/uaa; #{node[:maven][:path]}/bin/mvn clean install -U -DskipTests=true
+    rm -Rf #{node[:tomcat][:base]}/webapps/ROOT
+    cp -f #{node[:cloudfoundry][:path]}/uaa/uaa/target/cloudfoundry-identity-uaa-1.0.0.BUILD-SNAPSHOT.war #{node[:tomcat][:base]}/webapps/ROOT.war
+  EOH
 end
