@@ -581,7 +581,7 @@ echo "$STARTED" >> ../run.pid
       elsif "#{RUBY_VERSION}p#{RUBY_PATCHLEVEL}" =~ pattern
         current_ruby
       else
-        puts "No suitable runtime found. Needs version matching #{runtime['version']}"
+        $stderr.puts "No suitable runtime found. Needs version matching #{runtime['version']}"
         exit 1
       end
     end

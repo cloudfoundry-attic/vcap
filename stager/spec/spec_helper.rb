@@ -12,6 +12,17 @@ require 'vcap/stager'
 # in spec/support/ and its subdirectories.
 Dir[File.expand_path('../support/**/*.rb', __FILE__)].each {|f| require f}
 
+def warden_is_alive?
+  if ENV["WARDEN_SOCKET_PATH"] && File.exists?(ENV["WARDEN_SOCKET_PATH"])
+    begin
+      UNIXSocket.new(ENV["WARDEN_SOCKET_PATH"])
+      return true
+    rescue => e
+    end
+  end
+  false
+end
+
 # Created as needed, removed at the end of the spec run.
 # Allows us to override staging paths.
 STAGING_TEMP = Dir.mktmpdir
@@ -20,6 +31,10 @@ StagingPlugin.manifest_root = STAGING_TEMP
 VCAP::Logging.setup_from_config({:level => :debug2}) if ENV['VCAP_TEST_LOG'] == 'true'
 
 RSpec.configure do |config|
+  unless warden_is_alive?
+    config.filter_run_excluding :needs_warden => true
+  end
+
   config.before(:all) do
     begin
       VCAP::Subprocess.run("cp -a #{File.join(StagingPlugin::DEFAULT_MANIFEST_ROOT, 'sinatra.yml')} #{STAGING_TEMP}")
