@@ -2,8 +2,10 @@
 logging:
   level: debug2
 nats_uri: nats://127.0.0.1:<%= nats_port %>
-dirs:
-  manifests: <%= manifest_dir %>
+plugin_runner:
+  type: user
+  config:
+    manifest_root: <%= manifest_dir %>
 max_staging_duration: 120
 max_active_tasks: 10
 secure: false

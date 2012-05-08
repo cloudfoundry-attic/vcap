@@ -23,17 +23,25 @@ class VCAP::Stager::Config < VCAP::Config
       :max_active_tasks      => Integer,    # Maximum number of tasks executing concurrently
       :queues                => [String],   # List of queues to pull tasks from
       :pid_filename          => String,     # Pid filename to use
+
+      # Support old configs. This will be removed after users are given enough
+      # time to change their configs.
       optional(:dirs) => {
         optional(:manifests) => String,     # Where all of the staging manifests live
-        optional(:tmp)       => String,     # Default is /tmp
+	optional(:tmp)       => String,     # Default is /tmp
       },
+      optional(:secure)      => VCAP::JsonSchema::BoolSchema.new,
+      optional(:ruby_path)   => String,
+      optional(:run_plugin_path) => String,
 
-      :secure                => VCAP::JsonSchema::BoolSchema.new,
-
+      optional(:tmpdir)      => String,
       optional(:index)       => Integer,    # Component index (stager-0, stager-1, etc)
-      optional(:ruby_path)   => String,     # Full path to the ruby executable that should execute the run plugin script
       optional(:local_route) => String,     # If set, use this to determine the IP address that is returned in discovery messages
-      optional(:run_plugin_path) => String, # Full path to run plugin script
+
+      optional(:plugin_runner) => {
+        :type   => String, # Must be one of {"warden", "user"}
+        :config => Hash,   # Plugin specific config. See plugin impls for more.
+      }
     }
   end
 
