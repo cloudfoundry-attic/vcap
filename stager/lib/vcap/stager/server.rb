@@ -13,16 +13,15 @@ module VCAP
 end
 
 class VCAP::Stager::Server
-  def initialize(nats_uri, thread_pool, user_manager, config={})
+  def initialize(nats_uri, thread_pool, plugin_runner_factory, config={})
     @nats_uri    = nats_uri
     @nats_conn   = nil
     @sids        = []
     @config      = config
-    @task_config = create_task_config(config, user_manager)
     @logger      = VCAP::Logging.logger('vcap.stager.server')
     @thread_pool = thread_pool
-    @user_manager = user_manager
     @shutdown_thread = nil
+    @plugin_runner_factory = plugin_runner_factory
   end
 
   def run
@@ -118,7 +117,7 @@ class VCAP::Stager::Server
       return
     end
 
-    task = VCAP::Stager::Task.new(request, @task_config)
+    task = VCAP::Stager::Task.new(request, @plugin_runner_factory.call)
 
     result = nil
     begin
@@ -150,19 +149,5 @@ class VCAP::Stager::Server
     EM.next_tick { @nats_conn.publish(reply_to, encoded_result) }
 
     nil
-  end
-
-  def create_task_config(server_config, user_manager)
-    task_config = {
-      :ruby_path => server_config[:ruby_path],
-      :run_plugin_path => server_config[:run_plugin_path],
-      :secure_user_manager => user_manager,
-    }
-
-    if server_config[:dirs]
-      task_config[:manifest_root] = server_config[:dirs][:manifests]
-    end
-
-    task_config
   end
 end

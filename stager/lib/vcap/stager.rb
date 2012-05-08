@@ -1,5 +1,6 @@
 require 'vcap/stager/constants'
 require 'vcap/stager/config'
+require 'vcap/stager/plugin_runner'
 require 'vcap/stager/process_runner'
 require 'vcap/stager/secure_user_manager'
 require 'vcap/stager/server'
