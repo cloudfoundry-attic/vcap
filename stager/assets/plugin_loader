@@ -1,0 +1,14 @@
+#!/bin/bash
+#
+# Sets up the environment before invoking the staging_plugin
+#
+set -o errexit
+
+export PATH=~/bin:$PATH
+
+if [ -f ~/helpers/environment ];
+then
+  source ~/helpers/environment
+fi
+
+exec $@

@@ -46,29 +46,35 @@ rescue => e
   exit 1
 end
 
-ENV['TMPDIR'] = config[:dirs][:tmp] if config[:dirs] && config[:dirs][:tmp]
+ENV["TMPDIR"] = config[:tmpdir] if config[:tmpdir]
 
-VCAP::Stager.init(config)
+VCAP::Logging.setup_from_config(config[:logging])
 
-user_mgr = nil
 plugin_runner_factory = nil
+pr_type = config[:plugin_runner][:type]
+pr_config = config[:plugin_runner][:config].dup
 
-if config[:secure]
-  VCAP::Stager::SecureUserManager.instance.setup
+case pr_type
+when "warden"
+  plugin_runner_factory = lambda do
+    VCAP::Stager::PluginRunner::WardenBased.new(pr_config)
+  end
 
-  user_mgr =
-    VCAP::Concurrency::Proxy.new(VCAP::Stager::SecureUserManager.instance)
-end
+when "user"
+  if pr_config[:secure]
+    VCAP::Stager::SecureUserManager.instance.setup
 
-pr_config = {
-  :ruby_path       => config[:ruby_path],
-  :manifest_root   => config[:dirs][:manifests],
-  :run_plugin_path => config[:run_plugin_path],
-  :user_manager    => user_mgr,
-}
+    pr_config[:user_manager] =
+      VCAP::Concurrency::Proxy.new(VCAP::Stager::SecureUserManager.instance)
+  end
 
-plugin_runner_factory = lambda do
-  VCAP::Stager::PluginRunner::UserBased.new(pr_config)
+  plugin_runner_factory = lambda do
+    VCAP::Stager::PluginRunner::UserBased.new(pr_config)
+  end
+
+else
+  puts "ERROR: Unknown plugin_runner type: #{pr_type}"
+  exit 1
 end
 
 thread_pool = VCAP::Concurrency::ThreadPool.new(config[:max_active_tasks])
