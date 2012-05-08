@@ -54,7 +54,9 @@ class VCAP::Stager::Task
                                :timeout => @max_staging_duration)
 
     @task_logger.info("Staging plugin log:")
-    res[:log].split(/\n/).each { |l| @task_logger.info(l.chomp) }
+    if res[:log]
+      res[:log].split(/\n/).each { |l| @task_logger.info(l.chomp) }
+    end
 
     if res[:error]
       raise VCAP::Stager::TaskError.new(res[:error])

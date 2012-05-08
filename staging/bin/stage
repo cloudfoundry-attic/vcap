@@ -1,0 +1,11 @@
+#!/bin/bash
+#
+# This script bootstraps staging plugin execution inside a container.
+#
+set -o errexit
+
+ruby19_path=`runtime_path ruby19`
+
+run_plugin_path=`dirname $0`/run_plugin
+
+exec ${ruby19_path}/bin/ruby ${run_plugin_path} $@

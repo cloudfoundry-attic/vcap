@@ -25,7 +25,7 @@ class VCAP::Stager::Spec::ForkedStager < VCAP::Spec::ForkedComponent::Base
     @pid_filename = File.join(@log_dir, 'stager.pid')
     write_conf(@conf_path)
 
-    super("#{STAGER_PATH} -c #{@conf_path} -s 1", 'stager', @log_dir)
+    super("#{STAGER_PATH} -c #{@conf_path}", 'stager', @log_dir)
   end
 
   def stop

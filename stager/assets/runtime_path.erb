@@ -1,0 +1,29 @@
+#!/bin/bash
+#
+# Converts a runtime into its path.
+#
+# Usage: runtime_path <runtime name>
+#
+set -o errexit
+
+script_name=`basename $0`
+
+if [ $# -ne 1 ]; then
+  echo "Usage:"  `basename $0` "<runtime name>" >&2
+  exit 1
+fi
+
+runtime_name=$1
+
+case "${runtime_name}" in
+  <% runtimes.each do |name, path| %>
+  <%= name %>)
+    echo -n <%= path %>
+    ;;
+
+  <% end %>
+
+  *)
+    echo "Unknown runtime ${runtime_name}" >&2
+    exit 1
+esac
