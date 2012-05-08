@@ -86,7 +86,7 @@ class VCAP::Stager::Task
                       "output" => app_path)
 
     # Show errors but not progress, fail on non-200
-    res = @runner.run_logged("curl -s -S -f -K #{cfg_file.path}")
+    res = @runner.run_logged("env -u http_proxy -u https_proxy curl -s -S -f -K #{cfg_file.path}")
 
     unless res[:status].success?
       raise VCAP::Stager::TaskError.new("Failed downloading app")
@@ -175,7 +175,7 @@ class VCAP::Stager::Task
                       "form" => "upload[droplet]=@#{droplet_path}")
 
     # Show errors but not progress, fail on non-200
-    res = @runner.run_logged("curl -s -S -f -K #{cfg_file.path}")
+    res = @runner.run_logged("env -u http_proxy -u https_proxy curl -s -S -f -K #{cfg_file.path}")
 
     unless res[:status].success?
       raise VCAP::Stager::TaskError.new("Failed uploading droplet")
