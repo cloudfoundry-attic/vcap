@@ -37,7 +37,6 @@ class ForkedComponent
 
   def start
     fork do
-      Dir.chdir(@chdir) if @chdir
       fn = File.join(@output_basedir, "#{@name}.#{Process.pid}.out")
       outfile = File.new(fn, 'w+')
       $stderr.reopen(outfile)
@@ -87,6 +86,11 @@ class FileServerComponent < ForkedComponent
   def initialize(path, port, basedir)
     pidfile = '/tmp/file_server.pid'
     super("rackup #{path} -p #{port} -P #{pidfile}", pidfile, 'file_server', basedir)
-    @chdir = basedir
+  end
+
+  def start
+    Dir.chdir(@output_basedir) do
+      super
+    end
   end
 end

@@ -12,7 +12,7 @@ require 'yaml'
 describe 'DEA Agent' do
   nats_timeout_path = File.expand_path(File.join(File.dirname(__FILE__), 'nats_timeout'))
   dea_path = File.expand_path(File.join(__FILE__, "../../../bin/dea"))
-  file_server_path = File.expand_path(File.join(__FILE__, '../server.ru'))
+  file_server_path = File.expand_path('../server.ru', __FILE__)
   run_id_ctr = 0
 
   before :all do
@@ -165,7 +165,7 @@ describe 'DEA Agent' do
 
       droplet_infos.size.should == 4
       wait_for do
-        droplet_infos.inject { |s, i| s &&= port_open?(i['port']) }
+        droplet_infos.all? { |info| port_open?(info['port']) }
       end.should be_true
     end
 

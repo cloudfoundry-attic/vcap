@@ -1067,8 +1067,12 @@ module DEA
             # the original file. Then deleting its own copy won't affect other droplets.
             # The tgz_file will be deleted after it is decompressed.
             unless @disable_dir_cleanup
-              tgz_file += '.' + rand(100000).to_s
-              @logger.debug("tgz_file #{tgz_file} linked to #{downloaded}")
+              tgz_file = random_file_name(
+                :prefix => "#{tgz_file}.",
+                :chars => ('0'..'9').to_a + ('Q'..'Z').to_a,
+                :length => 4
+              )
+              @logger.debug("linking tgz_file #{tgz_file} to #{downloaded}")
               File.link(downloaded, tgz_file) rescue @logger.warn('Failed link')
             end
           else
@@ -1795,6 +1799,22 @@ module DEA
       else
         nil
       end
+    end
+
+    # kudos to tal garfinkel
+    def random_file_name(opts={})
+      opts = {:chars => ('0'..'9').to_a + ('A'..'F').to_a + ('a'..'f').to_a,
+              :length => 16, :prefix => '', :suffix => '',
+              :verify => true, :attempts => 10}.merge(opts)
+      opts[:attempts].times do
+        middle = ''
+        opts[:length].times do
+          middle << opts[:chars].sample
+        end
+        filename = opts[:prefix] + middle + opts[:suffix]
+        return filename unless opts[:verify] && File.exists?(filename)
+      end
+      raise "random file creation failed!!!"
     end
 
   end
