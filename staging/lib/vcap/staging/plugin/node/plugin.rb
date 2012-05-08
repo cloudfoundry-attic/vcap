@@ -14,6 +14,7 @@ class NodePlugin < StagingPlugin
       create_app_directories
       copy_source_files
       read_configs
+      compile_node_modules
       create_startup_script
       create_stop_script
     end
@@ -39,8 +40,14 @@ class NodePlugin < StagingPlugin
 
   def read_configs
     package = File.join(destination_directory, "app", "package.json")
-    if File.exists? package
+    if File.exists?(package)
       @package_config = Yajl::Parser.parse(File.new(package, "r"))
+    end
+    @vcap_config = {}
+    vcap_config_file = File.join(destination_directory, "app", "cloudfoundry.json")
+    if File.exists?(vcap_config_file)
+      config = Yajl::Parser.parse(File.new(vcap_config_file, "r"))
+      @vcap_config = config if config.is_a?(Hash)
     end
   end
 
