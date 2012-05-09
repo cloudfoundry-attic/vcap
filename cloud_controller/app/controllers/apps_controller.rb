@@ -1,4 +1,4 @@
-require 'staging_task_manager'
+require "vcap/stager/client"
 
 class AppsController < ApplicationController
   before_filter :require_user, :except => [:download_staged]
@@ -104,7 +104,7 @@ class AppsController < ApplicationController
     app = App.find_by_id(params[:id])
     raise CloudError.new(CloudError::APP_NOT_FOUND) unless app && (app.staged_package_hash == params[:hash])
 
-    path = app.staged_package_path
+    path = app.resolve_staged_package_path
     if path && File.exists?(path)
       if CloudController.use_nginx
         response.headers['X-Accel-Redirect'] = '/droplets/' + File.basename(path)
@@ -219,25 +219,36 @@ class AppsController < ApplicationController
   private
 
   def stage_app(app)
-    task_mgr = StagingTaskManager.new(:logger  => CloudController.logger,
-                                      :timeout => AppConfig[:staging][:max_staging_runtime])
     dl_uri = StagingController.download_app_uri(app)
     ul_hdl = StagingController.create_upload(app)
 
-    result = task_mgr.run_staging_task(app, dl_uri, ul_hdl.upload_uri)
+    client = VCAP::Stager::Client::FiberAware.new(NATS.client,
+                                                  AppConfig[:staging][:queue])
 
-    # Update run count to be consistent with previous staging code
-    if result.was_success?
-      CloudController.logger.debug("Staging task for app_id=#{app.id} succeded.", :tags => [:staging])
-      CloudController.logger.debug1("Details: #{result.task_log}", :tags => [:staging])
+    request = {
+      "app_id"       => app.id,
+      "properties"   => app.staging_task_properties,
+      "download_uri" => dl_uri,
+      "upload_uri"   => ul_hdl.upload_uri,
+    }
+
+    begin
+      result = client.stage(request, AppConfig[:staging][:max_staging_runtime])
+      StagingTaskLog.new(app.id, result["task_log"]).save
+    rescue VCAP::Stager::Client::Error => e
+      result = { "error" => e.to_s }
+    end
+
+    if result["error"]
+      CloudController.logger.warn("Staging for app_id=#{app.id} failed")
+      CloudController.logger.warn("Error: #{result["error"]}")
+      raise CloudError.new(CloudError::APP_STAGING_ERROR, result["error"])
+    else
+      # Update run count to be consistent with previous staging code
+      CloudController.logger.info("Staging for app_id=#{app.id} succeeded")
       app.update_staged_package(ul_hdl.upload_path)
       app.package_state = 'STAGED'
       app.update_run_count()
-    else
-      CloudController.logger.warn("Staging task for app_id=#{app.id} failed: #{result.error}",
-                                  :tags => [:staging])
-      CloudController.logger.debug1("Details: #{result.task_log}", :tags => [:staging])
-      raise CloudError.new(CloudError::APP_STAGING_ERROR, result.error.to_s)
     end
 
   rescue => e

@@ -74,12 +74,16 @@ module Warden
         debug "container removed"
       end
 
-      def create_job(script)
+      def create_job(script, opts = {})
         job = Job.new(self)
+
+        user = opts["privileged"] ? "root" : "vcap"
 
         # -T: Never request a TTY
         # -F: Use configuration from <container_path>/ssh/ssh_config
-        args = ["-T", "-F", File.join(container_path, "ssh", "ssh_config"), "vcap@container"]
+        args = ["-T",
+                "-F", File.join(container_path, "ssh", "ssh_config"),
+                "#{user}@container"]
         args << { :input => script }
 
         child = DeferredChild.new("ssh", *args)

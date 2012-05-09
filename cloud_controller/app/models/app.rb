@@ -227,21 +227,8 @@ class App < ActiveRecord::Base
         :binding_options => binding_options
       )
 
-      if EM.reactor_running?
-        # yields
-        endpoint = "#{svc.url}/gateway/v1/configurations/#{req.service_id}/handles"
-        http = VCAP::Services::Api::AsyncHttpRequest.fibered(endpoint, svc.token, :post, svc.timeout, req)
-        if !http.error.empty?
-          raise "Error sending bind request #{req.extract.inspect} to gateway #{svc.url}: #{http.error}"
-        elsif http.response_header.status != 200
-          raise "Error sending bind request #{req.extract.inspect}, non 200 response from gateway #{svc.url}: #{http.response_header.status} #{http.response}"
-        end
-        handle = VCAP::Services::Api::GatewayBindResponse.decode(http.response)
-      else
-        uri = URI.parse(svc.url)
-        gw = VCAP::Services::Api::ServiceGatewayClient.new(uri.host, svc.token, uri.port)
-        handle = gw.bind(req.extract)
-      end
+      client = VCAP::Services::Api::ServiceGatewayClient.new(svc.url, svc.token, svc.timeout)
+      handle = client.bind(req.extract)
     rescue => e
       CloudController.logger.error("Exception talking to gateway: #{e}")
       CloudController.logger.error(e)
@@ -302,22 +289,8 @@ class App < ActiveRecord::Base
     binding.destroy
 
     begin
-      if EM.reactor_running?
-        endpoint = "#{svc.url}/gateway/v1/configurations/#{req.service_id}/handles/#{req.handle_id}"
-        http = VCAP::Services::Api::AsyncHttpRequest.new(endpoint, svc.token, :delete, svc.timeout, req)
-        http.callback do
-          if http.response_header.status != 200
-            CloudController.logger.error("Error sending unbind request #{req.extract.to_json} non 200 response from gateway #{svc.url}: #{http.response_header.status} #{http.response}")
-          end
-        end
-        http.errback do
-          CloudController.logger.error("Error sending unbind request #{req.extract.to_json} to gateway #{svc.url}: #{http.error}")
-        end
-      else
-        uri = URI.parse(svc.url)
-        gw = VCAP::Services::Api::ServiceGatewayClient.new(uri.host, svc.token, uri.port)
-        gw.unbind(req.extract)
-      end
+      client = VCAP::Services::Api::ServiceGatewayClient.new(svc.url, svc.token, svc.timeout)
+      client.unbind(req.extract)
     rescue => e
       tok.destroy
       CloudController.logger.error("Error talking to service gateway (svc.url): #{e.to_s}")
@@ -330,12 +303,16 @@ class App < ActiveRecord::Base
   def purge_droplets
     # Clean up the packages/droplets
     unless self.package_hash.nil?
-      app_package = File.join(AppPackage.package_dir, self.package_hash)
-      FileUtils.rm_f(app_package)
+      # GC apps stored using sha1 of zipfile as basename.
+      FileUtils.rm_f(self.legacy_unstaged_package_path)
+
+      FileUtils.rm_f(self.unstaged_package_path)
     end
     unless self.staged_package_hash.nil?
-      staged_package = File.join(AppPackage.package_dir, self.staged_package_hash)
-      FileUtils.rm_f(staged_package)
+      # GC droplets stored using sha1 of contents as identifier
+      FileUtils.rm_f(self.legacy_staged_package_path)
+
+      FileUtils.rm_f(self.staged_package_path)
     end
   end
 
@@ -348,14 +325,18 @@ class App < ActiveRecord::Base
   # Passed an instance of AppPackage.
   # We don't want this to block, so mark as pending and schedule work.
   def latest_bits_from(app_package)
-    zipfile_path = app_package.to_zip # resulting filename is the SHA1 of the file.
-    sha1 = File.basename(zipfile_path)
+    sha1 = app_package.to_zip
+
     # We are not pending if the bits have not changed.
-    unless package_hash == sha1
-      # Remove old one
+    unless self.package_hash == sha1
+      # Remove old one.
+      #
+      # NB: This is no longer required, as app package names are now
+      #     (4/26/2012) immutable. Consequently, saving a new package will
+      #     replace the old one. This is left to GC packages that were
+      #     created prior to this change.
       unless self.package_hash.nil?
-        app_package = File.join(AppPackage.package_dir, self.package_hash)
-        FileUtils.rm_f(app_package)
+        FileUtils.rm_f(self.legacy_unstaged_package_path)
       end
       self.package_state = 'PENDING'
       self.package_hash = sha1
@@ -469,18 +450,49 @@ class App < ActiveRecord::Base
 
   def staged_package_path
     if staged_package_hash
+      File.join(AppPackage.package_dir, "droplet_#{self.id}")
+    end
+  end
+
+  def legacy_staged_package_path
+    if staged_package_hash
       File.join(AppPackage.package_dir, staged_package_hash)
     end
   end
 
+  def resolve_staged_package_path
+    if staged_package_hash
+      if File.exist?(self.staged_package_path)
+        self.staged_package_path
+      elsif File.exist?(self.legacy_staged_package_path)
+        self.legacy_staged_package_path
+      else
+        nil
+      end
+    end
+  end
+
   def unstaged_package_path
+    if package_hash
+      AppPackage.new(self, nil).package_path
+    end
+  end
+
+  def legacy_unstaged_package_path
     if package_hash
       File.join(AppPackage.package_dir, package_hash)
     end
   end
 
   def explode_into(exploded_dir)
-    zipfile = File.join(AppPackage.package_dir, package_hash)
+    zipfile = nil
+
+    if self.unstaged_package_path && File.exist?(self.unstaged_package_path)
+      zipfile = self.unstaged_package_path
+    else
+      zipfile = self.legacy_unstaged_package_path
+    end
+
     cmd = "unzip -q -d #{exploded_dir} #{zipfile}"
     if system(cmd)
       yield exploded_dir if block_given?
@@ -523,13 +535,18 @@ class App < ActiveRecord::Base
   end
 
   def update_staged_package(upload_path)
-    # Remove old package if needed
-    if self.staged_package_path
-      CloudController.logger.info("Removing old staged package for" \
-                                  + " app_id=#{self.id} app_name=#{self.name}" \
-                                  + " path=#{self.staged_package_path}")
-      FileUtils.rm_f(self.staged_package_path)
+    # Remove old packages if needed
+    [:legacy_staged_package_path, :staged_package_path].each do |getter|
+      path = self.send(getter)
+
+      if path
+        CloudController.logger.info("Removing old staged package for" \
+                                    + " app_id=#{self.id} app_name=#{self.name}" \
+                                    + " path=#{path}")
+        FileUtils.rm_f(path)
+      end
     end
+
     self.staged_package_hash = Digest::SHA1.file(upload_path).hexdigest
     FileUtils.mv(upload_path, self.staged_package_path)
   end

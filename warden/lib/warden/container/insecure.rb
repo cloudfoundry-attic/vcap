@@ -28,7 +28,7 @@ module Warden
         debug "insecure container destroyed"
       end
 
-      def create_job(script)
+      def create_job(script, opts = {})
         job = Job.new(self)
 
         child = DeferredChild.new(File.join(container_path, "run.sh"), :input => script)

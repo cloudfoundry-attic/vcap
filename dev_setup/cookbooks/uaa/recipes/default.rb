@@ -15,7 +15,8 @@ end
 
 bash "Grab dependencies for UAA" do
   user node[:deployment][:user]
-  not_if "[ -d ~/.m2/repository/org/cloudfoundry/runtime ]"
   cwd "#{node[:cloudfoundry][:path]}/uaa"
   code "#{node[:maven][:path]}/bin/mvn install -U -DskipTests=true"
 end
+
+cf_bundle_install(File.expand_path(File.join(node["cloudfoundry"]["path"], "uaa")))

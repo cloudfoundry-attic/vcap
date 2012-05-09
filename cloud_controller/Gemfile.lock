@@ -1,3 +1,16 @@
+GIT
+  remote: git://github.com/cloudfoundry/uaa.git
+  revision: 0000f73653ae3a09279063e4f73f87066a91b14a
+  ref: 0000f736
+  specs:
+    cf-uaa-client (0.0.10)
+      em-http-request (<= 1.0.0.beta.3, < 1.0.1)
+      eventmachine
+      interact
+      json_pure
+      rest-client
+      thor
+
 GEM
   remote: http://rubygems.org/
   specs:
@@ -33,11 +46,6 @@ GEM
     arel (2.0.9)
     bcrypt-ruby (2.1.4)
     builder (2.1.2)
-    cf-uaa-client (0.0.8)
-      em-http-request (= 1.0.0.beta.3)
-      eventmachine
-      json_pure
-      rest-client
     chronic (0.6.4)
     ci_reporter (1.6.4)
       builder (>= 2.1.2)
@@ -62,6 +70,7 @@ GEM
     hiredis (0.3.2)
     http_parser.rb (0.5.1)
     i18n (0.5.0)
+    interact (0.4.2)
     json_pure (1.6.5)
     mail (2.2.15)
       activesupport (>= 2.3.6)
@@ -121,6 +130,10 @@ GEM
       rack (~> 1.1)
       tilt (>= 1.2.2, < 2.0)
     sqlite3 (1.3.3)
+    stager-client (0.0.2)
+      eventmachine
+      nats
+      yajl-ruby
     thin (1.3.1)
       daemons (>= 1.0.9)
       eventmachine (>= 0.12.6)
@@ -131,15 +144,14 @@ GEM
       polyglot (>= 0.3.1)
     tzinfo (0.3.26)
     uuidtools (2.1.2)
-    vcap_common (1.0.10)
+    vcap_common (1.0.11)
       eventmachine (~> 0.12.11.cloudfoundry.3)
       nats (~> 0.4.22.beta.8)
       posix-spawn (~> 0.3.6)
       thin (~> 1.3.1)
       yajl-ruby (~> 0.8.3)
-    vcap_logging (1.0.0)
-    vcap_stager (0.1.14)
-    vcap_staging (0.1.52)
+    vcap_logging (1.0.1)
+    vcap_staging (0.1.57)
       nokogiri (>= 1.4.4)
       rake
       rspec
@@ -154,7 +166,7 @@ PLATFORMS
 DEPENDENCIES
   SystemTimer (~> 1.2)
   bcrypt-ruby (~> 2.1.4)
-  cf-uaa-client (>= 0.0.8)
+  cf-uaa-client (~> 0.0.10)!
   ci_reporter
   delorean
   em-hiredis
@@ -175,10 +187,10 @@ DEPENDENCIES
   ruby-hmac (~> 0.4.0)
   sinatra
   sqlite3
+  stager-client (~> 0.0.2)
   thin
   uuidtools (~> 2.1.2)
   vcap_common
   vcap_logging
-  vcap_stager (~> 0.1.14)
-  vcap_staging (~> 0.1.52)
+  vcap_staging (~> 0.1.57)
   yajl-ruby (~> 0.8.3)
