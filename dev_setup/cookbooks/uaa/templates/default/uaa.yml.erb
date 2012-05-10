@@ -20,7 +20,8 @@ cloud_controller:
 
 jwt:
   token:
-    key: <%= node[:uaa][:jwt_secret] %>
+    signing-key: <%= node[:uaa][:jwt_secret] %>
+    verification-key: <%= node[:uaa][:jwt_secret] %>
 
 batch:
   username: <%= node[:uaa][:batch][:username] %>

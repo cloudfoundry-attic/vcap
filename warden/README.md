@@ -225,13 +225,20 @@ the `null` value to completely disable the grace time.
 If specified, this setting overrides the default size of the container's
 scratch filesystem. The value is expected to be an integer number.
 
-### `spawn HANDLE SCRIPT`
+### `spawn HANDLE SCRIPT [OPTS]`
 
 Run the script `SCRIPT` in the container identified by `HANDLE`.
 
 Returns a job identifier that can be used to reap its exit status at
 some point in the future. Also, the connection that issued the command
 may go away and reconnect later while still being able to reap the job.
+
+The optional `OPTS` parameter is a hash that specifies options modifying the
+command being run. The supported options are:
+
+#### `privileged`
+
+If true, this specifies that the script should be run as root.
 
 ### `link HANDLE JOB_ID`
 

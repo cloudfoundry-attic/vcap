@@ -1,5 +1,3 @@
-require 'vcap/stager'
-
 class AppManager
   attr_reader :app
 
@@ -544,7 +542,7 @@ class AppManager
     data[:runtime] = app.runtime
     data[:framework] = app.framework
     data[:sha1] = app.staged_package_hash
-    data[:executableFile] = app.staged_package_path
+    data[:executableFile] = app.resolve_staged_package_path
     data[:executableUri] = "/staged_droplets/#{app.id}/#{app.staged_package_hash}"
     data[:version] = app.generate_version
     data[:services] = app.service_bindings.map do |sb|
@@ -583,15 +581,8 @@ class AppManager
     tmpdir = Dir.mktmpdir # we create the working directory ourselves so we can clean it up.
     staged_file = AppPackage.repack_app_in(staging_dir, tmpdir, :tgz)
 
-    # Remove old one if needed
-    unless app.staged_package_hash.nil?
-      staged_package = File.join(AppPackage.package_dir, app.staged_package_hash)
-      FileUtils.rm_f(staged_package)
-    end
+    app.update_staged_package(staged_file)
 
-    app.staged_package_hash = Digest::SHA1.file(staged_file).hexdigest
-
-    FileUtils.mv(staged_file, app.staged_package_path) unless File.exists?(app.staged_package_path)
     app.package_state = 'STAGED'
   rescue
     app.package_state = 'FAILED'

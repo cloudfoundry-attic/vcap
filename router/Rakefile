@@ -8,9 +8,12 @@ end
 
 reports_dir = File.expand_path(File.join(File.dirname(__FILE__), "spec_reports"))
 
-ENV['CI_REPORTS'] = reports_dir
-
-RSpec::Core::RakeTask.new do |t|
-  t.pattern = "spec/**/*_spec.rb"
-  t.rspec_opts = ["--format", "documentation", "--colour"]
+task "test" do |t|
+  sh("cd spec && rake test")
 end
+
+task "spec" do |t|
+  sh("cd spec && rake spec")
+end
+
+ENV['CI_REPORTS'] = reports_dir

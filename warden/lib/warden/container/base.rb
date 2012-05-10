@@ -342,12 +342,12 @@ module Warden
         raise WardenError.new("not implemented")
       end
 
-      def spawn(script)
+      def spawn(script, opts = {})
         debug "entry"
 
         check_state_in(State::Active)
 
-        job = create_job(script)
+        job = create_job(script, opts)
         jobs[job.job_id.to_s] = job
 
         # Return job id to caller
@@ -379,10 +379,10 @@ module Warden
         debug "exit"
       end
 
-      def run(script)
+      def run(script, opts = {})
         debug "entry"
 
-        link(spawn(script))
+        link(spawn(script, opts))
 
       rescue => err
         warn "error: #{err.message}"

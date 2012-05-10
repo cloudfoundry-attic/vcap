@@ -19,6 +19,10 @@ module VCAP
       class << self
         attr_reader :desc
 
+        def desc
+          @desc || "Staging task failed"
+        end
+
         def set_desc(desc)
           @desc = desc
         end

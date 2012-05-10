@@ -49,7 +49,7 @@ class UaaToken
       if @access_token.nil? || expired?(@access_token)
         #Get a new one
         @token_issuer.async = true
-        @token_issuer.trace = true
+        @token_issuer.debug = true
         @token_issuer.logger = CloudController.logger
         @access_token = @token_issuer.client_credentials_grant().auth_header
       end
@@ -59,7 +59,7 @@ class UaaToken
 
     def id_token(email, password)
       @id_token_issuer.async = true
-      @id_token_issuer.trace = true
+      @id_token_issuer.debug = true
       @id_token_issuer.logger = CloudController.logger
       id_token = @id_token_issuer.implicit_grant(username: email, password: password).auth_header
       CloudController.logger.debug("id_token #{id_token}")

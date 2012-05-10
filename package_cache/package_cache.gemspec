@@ -24,5 +24,5 @@ Gem::Specification.new do |s|
   s.add_dependency('vcap_common', '~> 1.0.8')
   s.add_dependency('vcap_logging', '>= 0.1.1')
   s.add_dependency('vcap_package_cache_client', '0.1.8')
-
+  s.add_dependency('warden-client', '0.0.1')
 end
