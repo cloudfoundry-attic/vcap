@@ -1,0 +1,14 @@
+---
+name: "aspdotnet"
+runtimes:
+  - "aspdotnet40":
+      version: "4.0.30319.1"
+      description: "ASP.NET 4.0 (4.0.30319.1)"
+      default: true
+app_servers:
+  # handled by CloudFoundry.Dea - Dot Net Service
+detection:
+  - "web.config": true # web.config must be present
+staged_services:
+
+# vim: filetype=yaml
