@@ -21,7 +21,7 @@ class Route < ActiveRecord::Base
   end
 
   def internal_url?
-    url =~ /#{Route.base_url_for_cloud}\s*$/o
+    url =~ /#{Route.base_url_for_cloud}\s*$/oi
   end
 
   private
