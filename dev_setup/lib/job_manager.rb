@@ -20,7 +20,7 @@ class JobManager
   ACM = "acm"
   ACMDB = "acmdb"
 
-  SERVICES = ["redis", "mysql", "mongodb", "neo4j", "rabbitmq"]
+  SERVICES = ["redis", "mysql", "mongodb", "neo4j", "rabbitmq", "memcached"]
   SERVICES_NODE = SERVICES.map do |service|
     "#{service}_node"
   end
@@ -39,7 +39,7 @@ class JobManager
   # List of the required properties for jobs
   INSTALLED_JOB_PROPERTIES = {NATS => ["host"], CC => ["service_api_uri", "builtin_services"],
                               CCDB => ["host"]}
-  INSTALL_JOB_PROPERTIES = {CC => ["builtin_services"], MYSQL_NODE => ["index"], MONGODB_NODE => ["index"], REDIS_NODE => ["index"], NEO4J_NODE => ["index"], RABBITMQ_NODE => ["index"]}
+  INSTALL_JOB_PROPERTIES = {CC => ["builtin_services"], MYSQL_NODE => ["index"], MONGODB_NODE => ["index"], REDIS_NODE => ["index"], NEO4J_NODE => ["index"], RABBITMQ_NODE => ["index"], MEMCACHED_NODE => ["index"]}
 
   # Dependency between JOBS and  components that are consumed by "vcap_dev" when cf is started or
   # stopped

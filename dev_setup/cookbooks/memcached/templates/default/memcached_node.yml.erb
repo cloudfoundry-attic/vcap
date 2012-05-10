@@ -1,0 +1,18 @@
+---
+capacity: <%= node[:memcached_node][:capacity] %>
+plan: free
+local_db: sqlite3:/var/vcap/services/memcached/memcached_node.db
+mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
+index: <%= node[:memcached_node][:index] %>
+base_dir: /var/vcap/services/memcached/instances
+memcached_log_dir: /var/vcap/services/memcached/logs
+pid: /var/vcap/sys/run/memcached_node.pid
+node_id: <%= "memcached_node_#{node[:memcached_node][:index]}" %>
+memcached_server_path: <%= File.join(node[:memcached][:path], "bin", "memcached") %>
+port_range:
+  first: 11000
+  last: 11050
+logging:
+  level: debug
+memcached_memory: 16
+max_clients: 1024
