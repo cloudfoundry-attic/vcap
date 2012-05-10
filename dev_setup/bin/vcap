@@ -81,6 +81,13 @@ class Component
     Run.services.include? name
   end
 
+  DEFAULT_CLOUD_FOUNDRY_EXCLUDED_COMPONENT = 'neo4j|memcached|couchdb'
+  def is_excluded?
+    @excluded ||= ENV['CLOUD_FOUNDRY_EXCLUDED_COMPONENT']
+    @excluded ||= DEFAULT_CLOUD_FOUNDRY_EXCLUDED_COMPONENT
+    name.match(@excluded)
+  end
+
   def exists?
     File.exists? @path
   end
@@ -439,7 +446,8 @@ module Run
     args = Run.expand_args(args)
     components = args.map do |arg|
       component = Component.new(arg)
-      component if component.exists?
+      STDOUT.puts "Skipping excluded component: #{component.name}" if component.is_excluded?
+      component if (component.exists? && !component.is_excluded?)
     end.compact
     STDERR.puts "Don't know how to process '#{args.inspect}' \?\?" if components.empty?
     components
