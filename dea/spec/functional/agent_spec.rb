@@ -43,22 +43,16 @@ describe 'DEA Agent' do
     create_dir(@run_dir)
 
     # NATS
-    port = VCAP.grab_ephemeral_port
+    nats_port = VCAP.grab_ephemeral_port
     pid_file = File.join(@run_dir, 'nats.pid')
-    @nats_cfg = {
-      :port     => port,
-      :pid_file => pid_file,
-      :cmd      => "ruby -S bundle exec nats-server -p #{port} -P #{pid_file}",
-      :uri      => "nats://localhost:#{port}",
-      :outdir   => @run_dir,
-    }
-    @nats_server = NatsComponent.new(@nats_cfg)
+    @nats_server = VCAP::Spec::ForkedComponent::NatsServer.new(pid_file, nats_port, @run_dir)
+
 
     # DEA
     @dea_cfg = {
       'base_dir'     => @run_dir,
       'filer_port'   => VCAP.grab_ephemeral_port,
-      'mbus'         => @nats_cfg[:uri],
+      'mbus'         => "nats://localhost:#{nats_port}",
       'intervals'    => {'heartbeat' => 1},
       'logging'      => {'level' => 'debug'},
       'multi_tenant' => true,
@@ -98,7 +92,7 @@ describe 'DEA Agent' do
   describe 'when running' do
     before :each do
       @nats_server.start
-      wait_for { @nats_server.is_ready? }.should be_true
+      wait_for { @nats_server.ready? }.should be_true
 
       # The dea announces itself on startup (after all initialization has been performed).
       # Listen for that message as a signal that it is ready.
@@ -119,10 +113,10 @@ describe 'DEA Agent' do
 
     after :each do
       @dea_agent.stop
-      @dea_agent.is_running?.should be_false
+      @dea_agent.running?.should be_false
 
       @nats_server.stop
-      @nats_server.is_running?.should be_false
+      @nats_server.running?.should be_false
     end
 
     it 'should ensure it can find an executable ruby' do
@@ -191,14 +185,14 @@ describe 'DEA Agent' do
 
     it 'should properly exit when NATS fails to reconnect' do
       @nats_server.stop
-      @nats_server.is_running?.should be_false
+      @nats_server.running?.should be_false
       wait_for { Process.waitpid(@dea_agent.pid, Process::WNOHANG) != nil }.should be_true
     end
 
     it 'should snapshot state upon reconnect failure' do
       File.exists?(@app_state_file).should be_false
       @nats_server.stop
-      @nats_server.is_running?.should be_false
+      @nats_server.running?.should be_false
       wait_for { Process.waitpid(@dea_agent.pid, Process::WNOHANG) != nil }.should be_true
       File.exists?(@app_state_file).should be_true
     end
