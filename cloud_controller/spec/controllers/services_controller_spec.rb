@@ -93,7 +93,9 @@ describe ServicesController do
           VCAP::Services::Api::ServiceOfferingRequest.new(
             :label => 'foo-bar',
             :url => 'http://www.google.com',
-            :plans => ['foo'])
+            :plans => ['foo'],
+            :cf_plan_id => {'foo' => '123'}
+          )
         end
         response.status.should == 403
       end
@@ -107,7 +109,9 @@ describe ServicesController do
           :label => 'foo-bar',
           :url   => 'http://www.google.com',
           :token => 'foobar',
-          :plans => ['foo'])
+          :plans => ['foo'],
+          :cf_plan_id => {'foo' => '123'}
+        )
         svc.should be_valid
 
         post_msg :create do
@@ -116,6 +120,7 @@ describe ServicesController do
             :url   => 'http://www.google.com',
             :acls  => acls,
             :plans => ['foo'],
+            :cf_plan_id => {'foo' => '123'},
             :timeout => 20,
             :description => 'foobar')
         end
@@ -138,7 +143,9 @@ describe ServicesController do
           :token => 'foobar',
           :acls  => acls,
           :timeout => 20,
-          :plans => ['foo'])
+          :plans => ['foo'],
+          :cf_plan_id => {'foo' => '123'}
+        )
         svc.should be_valid
 
         post_msg :create do
@@ -146,6 +153,7 @@ describe ServicesController do
             :label => 'foo-bar',
             :url   => 'http://www.google.com',
             :plans => ['foo'],
+            :cf_plan_id => {'foo' => '123'},
             :description => 'foobar')
         end
         response.status.should == 200
@@ -167,6 +175,7 @@ describe ServicesController do
           VCAP::Services::Api::ServiceOfferingRequest.new(
             :label => 'foo-bar',
             :plans => ['foo'],
+            :cf_plan_id => {'foo' => '123'},
             :url   => 'http://www.google.com')
         end
         response.status.should == 403
@@ -185,6 +194,7 @@ describe ServicesController do
           VCAP::Services::Api::ServiceOfferingRequest.new(
             :label => 'foo-bar',
             :plans => ['foo'],
+            :cf_plan_id => {'foo' => '123'},
             :url   => 'http://www.google.com')
         end
         response.status.should == 403
@@ -385,6 +395,7 @@ describe ServicesController do
       svc.url   = "http://localhost:56789"
       svc.token = 'foobar'
       svc.plans = ['free', 'nonfree']
+      svc.cf_plan_id = {'free' => "abc", 'nonfree' => '123'}
       svc.save
       svc.should be_valid
       @svc = svc

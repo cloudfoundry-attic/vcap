@@ -10,14 +10,16 @@ class Service < ActiveRecord::Base
   validates_format_of :url, :with => URI::regexp(%w(http https))
   validates_format_of :info_url, :with => URI::regexp(%w(http https)), :allow_nil => true
   validates_format_of :label, :with => LABEL_REGEX
+  validate :cf_plan_id_matches_plans
 
   serialize :tags
   serialize :plans
+  serialize :cf_plan_id
   serialize :plan_options
   serialize :binding_options
   serialize :acls
 
-  attr_accessible :label, :token, :url, :description, :info_url, :tags, :plans, :plan_options, :binding_options, :active, :acls, :timeout
+  attr_accessible :label, :token, :url, :description, :info_url, :tags, :plans, :cf_plan_id, :plan_options, :binding_options, :active, :acls, :timeout
 
   def self.active_services
     where("active = ?", true)
@@ -158,6 +160,13 @@ class Service < ActiveRecord::Base
       (AppConfig[:builtin_services][self.name.to_sym][:token] == token)
     else
       (self.token == token)
+    end
+  end
+
+  # cf_plan_id must contain the key which is one of the plans
+  def cf_plan_id_matches_plans
+    if plans && (!cf_plan_id.is_a?(Hash) || !plans.is_a?(Array) || !(plans - cf_plan_id.keys).empty?)
+      errors.add(:base, "cf_plan_id does not match plans")
     end
   end
 end

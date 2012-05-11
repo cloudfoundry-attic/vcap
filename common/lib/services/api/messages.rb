@@ -24,6 +24,7 @@ module VCAP
         optional :info_url,    URI::regexp(%w(http https))
         optional :tags,        [String]
         optional :plans,       [String]
+        optional :cf_plan_id
         optional :plan_options
         optional :binding_options
         optional :acls

@@ -53,9 +53,31 @@ describe Service do
     svc.should_not be_valid
   end
 
+  it "requires a valid cf_plan_id" do
+    svc = make_service(:label => "foo-bar", :url => "http://www.google.com", :token => "foo")
+    svc.plans = ['foo']
+    svc.should_not be_valid
+
+    svc.cf_plan_id = "foobar"
+    svc.should_not be_valid
+
+    svc.cf_plan_id = {'123' => '456'}
+    svc.should_not be_valid
+
+    svc.cf_plan_id = {'foo' => 'bar'}
+    svc.should be_valid
+  end
+
   it "should serialize complex fields" do
     plans = ["foo", "bar"]
-    svc = make_service(:label => "foo-bar", :url => "http://www.google.com", :token => "foo", :plans => plans)
+    cf_plan_id = {'foo' => 'abc', 'bar' => '123'}
+    svc = make_service(
+      :label => "foo-bar",
+      :url => "http://www.google.com",
+      :token => "foo",
+      :plans => plans,
+      :cf_plan_id => cf_plan_id
+    )
     svc.should be_valid
     svc.save
 
@@ -81,6 +103,7 @@ describe Service do
       @svc = make_service(
         :url   => 'http://www.foo.com',
         :plans => ['plan_a', 'plan_b', 'plan_c'],
+        :cf_plan_id => {'plan_a' => 'plan_a', 'plan_b' => 'plan_b', 'plan_c' => 'plan_c'},
         :label => 'foo-bar',
         :token => 'foobar'
       )
@@ -89,6 +112,7 @@ describe Service do
       @user_acl_svc = make_service(
         :url   => 'http://www.foo.com',
         :plans => ['plan_a', 'plan_b', 'plan_c'],
+        :cf_plan_id => {'plan_a' => 'plan_a', 'plan_b' => 'plan_b', 'plan_c' => 'plan_c'},
         :label => 'foo-bar1',
         :token => 'foobar',
         :acls  => {'users' => ['a@bar.com'], 'wildcards' => []}
@@ -98,6 +122,7 @@ describe Service do
       @wc_acl_svc = make_service(
         :url   => 'http://www.foo.com',
         :plans => ['plan_a', 'plan_b', 'plan_c'],
+        :cf_plan_id => {'plan_a' => 'plan_a', 'plan_b' => 'plan_b', 'plan_c' => 'plan_c'},
         :label => 'foo-bar2',
         :token => 'foobar',
         :acls  => {'users' => [], 'wildcards' => ['*@bar.com']}
@@ -107,6 +132,7 @@ describe Service do
       @p_acl_svc = make_service(
         :url   => 'http://www.foo.com',
         :plans => ['plan_a', 'plan_b', 'plan_c'],
+        :cf_plan_id => {'plan_a' => 'plan_a', 'plan_b' => 'plan_b', 'plan_c' => 'plan_c'},
         :label => 'foo-bar3',
         :token => 'foobar',
         :acls  => {
@@ -120,6 +146,7 @@ describe Service do
       @combo_acl_svc = make_service(
         :url   => 'http://www.foo.com',
         :plans => ['plan_a', 'plan_b', 'plan_c'],
+        :cf_plan_id => {'plan_a' => 'plan_a', 'plan_b' => 'plan_b', 'plan_c' => 'plan_c'},
         :label => 'foo-bar4',
         :token => 'foobar',
         :acls  => {
