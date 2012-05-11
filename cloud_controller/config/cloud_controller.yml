@@ -189,6 +189,8 @@ runtimes:
     version: ".* 5.8.3"
   python2:
     version: 2.6.5
+#  iis:
+#    version: 7
 
 # Used for /healthz and /vars endpoints. If not provided random
 # values will be generated on component start. Uncomment to use

@@ -45,3 +45,16 @@ class FileServerComponent < VCAP::Spec::ForkedComponent::Base
     end
   end
 end
+
+class FileServerComponent < ForkedComponent
+  def initialize(path, port, basedir)
+    pidfile = '/tmp/file_server.pid'
+    super("rackup #{path} -p #{port} -P #{pidfile}", pidfile, 'file_server', basedir)
+  end
+
+  def start
+    Dir.chdir(@output_basedir) do
+      super
+    end
+  end
+end
