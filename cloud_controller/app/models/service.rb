@@ -10,14 +10,16 @@ class Service < ActiveRecord::Base
   validates_format_of :url, :with => URI::regexp(%w(http https))
   validates_format_of :info_url, :with => URI::regexp(%w(http https)), :allow_nil => true
   validates_format_of :label, :with => LABEL_REGEX
+  validate :cf_plan_id_matches_plans
 
   serialize :tags
   serialize :plans
+  serialize :cf_plan_id
   serialize :plan_options
   serialize :binding_options
   serialize :acls
 
-  attr_accessible :label, :token, :url, :description, :info_url, :tags, :plans, :plan_options, :binding_options, :active, :acls, :timeout
+  attr_accessible :label, :token, :url, :description, :info_url, :tags, :plans, :cf_plan_id, :plan_options, :binding_options, :active, :acls, :timeout
 
   def self.active_services
     where("active = ?", true)
@@ -170,11 +172,20 @@ class Service < ActiveRecord::Base
     svc_offering[:info_url]        = self.info_url        if self.info_url
     svc_offering[:tags]            = self.tags            if self.tags
     svc_offering[:plans]           = self.plans           if self.plans
+    svc_offering[:cf_plan_id]      = self.cf_plan_id      if self.cf_plan_id
     svc_offering[:plan_options]    = self.plan_options    if self.plan_options
     svc_offering[:binding_options] = self.binding_options if self.binding_options
     svc_offering[:acls]            = self.acls            if self.acls
     svc_offering[:active]          = self.active          if self.active
     svc_offering[:timeout]         = self.timeout         if self.timeout
     return svc_offering
+  end
+
+  def cf_plan_id_matches_plans
+    # cf_plan_id either be nil,
+    # or its keys must be a subset of plans
+    if cf_plan_id && !(cf_plan_id.is_a?(Hash) && plans.is_a?(Array) && (cf_plan_id.keys - plans).empty?)
+      errors.add(:base, "cf_plan_id does not match plans")
+    end
   end
 end
