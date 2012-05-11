@@ -23,7 +23,7 @@ class LiftPlugin < JavaWebPlugin
 
   def configure_webapp webapp_path, autostaging_template, environment
     configure_cf_lift_servlet_context_listener(webapp_path)
-    Tomcat.copy_autostaging_jar webapp_path
+    copy_autostaging_jar File.join(webapp_path, 'WEB-INF/lib')
   end
 
   # We introspect the web configuration ('WEB-INF/web.xml' file) and
