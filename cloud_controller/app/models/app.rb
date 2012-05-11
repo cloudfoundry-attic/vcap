@@ -536,16 +536,12 @@ class App < ActiveRecord::Base
   end
 
   def update_staged_package(upload_path)
-    # Remove old packages if needed
-    [:legacy_staged_package_path, :staged_package_path].each do |getter|
-      path = self.send(getter)
-
-      if path
-        CloudController.logger.info("Removing old staged package for" \
-                                    + " app_id=#{self.id} app_name=#{self.name}" \
-                                    + " path=#{path}")
-        FileUtils.rm_f(path)
-      end
+    # Remove old package if needed
+    if self.legacy_staged_package_path
+      CloudController.logger.info("Removing old staged package for" \
+                                  + " app_id=#{self.id} app_name=#{self.name}" \
+                                  + " path=#{self.legacy_staged_package_path}")
+      FileUtils.rm_f(self.legacy_staged_package_path)
     end
 
     self.staged_package_hash = Digest::SHA1.file(upload_path).hexdigest
