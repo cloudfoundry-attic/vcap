@@ -1334,6 +1334,7 @@ module DEA
       return unless (instance and instance[:uris] and not instance[:uris].empty?)
       NATS.publish('router.register', {
                      :dea  => VCAP::Component.uuid,
+                     :app  => instance[:droplet_id],
                      :host => @local_ip,
                      :port => instance[:port],
                      :uris => options[:uris] || instance[:uris],
@@ -1345,6 +1346,7 @@ module DEA
       return unless (instance and instance[:uris] and not instance[:uris].empty?)
       NATS.publish('router.unregister', {
                      :dea  => VCAP::Component.uuid,
+                     :app  => instance[:droplet_id],
                      :host => @local_ip,
                      :port => instance[:port],
                      :uris => options[:uris] || instance[:uris]
