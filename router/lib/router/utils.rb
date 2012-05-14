@@ -18,13 +18,7 @@ def stop(pidfile)
   EM.stop_server(Router.server) if Router.server
   EM.stop_server(Router.local_server) if Router.local_server
 
-  if Router.client_connection_count <= 0
-    exit_router(pidfile)
-  else
-    EM.add_periodic_timer(0.25) { exit_router(pidfile) if (Router.client_connection_count <= 0) }
-    EM.add_timer(10) { exit_router(pidfile) } # Wait at most 10 secs
-  end
-
+  exit_router(pidfile)
 end
 
 def exit_router(pidfile)

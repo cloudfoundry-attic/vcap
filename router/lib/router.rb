@@ -164,8 +164,6 @@ EM.run do
   @router_id = VCAP.secure_uuid
   @hello_message = { :id => @router_id, :version => Router::VERSION }.to_json.freeze
 
-  Router.log_connection_stats
-
   # This will check on the state of the registered urls, do maintenance, etc..
   Router.setup_sweepers
 
