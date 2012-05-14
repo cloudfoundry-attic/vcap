@@ -4,20 +4,27 @@ class Router
   VERSION = 0.98
 
   class << self
-    attr_reader   :log, :notfound_redirect, :session_key, :trace_key, :client_inactivity_timeout
-    attr_accessor :server, :local_server, :timestamp, :shutting_down
-    attr_accessor :client_connection_count
+    attr_reader   :log, :notfound_redirect, :session_key
+    attr_accessor :server, :local_server, :timestamp, :pid_file
     attr_accessor :inet, :port
-
-    alias :shutting_down? :shutting_down
 
     def version
       VERSION
     end
 
+    def stop
+      log.info 'Signal caught, shutting down..'
+
+      server.stop if server
+      local_server.stop if local_server
+
+      NATS.stop { EM.stop }
+      pid_file.unlink()
+      log.info 'Bye'
+    end
+
     def config(config)
       @droplets = {}
-      @client_connection_count = 0
       VCAP::Logging.setup_from_config(config['logging'] || {})
       @log = VCAP::Logging.logger('router')
       if config['404_redirect']
@@ -26,8 +33,6 @@ class Router
       end
 
       @session_key = config['session_key'] || '14fbc303b76bacd1e0a3ab641c11d11400341c5d'
-      @trace_key = config['trace_key'] || '22'
-      @client_inactivity_timeout = config['client_inactivity_timeout'] || 60
       @expose_all_apps = config['status']['expose_all_apps'] if config['status']
     end
 
@@ -50,7 +55,6 @@ class Router
       EM.add_periodic_timer(RPS_SWEEPER) { calc_rps }
       EM.add_periodic_timer(CHECK_SWEEPER) {
         check_registered_urls
-        log_connection_stats
       }
     end
 
@@ -118,18 +122,6 @@ class Router
       to_drop.each { |droplet| unregister_droplet(droplet[:url], droplet[:host], droplet[:port]) }
     end
 
-    def connection_stats
-      tc = EM.connection_count
-      cc = Router.client_connection_count
-      "Connections: [uls Clients: #{cc}, Total: #{tc}]"
-    end
-
-    def log_connection_stats
-      tc = EM.connection_count
-      cc = Router.client_connection_count
-      log.info connection_stats
-    end
-
     def generate_session_cookie(droplet)
       token = [ droplet[:url], droplet[:host], droplet[:port] ]
       c = OpenSSL::Cipher::Cipher.new('blowfish')
@@ -178,7 +170,6 @@ class Router
       droplet = {
         :host => host,
         :port => port,
-        :connections => [],
         :clients => Hash.new(0),
         :url => url,
         :timestamp => Time.now,

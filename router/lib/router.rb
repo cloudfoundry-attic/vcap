@@ -21,7 +21,6 @@ $:.unshift(File.dirname(__FILE__))
 require 'router/const'
 require 'router/router'
 require 'router/router_uls_server'
-require 'router/utils'
 
 config_path = ENV["CLOUD_FOUNDRY_CONFIG_PATH"] || File.join(File.dirname(__FILE__), '../config')
 config_file = File.join(config_path, 'router.yml')
@@ -64,8 +63,8 @@ EM.epoll
 
 EM.run do
 
-  trap("TERM") { stop(config['pid']) }
-  trap("INT")  { stop(config['pid']) }
+  trap("TERM") { Router.stop() }
+  trap("INT")  { Router.stop() }
 
   Router.config(config)
   Router.log.info "Starting VCAP Router (#{Router.version})"
@@ -93,7 +92,13 @@ EM.run do
   EM.set_descriptor_table_size(32768) # Requires Root privileges
   Router.log.info "Socket Limit:#{EM.set_descriptor_table_size}"
 
-  create_pid_file(config['pid'])
+  Router.log.info "Pid file: %s" % config['pid']
+  begin
+    Router.pid_file = VCAP::PidFile.new(config['pid'])
+  rescue => e
+    Router.log.fatal "Can't create router pid file: #{e}"
+    exit 1
+  end
 
   NATS.on_error do |e|
     if e.kind_of? NATS::ConnectError
@@ -111,8 +116,11 @@ EM.run do
 
   begin
     # TCP/IP Socket
-    Router.server = Thin::Server.start(inet, port, RouterULSServer) if inet && port
-    Router.local_server = Thin::Server.start(fn, RouterULSServer) if fn
+    Router.server = Thin::Server.new(inet, port, RouterULSServer, :signals => false) if inet && port
+    Router.local_server = Thin::Server.new(fn, RouterULSServer, :signals => false) if fn
+
+    Router.server.start if Router.server
+    Router.local_server.start if Router.local_server
   rescue => e
     Router.log.fatal "Problem starting server, #{e}"
     exit
@@ -163,8 +171,6 @@ EM.run do
 
   @router_id = VCAP.secure_uuid
   @hello_message = { :id => @router_id, :version => Router::VERSION }.to_json.freeze
-
-  Router.log_connection_stats
 
   # This will check on the state of the registered urls, do maintenance, etc..
   Router.setup_sweepers

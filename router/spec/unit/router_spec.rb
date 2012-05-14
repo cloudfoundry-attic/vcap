@@ -49,7 +49,6 @@ describe Router do
       droplet.should have_key :host
       droplet.should have_key :port
       droplet.should have_key :clients
-      droplet[:connections].should == []
       droplet[:requests].should == 0
       droplet[:url].should == 'foo.vcap.me'
       droplet[:host].should == '10.0.1.22'
