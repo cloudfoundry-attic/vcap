@@ -5,13 +5,22 @@ class Router
 
   class << self
     attr_reader   :log, :notfound_redirect, :session_key
-    attr_accessor :server, :local_server, :timestamp, :shutting_down
+    attr_accessor :server, :local_server, :timestamp, :pid_file
     attr_accessor :inet, :port
-
-    alias :shutting_down? :shutting_down
 
     def version
       VERSION
+    end
+
+    def stop
+      log.info 'Signal caught, shutting down..'
+
+      server.stop if server
+      local_server.stop if local_server
+
+      NATS.stop { EM.stop }
+      pid_file.unlink()
+      log.info 'Bye'
     end
 
     def config(config)
