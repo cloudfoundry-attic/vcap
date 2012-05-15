@@ -8,10 +8,7 @@
   "json_class": "Chef::Role",
   "description": "PostgreSQL database for apps",
   "chef_type": "role",
-  "run_list" : ["recipe[deployment]",
-                "recipe[essentials]",
-                "recipe[ruby]",
-                "recipe[postgresql]",
+  "run_list" : ["role[services]",
                 "recipe[postgresql::service]",
-                "role[services]"]
+                "recipe[postgresql::node]"]
 }

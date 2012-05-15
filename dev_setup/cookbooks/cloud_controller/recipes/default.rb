@@ -31,6 +31,13 @@ end
 cf_bundle_install(File.expand_path(File.join(node["cloudfoundry"]["path"], "cloud_controller")))
 
 staging_dir = File.join(node[:deployment][:config_path], "staging")
+
+unless node[:ccdb][:adapter] != "postgresql"
+  # override the postgresql's user and password
+  node[:ccdb][:user] = node[:postgresql][:server_root_user]
+  node[:ccdb][:password] = node[:postgresql][:server_root_password]
+end
+
 node[:cloud_controller][:staging].each_pair do |framework, config|
   template config do
     path File.join(staging_dir, config)

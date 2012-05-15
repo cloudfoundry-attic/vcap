@@ -6,6 +6,18 @@
 #
 #
 
+unless node[:uaadb][:adapter] != "postgresql"
+  # override the postgresql's user and password
+  node[:uaadb][:user] = node[:postgresql][:server_root_user]
+  node[:uaadb][:password] = node[:postgresql][:server_root_password]
+end
+
+unless node[:ccdb][:adapter] != "postgresql"
+  # override the postgresql's user and password
+  node[:ccdb][:user] = node[:postgresql][:server_root_user]
+  node[:ccdb][:password] = node[:postgresql][:server_root_password]
+end
+
 template "uaa.yml" do
   path File.join(node[:deployment][:config_path], "uaa.yml")
   source "uaa.yml.erb"
