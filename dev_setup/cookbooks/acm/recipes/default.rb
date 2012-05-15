@@ -16,6 +16,8 @@ gem_package "postgres" do
   gem_binary File.join(node[:ruby][:path], "bin", "gem")
 end
 
+cf_pg_reset_user_password(:acmdb)
+
 template "acm.yml" do
   path File.join(node[:deployment][:config_path], "acm.yml")
   source "acm.yml.erb"

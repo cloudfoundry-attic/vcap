@@ -31,6 +31,8 @@ end
 cf_bundle_install(File.expand_path(File.join(node["cloudfoundry"]["path"], "cloud_controller")))
 
 staging_dir = File.join(node[:deployment][:config_path], "staging")
+
+cf_pg_reset_user_password(:ccdb)
 node[:cloud_controller][:staging].each_pair do |framework, config|
   template config do
     path File.join(staging_dir, config)

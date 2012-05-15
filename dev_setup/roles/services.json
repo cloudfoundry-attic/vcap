@@ -8,6 +8,6 @@
   "run_list" : [ "recipe[deployment]",
                  "recipe[essentials]",
                  "recipe[ruby]",
-                 "recipe[cloudfoundry]",
-                 "recipe[services]"]
+                 "recipe[cloudfoundry]"
+                ]
 }
