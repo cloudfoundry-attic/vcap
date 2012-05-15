@@ -7,7 +7,7 @@ class ServicesController < ApplicationController
   include ServicesHelper
 
   before_filter :validate_content_type
-  before_filter :require_service_auth_token, :only => [:create, :delete, :update_handle, :list_handles, :list_brokered_services]
+  before_filter :require_service_auth_token, :only => [:create, :get, :delete, :update_handle, :list_handles, :list_brokered_services]
   before_filter :require_user, :only => [:provision, :bind, :bind_external, :unbind, :unprovision,
                                          :create_snapshot, :enum_snapshots, :snapshot_details,:rollback_snapshot, :delete_snapshot,
                                          :serialized_url, :import_from_url, :import_from_data, :job_info]
@@ -139,6 +139,14 @@ class ServicesController < ApplicationController
       }
     end
     render :json =>  {:brokered_services => result}
+  end
+
+  # Get a service offering on the CC
+  #
+  def get
+    svc = Service.find_by_label(params[:label])
+    raise CloudError.new(CloudError::SERVICE_NOT_FOUND) unless svc
+    render :json => svc.hash_to_service_offering
   end
 
   # Unregister a service offering with the CC

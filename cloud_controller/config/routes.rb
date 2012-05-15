@@ -39,6 +39,7 @@ CloudController::Application.routes.draw do
 
   post   'services/v1/offerings'                     => 'services#create',         :as => :service_create
   delete 'services/v1/offerings/:label'              => 'services#delete',         :as => :service_delete,         :label => /[^\/]+/
+  get    'services/v1/offerings/:label'              => 'services#get',            :as => :service_get,            :label => /[^\/]+/
   get    'services/v1/offerings/:label/handles'      => 'services#list_handles',   :as => :service_list_handles,   :label => /[^\/]+/
   post   'services/v1/offerings/:label/handles/:id'  => 'services#update_handle',  :as => :service_update_handle,  :label => /[^\/]+/
   post   'services/v1/configurations'                => 'services#provision',      :as => :service_provision
