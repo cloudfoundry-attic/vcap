@@ -1,7 +1,8 @@
 include_attribute "deployment"
 include_attribute "postgresql"
-default[:uaadb][:user] = "root"
-default[:uaadb][:password] = "changeme"
+
+default[:uaadb][:user] = node[:postgresql][:server_root_user]
+default[:uaadb][:password] = node[:postgresql][:server_root_password]
 default[:uaadb][:database] = "uaa"
 default[:uaadb][:port] = "5432"
 default[:uaadb][:adapter] = "postgresql"

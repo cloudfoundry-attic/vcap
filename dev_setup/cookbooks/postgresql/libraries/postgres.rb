@@ -22,15 +22,21 @@ module CloudFoundryPostgres
     end
   end
 
-  def cf_pg_setup_db(db, user, passwd)
+  def cf_pg_setup_db(db, user, passwd, is_super=false)
     case node['platform']
     when "ubuntu"
+      if is_super
+        super_val="SUPERUSER"
+      else
+      	super_val="NOSUPERUSER"
+      end
       bash "Setup PostgreSQL database #{db}" do
         user "postgres"
         code <<-EOH
         createdb #{db}
-        psql -d #{db} -c \"create role #{user} NOSUPERUSER LOGIN INHERIT CREATEDB\"
+        psql -d #{db} -c \"create role #{user} #{super_val} LOGIN INHERIT CREATEDB\"
         psql -d #{db} -c \"alter role #{user} with password '#{passwd}'\"
+        psql -d template1 -c \"create language plpgsql\"
         echo \"db #{db} user #{user} pass #{passwd}\" >> #{File.join("", "tmp", "cf_pg_setup_db")}
         EOH
       end
