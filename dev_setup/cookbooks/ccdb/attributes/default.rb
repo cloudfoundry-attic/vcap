@@ -1,7 +1,8 @@
 include_attribute "deployment"
+include_attribute "postgresql"
 
-default[:ccdb][:user] = "root"
-default[:ccdb][:password] = "changeme"
+default[:ccdb][:user] = node[:postgresql][:server_root_user]
+default[:ccdb][:password] = node[:postgresql][:server_root_password]
 default[:ccdb][:database] = "cloud_controller"
 default[:ccdb][:port] = "5432"
 default[:ccdb][:adapter] = "postgresql"

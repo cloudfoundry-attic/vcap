@@ -20,9 +20,9 @@ class JobManager
   ACM = "acm"
   ACMDB = "acmdb"
 
-  SERVICES = ["redis", "mysql", "mongodb", "neo4j", "rabbitmq"]
+  SERVICES = ["redis", "mysql", "mongodb", "neo4j", "rabbitmq", "postgresql"]
   SERVICES_NODE = SERVICES.map do |service|
-    "#{service}_node"
+     "#{service}_node"
   end
   SERVICES_GATEWAY = SERVICES.map do |service|
     "#{service}_gateway"
@@ -31,7 +31,6 @@ class JobManager
     # Service name constant e.g. REDIS_NODE -> "redis_node"
     const_set(node.upcase, node)
   end
-
   # All supported jobs
   JOBS = [ALL, NATS, ROUTER, CF, CC, HM, DEA, CCDB, UAA, UAADB] + SERVICES_NODE + SERVICES_GATEWAY
   SYSTEM_JOB = [CF]

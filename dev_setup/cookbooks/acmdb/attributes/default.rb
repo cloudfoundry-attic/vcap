@@ -1,7 +1,8 @@
 include_attribute "deployment"
+include_attribute "postgresql"
 
-default[:acmdb][:user] = "root"
-default[:acmdb][:password] = "changeme"
+default[:acmdb][:user] = node[:postgresql][:server_root_user]
+default[:acmdb][:password] = node[:postgresql][:server_root_password]
 default[:acmdb][:database] = "acm"
 default[:acmdb][:port] = "5432"
 default[:acmdb][:adapter] = "postgresql"
