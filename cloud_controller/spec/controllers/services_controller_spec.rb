@@ -221,6 +221,37 @@ describe ServicesController do
       end
     end
 
+    describe '#get' do
+      before :each do
+        @svc = Service.create(
+          :label => 'foo-bar',
+          :url   => 'http://www.google.com',
+          :plans => ['free', 'nonfree'],
+          :token => 'foobar')
+        @svc.should be_valid
+      end
+
+      it 'should return not found for unknown services' do
+        get :get, :label => 'xxx'
+        response.status.should == 404
+      end
+
+      it 'should return not authorized on token mismatch' do
+        request.env['HTTP_X_VCAP_SERVICE_TOKEN'] = 'xxx'
+        get :get, :label => 'foo-bar'
+        response.status.should == 403
+      end
+
+      it 'should return the specific service offering' do
+        get :get, :label => 'foo-bar'
+        response.status.should == 200
+        resp = Yajl::Parser.parse(response.body)
+        resp["label"].should == 'foo-bar'
+        resp["url"].should   == 'http://www.google.com'
+        resp["plans"].should == ['free', 'nonfree']
+      end
+    end
+
     describe '#list_handles' do
       it 'should return not found for unknown services' do
         get :list_handles, :label => 'foo-bar'
