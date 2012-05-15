@@ -1,5 +1,5 @@
 require 'rubygems'
-require 'sinatra'
+require	'sinatra'
 
 get '/' do
   results = <<-OUT
