@@ -4,6 +4,7 @@ gem 'bundler', '>= 1.0.10'
 gem 'rake'
 gem 'nats', :require => 'nats/client'
 gem 'eventmachine'
+gem 'em-redis', '>= 0.3.0'
 
 gem "http_parser.rb", :require => "http/parser"
 gem "yajl-ruby", :require => ["yajl", "yajl/json_gem"]
