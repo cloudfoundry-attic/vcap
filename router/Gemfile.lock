@@ -6,6 +6,8 @@ GEM
       builder (>= 2.1.2)
     daemons (1.1.8)
     diff-lcs (1.1.2)
+    em-redis (0.3.0)
+      eventmachine
     eventmachine (0.12.11.cloudfoundry.3)
     http_parser.rb (0.5.1)
     json_pure (1.6.6)
@@ -53,6 +55,7 @@ PLATFORMS
 DEPENDENCIES
   bundler (>= 1.0.10)
   ci_reporter
+  em-redis (>= 0.3.0)
   eventmachine
   http_parser.rb
   nats

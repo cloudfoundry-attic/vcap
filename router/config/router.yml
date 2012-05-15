@@ -16,6 +16,17 @@ pid: /var/vcap/sys/run/router.pid
 #  port: 34503
 #  user: thin
 #  password: thin
+#
+
+# Flush app access time to redis. Comment the following section
+# to disable it.
+#redis:
+#  host: localhost
+#  port: 6379
+#  password: redis
+
+# flush_interval: 30
+# max_appset_size: 100
 
 #  Uncomment and set true to show requests-per-second stats for all aps not only top 10. If not specified or set false only 10 apps are shown
 #  expose_all_apps: true

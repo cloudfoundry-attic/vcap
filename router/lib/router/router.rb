@@ -2,6 +2,7 @@
 class Router
 
   VERSION = 0.98
+  REDIS_SET = 'access_time'
 
   class << self
     attr_reader   :log, :notfound_redirect, :session_key
@@ -32,6 +33,27 @@ class Router
         log.info "Registered 404 redirect at #{config['404_redirect']}"
       end
 
+      # Support flush app's access time
+      @enable_flush_redis = config['redis'] ? true : false
+      @flush_interval = config['flush_interval'] || 30
+      @max_appset_size = config['max_appset_size'] || 100
+
+      if @enable_flush_redis
+        @active_apps = Set.new
+        @flushing_apps = Set.new
+
+        redis_config = VCAP.symbolize_keys(config['redis'])
+        redis_config[:logger] = log
+        @redis = EM::Protocols::Redis.connect(redis_config)
+
+        @redis.errback do |code|
+          log.warn "Redis error: #{code}"
+        end
+
+        schedule_flush
+      end
+
+
       @session_key = config['session_key'] || '14fbc303b76bacd1e0a3ab641c11d11400341c5d'
       @expose_all_apps = config['status']['expose_all_apps'] if config['status']
     end
@@ -40,7 +62,8 @@ class Router
       NATS.subscribe('router.register') { |msg|
         msg_hash = Yajl::Parser.parse(msg, :symbolize_keys => true)
         return unless uris = msg_hash[:uris]
-        uris.each { |uri| register_droplet(uri, msg_hash[:host], msg_hash[:port], msg_hash[:tags]) }
+        uris.each { |uri| register_droplet(uri, msg_hash[:host], msg_hash[:port],
+                                           msg_hash[:tags], msg_hash[:app]) }
       }
       NATS.subscribe('router.unregister') { |msg|
         msg_hash = Yajl::Parser.parse(msg, :symbolize_keys => true)
@@ -154,7 +177,7 @@ class Router
       @droplets[url.downcase]
     end
 
-    def register_droplet(url, host, port, tags)
+    def register_droplet(url, host, port, tags, app)
       return unless host && port
       url.downcase!
       droplets = @droplets[url] || []
@@ -170,6 +193,7 @@ class Router
       droplet = {
         :host => host,
         :port => port,
+        :app => app,
         :clients => Hash.new(0),
         :url => url,
         :timestamp => Time.now,
@@ -209,6 +233,48 @@ class Router
           :responses_5xx => 0,
           :responses_xxx => 0
         }
+      end
+    end
+
+    def add_active_app(app_id)
+      return unless @enable_flush_redis
+
+      @active_apps.add(app_id)
+      if(@active_apps.size >= @max_appset_size)
+        flush_access_time
+      end
+    end
+
+    def flush_access_time
+      log.info("Flush access time active: #{@active_apps.size}, remaining: #{@flushing_apps.size}")
+
+      EM.cancel_timer @scheduled_flush if @scheduled_flush
+      @scheduled_flush = nil
+
+      # Swapping 2 sets. Bigger set merges smaller set is much faster.
+      @flushing_apps, @active_apps = @active_apps, @flushing_apps
+
+      @flushing_apps.merge(@active_apps)
+      @active_apps.clear()
+
+      timestamp = Time.now.to_i
+      @flushing_apps.each do |app_id|
+        log.debug "Flushing #{app_id}:#{timestamp} to redis"
+
+        @redis.zadd REDIS_SET, timestamp, app_id do |result|
+          # If it comes to here, it is flushed to redis,
+          # regardless of result is true or false.
+          @flushing_apps.delete(app_id)
+        end
+      end
+
+      schedule_flush
+
+    end
+
+    def schedule_flush
+      @scheduled_flush = EM.add_timer(@flush_interval) do
+        flush_access_time
       end
     end
 
