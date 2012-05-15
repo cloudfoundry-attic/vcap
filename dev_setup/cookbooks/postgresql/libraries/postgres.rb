@@ -1,10 +1,22 @@
 module CloudFoundryPostgres
+
+  def cf_pg_reset_user_password(db_sym)
+    unless node[db_sym][:adapter] != "postgresql"
+      # override the postgresql's user and password
+      node[db_sym][:user] = node[:postgresql][:server_root_user]
+      node[db_sym][:password] = node[:postgresql][:server_root_password]
+    end
+  end
+
+  def cf_pg_restart(pg_major_version)
+  end
+
   def cf_pg_update_hba_conf(db, user)
     case node['platform']
     when "ubuntu"
       ruby_block "Update PostgreSQL config" do
         block do
-          / \d*.\d*/ =~ `pg_config --version`
+          /\s*\d*.\d*\s*/ =~  "#{node[:postgresql][:version]}"
           pg_major_version = $&.strip
 
           # Update pg_hba.conf
@@ -13,8 +25,20 @@ module CloudFoundryPostgres
           if $?.exitstatus != 0
             `echo "host #{db} #{user} 0.0.0.0/0 md5" >> #{pg_hba_conf_file}`
           end
-          # Cant use service resource as service name needs to be statically defined
-          `#{File.join("", "etc", "init.d", "postgresql-#{pg_major_version}")} restart`
+
+          # restart postgrsql
+          init_file = "#{File.join("", "etc", "init.d", "postgresql-#{pg_major_version}")}"
+          backup_init_file = "#{File.join("", "etc", "init.d", "postgresql")}"
+
+          if File.exists?(init_file)
+            Chef::Log.error("Fail to restart postgresql using #{init_file}") unless system("#{init_file} restart")
+          else
+            if File.exists?(backup_init_file)
+              Chef::Log.error("Fail to restart postgresql using #{backup_init_file}") unless system("#{backup_init_file} restart #{pg_major_version}")
+            else
+              Chef::Log.error("Installation of PostgreSQL maybe failed, could not find init script")
+            end
+          end
         end
       end
     else
@@ -22,15 +46,21 @@ module CloudFoundryPostgres
     end
   end
 
-  def cf_pg_setup_db(db, user, passwd)
+  def cf_pg_setup_db(db, user, passwd, is_super=false)
     case node['platform']
     when "ubuntu"
+      if is_super
+        super_val="SUPERUSER"
+      else
+        super_val="NOSUPERUSER"
+      end
       bash "Setup PostgreSQL database #{db}" do
         user "postgres"
         code <<-EOH
-        createdb #{db}
-        psql -d #{db} -c \"create role #{user} NOSUPERUSER LOGIN INHERIT CREATEDB\"
-        psql -d #{db} -c \"alter role #{user} with password '#{passwd}'\"
+        createdb -p #{node[:postgresql][:server_port]} #{db}
+        psql -p #{node[:postgresql][:server_port]} -d #{db} -c \"create role #{user} #{super_val} LOGIN INHERIT CREATEDB\"
+        psql -p #{node[:postgresql][:server_port]} -d #{db} -c \"alter role #{user} with password '#{passwd}'\"
+        psql -p #{node[:postgresql][:server_port]} -d template1 -c \"create language plpgsql\"
         echo \"db #{db} user #{user} pass #{passwd}\" >> #{File.join("", "tmp", "cf_pg_setup_db")}
         EOH
       end

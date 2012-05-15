@@ -6,6 +6,10 @@
 #
 #
 
+
+cf_pg_reset_user_password(:uaadb)
+cf_pg_reset_user_password(:ccdb)
+
 template "uaa.yml" do
   path File.join(node[:deployment][:config_path], "uaa.yml")
   source "uaa.yml.erb"
