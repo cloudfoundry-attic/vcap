@@ -1,0 +1,12 @@
+{
+  "name": "elasticsearch_node",
+  "override_attributes": {},
+  "json_class": "Chef::Role",
+  "description": "Elasticsearch search engine for apps",
+  "chef_type": "role",
+  "run_list" : ["recipe[deployment]",
+                "recipe[essentials]",
+                "recipe[ruby]",
+                "recipe[elasticsearch]",
+                "recipe[elasticsearch::node]"]
+}
