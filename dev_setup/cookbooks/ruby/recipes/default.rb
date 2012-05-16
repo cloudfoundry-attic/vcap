@@ -1,3 +1,5 @@
+include_recipe "cloudfoundry"
+
 # convenience variables
 ruby_version = node[:ruby][:version]
 ruby_source = node[:ruby][:source]

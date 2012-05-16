@@ -29,7 +29,7 @@ module RubyInstall
       code <<-EOH
       # work around chef's decompression of source tarball before a more elegant
       # solution is found
-      tar xzf #{tarball_path} || tar xf #{tarball_path}
+      tar xzf #{tarball_path}
       cd ruby-#{ruby_version}
       ./configure --disable-pthread --prefix=#{ruby_path}
       make
