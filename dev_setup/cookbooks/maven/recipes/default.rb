@@ -17,6 +17,7 @@
 # limitations under the License.
 #
 
+include_recipe "cloudfoundry"
 include_recipe "java"
 
 case node.platform
@@ -24,10 +25,11 @@ when "redhat", "centos", "fedora"
   include_recipe "jpackage"
 end
 
-remote_file  File.join("", "tmp", "apache-maven-#{node[:maven][:version]}.tar.gz") do
-  owner node[:deployment][:user]
+cf_remote_file  File.join("", "tmp", "apache-maven-#{node[:maven][:version]}.tar.gz") do
+  # owner node[:deployment][:user]
   source node[:maven][:source]
-  not_if { ::File.exists?(File.join("", "tmp", "apache-maven-#{node[:maven][:version]}.tar.gz")) }
+  # not_if { ::File.exists?(File.join("", "tmp", "apache-maven-#{node[:maven][:version]}.tar.gz")) }
+  checksum 'd35a876034c08cb7e20ea2fbcf168bcad4dff5801abad82d48055517513faa2f'
 end
 
 directory node[:maven][:base] do

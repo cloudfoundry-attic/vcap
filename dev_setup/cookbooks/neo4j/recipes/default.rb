@@ -4,6 +4,8 @@
 #
 # Copyright 2011, VMware
 #
+include_recipe "cloudfoundry"
+
 [node[:neo4j][:service_dir], File.join(node[:neo4j][:service_dir], "instances")].each do |dir|
   directory dir do
     owner node[:deployment][:user]
