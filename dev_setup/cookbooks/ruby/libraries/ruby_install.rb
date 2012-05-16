@@ -27,7 +27,9 @@ module RubyInstall
       cwd File.join("", "tmp")
       user node[:deployment][:user]
       code <<-EOH
-      tar xzf #{tarball_path}
+      # work around chef's decompression of source tarball before a more elegant
+      # solution is found
+      tar xzf #{tarball_path} || tar xf #{tarball_path}
       cd ruby-#{ruby_version}
       ./configure --disable-pthread --prefix=#{ruby_path}
       make
