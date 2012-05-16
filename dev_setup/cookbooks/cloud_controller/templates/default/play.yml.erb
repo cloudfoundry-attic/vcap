@@ -8,5 +8,12 @@ runtimes:
       default: true
       environment:
         path: /usr/bin:$PATH
+<% if node[:java7][:available?] %>
+  - "java7":
+      description: "Java 7"
+      version: "1.7"
+      executable: "java"
+      default: false
+<% end %>
 detection:
   - "lib/play.*.jar": true
