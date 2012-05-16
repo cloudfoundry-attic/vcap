@@ -1,4 +1,4 @@
-include_recipe "deployment"
+include_attributes "deployment"
 include_attributes "uaa"
 default[:deployment][:welcome] = "VMware's Cloud Application Platform"
 
