@@ -9,6 +9,10 @@ runtimes:
       description: "Java 6"
       version: "1.6"
       executable: "java"
+  - "java7":
+      description: "Java 7"
+      version: "1.7"
+      executable: "java"
   - node:
       version: '0.4.12'
       description: 'Node.js'
