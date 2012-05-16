@@ -1,4 +1,4 @@
-remote_file File.join(node[:deployment][:setup_cache], "redis-#{node[:redis][:version]}.tar.gz") do
+cf_remote_file File.join(node[:deployment][:setup_cache], "redis-#{node[:redis][:version]}.tar.gz") do
   owner node[:deployment][:user]
   source "http://redis.googlecode.com/files/redis-#{node[:redis][:version]}.tar.gz"
   checksum node[:redis][:checksum]
