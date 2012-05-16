@@ -13,6 +13,14 @@ runtimes:
       executable: "java"
       environment:
         path: /usr/bin:$PATH
+<% if node[:java7][:available?] %>
+  - "java7":
+      description: "Java 7"
+      version: "1.7"
+      executable: "java"
+      environment:
+        path: <%= File.join(node[:java7][:path]) %>:/usr/bin:$PATH
+<% end %>
   - node:
       version: '0.4.12'
       description: 'Node.js'
