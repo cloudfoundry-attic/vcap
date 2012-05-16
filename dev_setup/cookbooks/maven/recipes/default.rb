@@ -28,6 +28,7 @@ remote_file  File.join("", "tmp", "apache-maven-#{node[:maven][:version]}.tar.gz
   owner node[:deployment][:user]
   source node[:maven][:source]
   not_if { ::File.exists?(File.join("", "tmp", "apache-maven-#{node[:maven][:version]}.tar.gz")) }
+  checksum 'd35a876034c08cb7e20ea2fbcf168bcad4dff5801abad82d48055517513faa2f'
 end
 
 directory node[:maven][:base] do

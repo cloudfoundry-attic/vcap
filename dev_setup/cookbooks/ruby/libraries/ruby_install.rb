@@ -9,7 +9,7 @@ module RubyInstall
     end
 
     tarball_path = File.join(node[:deployment][:setup_cache], "ruby-#{ruby_version}.tar.gz")
-    remote_file tarball_path do
+    cf_remote_file tarball_path do
       owner node[:deployment][:user]
       source ruby_source
       checksum node[:ruby][:checksums][ruby_version]
@@ -27,6 +27,8 @@ module RubyInstall
       cwd File.join("", "tmp")
       user node[:deployment][:user]
       code <<-EOH
+      # work around chef's decompression of source tarball before a more elegant
+      # solution is found
       tar xzf #{tarball_path}
       cd ruby-#{ruby_version}
       ./configure --disable-pthread --prefix=#{ruby_path}
@@ -38,9 +40,10 @@ module RubyInstall
       end
     end
 
-    remote_file File.join("", "tmp", "rubygems-#{rubygems_version}.tgz") do
+    cf_remote_file File.join("", "tmp", "rubygems-#{rubygems_version}.tgz") do
       owner node[:deployment][:user]
       source "http://production.cf.rubygems.org/rubygems/rubygems-#{rubygems_version}.tgz"
+      checksum node[:rubygems][:checksum]
       not_if { ::File.exists?(File.join("", "tmp", "rubygems-#{rubygems_version}.tgz")) }
     end
 
