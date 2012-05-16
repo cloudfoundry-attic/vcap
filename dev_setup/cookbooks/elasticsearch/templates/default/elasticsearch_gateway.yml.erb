@@ -1,0 +1,20 @@
+---
+cloud_controller_uri: <%= node[:cloud_controller][:service_api_uri] %>
+service:
+  name: elasticsearch
+  version: "0.19"
+  description: 'Elasticsearch text search service'
+  plans: ['free']
+  tags: ['elasticsearch', 'elasticsearch-0.19', 'search']
+  timeout: 20
+host: localhost
+index: 0
+token: <%= node[:elasticsearch_node][:token] %>
+logging:
+  level: debug
+mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
+pid: /var/vcap/sys/run/elasticsearch_service.pid
+node_timeout: 20
+# z_interval: 30
+# check_orphan_interval: 3600
+# double_check_orphan_interval: 300

@@ -1,0 +1,21 @@
+---
+capacity: <%= node[:elasticsearch_node][:capacity] %>
+plan: "free"
+local_db: sqlite3:/var/vcap/services/elasticsearch/elasticsearch_node.db
+mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
+index: <%= node[:elasticsearch_node][:index] %>
+base_dir: /var/vcap/services/elasticsearch/instances
+logging:
+  level: debug
+pid: /var/vcap/sys/run/elasticsearch_node.pid
+max_memory: <%= node[:elasticsearch_node][:max_memory] %>
+node_id: <%= "elasticsearch_node_#{node[:elasticsearch_node][:index]}" %>
+elasticsearch_log_dir: /var/vcap/sys/log/elasticsearch
+elasticsearch_path: <%= File.join(node[:elasticsearch][:path], "bin", "elasticsearch") %>
+elasticsearch_plugin_dir: <%= File.join(node[:elasticsearch][:path], "plugins") %>
+port_range:
+  first: 45001
+  last: 55000
+# z_interval: 30
+# max_nats_payload: 1048576
+# fqdn_hosts: false
