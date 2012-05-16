@@ -84,7 +84,7 @@ class Component
     Run.services.include? name
   end
 
-  DEFAULT_CLOUD_FOUNDRY_EXCLUDED_COMPONENT = 'neo4j|memcached|couchdb|service_broker'
+  DEFAULT_CLOUD_FOUNDRY_EXCLUDED_COMPONENT = 'neo4j|memcached|couchdb|service_broker|elasticsearch'
   def is_excluded?
     @excluded ||= ENV['CLOUD_FOUNDRY_EXCLUDED_COMPONENT']
     @excluded ||= DEFAULT_CLOUD_FOUNDRY_EXCLUDED_COMPONENT
