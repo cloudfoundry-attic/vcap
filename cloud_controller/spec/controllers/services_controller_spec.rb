@@ -66,9 +66,20 @@ describe ServicesController do
         response.status.should == 200
       end
 
-      it 'should create service offerings for brokered service' do
+      it 'should create service offerings for single brokered service' do
         request.env['HTTP_X_VCAP_SERVICE_TOKEN'] = 'broker'
-        AppConfig[:service_broker] = {:token => 'broker'}
+        AppConfig[:service_broker] = {:token => ['broker']}
+        post_msg :create do
+          VCAP::Services::Api::ServiceOfferingRequest.new(
+            :label => 'foo-bar',
+            :url   => 'http://localhost:56789')
+        end
+        response.status.should == 200
+      end
+
+      it 'should create service offerings for multiple brokered service' do
+        request.env['HTTP_X_VCAP_SERVICE_TOKEN'] = 'broker'
+        AppConfig[:service_broker] = {:token => ['broker', 'foobar']}
         post_msg :create do
           VCAP::Services::Api::ServiceOfferingRequest.new(
             :label => 'foo-bar',
@@ -79,7 +90,7 @@ describe ServicesController do
 
       it 'should not create brokered service offerings if token mismatch' do
         request.env['HTTP_X_VCAP_SERVICE_TOKEN'] = 'foobar'
-        AppConfig[:service_broker] = {:token => 'broker'}
+        AppConfig[:service_broker] = {:token => ['broker']}
         post_msg :create do
           VCAP::Services::Api::ServiceOfferingRequest.new(
             :label => 'foo-bar',
@@ -159,7 +170,7 @@ describe ServicesController do
         svc = Service.create(
           :label => 'foo-bar',
           :url   => 'http://www.google.com',
-          :token => 'foobar')
+          :token => ['foobar'])
         svc.should be_valid
 
         request.env['HTTP_X_VCAP_SERVICE_TOKEN'] = 'barfoo'
@@ -288,7 +299,7 @@ describe ServicesController do
     describe '#list_brokered_services' do
       before :each do
         request.env['HTTP_X_VCAP_SERVICE_TOKEN'] = 'broker'
-        AppConfig[:service_broker] = {:token => 'broker'}
+        AppConfig[:service_broker] = {:token => ['broker']}
       end
 
       it "should return not authorized on token mismatch" do
@@ -299,7 +310,7 @@ describe ServicesController do
 
       it "should not list builtin services" do
         AppConfig[:builtin_services] = {
-          :foo => {:token=>"foobar"}
+          :foo => {:token => ["foobar"]}
         }
         svc = Service.new
         svc.label = "foo-1.0"
@@ -313,15 +324,15 @@ describe ServicesController do
         Yajl::Parser.parse(response.body)['brokered_services'].should be_empty
       end
 
-      it "should list brokered services" do
+      it "should list single brokered services" do
         AppConfig[:builtin_services] = {
-          :foo => {:token=>"foobar"}
+          :foo => {:token => ["foobar"]}
         }
 
         svc = Service.new
         svc.label = "brokered-1.0"
         svc.url   = "http://localhost:56789"
-        svc.token = 'brokered'
+        svc.token = 'broker'
         svc.save
         svc.should be_valid
 
@@ -329,10 +340,39 @@ describe ServicesController do
         response.status.should == 200
         Yajl::Parser.parse(response.body)['brokered_services'].size.should == 1
       end
+
+      it "should list multiple brokered services" do
+        AppConfig[:builtin_services] = {
+          :foo => {:token => ["foobar"]}
+        }
+
+        svc = Service.new
+        svc.label = "brokered-1.0"
+        svc.url   = "http://localhost:56789"
+        svc.token = 'broker'
+        svc.save
+        svc.should be_valid
+
+        svc = Service.new
+        svc.label = "brokered-2.0"
+        svc.url   = "http://localhost:56789"
+        svc.token = 'broker'
+        svc.save
+        svc.should be_valid
+
+        get :list_brokered_services
+        response.status.should == 200
+        Yajl::Parser.parse(response.body)['brokered_services'].size.should == 2
+      end
     end
 
     describe '#update_handle' do
       before :each do
+        request.env['HTTP_X_VCAP_SERVICE_TOKEN'] = 'foobar'
+        AppConfig[:builtin_services] = {
+          :foo => {:token=>"foobar"}
+        }
+
         svc = Service.new
         svc.label = "foo-bar"
         svc.url   = "http://localhost:56789"

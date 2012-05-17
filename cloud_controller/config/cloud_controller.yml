@@ -149,7 +149,7 @@ builtin_services:
 
 # Service broker
 service_broker:
-    token: "0xdeadbeef"
+    token: ["0xdeadbeef"]
 
 # lifecycle
 service_lifecycle:
