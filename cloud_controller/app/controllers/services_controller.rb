@@ -51,7 +51,9 @@ class ServicesController < ApplicationController
       # register with us to get a token.
       # or, it's a brokered service
       svc = Service.new(req.extract)
-      if AppConfig[:service_broker] and @service_auth_token == AppConfig[:service_broker][:token] and !svc.is_builtin?
+      if AppConfig[:service_broker] and \
+         AppConfig[:service_broker][:token].index(@service_auth_token) and \
+         !svc.is_builtin?
         attrs = req.extract.dup
         attrs[:token] = @service_auth_token
         svc.update_attributes!(attrs)
@@ -124,20 +126,16 @@ class ServicesController < ApplicationController
 
   # List brokered services
   def list_brokered_services
-    if AppConfig[:service_broker].nil? or @service_auth_token != AppConfig[:service_broker][:token]
+    if AppConfig[:service_broker].nil? or \
+       AppConfig[:service_broker][:token].index(@service_auth_token).nil?
       raise CloudError.new(CloudError::FORBIDDEN)
     end
 
-    svcs = Service.all
-    brokered_svcs = svcs.select {|svc| ! svc.is_builtin? }
-    result = []
-    brokered_svcs.each do |svc|
-      result << {
-        :label => svc.label,
-        :description => svc.description,
-        :acls => svc.acls,
-      }
-    end
+    result = Service.where(:token => @service_auth_token)
+    result = result.select { |svc| !svc.is_builtin? }
+    result = result.map { |svc| {:label => svc.label, \
+                  :description => svc.description, :acls => svc.acls } }
+
     render :json =>  {:brokered_services => result}
   end
 

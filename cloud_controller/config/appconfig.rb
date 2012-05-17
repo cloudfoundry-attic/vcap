@@ -181,12 +181,11 @@ if AppConfig[:service_broker]
   end
 
   token = AppConfig[:service_broker][:token]
-  unless (token.kind_of? String) || (token.kind_of? Integer)
-    $stderr.puts "FATAL: Token must be string or integer, #{token.class} given."
+  unless (token.kind_of? Array)
+    $stderr.puts "FATAL: Token must be Array #{token.class} given."
     exit 1
   end
-
-  AppConfig[:service_broker][:token] = token.to_s
+  AppConfig[:service_broker][:token] = token.map {|t| t.to_s}
 end
 
 c = OpenSSL::Cipher::Cipher.new('blowfish')
