@@ -11,7 +11,7 @@ end
 class VCAP::Spec::ForkedComponent::Base
   attr_reader :pid, :pid_filename, :output_basedir, :name, :cmd
 
-  attr_accessor :reopen_stdio
+  attr_accessor :reopen_stdio, :daemon
 
   # @param  cmd             String  Command to run
   # @param  name            String  Short name for this component (e.g. 'redis')
@@ -25,6 +25,7 @@ class VCAP::Spec::ForkedComponent::Base
     @pid_filename   = pid_filename
 
     @reopen_stdio = true
+    @daemon = false
 
   end
 
@@ -53,8 +54,12 @@ class VCAP::Spec::ForkedComponent::Base
 
   def stop
     return unless @pid && VCAP.process_running?(@pid)
-    Process.kill('TERM', @pid)
-    Process.waitpid(@pid, 0)
+    if @daemon
+      Process.kill('TERM', @pid)
+      Process.waitpid(@pid, 0)
+    else
+      Process.kill('KILL', @pid)
+    end
     FileUtils.rm_f(@pid_filename) if @pid_filename
     @pid = nil
 
