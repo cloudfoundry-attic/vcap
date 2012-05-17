@@ -2,9 +2,12 @@
 require File.dirname(__FILE__) + '/../spec_helper'
 
 require 'fileutils'
+require 'tmpdir'
 require 'nats/client'
 require 'yajl/json_gem'
 require 'vcap/common'
+require 'vcap/logging'
+require 'vcap/spec/forked_component.rb'
 require 'openssl'
 require 'net/http'
 require 'uri'
@@ -14,97 +17,50 @@ require "router/router"
 
 require 'pp'
 
-class NatsServer
-
-  TEST_PORT = 4228
-
-  def initialize(uri="nats://localhost:#{TEST_PORT}", pid_file='/tmp/nats-router-tests.pid')
-    @uri = URI.parse(uri)
-    @pid_file = pid_file
+class NatsServer < VCAP::Spec::ForkedComponent::Base
+  def initialize(port, dir)
+    @port = port
+    pidfile = File.join(dir, 'nats-server.pid')
+    super("ruby -S bundle exec nats-server -p #{port} -P #{pidfile}", 'nats', dir, pidfile)
   end
 
   def uri
-    @uri.to_s
-  end
-
-  def server_pid
-    @pid ||= File.read(@pid_file).chomp.to_i
-  end
-
-  def start_server
-    return if NATS.server_running? @uri
-    %x[ruby -S bundle exec nats-server -p #{@uri.port} -P #{@pid_file} -d 2> /dev/null]
-    NATS.wait_for_server(@uri) # New version takes opt_timeout
+    "nats://localhost:#{@port}"
   end
 
   def is_running?
-    NATS.server_running? @uri
-  end
-
-  def kill_server
-    if File.exists? @pid_file
-      Process.kill('KILL', server_pid)
-      FileUtils.rm_f(@pid_file)
-    end
-    sleep(0.5)
+    NATS.server_running? uri
   end
 end
 
-class RouterServer
+class RouterServer < VCAP::Spec::ForkedComponent::Base
 
-  PID_FILE    = '/tmp/router-test.pid'
-  CONFIG_FILE = '/tmp/router-test.yml'
-  LOG_FILE    = '/tmp/router-test.log'
-  UNIX_SOCK   = '/tmp/router.sock' # unix socket between nginx and uls
   PORT        = 80                 # nginx listening port
   STATUS_PORT = 8081               # must be consistent with nginx config in dev_setup
   STATUS_USER = "admin"            # must be consistent with nginx config in dev_setup
   STATUS_PASSWD = "password"       # must be consistent with nginx config in dev_setup
+  UNIX_SOCK   = '/tmp/router.sock' # unix socket between nginx and uls
 
-  # We verify functionalities for the whole "router" (i.e. nginx + uls).
-  # In all tests, when a client like to send a request to an test app,
-  # it has to send to the port which nginx is listening.
-  def initialize(nats_uri)
-    mbus      = "mbus: #{nats_uri}"
-    log_info  = "logging:\n  level: debug\n  file: #{LOG_FILE}"
-    @config = %Q{sock: #{UNIX_SOCK}\n#{mbus}\n#{log_info}\npid: #{PID_FILE}\nlocal_route: 127.0.0.1\nstatus:\n  port: #{STATUS_PORT}\n  user: #{STATUS_USER}\n  password: #{STATUS_PASSWD}}
-  end
+  def initialize(nats_uri, dir)
+    pidfile = File.join(dir, 'router.pid')
+    logfile = File.join(dir, 'router.log')
+    config_file = File.join(dir, 'router.yml')
 
-  def self.port
-    PORT
-  end
+    mbus = "mbus: #{nats_uri}"
+    log_info = "logging:\n  level: debug\n  file: #{logfile}"
 
-  def self.sock
-    UNIX_SOCK
-  end
-
-  def self.host
-    '127.0.0.1'
-  end
-
-  def server_pid
-    File.read(PID_FILE).chomp.to_i
-  end
-
-  def start_server
-    return if is_running?
+    config = %Q{sock: #{UNIX_SOCK}\n#{mbus}\n#{log_info}\npid: #{pidfile}\nlocal_route: 127.0.0.1\nstatus:\n  port: #{STATUS_PORT}\n  user: #{STATUS_USER}\n  password: #{STATUS_PASSWD}}
 
     # Write the config
-    File.open(CONFIG_FILE, 'w') { |f| f.puts "#{@config}" }
-
-    # Wipe old log file, but truncate so running tail works
-    if (File.exists? LOG_FILE)
-      File.truncate(LOG_FILE, 0)
-      # %x[rm #{LOG_FILE}] if File.exists? LOG_FILE
-    end
+    File.open(config_file, 'w') { |f| f.puts "#{config}" }
 
     server = File.expand_path(File.join(__FILE__, '../../../bin/router'))
     nats_timeout = File.expand_path(File.join(File.dirname(__FILE__), 'nats_timeout'))
-    #pid = Process.fork { %x[#{server} -c #{CONFIG_FILE} 2> /dev/null] }
-    pid = Process.fork { %x[ruby -r#{nats_timeout} #{server} -c #{CONFIG_FILE}] }
-    Process.detach(pid)
+    super("ruby -r#{nats_timeout} #{server} -c #{config_file}", 'router', dir, pidfile)
+  end
 
-    wait_for_server
+  def self.unix_socket
+    UNIX_SOCK
   end
 
   def is_running?
@@ -115,21 +71,5 @@ class RouterServer
   rescue
     return false
   end
-
-  def wait_for_server(max_wait = 5)
-    start = Time.now
-    while (Time.now - start < max_wait) # Wait max_wait seconds max
-      break if is_running?
-      sleep(0.2)
-    end
-  end
-
-  def kill_server
-    if File.exists? PID_FILE
-      %x[kill -9 #{server_pid} 2> /dev/null]
-      %x[rm #{PID_FILE}]
-    end
-    %x[rm #{CONFIG_FILE}] if File.exists? CONFIG_FILE
-    sleep(0.2)
-  end
 end
+
