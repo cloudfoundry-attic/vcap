@@ -1,0 +1,13 @@
+{
+  "name": "vblob_node",
+  "override_attributes": {},
+  "json_class": "Chef::Role",
+  "description": "vBlob service for apps",
+  "chef_type": "role",
+  "run_list" : ["recipe[deployment]",
+                "recipe[essentials]",
+                "recipe[ruby]",
+                "recipe[node::node06]",
+                "recipe[vblob]",
+                "recipe[vblob::node]"]
+}
