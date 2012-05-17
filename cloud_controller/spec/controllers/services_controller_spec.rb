@@ -290,7 +290,7 @@ describe ServicesController do
         svc = Service.new
         svc.label = "brokered-1.0"
         svc.url   = "http://localhost:56789"
-        svc.token = 'brokered'
+        svc.token = 'broker'
         svc.save
         svc.should be_valid
 

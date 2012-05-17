@@ -51,10 +51,24 @@ class ServicesController < ApplicationController
       # register with us to get a token.
       # or, it's a brokered service
       svc = Service.new(req.extract)
-      if AppConfig[:service_broker] and @service_auth_token == AppConfig[:service_broker][:token] and !svc.is_builtin?
-        attrs = req.extract.dup
-        attrs[:token] = @service_auth_token
-        svc.update_attributes!(attrs)
+      if AppConfig[:service_broker] and !svc.is_builtin?
+        token = AppConfig[:service_broker][:token]
+        token_valid = false
+        if token.kind_of? String or token.kind_of? Integer
+          token_valid = (@service_auth_token == token.to_s)
+        elsif token.kind_of? Array
+          token.each do |t|
+            token_valid = (@service_auth_token == t.to_s)
+            break if token_valid
+          end
+        end
+        if token_valid
+          attrs = req.extract.dup
+          attrs[:token] = @service_auth_token
+          svc.update_attributes!(attrs)
+        else
+          raise CloudError.new(CloudError::FORBIDDEN)
+        end
       else
         raise CloudError.new(CloudError::FORBIDDEN) unless svc.is_builtin? && svc.verify_auth_token(@service_auth_token)
         svc.token = @service_auth_token
@@ -124,12 +138,25 @@ class ServicesController < ApplicationController
 
   # List brokered services
   def list_brokered_services
-    if AppConfig[:service_broker].nil? or @service_auth_token != AppConfig[:service_broker][:token]
+    if AppConfig[:service_broker]
+      token = AppConfig[:service_broker][:token]
+      token_valid = false
+      if token.kind_of? String or token.kind_of? Integer
+        token_valid = (@service_auth_token == token.to_s)
+      elsif token.kind_of? Array
+        token.each do |t|
+          token_valid = (@service_auth_token == t.to_s)
+        end
+      end
+
+      raise CloudError.new(CloudError::FORBIDDEN) if !token_valid
+    else
       raise CloudError.new(CloudError::FORBIDDEN)
     end
 
     svcs = Service.all
-    brokered_svcs = svcs.select {|svc| ! svc.is_builtin? }
+    brokered_svcs = svcs.select {|svc| !svc.is_builtin? and \
+                       svc.token == @service_auth_token }
     result = []
     brokered_svcs.each do |svc|
       result << {
