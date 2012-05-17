@@ -43,7 +43,7 @@ module Functional
 
     def query_uls(uri)
       parser, body = nil, nil
-      UNIXSocket.open(RouterServer.sock) do |socket|
+      UNIXSocket.open(RouterServer.unix_socket) do |socket|
         socket.send(simple_uls_request(uri), 0)
         socket.close_write
         buf = socket.read

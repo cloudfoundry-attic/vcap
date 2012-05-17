@@ -10,26 +10,22 @@ describe 'Router Functional Tests' do
   ROUTER_V1_SESSION = "zXiJv9VIyWW7kqrcqYUkzj+UEkC4UUHGaYX9fCpDMm2szLfOpt+aeRZMK7kfkpET+PDhvfKRP/M="
 
   before :each do
-    @nats_server = NatsServer.new
-    @nats_server.start_server
-    @nats_server.is_running?.should be_true
+    nats_dir = Dir.mktmpdir('router-test-nats')
+    nats_port = VCAP::grab_ephemeral_port
+    @nats_server = NatsServer.new(nats_port, nats_dir)
+    @nats_server.start
 
-    @router = RouterServer.new(@nats_server.uri)
-    # The router will only announce itself after it has subscribed to 'vcap.component.discover'.
-    NATS.start(:uri => @nats_server.uri) do
-      NATS.subscribe('vcap.component.announce') { NATS.stop }
-      # Ensure that NATS has processed our subscribe from above before we start the router
-      NATS.publish('xxx') { @router.start_server }
-      EM.add_timer(5) { NATS.stop }
-    end
-    @router.is_running?.should be_true
+    router_dir = Dir.mktmpdir('router-test-nats')
+    @router_server = RouterServer.new(@nats_server.uri, router_dir)
+    @router_server.start
+    @router_server.is_running?.should be_true
   end
 
   after :each do
-    @router.kill_server
-    @router.is_running?.should be_false
+    @router_server.stop
+    @router_server.is_running?.should be_false
 
-    @nats_server.kill_server
+    @nats_server.stop
     @nats_server.is_running?.should be_false
   end
 
@@ -96,21 +92,21 @@ describe 'Router Functional Tests' do
   end
 
   it 'should properly exit when NATS fails to reconnect' do
-    @nats_server.kill_server
+    @nats_server.stop
     @nats_server.is_running?.should be_false
     sleep(0.5)
-    @router.is_running?.should be_false
+    @router_server.is_running?.should be_false
   end
 
   it 'should not start with nats not running' do
-    @nats_server.kill_server
+    @nats_server.stop
     @nats_server.is_running?.should be_false
-    @router.kill_server
-    @router.is_running?.should be_false
+    @router_server.stop
+    @router_server.is_running?.should be_false
 
-    @router.start_server
+    @router_server.start
     sleep(0.5)
-    @router.is_running?.should be_false
+    @router_server.is_running?.should be_false
   end
 
   # Encodes _data_ as json, decodes reply as json
