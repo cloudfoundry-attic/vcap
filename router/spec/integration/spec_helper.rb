@@ -130,7 +130,7 @@ def get_healthz
   credentials.should_not be_nil
 
   rbody = nil
-  TCPSocket.open("127.0.0.1", RouterServer.port) {|rs|
+  TCPSocket.open("127.0.0.1", 80) {|rs|
     rs.send(healthz_request, 0)
 
     resp, rbody = parse_http_msg_from_socket(rs)
