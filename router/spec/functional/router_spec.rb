@@ -14,7 +14,12 @@ describe 'Router Functional Tests' do
     @nats_server.start_server
     @nats_server.is_running?.should be_true
 
-    @router = RouterServer.new(@nats_server.uri)
+    redis_port = VCAP.grab_ephemeral_port
+    @redis_server = RedisServer.new(redis_port)
+    @redis_server.start
+    @redis_server.wait_ready
+
+    @router = RouterServer.new(@nats_server.uri, @redis_server)
     # The router will only announce itself after it has subscribed to 'vcap.component.discover'.
     NATS.start(:uri => @nats_server.uri) do
       NATS.subscribe('vcap.component.announce') { NATS.stop }
@@ -31,6 +36,8 @@ describe 'Router Functional Tests' do
 
     @nats_server.kill_server
     @nats_server.is_running?.should be_false
+
+    @redis_server.stop
   end
 
   it 'should respond to a discover message properly' do

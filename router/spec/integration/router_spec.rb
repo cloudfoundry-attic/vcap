@@ -1,6 +1,7 @@
 # Copyright (c) 2009-2011 VMware, Inc.
 require File.dirname(__FILE__) + '/spec_helper'
 require "base64"
+require "redis"
 
 describe 'Router Integration Tests (require nginx running)' do
   include Integration
@@ -10,7 +11,12 @@ describe 'Router Integration Tests (require nginx running)' do
     @nats_server.start_server
     @nats_server.is_running?.should be_true
 
-    @router = RouterServer.new(@nats_server.uri)
+    redis_port = VCAP.grab_ephemeral_port
+    @redis_server = RedisServer.new(redis_port)
+    @redis_server.start
+    @redis_server.wait_ready
+
+    @router = RouterServer.new(@nats_server.uri, @redis_server)
     # The router will only announce itself after it has subscribed to 'vcap.component.discover'.
     NATS.start(:uri => @nats_server.uri) do
       NATS.subscribe('vcap.component.announce') { NATS.stop }
@@ -27,6 +33,8 @@ describe 'Router Integration Tests (require nginx running)' do
 
     @nats_server.kill_server
     @nats_server.is_running?.should be_false
+
+    @redis_server.stop
   end
 
   it 'should get health status via nginx' do
@@ -40,6 +48,7 @@ describe 'Router Integration Tests (require nginx running)' do
     dea = DummyDea.new(@nats_server.uri, '1234')
     dea.register_app(app)
     app.verify_registered('127.0.0.1', RouterServer.port)
+    app.verify_redis_stats(@redis_server)
     app.stop
   end
 
