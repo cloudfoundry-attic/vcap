@@ -221,10 +221,11 @@ module Integration
   class TestApp
     class UsageError < StandardError; end
 
-    attr_reader :host, :port, :uris, :socket
+    attr_reader :host, :port, :uris, :socket, :app_id
 
     def initialize(*uris)
       @uris = uris
+      @app_id = Random.rand(10000)
       @port = nil
       @socket = nil
       start
@@ -259,6 +260,15 @@ module Integration
         verify_path_registered(uri, '/', router_host, router_port)
         verify_path_registered(uri.upcase, '/', router_host, router_port)
       end
+    end
+
+    def verify_redis_stats(redis_server)
+      now = Time.now.to_i
+      redis = Redis.new(:port => redis_server.port, :password => redis_server.pass)
+      records = redis.zrangebyscore('access_time', now - 10, now)
+
+      records.size.should == 1
+      records[0].to_i.should == @app_id
     end
 
     def get_trace_header(router_host, router_port, trace_key)
@@ -318,6 +328,7 @@ module Integration
       { :dea  => @dea_id,
         :host => @host,
         :port => app.port,
+        :app  => app.app_id,
         :uris => app.uris,
         :tags => tags
       }

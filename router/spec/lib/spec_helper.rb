@@ -5,6 +5,8 @@ require 'fileutils'
 require 'nats/client'
 require 'yajl/json_gem'
 require 'vcap/common'
+require 'vcap/logging'
+require 'vcap/spec/forked_component.rb'
 require 'openssl'
 require 'net/http'
 require 'uri'
@@ -64,10 +66,10 @@ class RouterServer
   # We verify functionalities for the whole "router" (i.e. nginx + uls).
   # In all tests, when a client like to send a request to an test app,
   # it has to send to the port which nginx is listening.
-  def initialize(nats_uri)
+  def initialize(nats_uri, redis_server)
     mbus      = "mbus: #{nats_uri}"
     log_info  = "logging:\n  level: debug\n  file: #{LOG_FILE}"
-    @config = %Q{sock: #{UNIX_SOCK}\n#{mbus}\n#{log_info}\npid: #{PID_FILE}\nlocal_route: 127.0.0.1\nstatus:\n  port: #{STATUS_PORT}\n  user: #{STATUS_USER}\n  password: #{STATUS_PASSWD}}
+    @config = %Q{sock: #{UNIX_SOCK}\n#{mbus}\n#{log_info}\npid: #{PID_FILE}\nlocal_route: 127.0.0.1\nstatus:\n  port: #{STATUS_PORT}\n  user: #{STATUS_USER}\n  password: #{STATUS_PASSWD}\nredis:\n  host: localhost\n  port: #{redis_server.port}\n  password: #{redis_server.pass}\nmax_appset_size: 1\n}
   end
 
   def self.port
@@ -131,5 +133,37 @@ class RouterServer
     end
     %x[rm #{CONFIG_FILE}] if File.exists? CONFIG_FILE
     sleep(0.2)
+  end
+end
+
+class RedisServer < VCAP::Spec::ForkedComponent::Base
+  attr_reader :port, :pass
+
+  def initialize(port, pass='pass')
+    pidfile = '/tmp/redis_server.pid'
+    basedir = '/tmp'
+    @port = port
+    @pass = pass
+    super("redis-server --port #{port} --daemonize yes --pidfile #{pidfile} --requirepass #{pass}", 'redis', basedir, pidfile)
+  end
+
+  def ready?
+    begin
+      TCPSocket.open('localhost', @port).close
+      return true
+    rescue => e
+      return false
+    end
+  end
+
+  # TODO this should be moved in common, to support daemon process
+  def stop
+    return unless @pid && VCAP.process_running?(@pid)
+    Process.kill('TERM', @pid)
+    Process.waitpid(@pid, 0) rescue nil
+    FileUtils.rm_f(@pid_filename) if @pid_filename
+    @pid = nil
+
+    self
   end
 end
