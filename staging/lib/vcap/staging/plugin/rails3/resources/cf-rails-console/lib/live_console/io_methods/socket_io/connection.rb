@@ -39,8 +39,12 @@ class LiveConsole::IOMethods::SocketIOConnection
     raw_output.print "Login: "
     raw_output.flush
     username = raw_input.gets
+    raw_output.print "\n"
     raw_output.print "Password: "
+    raw_output.flush
     password = raw_input.gets
+    raw_output.print "\n"
+    raw_output.flush
     credentials_file= @opts[:credentials_file] || '.consoleaccess'
     credentials =YAML.load_file(credentials_file)
     if username.chomp != credentials['username'] || password.chomp != credentials['password']
