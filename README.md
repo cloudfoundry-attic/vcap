@@ -50,8 +50,8 @@ server VM.
 
 ### Step 1: create a pristine VM with ssh
 
-* setup a VM with a pristine Ubuntu 10.04.2 server 64bit image,
-  [download here](http://www.ubuntu.com/download/ubuntu/download)
+* setup a VM with a pristine Ubuntu 10.04.4 server 64bit image,
+  [download here](http://releases.ubuntu.com/lucid/)
 * setup your VM with 1G or more of memory
 * you may wish to snapshot your VM now in case things go pear shaped
   (great snapshot spots are here and after step 4)
