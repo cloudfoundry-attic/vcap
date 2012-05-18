@@ -45,7 +45,7 @@ module VCAP
   class Component
 
     # We will suppress these from normal varz reporting by default.
-    CONFIG_SUPPRESS = Set.new([:mbus, :service_mbus, :keys, :database_environment, :password, :pass])
+    CONFIG_SUPPRESS = Set.new([:mbus, :service_mbus, :keys, :database_environment, :password, :pass, :token])
 
     class << self
 
