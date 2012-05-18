@@ -65,8 +65,9 @@ describe VCAP::Services::Api::ServiceGatewayClient do
         {:code => 40400, :description=> "not found"}.to_json,
         {:code => 50300, :description=> "internal"}.to_json,
         {:code => 50100, :description=> "not done yet"}.to_json,
+        {:bad_response => "foo"}.to_json,
       )
-      resp.should_receive(:code).and_return(404, 503, 500)
+      resp.should_receive(:code).and_return(404, 503, 500, 500)
       resp.should_receive(:start).any_number_of_times.and_return resp
 
       http_method = :get
@@ -75,6 +76,7 @@ describe VCAP::Services::Api::ServiceGatewayClient do
 
       expect {client.perform_request(http_method, path)}.should raise_error(VCAP::Services::Api::ServiceGatewayClient::NotFoundResponse)
       expect {client.perform_request(http_method, path)}.should raise_error(VCAP::Services::Api::ServiceGatewayClient::GatewayInternalResponse)
+      expect {client.perform_request(http_method, path)}.should raise_error(VCAP::Services::Api::ServiceGatewayClient::ErrorResponse, /not done yet/)
       expect {client.perform_request(http_method, path)}.should raise_error(VCAP::Services::Api::ServiceGatewayClient::UnexpectedResponse)
     end
   end
