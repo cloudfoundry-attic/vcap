@@ -1,0 +1,161 @@
+#!/usr/bin/env ruby
+# vim: fileencoding=utf-8
+# vim: ts=2 sw=2 sts=2 et
+
+require 'rubygems'
+require 'bundler'
+require 'fileutils'
+require 'logger'
+
+# Rewrite git sources in Gemfile and lock files to paths
+#
+# Usage: transform_git_source path/to/dir_w_Gemfile path/to/git/checkout
+
+def `(cmd)
+  @logger.debug "executing #{cmd}"
+  result = super
+  raise RuntimeError, "error while attempting to execute #{cmd}" unless $?.exitstatus == 0
+  result
+end
+
+def checkout(spec, path)
+  unless path.join('.git').exist?
+    path.parent.mkpath
+    path.rmtree if path.exist?
+    %x(git clone --no-checkout #{spec.source.uri} #{path})
+  end
+  Dir.chdir(path) do
+    %x(git fetch --quiet --tags #{spec.source.uri})
+    # This is gross, but why do they keep this private?
+    revision = spec.source.send(:revision)
+    %x(git reset --hard #{revision})
+  end
+end
+
+# Derived from Bundler::Definition#to_lock
+# Copyright Bundler contributors
+# Portions copyright (c) 2010 André Arko
+# Portions copyright (c) 2009 Engine Yard
+def to_lock(specs, platforms, dependencies)
+  out = ""
+
+  specs.map {|s| s.source}.sort_by { |s| s.class.to_s }.uniq.each do |source|
+    # Add the source header
+    out << source.to_lock
+    # Find all specs for this source
+    specs.
+      select  { |s| s.source == source }.
+      # This needs to be sorted by full name so that
+      # gems with the same name, but different platform
+      # are ordered consistantly
+      sort_by { |s| s.full_name }.
+      each do |spec|
+        next if spec.name == 'bundler'
+        out << spec.to_lock
+    end
+    out << "\n"
+  end
+
+  out << "PLATFORMS\n"
+
+  platforms.map { |p| p.to_s }.sort.each do |p|
+    out << "  #{p}\n"
+  end
+
+  out << "\n"
+  out << "DEPENDENCIES\n"
+
+  handled = []
+  dependencies.
+    sort_by { |d| d.to_s }.
+    each do |dep|
+      next if handled.include?(dep.name)
+      out << dep.to_lock
+      handled << dep.name
+  end
+
+  out
+end
+
+def rewrite_lockfile(lockfile, checkout_base)
+  parser = Bundler::LockfileParser.new(lockfile.read)
+
+  candidates = parser.specs.select { |s| Bundler::Source::Git === s.source }
+  if candidates.empty?
+    @logger.info 'Nothing to see here, move along'
+    return
+  end
+
+  gemsrc = parser.sources.find { |s| Bundler::Source::Rubygems === s } ||
+    Bundler::Source::Rubygems.from_lock('remote' => 'http://rubygems.org')
+  lockfile.parent.join('vendor', 'cache').mkpath
+  candidates.each do |spec|
+    # TODO: shall i sanitize spec.name?
+    checkout_dir = checkout_base.join(spec.name)
+    checkout(spec, checkout_dir)
+    # TODO error handling
+    gem_dir = Pathname.glob("#{checkout_dir}/**/#{spec.name}.gemspec")[0].parent
+    Dir.chdir(gem_dir) do |dir|
+      %x(gem build #{spec.name}.gemspec)
+      gempath = gem_dir.join("#{spec.name}-#{spec.version}.gem")
+      FileUtils.link([gempath.to_s], lockfile.parent.join('vendor', 'cache').to_s, :verbose => true)
+    end
+    spec.source = gemsrc
+    # make the dependency have "no specified source"
+    parser.dependencies.find { |d| d.name == spec.name }.source = nil
+  end
+
+  lockfile.open('w') do |f|
+    f.puts to_lock(parser.specs, parser.platforms, parser.dependencies)
+  end
+end
+
+# We don't attempt to be a full ruby parser, only rewrite Gemfiles we wrote
+def rewrite_gemfile(gemfile, checkout_base)
+  out = ''
+  probe = Object.new
+  class << probe
+    attr_reader :name, :version, :options, :path
+    def gem(name, *args)
+      @name = name
+      @options = args.last.is_a?(Hash) ? args.pop : {}
+      @version = args
+      unless @options.include?(:git)
+        raise ArgumentError, ':git option expected, none found'
+      end
+    end
+  end
+
+  gemfile.each_line do |line|
+    case line
+    when /^\s*gem.*:git/
+      if line =~ /#.*:git/ && line !~ /^[^#]+:git/
+        out << line
+        next
+      end
+      probe.instance_eval(line)
+      out << "gem #{probe.name.inspect}"
+      out << ", #{probe.version.map(&:inspect).join(', ')}" unless probe.version.empty?
+      out << "\n"
+    else
+      out << line
+    end
+  end
+  gemfile.open('w') { |f| f.write(out) }
+end
+
+if __FILE__ == $0
+  unless ARGV.length == 2
+    puts <<-USAGE
+Incorrect number of arguments! Usage:
+    #{File.basename(__FILE__)} path/to/dir_with_Gemfile path/to/place/git/checkouts
+    USAGE
+    exit 1
+  end
+
+  @logger = Logger.new(STDERR)
+  project_dir, checkout_base = ARGV.map { |x| Pathname.new(x).expand_path }
+  ENV['BUNDLE_GEMFILE'] = project_dir.join('Gemfile').to_s
+  rewrite_lockfile(project_dir.join('Gemfile.lock'), checkout_base)
+  rewrite_gemfile(project_dir.join('Gemfile'), checkout_base)
+end

@@ -1,7 +1,8 @@
-user www-data;
+
+user  root root;
 worker_processes  1;
 
-error_log  /var/log/nginx/error.log;
+error_log <%= node[:nginx][:log_home] %>/nginx_error.log debug;
 pid        /var/run/nginx.pid;
 
 events {
@@ -11,55 +12,140 @@ events {
 }
 
 http {
-    include     /etc/nginx/mime.types;
-    access_log  /var/log/nginx/access.log;
+  include       mime.types;
+  default_type  text/html;
+  server_tokens off;
 
-    log_format main  '$host - [$time_local] '
-                     '"$request" $status $bytes_sent '
-                     '"$http_referer" "$http_user_agent" '
-                     '$remote_addr response_time:$upstream_response_time';
+  log_format main  '$host - [$time_local] '
+                   '"$request" $status $bytes_sent '
+                   '"$http_referer" "$http_user_agent" '
+                   '$remote_addr response_time:$upstream_response_time';
 
-    default_type  text/html;
+  access_log   <%= node[:nginx][:log_home] %>/nginx_main_access.log main;
 
-    sendfile           on;
-    tcp_nopush         on;
-    tcp_nodelay        on;
+  sendfile             on;
+  tcp_nopush           on;
+  tcp_nodelay          on;
 
-    keepalive_timeout  75 20;
+  keepalive_timeout  75 20;
 
-    gzip  on;
-    gzip_min_length    1250;
-    gzip_buffers       16 8k;
-    gzip_comp_level    2;
-    gzip_proxied       any;
-    gzip_types         text/plain text/css application/javascript application/x-javascript text/xml application/xml application/xml+rss text/javascript;
-    gzip_vary          on;
-    gzip_disable "MSIE [1-6]\.(?!.*SV1)";
+  gzip                 on;
+  gzip_min_length      1250;
+  gzip_buffers         16 8k;
+  gzip_comp_level      2;
+  gzip_proxied         any;
+  gzip_types           text/plain text/css application/javascript application/x-javascript text/xml application/xml application/xml+rss text/javascript;
+  gzip_vary            on;
+  gzip_disable         "MSIE [1-6]\.(?!.*SV1)";
 
-    client_max_body_size 256M;
+  client_max_body_size 256M;
 
-    upstream vcap_router {
-      server  unix:/tmp/router.sock;
+  upstream router_status {
+    server <%= node[:nginx][:uls_ip] %>:<%= node[:nginx][:uls_port] %>;
+  }
+
+  server {
+    listen       80;
+    server_name  _;
+    server_name_in_redirect off;
+
+    #TODO: how to make this internal location totally transparent to outside
+    location = /vcapuls {
+      internal;
+      # We should use rewrite_by_lua to scrub subrequest headers
+      # as uls doesn't care those headers at all.
+      # Given there are some exceptions to clear some headers,
+      # we just leave them as is.
+
+      proxy_pass http://unix:/tmp/router.sock:/;
     }
 
-    server {
-        listen       *:80;
-        server_name  _;
+    location / {
+      access_log   <%= node[:nginx][:log_home] %>/nginx_access.log main;
+      proxy_buffering             off;
+      proxy_set_header            Host $host;
+      proxy_set_header            X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_redirect              off;
+      proxy_connect_timeout       10;
+      proxy_send_timeout          30;
+      proxy_read_timeout          30;
 
-        access_log   <%= node[:nginx][:vcap_log] %> main;
-        server_name_in_redirect off;
+      set $health_monitor '';
+      if ($http_user_agent = "HTTP-Monitor/1.1") {
+        set $health_monitor T;
+      }
+      if ($http_host = "") {
+        set $health_monitor "${health_monitor}T";
+      }
+      if ($health_monitor = TT) {
+        # Trigger a subrequest to sync the latest few stats of the worker to uls,
+        # if we have multiple workers, there will be still few stats not synced for
+        # the workers which don't get this monitor request.
+        access_by_lua '
+          -- add package.path and package.cpath
+          package.path = package.path..";<%= node[:lua][:module_path] %>/?.lua"
+          package.cpath = package.cpath..";<%= node[:lua][:module_path] %>/?.so"
+          local uls = require ("uls")
 
-        location / {
-                proxy_buffering                 off;
-                proxy_set_header                Host $host;
-                proxy_set_header                X-Real_IP $remote_addr;
-                proxy_set_header                X-Forwarded_For $proxy_add_x_forwarded_for;
-                proxy_set_header                X-Forwarded_Proto http;
-                proxy_redirect                  off;
-                proxy_connect_timeout           10;
-                proxy_send_timeout              300;
-                proxy_read_timeout              300;
-                proxy_pass                      http://vcap_router;
-        }
+          ngx.log(ngx.DEBUG, "monitor trigger stats syncup")
+
+          local req = uls.generate_stats_request()
+
+          -- generate one subrequest to uls to update stats
+          ngx.location.capture(
+            "/vcapuls", { body = req }
+          )
+        ';
+
+        more_set_input_headers "Authorization: Basic <%= Base64.encode64("#{node[:nginx][:status_user]}:#{node[:nginx][:status_passwd]}").strip %>";
+        rewrite ^.*$ /healthz break;
+        proxy_pass                 http://router_status;
+      }
+
+      # We intend to have one "if" block to avoid the above monitor location
+      # to twist with below upstream locator server handling.
+      # ("if" block effectively creates a nested location and will inherit
+      # all the rewrite/access phase handlers of outer location)
+      if ($health_monitor != TT) {
+        # The following variables are used by lua module code.
+        # DO NOT remove or rename any of them!
+        set $backend_addr ''; # Backend server address returned from uls for this request
+        set $uls_req_tags ''; # Request tags returned from uls for this request to catalog statistics
+        set $router_ip '';
+        set $timestamp 0;
+        set $trace '';
+        set $sticky '';
+
+        access_by_lua '
+          -- add package.path and package.cpath
+          package.path = package.path..";<%= node[:lua][:module_path] %>/?.lua"
+          package.cpath = package.cpath..";<%= node[:lua][:module_path] %>/?.so"
+          local uls = require ("uls")
+
+          uls.pre_process_subrequest(ngx, "<%= node[:router][:trace_key] %>")
+
+          local req = uls.generate_uls_request(ngx)
+
+          -- generate one subrequest to uls for querying
+          local res = ngx.location.capture(
+            "/vcapuls", { body = req }
+          )
+
+          uls.post_process_subrequest(ngx, res)
+        ';
+
+        proxy_pass http://$backend_addr;
+
+        # Handling response from backend servers
+        header_filter_by_lua '
+          -- add package.path and package.cpath
+          package.path = package.path..";<%= node[:lua][:module_path] %>/?.lua"
+          package.cpath = package.cpath..";<%= node[:lua][:module_path] %>/?.so"
+          local uls = require ("uls")
+
+          uls.post_process_response(ngx)
+        ';
+      }
     }
+  }
 }

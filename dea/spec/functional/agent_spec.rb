@@ -12,6 +12,7 @@ require 'yaml'
 describe 'DEA Agent' do
   nats_timeout_path = File.expand_path(File.join(File.dirname(__FILE__), 'nats_timeout'))
   dea_path = File.expand_path(File.join(__FILE__, "../../../bin/dea"))
+  file_server_path = File.expand_path('../server.ru', __FILE__)
   run_id_ctr = 0
 
   before :all do
@@ -19,16 +20,20 @@ describe 'DEA Agent' do
     @test_dir = "/tmp/dea_agent_tests_#{Process.pid}_#{Time.now.to_i}"
     FileUtils.mkdir(@test_dir)
     File.directory?(@test_dir).should be_true
+    @file_port = VCAP.grab_ephemeral_port
 
     @tcpserver_droplet_bundle = File.join(@test_dir, 'droplet')
     create_droplet_bundle(@test_dir, @tcpserver_droplet_bundle)
     @droplet = droplet_for_bundle(@tcpserver_droplet_bundle)
 
+    @file_server = FileServerComponent.new(file_server_path, @file_port, @test_dir)
+    @file_server.start
     @run_id = 0
   end
 
   after :all do
     # Cleanup after ourselves
+    @file_server.stop
     FileUtils.rm_rf(@test_dir)
   end
 
@@ -38,22 +43,16 @@ describe 'DEA Agent' do
     create_dir(@run_dir)
 
     # NATS
-    port = VCAP.grab_ephemeral_port
+    nats_port = VCAP.grab_ephemeral_port
     pid_file = File.join(@run_dir, 'nats.pid')
-    @nats_cfg = {
-      :port     => port,
-      :pid_file => pid_file,
-      :cmd      => "ruby -S bundle exec nats-server -p #{port} -P #{pid_file}",
-      :uri      => "nats://localhost:#{port}",
-      :outdir   => @run_dir,
-    }
-    @nats_server = NatsComponent.new(@nats_cfg)
+    @nats_server = VCAP::Spec::ForkedComponent::NatsServer.new(pid_file, nats_port, @run_dir)
+
 
     # DEA
     @dea_cfg = {
       'base_dir'     => @run_dir,
       'filer_port'   => VCAP.grab_ephemeral_port,
-      'mbus'         => @nats_cfg[:uri],
+      'mbus'         => "nats://localhost:#{nats_port}",
       'intervals'    => {'heartbeat' => 1},
       'logging'      => {'level' => 'debug'},
       'multi_tenant' => true,
@@ -69,7 +68,8 @@ describe 'DEA Agent' do
           'version_flag'      => "-e 'puts RUBY_VERSION'"
         }
       },
-      'disable_dir_cleanup' => true,
+      'disable_dir_cleanup' => false,
+      'force_http_sharing' => true,
       'droplet_fs_percent_used_threshold' => 100, # don't fail if a developer's machine is almost full
     }
     @dea_config_file = File.join(@run_dir, 'dea.config')
@@ -92,7 +92,7 @@ describe 'DEA Agent' do
   describe 'when running' do
     before :each do
       @nats_server.start
-      wait_for { @nats_server.is_ready? }.should be_true
+      wait_for { @nats_server.ready? }.should be_true
 
       # The dea announces itself on startup (after all initialization has been performed).
       # Listen for that message as a signal that it is ready.
@@ -113,10 +113,10 @@ describe 'DEA Agent' do
 
     after :each do
       @dea_agent.stop
-      @dea_agent.is_running?.should be_false
+      @dea_agent.running?.should be_false
 
       @nats_server.stop
-      @nats_server.is_running?.should be_false
+      @nats_server.running?.should be_false
     end
 
     it 'should ensure it can find an executable ruby' do
@@ -153,6 +153,16 @@ describe 'DEA Agent' do
       droplet_info["uris"].should == ["test_app.vcap.me"]
     end
 
+    it 'should start identical droplets simultaneously' do
+      droplets = [@droplet] * 4
+      droplet_infos = start_droplets(@nats_server.uri, droplets)
+
+      droplet_infos.size.should == 4
+      wait_for do
+        droplet_infos.all? { |info| port_open?(info['port']) }
+      end.should be_true
+    end
+
     it 'should heartbeat a running droplet' do
       droplet_info = start_droplet(@nats_server.uri, @droplet)
       droplet_info.should_not be_nil
@@ -175,14 +185,14 @@ describe 'DEA Agent' do
 
     it 'should properly exit when NATS fails to reconnect' do
       @nats_server.stop
-      @nats_server.is_running?.should be_false
+      @nats_server.running?.should be_false
       wait_for { Process.waitpid(@dea_agent.pid, Process::WNOHANG) != nil }.should be_true
     end
 
     it 'should snapshot state upon reconnect failure' do
       File.exists?(@app_state_file).should be_false
       @nats_server.stop
-      @nats_server.is_running?.should be_false
+      @nats_server.running?.should be_false
       wait_for { Process.waitpid(@dea_agent.pid, Process::WNOHANG) != nil }.should be_true
       File.exists?(@app_state_file).should be_true
     end
@@ -221,6 +231,11 @@ describe 'DEA Agent' do
   end
 
   def start_droplet(uri, droplet, timeout=10)
+    droplet_infos = start_droplets(uri, [droplet], timeout)
+    droplet_infos[0]
+  end
+
+  def start_droplets(uri, droplets, timeout=10)
     disc_msg = {
       'droplet'        => 1,
       'sha1'           => 22,
@@ -228,25 +243,28 @@ describe 'DEA Agent' do
       'limits'         => { 'mem' => 1 }
     }.to_json()
 
-    droplet_info = nil
+    droplet_infos = []
+
     em_run_with_timeout(timeout) do
       NATS.start(:uri => uri) do
-        NATS.request('dea.discover', disc_msg) do |msg|
-
-          # Wait for the app
-          NATS.subscribe('router.register') do |msg|
-            droplet_info = JSON.parse(msg)
-            EM.stop
-          end
-
-          # Start the app
-          dea_json = JSON.parse(msg)
-          NATS.publish('dea.%s.start' % (dea_json['id']), droplet.to_json())
+        # Wait for the app
+        NATS.subscribe('router.register') do |msg|
+          droplet_infos << JSON.parse(msg)
+          EM.stop if droplet_infos.size == droplets.size
         end
+
+        droplets.each do |droplet|
+          NATS.request('dea.discover', disc_msg) do |msg|
+            # Start the app
+            dea_json = JSON.parse(msg)
+            NATS.publish('dea.%s.start' % (dea_json['id']), droplet.to_json())
+          end
+        end
+
       end
     end
 
-    droplet_info
+    droplet_infos
   end
 
   # NB: This is intended to be used without the event-loop already running.
@@ -302,7 +320,7 @@ describe 'DEA Agent' do
       'services' => {},
       'uris'     => ['test_app.vcap.me'],
       'executableFile' => bundle_filename,
-      'executableUri'  => 'http://localhost/foo',
+      'executableUri'  => "http://localhost:#{@file_port}/droplet",
       'runtime'        => 'ruby18',
       'framework'      => 'sinatra'
     }

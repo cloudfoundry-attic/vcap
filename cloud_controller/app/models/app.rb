@@ -25,8 +25,7 @@ class App < ActiveRecord::Base
   PackageStates = %w[PENDING STAGED FAILED]
 
   Runtimes = %w[ruby18 ruby19 java node node06 php erlangR14B02 python2]
-  Frameworks = %w[sinatra rack rails3 java_web spring grails node php otp_rebar lift wsgi django standalone unknown]
-
+  Frameworks = %w[sinatra rack rails3 java_web spring grails node php otp_rebar lift wsgi django standalone play unknown]
 
   validates_presence_of :name, :framework, :runtime
 
@@ -34,7 +33,7 @@ class App < ActiveRecord::Base
 
   # TODO - Update vmc client to use reasonable strings for these.
   validates_inclusion_of :framework, :in => Frameworks
-  validates_inclusion_of :runtime, :in => Runtimes
+  validates_inclusion_of :runtime, :in => Runtimes & AppConfig[:runtimes].keys.map(&:to_s)
   validates_inclusion_of :state, :in => AppStates
   validates_inclusion_of :package_state, :in => PackageStates
 
@@ -305,12 +304,16 @@ class App < ActiveRecord::Base
   def purge_droplets
     # Clean up the packages/droplets
     unless self.package_hash.nil?
-      app_package = File.join(AppPackage.package_dir, self.package_hash)
-      FileUtils.rm_f(app_package)
+      # GC apps stored using sha1 of zipfile as basename.
+      FileUtils.rm_f(self.legacy_unstaged_package_path)
+
+      FileUtils.rm_f(self.unstaged_package_path)
     end
     unless self.staged_package_hash.nil?
-      staged_package = File.join(AppPackage.package_dir, self.staged_package_hash)
-      FileUtils.rm_f(staged_package)
+      # GC droplets stored using sha1 of contents as identifier
+      FileUtils.rm_f(self.legacy_staged_package_path)
+
+      FileUtils.rm_f(self.staged_package_path)
     end
   end
 
@@ -323,14 +326,18 @@ class App < ActiveRecord::Base
   # Passed an instance of AppPackage.
   # We don't want this to block, so mark as pending and schedule work.
   def latest_bits_from(app_package)
-    zipfile_path = app_package.to_zip # resulting filename is the SHA1 of the file.
-    sha1 = File.basename(zipfile_path)
+    sha1 = app_package.to_zip
+
     # We are not pending if the bits have not changed.
-    unless package_hash == sha1
-      # Remove old one
+    unless self.package_hash == sha1
+      # Remove old one.
+      #
+      # NB: This is no longer required, as app package names are now
+      #     (4/26/2012) immutable. Consequently, saving a new package will
+      #     replace the old one. This is left to GC packages that were
+      #     created prior to this change.
       unless self.package_hash.nil?
-        app_package = File.join(AppPackage.package_dir, self.package_hash)
-        FileUtils.rm_f(app_package)
+        FileUtils.rm_f(self.legacy_unstaged_package_path)
       end
       self.package_state = 'PENDING'
       self.package_hash = sha1
@@ -444,18 +451,49 @@ class App < ActiveRecord::Base
 
   def staged_package_path
     if staged_package_hash
+      File.join(AppPackage.package_dir, "droplet_#{self.id}")
+    end
+  end
+
+  def legacy_staged_package_path
+    if staged_package_hash
       File.join(AppPackage.package_dir, staged_package_hash)
     end
   end
 
+  def resolve_staged_package_path
+    if staged_package_hash
+      if File.exist?(self.staged_package_path)
+        self.staged_package_path
+      elsif File.exist?(self.legacy_staged_package_path)
+        self.legacy_staged_package_path
+      else
+        nil
+      end
+    end
+  end
+
   def unstaged_package_path
+    if package_hash
+      AppPackage.new(self, nil).package_path
+    end
+  end
+
+  def legacy_unstaged_package_path
     if package_hash
       File.join(AppPackage.package_dir, package_hash)
     end
   end
 
   def explode_into(exploded_dir)
-    zipfile = File.join(AppPackage.package_dir, package_hash)
+    zipfile = nil
+
+    if self.unstaged_package_path && File.exist?(self.unstaged_package_path)
+      zipfile = self.unstaged_package_path
+    else
+      zipfile = self.legacy_unstaged_package_path
+    end
+
     cmd = "unzip -q -d #{exploded_dir} #{zipfile}"
     if system(cmd)
       yield exploded_dir if block_given?
@@ -499,12 +537,13 @@ class App < ActiveRecord::Base
 
   def update_staged_package(upload_path)
     # Remove old package if needed
-    if self.staged_package_path
+    if self.legacy_staged_package_path
       CloudController.logger.info("Removing old staged package for" \
                                   + " app_id=#{self.id} app_name=#{self.name}" \
-                                  + " path=#{self.staged_package_path}")
-      FileUtils.rm_f(self.staged_package_path)
+                                  + " path=#{self.legacy_staged_package_path}")
+      FileUtils.rm_f(self.legacy_staged_package_path)
     end
+
     self.staged_package_hash = Digest::SHA1.file(upload_path).hexdigest
     FileUtils.mv(upload_path, self.staged_package_path)
   end

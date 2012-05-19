@@ -1,15 +1,9 @@
 #Worklist
 ---------
 
--package for deployment
+-rebase and get working with latest warden.
 
-p0
-
--create debug formatter based on matt's stuff and transition to his logger.
-
-p1
-
--add container support
+---
 
 -add npm support
 
@@ -17,8 +11,6 @@ p1
 
 
 -----
-
-
 
 -look at removing the copy into the public inbox.
 

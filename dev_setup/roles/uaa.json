@@ -13,5 +13,6 @@
                 "recipe[postgresql]",
                 "recipe[java]",
                 "recipe[maven]",
+                "recipe[tomcat]",
                 "recipe[uaa]"]
 }
