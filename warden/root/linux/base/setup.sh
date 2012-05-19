@@ -11,7 +11,6 @@ fi
 chroot_bin=$(which chroot)
 packages="openssh-server,rsync"
 suite="lucid"
-target="rootfs"
 mirror=$(grep "^deb" /etc/apt/sources.list | head -n1 | cut -d" " -f2)
 
 # Fallback to default Ubuntu mirror when mirror could not be determined
@@ -65,12 +64,13 @@ if [ "${#}" -ne 1 ]; then
   exit 1
 fi
 
-if [ ! -d ${1} ]; then
-  echo "Looks like ${1} doesn't exist or isn't a directory"
+parent_dir=$(dirname ${1})
+if [ ! -d ${parent_dir} ]; then
+  echo "Looks like ${parent_dir} doesn't exist or isn't a directory"
   exit 1
 fi
 
-cd ${1}
+target=${1}
 
 if [ -z "${SKIP_DEBOOTSTRAP+1}" ]; then
   debootstrap

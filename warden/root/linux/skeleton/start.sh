@@ -15,7 +15,7 @@ fi
 
 ./net.sh setup
 
-env -i unshare -n ../../../../src/clone/clone
+env -i rootfs_path=${rootfs_path} unshare -n ./bin/clone
 
 ifconfig ${network_host_iface} ${network_host_ip} netmask ${network_netmask}
 touch started

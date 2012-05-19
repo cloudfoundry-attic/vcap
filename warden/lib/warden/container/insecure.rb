@@ -10,11 +10,13 @@ module Warden
     class Insecure < Base
 
       def self.setup(config={})
+        super
+
         # noop
       end
 
       def do_create
-        sh "#{root_path}/create.sh #{handle}"
+        sh "#{root_path}/create.sh #{container_path}"
         debug "insecure container created"
       end
 
@@ -24,7 +26,7 @@ module Warden
       end
 
       def do_destroy
-        sh "#{root_path}/destroy.sh #{handle}"
+        sh "#{root_path}/destroy.sh #{container_path}"
         debug "insecure container destroyed"
       end
 

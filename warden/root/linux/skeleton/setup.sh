@@ -15,6 +15,7 @@ network_host_iface="veth-${id}-0"
 network_container_ip=${network_container_ip:-10.0.0.2}
 network_container_iface="veth-${id}-1"
 disk_size_mb=${disk_size_mb:-512}
+rootfs_path=${rootfs_path:-../../base/rootfs}
 
 # Write configuration
 cat > config <<-EOS
@@ -27,7 +28,7 @@ network_container_iface=${network_container_iface}
 disk_size_mb=${disk_size_mb}
 EOS
 
-setup_fs
+setup_fs ${rootfs_path}
 trap "teardown_fs" EXIT
 
 write "etc/hostname" <<-EOS

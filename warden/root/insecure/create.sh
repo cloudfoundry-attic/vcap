@@ -6,12 +6,11 @@ shopt -s nullglob
 cd $(dirname "${0}")
 
 if [ -z "${1}" ]; then
-  echo "Usage: ${0} <name>"
+  echo "Usage: ${0} <instance_path>"
   exit 1
 fi
 
-target="instances/${1}"
-mkdir -p instances
+target=${1}
 
 if [ -d ${target} ]; then
   echo "\"${target}\" already exists, aborting..."

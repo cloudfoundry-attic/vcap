@@ -2,6 +2,7 @@ require "warden/event_emitter"
 require "warden/logger"
 require "warden/errors"
 require "warden/container/spawn"
+require "warden/util"
 
 require "eventmachine"
 require "set"
@@ -40,6 +41,10 @@ module Warden
       include Logger
 
       class << self
+
+        attr_reader :root_path
+        attr_reader :rootfs_path
+        attr_reader :container_depot_path
 
         # Stores a map of handles to their respective container objects. Only
         # live containers are reachable through this map. Containers are only
@@ -93,18 +98,22 @@ module Warden
 
         # Called before the server starts.
         def setup(config = {})
-          # noop
+          @root_path = File.join(Warden::Util.path("root"),
+                                 self.name.split("::").last.downcase)
+
+          @rootfs_path = config["server"]["container_rootfs"] \
+                         || File.join(@root_path, "base", "rootfs")
+
+
+          @container_depot_path = config["server"]["container_depot"] \
+                                  || File.join(@root_path, "instances")
+          FileUtils.mkdir_p(@container_depot_path)
         end
 
         # Generates process-wide unique job IDs
         def generate_job_id
           @job_id ||= 0
           @job_id += 1
-        end
-
-        # Root path for container assets
-        def root_path
-          @root_path ||= File.join(Server.container_root, self.name.split("::").last.downcase)
         end
       end
 
@@ -258,8 +267,18 @@ module Warden
         @root_path ||= self.class.root_path
       end
 
+      # Path to the chroot used as the ro portion of the union mount
+      def rootfs_path
+        @rootfs_path ||= self.class.rootfs_path
+      end
+
+      # Path to the directory that will house all created containers
+      def container_depot_path
+        @container_depot_path ||= self.class.container_depot_path
+      end
+
       def container_path
-        @container_path ||= File.join(root_path, "instances", handle)
+        @container_path ||= File.join(container_depot_path, handle)
       end
 
       def create

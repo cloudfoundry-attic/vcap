@@ -25,6 +25,14 @@ server:
 
   unix_domain_permissions: 0777
 
+  # Specifies the path to the base chroot used as the read-only root
+  # filesystem
+  container_rootfs: /tmp/warden/rootfs
+
+  # Specifies the path to the parent directory under which all containers
+  # will live.
+  container_depot: /tmp/warden/containers
+
 logging:
   level: debug2
 

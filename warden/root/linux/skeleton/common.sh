@@ -44,11 +44,12 @@ function setup_fs() {
   case "${codename}" in
 
   lucid|natty|oneiric)
-    mount -n -t aufs -o br:rootfs=rw:../../base/rootfs=ro+wh none ${target}
+    echo "Mounting rootfs from ${1}"
+    mount -n -t aufs -o br:rootfs=rw:${1}=ro+wh none ${target}
     ;;
 
   precise)
-    mount -n -t overlayfs -o rw,upperdir=rootfs,lowerdir=../../base/rootfs none ${target}
+    mount -n -t overlayfs -o rw,upperdir=rootfs,lowerdir=${1} none ${target}
     ;;
 
   *)

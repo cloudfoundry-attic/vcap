@@ -35,14 +35,6 @@ module Warden
       @unix_domain_permissions
     end
 
-    def self.default_container_root
-      File.expand_path(File.join("..", "..", "..", "root"), __FILE__)
-    end
-
-    def self.container_root
-      @container_root
-    end
-
     def self.default_container_klass
       ::Warden::Container::Insecure
     end
@@ -71,7 +63,6 @@ module Warden
       config ||= {}
       @unix_domain_path = config.delete("unix_domain_path") { default_unix_domain_path }
       @unix_domain_permissions = config.delete("unix_domain_permissions") { default_unix_domain_permissions }
-      @container_root = config.delete("container_root") { default_container_root  }
       @container_klass = config.delete("container_klass") { default_container_klass }
       @container_grace_time = config.delete("container_grace_time") { default_container_grace_time }
       @container_disk_size_mb = config.delete("container_disk_size_mb") { default_container_disk_size_mb }
@@ -92,6 +83,7 @@ module Warden
 
     def self.setup(config = {})
       @config = config
+
       setup_server config["server"]
       setup_logger config["logging"]
       setup_network config["network"]

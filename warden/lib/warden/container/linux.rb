@@ -44,6 +44,7 @@ module Warden
           "network_container_ip" => container_ip.to_human,
           "network_netmask" => self.class.network_pool.netmask.to_human,
           "disk_size_mb" => @config[:disk_size_mb],
+          "rootfs_path" => rootfs_path,
         }
         env
       end
@@ -53,13 +54,13 @@ module Warden
       end
 
       def do_create
-        sh "#{env_command} #{root_path}/create.sh #{handle}", :timeout => nil
+        sh "#{env_command} #{root_path}/create.sh #{container_path}", :timeout => nil
         debug "container created"
 
         write_bind_mount_commands
         debug "wrote bind mount commands"
 
-        sh "#{container_path}/start.sh", :timeout => nil
+        sh "#{env_command} #{container_path}/start.sh", :timeout => nil
         debug "container started"
       end
 
@@ -68,7 +69,7 @@ module Warden
       end
 
       def do_destroy
-        sh "#{root_path}/destroy.sh #{handle}", :timeout => nil
+        sh "#{root_path}/destroy.sh #{container_path}", :timeout => nil
         debug "container destroyed"
         sh "rm -rf #{container_path}", :timeout => nil
         debug "container removed"

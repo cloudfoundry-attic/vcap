@@ -24,6 +24,8 @@ shared_context :warden_server do
   before :each do
     FileUtils.rm_f(unix_domain_path)
 
+    @container_depot = Dir.mktmpdir
+
     # Grab new network for every test to avoid resource contention
     start_address = next_class_c
 
@@ -36,6 +38,7 @@ shared_context :warden_server do
           "unix_domain_path" => unix_domain_path,
           "container_root" => container_root,
           "container_klass" => container_klass,
+          "container_depot" => @container_depot,
           "container_grace_time" => 1 },
         "network" => {
           "pool_start_address" => start_address,
@@ -68,8 +71,11 @@ shared_context :warden_server do
     Process.waitpid(@pid)
 
     # Destroy all artifacts
-    Dir[File.join(container_root, "*", "clear.sh")].each do |clear|
+    Dir[File.join(container_root, "*", "clear.sh",
+                  @container_depot)].each do |clear|
       system(clear)
     end
+
+    FileUtils.rm_rf(@container_depot)
   end
 end

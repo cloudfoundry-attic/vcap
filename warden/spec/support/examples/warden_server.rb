@@ -407,8 +407,7 @@ shared_examples "a warden server" do |container_klass|
 
   def path_in_container(handle, path)
     if container_klass == Warden::Container::Insecure
-      File.join(container_root, 'insecure', 'instances',
-                handle, "root", path.slice(1, path.length - 1))
+      File.join(@container_depot, handle, "root", path.slice(1, path.length - 1))
     else
       path
     end
