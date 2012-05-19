@@ -1,5 +1,6 @@
 require "warden/server"
 require "warden/network"
+require "warden/util"
 
 require "spec_helper"
 
@@ -14,7 +15,7 @@ end
 shared_context :warden_server do
 
   let(:unix_domain_path) {
-    File.expand_path("../../../tmp/warden.sock", __FILE__)
+    Warden::Util.path("tmp/warden.sock")
   }
 
   let(:container_root) {
@@ -47,7 +48,7 @@ shared_context :warden_server do
           "deny_networks" => "4.2.2.0/24" },
         "logging" => {
           "level" => "debug",
-          "file" => File.expand_path("../../../tmp/warden.log", __FILE__) }
+          "file" => Warden::Util.path("tmp/warden.log") }
 
       colored_test_name = "\033[37;1m%s\033[0m" % example.metadata[:full_description]
       Warden::Logger.logger.info colored_test_name

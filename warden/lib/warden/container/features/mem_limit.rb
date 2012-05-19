@@ -1,6 +1,7 @@
 require "warden/errors"
 require "warden/logger"
 require "warden/container/spawn"
+require "warden/util"
 
 module Warden
 
@@ -20,7 +21,7 @@ module Warden
           def initialize(container)
             @container = container
 
-            oom_notifier_path = File.expand_path("../../../../../src/oom/oom", __FILE__)
+            oom_notifier_path = Warden::Util.path("src/oom/oom")
             @child = DeferredChild.new(oom_notifier_path, container.cgroup_root_path)
 
             # Zero exit status means a process OOMed, non-zero means an error occurred
