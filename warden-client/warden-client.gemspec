@@ -9,7 +9,7 @@ Gem::Specification.new do |s|
   s.email       = ["pcnoordhuis@gmail.com", "mpage@vmware.com"]
   s.homepage    = "http://www.cloudfoundry.org/"
   s.summary     = %q{Client driver for warden, the ephemeral container manager.}
-  s.description = %q{}
+  s.description = %q{Provides a blocking client for interacting with the Warden.}
 
   s.files         = Dir.glob("**/*")
   s.test_files    = Dir.glob("spec/**/*")

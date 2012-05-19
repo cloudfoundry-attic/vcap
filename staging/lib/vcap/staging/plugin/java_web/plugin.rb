@@ -3,6 +3,9 @@ require File.join(File.expand_path('../', __FILE__), 'tomcat.rb')
 
 class JavaWebPlugin < StagingPlugin
 
+  include JavaDatabaseSupport
+  include JavaAutoconfig
+
   def framework
     'java_web'
   end
@@ -25,7 +28,7 @@ class JavaWebPlugin < StagingPlugin
         raise "Web application staging failed: web.xml not found"
       end
       services = environment[:services] if environment
-      copy_service_drivers(webapp_root, services)
+      copy_service_drivers(File.join(webapp_root,'../../lib'), services)
       Tomcat.prepare_insight destination_directory, environment, insight_agent if Tomcat.insight_bound? services
       configure_webapp(webapp_root, self.autostaging_template, environment) unless self.skip_staging(webapp_root)
       create_startup_script
@@ -44,10 +47,6 @@ class JavaWebPlugin < StagingPlugin
 
   def create_app_directories
     FileUtils.mkdir_p File.join(destination_directory, 'logs')
-  end
-
-  def copy_service_drivers webapp_root, services
-    Tomcat.copy_service_drivers(services, webapp_root) if services
   end
 
   # The Tomcat start script runs from the root of the staged application.

@@ -58,7 +58,7 @@ describe StagingTaskLog do
       Fiber.new do
         expect do
           res = StagingTaskLog.fetch_fibered(@task_id, @redis_mock)
-        end.to raise_error(VCAP::Stager::TaskError)
+        end.to raise_error(CloudError)
       end.resume
       @deferrable_mock.fail(nil)
     end

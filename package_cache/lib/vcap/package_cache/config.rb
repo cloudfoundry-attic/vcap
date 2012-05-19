@@ -19,11 +19,10 @@ class VCAP::PackageCache::Config < VCAP::Config
       :base_dir              => String,     # where all package cache stuff lives.
       :pid_filename          => String,     # where our pid file lives.
       :purge_cache_on_startup => VCAP::JsonSchema::BoolSchema.new,     # true/false, blow away cache or not.
+      :use_warden             => VCAP::JsonSchema::BoolSchema.new,     # run builds in the warden.
       :runtimes => {
-        :gem => {
           optional(:ruby18)   => String,      # path to ruby 1.8 executable.
           optional(:ruby19)   => String,      # path to ruby 1.9 executable.
-        },
       },
 
     }
@@ -37,13 +36,13 @@ class VCAP::PackageCache::Config < VCAP::Config
     end
 
     private
+
     def normalize_config(config)
-      config[:runtimes].each { |k,v|
-        path = v.values[0]
-        field = v.keys[0]
-        raise "\nInvalid runtime #{path} for parameter #{field}."\
-              "\nPlease ensure #{path} points to an executable for the #{field} runtime."\
-              if not File.executable?(path)
+      config[:runtimes].each { |runtime, path|
+        path = `which #{path}`.chop
+        config[:runtimes][runtime] = path
+        puts "runtime #{runtime} resolved to #{path}."
+        raise "\nInvalid path #{path} for runtime #{runtime}." unless File.executable?(path)
       }
 
       log_level = config[:logging][:level]

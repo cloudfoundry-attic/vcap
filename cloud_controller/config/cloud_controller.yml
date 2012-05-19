@@ -159,7 +159,7 @@ service_lifecycle:
 allow_debug: true
 
 # Enable new initial placement protocol.
-new_initial_placement: false
+new_initial_placement: true
 
 # Supported runtime versions and debug modes.
 # Used for /info/runtimes endpoint (served unfiltered as JSON)

@@ -1,13 +1,14 @@
 require 'vcap/stager/constants'
 require 'vcap/stager/config'
+require 'vcap/stager/process_runner'
+require 'vcap/stager/secure_user_manager'
 require 'vcap/stager/server'
 require 'vcap/stager/task'
 require 'vcap/stager/task_error'
 require 'vcap/stager/task_logger'
-require 'vcap/stager/task_manager'
 require 'vcap/stager/task_result'
-require 'vcap/stager/util'
 require 'vcap/stager/version'
+require 'vcap/stager/workspace'
 
 module VCAP
   module Stager
@@ -20,8 +21,6 @@ module VCAP
         StagingPlugin.manifest_root = config[:dirs][:manifests]
         StagingPlugin.load_all_manifests
         StagingPlugin.validate_configuration!
-        VCAP::Stager::Task.set_defaults(config)
-        VCAP::Stager::Task.set_defaults({:manifest_dir => config[:dirs][:manifests]})
       end
     end
   end
