@@ -1,0 +1,3 @@
+#!/usr/bin/env sh
+
+exec java $* -cp "`dirname $0`/lib/*" play.core.server.NettyServer `dirname $0`

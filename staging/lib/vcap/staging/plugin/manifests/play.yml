@@ -1,0 +1,11 @@
+---
+name: "play"
+runtimes:
+  - "java":
+      description: "Java 6"
+      version: "1.6"
+      executable: "java"
+      default: true
+detection:
+  - "lib/play.*.jar": true
+# vim: filetype=yaml

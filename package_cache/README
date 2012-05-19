@@ -5,7 +5,6 @@ Purpose: The package cache keeps a local pre-built copy of packages (such as
 ruby gems, python packages, etc.) so that they do not need to be repeatedly
 downloaded and built during application staging.
 
-
 Operation:
 ----------
 
@@ -25,7 +24,7 @@ e.g. thin (1.2.11) would be stored as thin-1.2.11.tgz in the cache.
 -With the addition of support for building with different runtimes, the name
  now includes the runtime it was build for i.e. thin-1.2.11@ruby18.tgz
 
--local packages are stored by the SHA1 hash of their contents plus a .tgz extension.
+-local packages are stored by the SHA1 hash of their contents plus a .tar extension.
 
 Security model:
 ---------------

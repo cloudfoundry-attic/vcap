@@ -1014,7 +1014,7 @@ module DEA
       pending = @downloads_pending[sha1]
       @downloads_pending.delete(sha1)
       unless pending.nil? || pending.empty?
-        pending.each { |f| f.resume }
+        pending.each { |f| f.resume(tgz_file) }
       end
     end
 
@@ -1060,7 +1060,21 @@ module DEA
           if pending = @downloads_pending[sha1]
             @logger.debug("Waiting on another download already in progress")
             pending << Fiber.current
-            Fiber.yield
+            downloaded = Fiber.yield
+
+            # When dir cleanup is enabled, randomize tgz_file name, create a hard link
+            # to the downloaded bits, so that each droplet owns a copy of hard link of
+            # the original file. Then deleting its own copy won't affect other droplets.
+            # The tgz_file will be deleted after it is decompressed.
+            unless @disable_dir_cleanup
+              tgz_file = random_file_name(
+                :prefix => "#{tgz_file}.",
+                :chars => ('0'..'9').to_a + ('Q'..'Z').to_a,
+                :length => 4
+              )
+              @logger.debug("linking tgz_file #{tgz_file} to #{downloaded}")
+              File.link(downloaded, tgz_file) rescue @logger.warn('Failed link')
+            end
           else
             download_app_bits(bits_uri, sha1, tgz_file)
           end
@@ -1320,6 +1334,7 @@ module DEA
       return unless (instance and instance[:uris] and not instance[:uris].empty?)
       NATS.publish('router.register', {
                      :dea  => VCAP::Component.uuid,
+                     :app  => instance[:droplet_id],
                      :host => @local_ip,
                      :port => instance[:port],
                      :uris => options[:uris] || instance[:uris],
@@ -1331,6 +1346,7 @@ module DEA
       return unless (instance and instance[:uris] and not instance[:uris].empty?)
       NATS.publish('router.unregister', {
                      :dea  => VCAP::Component.uuid,
+                     :app  => instance[:droplet_id],
                      :host => @local_ip,
                      :port => instance[:port],
                      :uris => options[:uris] || instance[:uris]
@@ -1785,6 +1801,22 @@ module DEA
       else
         nil
       end
+    end
+
+    # kudos to tal garfinkel
+    def random_file_name(opts={})
+      opts = {:chars => ('0'..'9').to_a + ('A'..'F').to_a + ('a'..'f').to_a,
+              :length => 16, :prefix => '', :suffix => '',
+              :verify => true, :attempts => 10}.merge(opts)
+      opts[:attempts].times do
+        middle = ''
+        opts[:length].times do
+          middle << opts[:chars].sample
+        end
+        filename = opts[:prefix] + middle + opts[:suffix]
+        return filename unless opts[:verify] && File.exists?(filename)
+      end
+      raise "random file creation failed!!!"
     end
 
   end
