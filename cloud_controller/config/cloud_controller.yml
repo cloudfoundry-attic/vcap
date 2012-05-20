@@ -197,3 +197,8 @@ runtimes:
 #  port: 34500
 #  user: thin
 #  password: thin
+
+# Supported verified system applications
+sys_apps:
+  caldecott:
+    - fcab635ae4c51c685df9cf14cb1bf4af4818a945
