@@ -39,7 +39,7 @@ describe BindingTokensController do
 
     tok = BindingToken.generate(
       :label => 'foo-bar',
-      :binding_options => [],
+      :binding_options => {},
       :service_config => cfg
     )
     tok.save

@@ -284,6 +284,14 @@ class AppsController < ApplicationController
     raise CloudError.new(CloudError::APP_NOT_FOUND) unless @app.collaborator?(user)
   end
 
+  def verify_sys_app(app)
+    return if app.package_hash.nil?
+    sys_hash_list = AppConfig[:sys_apps][(app.name).to_sym]
+    CloudController.logger.debug "app: #{app.name} sys_hash_list: #{sys_hash_list}"
+    return if sys_hash_list.nil?
+    raise CloudError.new(CloudError::INVALID_SYS_APP) unless sys_hash_list.include? app.package_hash
+  end
+
   # Checks to make sure the update can proceed, then updates the given
   # App from the request params and makes the necessary AppManager calls.
   def update_app_from_params(app)
@@ -328,12 +336,20 @@ class AppsController < ApplicationController
     # Process any changes that require action on out part here.
     manager = AppManager.new(app)
 
+    if (!app.package_hash.nil?)
+      CloudController.logger.info "app: #{app.id} package_hash is #{app.package_hash}"
+    end
+
     if app.needs_staging?
       if user.uses_new_stager?
         stage_app(app)
       else
         manager.stage
       end
+    end
+
+    if (!app.staged_package_hash.nil?)
+      CloudController.logger.info "app: #{app.id} staged_package_hash is #{app.staged_package_hash}"
     end
 
     if changed.include?('state')

@@ -42,6 +42,7 @@ class CloudError < StandardError
   APP_INVALID_FRAMEWORK = [308, HTTP_BAD_REQUEST, "Invalid framework description: '%s'"]
   APP_DEBUG_DISALLOWED = [309, HTTP_BAD_REQUEST, "Cloud controller has disallowed debugging."]
   APP_STAGING_ERROR = [310, HTTP_INTERNAL_SERVER_ERROR, "Staging failed: '%s'"]
+  APP_INVALID_SYS_APP = [311, HTTP_BAD_REQUEST, "Invalid system application."]
 
   # Bits
   RESOURCES_UNKNOWN_PACKAGE_TYPE = [400, HTTP_BAD_REQUEST, "Unknown package type requested: \"%\""]

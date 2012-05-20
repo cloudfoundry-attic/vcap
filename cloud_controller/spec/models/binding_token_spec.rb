@@ -7,7 +7,7 @@ describe BindingToken do
   end
 
   it "should generate valid tokens" do
-    bt = BindingToken.generate(:label => "foo-bar", :binding_options => [], :service_config_id => 1)
+    bt = BindingToken.generate(:label => "foo-bar", :binding_options => {}, :service_config_id => 1)
     bt.should be_valid
   end
 end

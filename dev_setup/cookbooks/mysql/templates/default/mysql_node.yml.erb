@@ -13,6 +13,7 @@ node_id: <%= "mysql_node_#{node[:mysql_node][:index]}" %>
 max_db_size: <%= node[:mysql_node][:max_db_size] %>
 max_long_query: 3
 max_long_tx: 30
+sys_app_word: was
 migration_nfs: /mnt/migration
 mysql:
   host: <%= node[:mysql][:host] %>

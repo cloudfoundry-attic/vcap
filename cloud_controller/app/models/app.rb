@@ -195,6 +195,14 @@ class App < ActiveRecord::Base
     svc = cfg.service
     user = cfg.user
 
+    # If the app.name is identified to be a system application such as caldecott
+    if AppConfig.has_key?(:sys_apps) && AppConfig[:sys_apps].has_key?(self.name.to_sym)
+      binding_options[:verified_vcap_sys_app] = self.name
+    else
+      binding_options.delete :verified_vcap_sys_app if binding_options.has_key?(:verified_vcap_sys_app)
+    end
+
+
     # The ordering here is odd, but important; it allows us to repair our internal
     # state to match that of the gateway. The description following each operation
     # assumes that the operation has failed.

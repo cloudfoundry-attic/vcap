@@ -26,7 +26,7 @@ class AppPackage
     timed_section(CloudController.logger, 'app_to_zip') do
       dir = unpack_upload
       synchronize_pool_with(dir)
-      path = AppPackage.repack_app_in(dir, tmpdir, :zip)
+      path = AppPackage.repack_app_in(dir, tmpdir, :zip, @app.name)
       sha1 = save_package(path) if path
     end
   ensure
@@ -35,10 +35,31 @@ class AppPackage
     FileUtils.rm_rf(File.dirname(path)) if path
   end
 
+  def self.reset_pack_time(path)
+    CloudController.logger.warn("reset_pack_time: #{path}")
+    if File.directory?(path)
+      cur_dir = Dir.new(path)
+      cur_dir.each do |file|
+        if file != '.' &&  file != '..'
+          AppPackage.reset_pack_time(File.join(cur_dir, file))
+        end
+      end
+    else
+      File.utime(0, 0, path)
+    end
+  end
+
   # Repacks the working directory into a compressed file.
   # By default this uses zip format.
-  def self.repack_app_in(dir, tmpdir, format)
+  def self.repack_app_in(dir, tmpdir, format, app_name=nil)
     if format == :zip
+      # FIXME change me the mtime and atime of all files in dir
+      # For zip file will store the modification time of files
+      unless AppConfig[:sys_apps].nil? || app_name.nil? || AppConfig[:sys_apps][app_name.to_sym].nil?
+        CloudController.logger.debug("Repack system application #{app_name}, will reset the time of files.")
+        AppPackage.reset_pack_time(dir)
+      end
+
       target_path = File.join(tmpdir, 'app.zip')
       cmd = "cd #{dir}; zip -q -y #{target_path} -r * 2>&1"
     else

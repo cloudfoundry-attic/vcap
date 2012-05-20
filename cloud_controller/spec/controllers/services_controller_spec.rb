@@ -542,7 +542,7 @@ describe ServicesController do
         cfg.should be_valid
         @cfg = cfg
 
-        tok = BindingToken.generate(:label => 'foo', :service_config => cfg, :binding_options => ['free'])
+        tok = BindingToken.generate(:label => 'foo', :service_config => cfg, :binding_options => {:plan => 'free'})
         tok.save
         tok.should be_valid
         @tok = tok
