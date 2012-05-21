@@ -5,10 +5,8 @@ logging:
 pid_filename: /var/vcap/sys/run/package_cache.pid
 base_dir: /var/vcap.local/package_cache
 purge_cache_on_startup: true
-#configure this with the appropriate ruby runtimes to build packages with,
-#standard config is conservative to ensure proper functioning with default vcap
-#setup.
+use_warden: false
+#configure this with the appropriate ruby runtimes to build packages with.
 runtimes:
-  gem:
     ruby18: /usr/bin/ruby1.8
-    #ruby19:
+    ruby19: ruby

@@ -1,10 +1,11 @@
 require 'tmpdir'
 
 module StagingSpecHelpers
-  AUTOSTAGING_JAR = 'auto-reconfiguration-0.6.2.jar'
+  AUTOSTAGING_JAR = 'auto-reconfiguration-0.6.4.jar'
   MYSQL_DRIVER_JAR = 'mysql-connector-java-5.1.12-bin.jar'
   POSTGRESQL_DRIVER_JAR = 'postgresql-9.0-801.jdbc4.jar'
   INSIGHT_AGENT = 'cf-tomcat-agent-javaagent-1.7.1.RELEASE'
+  AUTO_CONFIG_GEM_VERSION = '0.0.3'
 
   # Importantly, this returns a Pathname instance not a String.
   # This allows you to write: app_fixture_base_directory.join('subdir', 'subsubdir')
@@ -80,6 +81,14 @@ module StagingSpecHelpers
       FileUtils.rm_r(working_dir) if working_dir
     end
     FileUtils.rm_r(source_tempdir) if source_tempdir
+  end
+
+  def runtime_staging_config(framework, runtime)
+    StagingPlugin.manifests[framework]["runtimes"].each do |runtime_info|
+      runtime_info.each do |name, attrs|
+        return attrs if name == runtime
+      end
+    end
   end
 end
 

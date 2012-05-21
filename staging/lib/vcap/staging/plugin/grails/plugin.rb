@@ -25,7 +25,7 @@ class GrailsPlugin < JavaWebPlugin
 
   def vmc_plugin_present grails_config_file
     grails_config = Nokogiri::XML(open(grails_config_file))
-    prefix = grails_config.root.namespace ? "xmlns:" : ''
+    prefix = Tomcat.get_namespace_prefix(grails_config)
     plugins = grails_config.xpath("//#{prefix}plugins/#{prefix}plugin[contains(normalize-space(), '#{VMC_GRAILS_PLUGIN}')]")
     if (plugins == nil || plugins.empty?)
       return false
@@ -39,7 +39,7 @@ class GrailsPlugin < JavaWebPlugin
     web_config = Tomcat.configure_autostaging_context_param autostaging_context, web_config, webapp_path
     web_config = Tomcat.configure_autostaging_servlet autostaging_context, web_config, webapp_path
     Tomcat.save_web_config(web_config, webapp_path)
-    Tomcat.copy_autostaging_jar webapp_path
+    copy_autostaging_jar File.join(webapp_path, 'WEB-INF/lib')
   end
 
 end

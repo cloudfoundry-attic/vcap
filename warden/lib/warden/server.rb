@@ -161,6 +161,10 @@ module Warden
       def receive_line(line = nil)
         object = Yajl::Parser.parse(line)
         receive_request(object)
+      rescue Yajl::ParseError => e
+        send_error e.message
+        close_connection_after_writing
+        debug "Disconnected client after error parsing request: #{e}"
       end
 
       def receive_request(req = nil)
@@ -238,9 +242,14 @@ module Warden
       end
 
       def process_spawn(request)
-        request.require_arguments { |n| n == 3 }
+        request.require_arguments { |n| (n == 3) || (n == 4) }
         container = find_container(request[1])
-        container.spawn(request[2])
+
+        if (request.length == 4) && !request[3].kind_of?(Hash)
+          raise WardenError.new("Options must be a hash")
+        end
+
+        container.spawn(*request.slice(2, 2))
       end
 
       def process_link(request)
@@ -250,9 +259,14 @@ module Warden
       end
 
       def process_run(request)
-        request.require_arguments { |n| n == 3 }
+        request.require_arguments { |n| (n == 3) || (n == 4) }
         container = find_container(request[1])
-        container.run(request[2])
+
+        if (request.length == 4) && !request[3].kind_of?(Hash)
+          raise WardenError.new("Options must be a hash")
+        end
+
+        container.run(*request.slice(2, 2))
       end
 
       def process_net(request)

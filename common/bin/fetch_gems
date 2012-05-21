@@ -1,9 +1,9 @@
 #!/usr/bin/env ruby
 
+require 'rubygems'
 require 'bundler'
 require 'fileutils'
 require 'logger'
-require 'rubygems'
 
 # Provides functionality similar to `bundle package`, but without needing
 # to install any gems.

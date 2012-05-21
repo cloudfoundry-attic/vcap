@@ -6,7 +6,7 @@ module PkgUtil
     end
 
     def to_package(name, runtime)
-      drop_extension(name) + "@#{runtime}"  + '.tgz'
+      drop_extension(name) + "@#{runtime}"  + '.tar'
     end
   end
 end

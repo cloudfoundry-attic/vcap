@@ -205,4 +205,18 @@ describe "server implementing Linux containers", :platform => "linux", :needs_ro
       result[1].to_i.should be_within(8 * 1024).of(128 * 1024)
     end
   end
+
+  describe "run" do
+
+    include_context :server_linux
+
+    it "should run commands as root if the 'privileged' option is true" do
+      handle = client.create
+
+      result = client.run(handle, "id -u", { "privileged" => true })
+
+      result[0].should == 0
+      result[1].should == "0\n"
+    end
+  end
 end

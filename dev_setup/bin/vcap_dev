@@ -32,8 +32,10 @@ else
   puts "Targeting default deployment \"#{options["name"]}\""
 end
 
-if ARGV[0].nil? || !%w[start stop restart tail status].include?(ARGV[0].downcase)
-    STDERR.puts "Usage: #{$0} [-n deployment_name] [-d cloudfoundry_home_dir] [start|stop|restart|tail|status]"
+command = ARGV[0] ? ARGV.shift.downcase : nil
+
+if command.nil? || !%w[start stop restart tail status].include?(command)
+  STDERR.puts "Usage: #{$0} [-n deployment_name] [-d cloudfoundry_home_dir] [start|stop|restart|tail|status] [COMPONENT]"
     exit 1
 end
 
@@ -46,6 +48,13 @@ rescue => e
   STDERR.puts "#{e.inspect}. Could not parse deployment config files . Please check your deployment."
   exit 1
 end
+
+# select only those components that are on the command line (if any)
+if !ARGV.empty? and (vcap_components["components"] & ARGV).empty?
+  STDERR.puts "The component(s) specified on the command line are unknown.\nPlease specify one or more of (#{vcap_components['components'].join(' ')})"
+  exit 1
+end
+vcap_components["components"] &= ARGV unless ARGV.empty?
 
 unless File.exists?(File.join(deployment_info["cloudfoundry_path"], "bin", "vcap"))
   puts "Cannot find vcap repo. Please specify the deployment name or the deployment home directory where to find the config file"
@@ -68,6 +77,12 @@ if vcap_components["components"].include?("cloud_controller")
   vcap_components["components"].unshift(vcap_components["components"].delete("cloud_controller"))
 end
 
+if vcap_components["components"].include?("uaa")
+  puts "Setting up the uaa environment"
+  ENV["CLOUD_CONTROLLER_CONFIG_PATH"]=deployment_config_path
+  ENV["UAA_TOMCAT"]=File.join(deployment_config_path, "../deploy/uaa-tomcat/")
+end
+
 # Set both http_proxy and HTTP_PROXY
 %w(http_proxy https_proxy no_proxy).each do |var|
   ENV[var] = ENV[var] || ENV[var.upcase] unless ENV[var.upcase].nil?
@@ -88,4 +103,4 @@ vcap_path = File.join(deployment_info["cloudfoundry_path"], "bin")
 vcap_launch = File.join(script_dir, "vcap")
 
 puts "Using cloudfoundry config from #{deployment_config_path}"
-exec_cmd("#{ruby_binary} #{vcap_launch} #{ARGV[0].downcase} #{vcap_components["components"].join(" ")} -c #{deployment_config_path} -v #{vcap_path} -l #{deployment_info["deployment_log_path"]}")
+exec_cmd("#{ruby_binary} #{vcap_launch} #{command} #{vcap_components["components"].join(" ")} -c #{deployment_config_path} -v #{vcap_path} -l #{deployment_info["deployment_log_path"]}")

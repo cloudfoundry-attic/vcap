@@ -550,6 +550,7 @@ module DEA
       framework = message_json['framework']
       debug = message_json['debug']
       console = message_json['console']
+      flapping = message_json['flapping']
 
       # Limits processing
       mem     = DEFAULT_APP_MEM
@@ -604,6 +605,7 @@ module DEA
         :start => Time.now,
         :state_timestamp => Time.now.to_i,
         :log_id => "(name=%s app_id=%s instance=%s index=%s)" % [name, droplet_id, instance_id, instance_index],
+        :flapping => flapping ? true : false
       }
 
       instances = @droplets[droplet_id] || {}
@@ -676,7 +678,7 @@ module DEA
         if @secure
           case RUBY_PLATFORM
           when /linux/
-            sh_command = "env -i su -s /bin/sh #{user[:user]}"
+            sh_command = "env -i su -s /bin/bash #{user[:user]}"
           when /darwin/
             sh_command = "env -i su -m #{user[:user]}"
           else
@@ -1021,7 +1023,7 @@ module DEA
       pending = @downloads_pending[sha1]
       @downloads_pending.delete(sha1)
       unless pending.nil? || pending.empty?
-        pending.each { |f| f.resume }
+        pending.each { |f| f.resume(tgz_file) }
       end
     end
 
@@ -1067,7 +1069,21 @@ module DEA
           if pending = @downloads_pending[sha1]
             @logger.debug("Waiting on another download already in progress")
             pending << Fiber.current
-            Fiber.yield
+            downloaded = Fiber.yield
+
+            # When dir cleanup is enabled, randomize tgz_file name, create a hard link
+            # to the downloaded bits, so that each droplet owns a copy of hard link of
+            # the original file. Then deleting its own copy won't affect other droplets.
+            # The tgz_file will be deleted after it is decompressed.
+            unless @disable_dir_cleanup
+              tgz_file = random_file_name(
+                :prefix => "#{tgz_file}.",
+                :chars => ('0'..'9').to_a + ('Q'..'Z').to_a,
+                :length => 4
+              )
+              @logger.debug("linking tgz_file #{tgz_file} to #{downloaded}")
+              File.link(downloaded, tgz_file) rescue @logger.warn('Failed link')
+            end
           else
             download_app_bits(bits_uri, sha1, tgz_file)
           end
@@ -1328,15 +1344,16 @@ module DEA
       # Drop usage and resource tracking regardless of state
       remove_instance_resources(instance)
       @usage.delete(instance[:pid]) if instance[:pid]
-      # clean up the in memory instance and directory only if the instance didn't crash
-      if instance[:state] != :CRASHED
+      # clean up the in memory instance and directory only if
+      # the instance didn't crash or when it was marked as flapping
+      if instance[:state] != :CRASHED || instance[:flapping]
         if droplet = @droplets[instance[:droplet_id]]
           droplet.delete(instance[:instance_id])
           @droplets.delete(instance[:droplet_id]) if droplet.empty?
           schedule_snapshot
         end
         unless @disable_dir_cleanup
-          @logger.debug("#{instance[:name]}: Cleaning up dir #{instance[:dir]}")
+          @logger.debug("#{instance[:name]}: Cleaning up dir #{instance[:dir]}#{instance[:flapping]?' (flapping)':''}")
           EM.system("rm -rf #{instance[:dir]}")
         end
       # Rechown crashed application directory using uid and gid of DEA
@@ -1350,6 +1367,7 @@ module DEA
       return unless (instance and instance[:uris] and not instance[:uris].empty?)
       NATS.publish('router.register', {
                      :dea  => VCAP::Component.uuid,
+                     :app  => instance[:droplet_id],
                      :host => @local_ip,
                      :port => instance[:port],
                      :uris => options[:uris] || instance[:uris],
@@ -1361,6 +1379,7 @@ module DEA
       return unless (instance and instance[:uris] and not instance[:uris].empty?)
       NATS.publish('router.unregister', {
                      :dea  => VCAP::Component.uuid,
+                     :app  => instance[:droplet_id],
                      :host => @local_ip,
                      :port => instance[:port],
                      :uris => options[:uris] || instance[:uris]
@@ -1815,6 +1834,22 @@ module DEA
       else
         nil
       end
+    end
+
+    # kudos to tal garfinkel
+    def random_file_name(opts={})
+      opts = {:chars => ('0'..'9').to_a + ('A'..'F').to_a + ('a'..'f').to_a,
+              :length => 16, :prefix => '', :suffix => '',
+              :verify => true, :attempts => 10}.merge(opts)
+      opts[:attempts].times do
+        middle = ''
+        opts[:length].times do
+          middle << opts[:chars].sample
+        end
+        filename = opts[:prefix] + middle + opts[:suffix]
+        return filename unless opts[:verify] && File.exists?(filename)
+      end
+      raise "random file creation failed!!!"
     end
 
   end

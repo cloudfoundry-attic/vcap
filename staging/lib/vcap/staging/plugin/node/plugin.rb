@@ -1,14 +1,20 @@
+require File.expand_path("../npm_support/npm_support", __FILE__)
+
 class NodePlugin < StagingPlugin
+  include NpmSupport
+
   # TODO - Is there a way to avoid this without some kind of 'register' callback?
-  # e.g. StagingPlugin.register('sinatra', __FILE__)
+  # e.g. StagingPlugin.register("sinatra", __FILE__)
   def framework
-    'node'
+    "node"
   end
 
   def stage_application
     Dir.chdir(destination_directory) do
       create_app_directories
       copy_source_files
+      read_configs
+      compile_node_modules
       create_startup_script
       create_stop_script
     end
@@ -32,14 +38,25 @@ class NodePlugin < StagingPlugin
     generate_stop_script(vars)
   end
 
+  def read_configs
+    package = File.join(destination_directory, "app", "package.json")
+    if File.exists?(package)
+      @package_config = Yajl::Parser.parse(File.new(package, "r"))
+    end
+    @vcap_config = {}
+    vcap_config_file = File.join(destination_directory, "app", "cloudfoundry.json")
+    if File.exists?(vcap_config_file)
+      config = Yajl::Parser.parse(File.new(vcap_config_file, "r"))
+      @vcap_config = config if config.is_a?(Hash)
+    end
+  end
+
   # detect start script from package.json
   def package_json_start
-    package = File.join(destination_directory, 'app', 'package.json')
-    if File.exists? package
-      json = Yajl::Parser.parse(File.new(package, 'r'))
-      if scripts = json["scripts"] and start = scripts["start"]
-        start.sub(/^\s*node\s+/, "")
-      end
+    if @package_config.is_a?(Hash) &&
+        @package_config["scripts"].is_a?(Hash) &&
+        @package_config["scripts"]["start"]
+      @package_config["scripts"]["start"].sub(/^\s*node\s+/, "")
     end
   end
 

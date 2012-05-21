@@ -20,7 +20,7 @@ class SpringPlugin < JavaWebPlugin
     web_config = configure_springenv_context_param autostaging_context, web_config, webapp_path
     web_config = Tomcat.configure_autostaging_servlet autostaging_context, web_config, webapp_path
     Tomcat.save_web_config(web_config, webapp_path)
-    Tomcat.copy_autostaging_jar webapp_path
+    copy_autostaging_jar File.join(webapp_path, 'WEB-INF/lib')
   end
 
   def configure_springenv_context_param(autostaging_context, webapp_config, webapp_path)
@@ -29,7 +29,7 @@ class SpringPlugin < JavaWebPlugin
     autostaging_context_param_value_node = autostaging_context_param_node.xpath("param-value").first
     autostaging_context_param_value = autostaging_context_param_value_node.content
 
-    prefix = webapp_config.root.namespace ? "xmlns:" : ''
+    prefix = Tomcat.get_namespace_prefix(webapp_config)
     context_param_node =  webapp_config.xpath("//#{prefix}context-param[#{prefix}param-name='contextInitializerClasses']").first
     if (context_param_node == nil)
       context_param_node = Nokogiri::XML::Node.new 'context-param', webapp_config

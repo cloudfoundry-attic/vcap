@@ -8,6 +8,7 @@ $LOAD_PATH.unshift(File.expand_path('../../lib', __FILE__))
 
 require 'vcap/common'
 require 'vcap/component'
+require 'vcap/concurrency'
 require 'vcap/stager'
 
 sleep_interval = 1
@@ -51,8 +52,8 @@ VCAP::Stager.init(config)
 user_mgr=nil
 if config[:secure]
   VCAP::Stager::SecureUserManager.instance.setup
-  user_mgr = VCAP::Stager::SecureUserManager.instance
+  user_mgr = VCAP::Concurrency::Proxy.new(VCAP::Stager::SecureUserManager.instance)
 end
-task_mgr = VCAP::Stager::TaskManager.new(config[:max_active_tasks], user_mgr)
-server = VCAP::Stager::Server.new(config[:nats_uri], task_mgr, config)
+thread_pool = VCAP::Concurrency::ThreadPool.new(config[:max_active_tasks])
+server = VCAP::Stager::Server.new(config[:nats_uri], thread_pool, user_mgr, config)
 server.run
