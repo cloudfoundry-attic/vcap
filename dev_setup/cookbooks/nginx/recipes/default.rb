@@ -28,10 +28,11 @@ when "ubuntu"
     not_if { ::File.exists?(File.join("", "tmp", "lua-#{lua_version}.tar.gz")) }
   end
 
-  remote_file File.join("", "tmp", "lua-cjson-1.0.3.tar.gz") do
+  lua_cjson_tarball = File.join(node[:deployment][:setup_cache], "lua-cjson-1.0.3.tar.gz")
+  remote_file lua_cjson_tarball do
     owner node[:deployment][:user]
     source node[:lua][:cjson_source]
-    not_if { ::File.exists?(File.join("", "tmp", "lua-cjson-1.0.3.tar.gz")) }
+    checksum 'b4e3495dde10d087a9550d3a6f364e8998a5dda4f5f4722c69ff89420c9a8c09'
   end
 
   # Nginx related packages
@@ -110,8 +111,8 @@ when "ubuntu"
     cwd File.join("", "tmp")
     user node[:deployment][:user]
     code <<-EOH
-      tar xzf lua-cjson-1.0.3.tar.gz
-      cd lua-cjson-1.0.3
+      tar xzf #{lua_cjson_tarball}
+      cd mpx-lua-cjson-ddbb686
       sed 's!^PREFIX ?=.*!PREFIX ?='#{lua_path}'!' Makefile > tmp
       mv tmp Makefile
       make
