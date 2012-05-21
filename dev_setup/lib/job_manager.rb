@@ -27,6 +27,7 @@ class JobManager
   SERVICES_GATEWAY = SERVICES.map do |service|
     "#{service}_gateway"
   end
+  SERVICES_GATEWAY << "filesystem_gateway"
   SERVICES_NODE.each do |node|
     # Service name constant e.g. REDIS_NODE -> "redis_node"
     const_set(node.upcase, node)
