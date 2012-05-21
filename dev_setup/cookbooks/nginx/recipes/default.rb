@@ -28,10 +28,10 @@ when "ubuntu"
     not_if { ::File.exists?(File.join("", "tmp", "lua-#{lua_version}.tar.gz")) }
   end
 
-  remote_file File.join("", "tmp", "lua-cjson-1.0.3.tar.gz") do
+  cf_remote_file File.join(node[:deployment][:setup_cache], "lua-cjson-1.0.3.tar.gz") do
     owner node[:deployment][:user]
     source node[:lua][:cjson_source]
-    not_if { ::File.exists?(File.join("", "tmp", "lua-cjson-1.0.3.tar.gz")) }
+    checksum 'b4e3495dde10d087a9550d3a6f364e8998a5dda4f5f4722c69ff89420c9a8c09'
   end
 
   # Nginx related packages

@@ -15,7 +15,7 @@ default[:lua][:version] = "5.1.4"
 default[:lua][:simple_version] = lua[:version].match(/\d+\.\d+/).to_s # something like 5.1
 default[:lua][:source]  = "http://www.lua.org/ftp/lua-#{lua[:version]}.tar.gz"
 default[:lua][:path]    = File.join(node[:deployment][:home], "deploy", "lua", "lua-#{lua[:version]}")
-default[:lua][:cjson_source]  = "http://www.kyne.com.au/~mark/software/lua-cjson-1.0.3.tar.gz"
+default[:lua][:cjson_source]  = "http://github.com/mpx/lua-cjson/tarball/ddbb686f535accac1e3cc375994191883fbe35d8"
 default[:lua][:module_path]    = File.join(lua[:path], 'lib', 'lua', lua[:simple_version])
 default[:lua][:plugin_source_path] = File.join(node["cloudfoundry"]["path"], "router", "ext", "nginx")
 
