@@ -41,16 +41,16 @@ bash "Compile libevent" do
   end
 end
 
-bash "Install and configure sasldb" do
-  user node[:deployment][:user]
-  code <<-EOH
-  sudo apt-get install sasl2-bin libsasl2-dev -y
-  sudo sed -i 's/START=no/START=yes/' /etc/default/saslauthd
-  sudo /etc/init.d/saslauthd start
-  echo "password" | saslpasswd2 -c -a test testuser -p
-  sudo chown #{node[:deployment][:user]} /etc/sasldb2
-  EOH
-end
+#bash "Install and configure sasldb" do
+#  user node[:deployment][:user]
+#  code <<-EOH
+#  sudo apt-get install sasl2-bin libsasl2-dev -y
+#  sudo sed -i 's/START=no/START=yes/' /etc/default/saslauthd
+#  sudo /etc/init.d/saslauthd start
+#  echo "password" | saslpasswd2 -c -a test testuser -p
+#  sudo chown #{node[:deployment][:user]} /etc/sasldb2
+#  EOH
+#end
 
 bash "Install memcached" do
   cwd File.join("", "tmp")
@@ -58,7 +58,8 @@ bash "Install memcached" do
   code <<-EOH
   tar xzf memcached-#{node[:memcached][:version]}.tar.gz
   cd memcached-#{node[:memcached][:version]}
-  ./configure --enable-sasl --with-libevent=../libevent-#{node[:libevent][:version]}-stable/tmp
+  ./configure --with-libevent=../libevent-#{node[:libevent][:version]}-stable/tmp
+  sed -i 's/^LDFLAGS =/LDFLAGS = -static/' Makefile
   make
   cp memcached #{File.join(node[:memcached][:path], "bin")}
   EOH
