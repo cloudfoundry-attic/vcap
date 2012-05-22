@@ -9,7 +9,7 @@ gem 'vcap_common', '~> 1.0.8', :git => 'git://github.com/d/vcap-common.git', :re
 gem 'vcap_logging', '>= 0.1.3', :git => 'git://github.com/cloudfoundry/common.git'
 gem 'vcap_staging', '~> 0.1.59'
 gem 'vcap-concurrency', '~> 0.0.1'
-gem 'stager-client', '~> 0.0.2'
+gem 'stager-client', '~> 0.0.2', :git => 'ssh://reviews.cloudfoundry.org:29418/stager-client'
 
 group :test do
   gem 'rspec'
