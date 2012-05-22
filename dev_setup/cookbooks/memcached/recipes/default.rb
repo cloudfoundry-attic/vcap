@@ -34,6 +34,7 @@ bash "Compile libevent" do
   cd libevent-#{node[:libevent][:version]}-stable
   ./configure --prefix=`pwd`/tmp
   make
+  make install
   EOH
   not_if do
     ::File.exists?(File.join(node[:memcached][:path], "bin", "memcached"))
