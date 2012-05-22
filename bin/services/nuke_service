@@ -1,4 +1,4 @@
 #!/usr/bin/env ruby
 # Copyright (c) 2009-2011 VMware, Inc.
 
-exec(File.expand_path("../../../services/common/nuke_service.rb", __FILE__), *ARGV)
+exec(File.expand_path("../../../services/tools/misc/bin/nuke_service.rb", __FILE__), *ARGV)

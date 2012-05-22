@@ -3,13 +3,13 @@
 #
 # Copyright 2012, VMware
 #
-#
+
 %w[ build-essential libncurses5-dev openssl libssl-dev ].each do |pkg|
   package pkg
 end
 
 tarball_path = File.join(node[:deployment][:setup_cache], "otp_src_#{node[:erlang][:version]}.tar.gz")
-remote_file tarball_path do
+cf_remote_file tarball_path do
   owner node[:deployment][:user]
   source node[:erlang][:source]
   checksum "849d050b59821e9f2831fee2e3267d84b410eee860a55f6fc9320cc00b5205bd"
