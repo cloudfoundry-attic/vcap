@@ -160,4 +160,21 @@ class Service < ActiveRecord::Base
       (self.token == token)
     end
   end
+
+  def hash_to_service_offering
+    svc_offering = {
+      :label => self.label,
+      :url   => self.url
+    }
+    svc_offering[:description]     = self.description     if self.description
+    svc_offering[:info_url]        = self.info_url        if self.info_url
+    svc_offering[:tags]            = self.tags            if self.tags
+    svc_offering[:plans]           = self.plans           if self.plans
+    svc_offering[:plan_options]    = self.plan_options    if self.plan_options
+    svc_offering[:binding_options] = self.binding_options if self.binding_options
+    svc_offering[:acls]            = self.acls            if self.acls
+    svc_offering[:active]          = self.active          if self.active
+    svc_offering[:timeout]         = self.timeout         if self.timeout
+    return svc_offering
+  end
 end
