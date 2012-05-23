@@ -146,7 +146,10 @@ module VCAP::Services::Api
       result = nil
       uri = URI.parse(@url)
       if EM.reactor_running?
-        url = uri.merge!(path)
+        url = uri
+        if uri.path == "" or uri.path == "/"
+          url = uri.merge!(path)
+        end
         http = AsyncHttpRequest.fibered(url, @token, http_method, @timeout, msg)
         raise UnexpectedResponse, "Error sending request #{msg.extract.to_json} to gateway #{@url}: #{http.error}" unless http.error.empty?
         code = http.response_header.status.to_i
