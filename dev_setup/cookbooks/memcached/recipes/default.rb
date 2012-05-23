@@ -1,13 +1,15 @@
-remote_file File.join("", "tmp", "libevent-#{node[:libevent][:version]}-stable.tar.gz") do
+libevent_tarball_path = File.join(node[:deployment][:setup_cache], "libevent-#{node[:libevent][:version]}-stable.tar.gz")
+cf_remote_file libevent_tarball_path do
   owner node[:deployment][:user]
-  source "https://github.com/downloads/libevent/libevent/libevent-#{node[:libevent][:version]}-stable.tar.gz"
-  not_if { ::File.exists?(File.join("", "tmp", "libevent-#{node[:libevent][:version]}-stable.tar.gz")) }
+  source node[:libevent][:source]
+  checksum node[:memcached][:checksums][:libevent]
 end
 
-remote_file File.join("", "tmp", "memcached-#{node[:memcached][:version]}.tar.gz") do
+memcached_tarball_path = File.join(node[:deployment][:setup_cache], "memcached-#{node[:memcached][:version]}.tar.gz")
+cf_remote_file memcached_tarball_path do
   owner node[:deployment][:user]
-  source "http://memcached.googlecode.com/files/memcached-#{node[:memcached][:version]}.tar.gz"
-  not_if { ::File.exists?(File.join("", "tmp", "memcached-#{node[:memcached][:version]}.tar.gz")) }
+  source node[:memcached][:source]
+  checksum node[:memcached][:checksums][:memcached]
 end
 
 directory "#{node[:memcached][:path]}" do
@@ -30,7 +32,7 @@ bash "Compile libevent" do
   cwd File.join("", "tmp")
   user node[:deployment][:user]
   code <<-EOH
-  tar xzf libevent-#{node[:libevent][:version]}-stable.tar.gz
+  tar xzf #{libevent_tarball_path}
   cd libevent-#{node[:libevent][:version]}-stable
   ./configure --prefix=`pwd`/tmp
   make
@@ -45,7 +47,7 @@ bash "Install memcached" do
   cwd File.join("", "tmp")
   user node[:deployment][:user]
   code <<-EOH
-  tar xzf memcached-#{node[:memcached][:version]}.tar.gz
+  tar xzf #{memcached_tarball_path}
   cd memcached-#{node[:memcached][:version]}
   ./configure --with-libevent=../libevent-#{node[:libevent][:version]}-stable/tmp LDFLAGS="-static"
   make
