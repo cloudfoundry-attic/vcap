@@ -559,6 +559,10 @@ opts_parser = OptionParser.new do |opts|
   opts.on('--no-color', '--nocolor', '--nc')       { $nocolor = true }
   opts.on('--noprompt', '-n')                      { $noprompt = true }
 end
+
+
+excluded ||= ENV['CLOUD_FOUNDRY_EXCLUDED_COMPONENT'] || Component::DEFAULT_CLOUD_FOUNDRY_EXCLUDED_COMPONENT
+puts "- Excluded components: #{excluded}.\n  See dev_setup/README for details"
 args = opts_parser.parse!(args)
 ENV['CLOUD_FOUNDRY_CONFIG_PATH'] = $config_dir
 
