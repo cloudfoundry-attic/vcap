@@ -70,5 +70,49 @@ o To use a custom domain
   Later, you will target your CloudFoundry installation with:
     vmc target api.myowndomain.com
 
+
+o Excluded components:
+  By default neo4j and memcached (+ a few other new services) will be excluded by default. 
+  The excluded components are specified by a regex using the environment variable 
+  CLOUD_FOUNDRY_EXCLUDED_COMPONENT.
+  NOTE: The exclusion is on the component name. E.g. specifying memcached, will exclude memcached_node 
+  and memcached_gateway but nothing else.
+
+  To include all components, just set the environment variable to empty which will skip matching. e.g.:
+  export CLOUD_FOUNDRY_EXCLUDED_COMPONENT=
+
+  To exclude mysql, neo4j and memcached, set the variable as follows:
+  export CLOUD_FOUNDRY_EXCLUDED_COMPONENT="mysql|memcached|neo4j"
+  This will skip:
+    Skipping excluded component: mysql_gateway
+    Skipping excluded component: mysql_node
+    Skipping excluded component: neo4j_gateway
+    Skipping excluded component: neo4j_node
+    Skipping excluded component: memcached_gateway
+    Skipping excluded component: memcached_node
+
+  To skip all node and gateway components:
+  export CLOUD_FOUNDRY_EXCLUDED_COMPONENT="node|gateway"
+  This will skip:
+    Skipping excluded component: redis_gateway
+    Skipping excluded component: redis_node
+    Skipping excluded component: mongodb_gateway
+    Skipping excluded component: mysql_gateway
+    Skipping excluded component: mysql_node
+    Skipping excluded component: neo4j_gateway
+    Skipping excluded component: neo4j_node
+    Skipping excluded component: mongodb_node
+    Skipping excluded component: memcached_gateway
+    Skipping excluded component: rabbitmq_gateway
+    Skipping excluded component: memcached_node
+    Skipping excluded component: rabbitmq_node
+
+  Finally, the default list of excluded components can be restored by undefining the 
+  environment variable as follows:
+  unset CLOUD_FOUNDRY_EXCLUDED_COMPONENT
+
+  To modify the default exclusion list, add the component name in dev_setup/bin/vcap to:
+  DEFAULT_CLOUD_FOUNDRY_EXCLUDED_sCOMPONENT
+
 NOTE: To learn more about custom deployment config files and multi host setups
 see the README file vcap/dev_setup/deployments/README.
