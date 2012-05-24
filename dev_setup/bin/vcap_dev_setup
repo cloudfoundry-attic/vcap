@@ -1,6 +1,8 @@
 #!/bin/bash
-# Copyright (c) 2011 VMware, Inc.
+# Copyright (c) 2012 VMware, Inc.
 # Install vcap components on Ubuntu systems.
+
+set -o errexit
 
 usage() {
 cat <<EOF
@@ -95,20 +97,15 @@ function clear_bundler_settings () {
 }
 
 # Check if we have access to the web
-run_cmd apt-get $APT_CONFIG install -qym wget
-if [ $? -ne 0 ]; then
+if ! run_cmd apt-get $APT_CONFIG install -qym wget; then
   echo "Can't install prerequisite: wget"
   exit 1
 fi
 
-which wget > /dev/null
-if [ $? -eq 0 ]; then
-  echo "Checking web connectivity."
-  wget -q -T 2 -t 2 -O - http://api.cloudfoundry.com/info | grep "Cloud Application Platform" > /dev/null
-  if [ $? -ne 0 ]; then
-    echo "Giving up. Cannot connect to the web. Check your proxy settings if you are behind a proxy."
-    exit 1
-  fi
+echo "Checking web connectivity."
+if ! wget -q -T 2 -t 2 -O - http://api.cloudfoundry.com/info | grep "Cloud Application Platform" > /dev/null; then
+  echo "Giving up. Cannot connect to the web. Check your proxy settings if you are behind a proxy."
+  exit 1
 fi
 
 # Install chef
@@ -123,8 +120,12 @@ run_cmd apt-get $APT_CONFIG install -qym chef
 run_cmd apt-get $APT_CONFIG install -qym git-core
 [ -d $CLOUDFOUNDRY_HOME ] || mkdir $CLOUDFOUNDRY_HOME
 if [ ! -d $CLOUDFOUNDRY_HOME/vcap ]; then
-  (cd $CLOUDFOUNDRY_HOME && git clone $VCAP_REPO && cd vcap && git submodule update --init && git checkout $VCAP_REPO_BRANCH)
-  if [ $? != 0 ]; then
+  if ! (cd $CLOUDFOUNDRY_HOME
+    git clone $VCAP_REPO
+    cd vcap
+    git submodule update --init
+    git checkout $VCAP_REPO_BRANCH
+  ); then
     echo "Unable to clone cloudfoundry repo."
     exit 1
   fi
@@ -135,8 +136,7 @@ fi
 
 # Our deployment code needs this gem. Using bundler seems like an overkill for
 # the deployment code. So for now just manually install the required gem.
-gem list rake -i > /dev/null
-if [ $? != 0 ]; then
+if ! gem list rake -i > /dev/null; then
   gem install rake -q --no-ri --no-rdoc > /dev/null 2>&1
 fi
 
