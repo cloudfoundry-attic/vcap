@@ -1,6 +1,8 @@
 #!/bin/bash
-# Copyright (c) 2011 VMware, Inc.
+# Copyright (c) 2012 VMware, Inc.
 # Install vcap components on Ubuntu systems.
+
+set -o errexit
 
 usage() {
 cat <<EOF
