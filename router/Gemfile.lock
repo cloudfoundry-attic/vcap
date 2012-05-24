@@ -1,3 +1,29 @@
+GIT
+  remote: git://github.com/cloudfoundry/common.git
+  revision: b96ec1192d961925d91e17ca3831f8547489d918
+  specs:
+    vcap_logging (1.0.2)
+      rake
+
+GIT
+  remote: git://github.com/cloudfoundry/eventmachine.git
+  revision: 2806c630d8631d5dcf9fb2555f665b829052aabe
+  branch: release-0.12.11-cf
+  specs:
+    eventmachine (0.12.11.cloudfoundry.3)
+
+GIT
+  remote: git://github.com/cloudfoundry/vcap-common.git
+  revision: f6ffe9add54b55eaf428556147d61f3d64508cd8
+  ref: f6ffe9ad
+  specs:
+    vcap_common (1.0.9)
+      eventmachine (~> 0.12.11.cloudfoundry.3)
+      nats (~> 0.4.22.beta.8)
+      posix-spawn (~> 0.3.6)
+      thin (~> 1.3.1)
+      yajl-ruby (~> 0.8.3)
+
 GEM
   remote: http://rubygems.org/
   specs:
@@ -6,7 +32,6 @@ GEM
       builder (>= 2.1.2)
     daemons (1.1.8)
     diff-lcs (1.1.2)
-    eventmachine (0.12.11.cloudfoundry.3)
     http_parser.rb (0.5.1)
     json_pure (1.6.6)
     nats (0.4.22)
@@ -37,14 +62,6 @@ GEM
       eventmachine (>= 0.12.6)
       rack (>= 1.0.0)
     tilt (1.3.3)
-    vcap_common (1.0.10)
-      eventmachine (~> 0.12.11.cloudfoundry.3)
-      nats (~> 0.4.22.beta.8)
-      posix-spawn (~> 0.3.6)
-      thin (~> 1.3.1)
-      yajl-ruby (~> 0.8.3)
-    vcap_logging (1.0.1)
-      rake
     yajl-ruby (0.8.3)
 
 PLATFORMS
@@ -53,13 +70,13 @@ PLATFORMS
 DEPENDENCIES
   bundler (>= 1.0.10)
   ci_reporter
-  eventmachine
+  eventmachine!
   http_parser.rb
   nats
   rake
   rcov
   rspec
   sinatra
-  vcap_common (~> 1.0.9)
-  vcap_logging
+  vcap_common (~> 1.0.9)!
+  vcap_logging!
   yajl-ruby
