@@ -9,7 +9,9 @@ class VCAP::PackageCache::Config < VCAP::Config
 
   define_schema do
     {
-      :listen_port         => Integer,    # tcp port to listen on.
+      :listen_port           => Integer,    # tcp port to listen on.
+      optional(:listen_addr) => String,     # address to listen on. defaults to 127.0.0.1
+
       :logging => {
         :level              => String,      # debug, info, etc.
         optional(:file)     => String,      # Log file to use
