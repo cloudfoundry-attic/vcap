@@ -1,6 +1,8 @@
 #!/bin/bash
-# Copyright (c) 2011 VMware, Inc.
+# Copyright (c) 2012 VMware, Inc.
 # Install vcap components on Ubuntu systems.
+
+set -o errexit
 
 usage() {
 cat <<EOF
@@ -98,32 +100,21 @@ fi
 
 # Check if we have access to the web
 echo "Installing wget..."
-run_cmd apt-get $APT_CONFIG install -qym wget > /dev/null
-if [ $? -ne 0 ]; then
+if ! run_cmd apt-get $APT_CONFIG install -qym wget; then
   echo "Can't install prerequisite: wget"
   exit 1
 fi
 
-which wget > /dev/null
-if [ $? -eq 0 ]; then
-  echo "Checking web connectivity..."
-  wget -q -T 5 -t 2 -O - http://api.cloudfoundry.com/info | grep "Cloud Application Platform" > /dev/null
-  if [ $? -ne 0 ]; then
-    echo "Giving up. Cannot connect to the web. Check your proxy settings if you are behind a proxy."
-    exit 1
-  fi
+echo "Checking web connectivity."
+if ! wget -q -T 2 -t 2 -O - http://api.cloudfoundry.com/info | grep "Cloud Application Platform" > /dev/null; then
+  echo "Giving up. Cannot connect to the web. Check your proxy settings if you are behind a proxy."
+  exit 1
 fi
 
 # Install chef
-for utility in ruby ruby-dev libopenssl-ruby rdoc ri irb build-essential ssl-cert
-do
-  echo "Installing ${utility}..."
-  run_cmd apt-get $APT_CONFIG install -qym ${utility} > /dev/null
-  if [ $? -ne 0 ]; then
-    echo "Can't install prerequisit: ${utility}"
-    exit 1
-  fi
-done
+readonly PREREQUISITES=(ruby ruby-dev libopenssl-ruby rdoc ri irb build-essential ssl-cert)
+echo "Installing prerequisites..."
+run_cmd apt-get $APT_CONFIG install -qym "${PREREQUISITES[@]}"
 
 if [ ! -f ${GEM} ] || [ `${GEM} -v` \< "1.3.6" ]; then
   # Blobstore_client requires gem >= 1.3.6
@@ -137,36 +128,30 @@ if [ ! -f ${GEM} ] || [ `${GEM} -v` \< "1.3.6" ]; then
   cd ${CWD}
 fi
 
-${GEM} list chef -i > /dev/null
-if [ $? -ne 0 ]; then
-  echo "Installing chef..."
-  sudo ${GEM} install chef -q --no-ri --no-rdoc > /dev/null
-fi
+# FIXME: at some point you will want a version spec like "~> 10.12.0" here
+echo "Installing chef..."
+${GEM} list -i chef || sudo ${GEM} install chef -q --no-ri --no-rdoc > /dev/null
 
 # Install blobstore_client
-${GEM} list blobstore_client -i > /dev/null
-if [ $? -ne 0 ]; then
-  echo "Installing blobstore_client..."
-  sudo ${GEM} install blobstore_client -q --no-ri --no-rdoc > /dev/null
-fi
+echo "Installing blobstore_client..."
+${GEM} list -i blobstore_client || sudo ${GEM} install blobstore_client -q --no-ri --no-rdoc > /dev/null
 
 # Install rake
-${GEM} list rake -i > /dev/null
-if [ $? -ne 0 ]; then
-  echo "Installing rake..."
-  sudo ${GEM} install rake -q --no-ri --no-rdoc > /dev/null
-fi
+echo "Installing rake..."
+${GEM} list -i rake -i || sudo ${GEM} install rake -q --no-ri --no-rdoc > /dev/null
 
 # Clone cloudfoundry repo
 echo "Installing git..."
-run_cmd apt-get $APT_CONFIG install -qym git-core > /dev/null
+run_cmd apt-get $APT_CONFIG install -qym git-core
 
 [ -d $CLOUDFOUNDRY_HOME ] || mkdir $CLOUDFOUNDRY_HOME
 if [ ! -d $CLOUDFOUNDRY_HOME/vcap ]; then
-  echo ""
-  echo "Creating cloudfoundry repo..."
-  (cd $CLOUDFOUNDRY_HOME && git clone $VCAP_REPO && cd vcap && git submodule update --init && git checkout $VCAP_REPO_BRANCH)
-  if [ $? -ne 0 ]; then
+  if ! (cd $CLOUDFOUNDRY_HOME
+    git clone $VCAP_REPO
+    cd vcap
+    git submodule update --init
+    git checkout $VCAP_REPO_BRANCH
+  ); then
     echo "Unable to clone cloudfoundry repo."
     exit 1
   fi
