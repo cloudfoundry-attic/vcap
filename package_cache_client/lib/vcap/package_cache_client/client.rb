@@ -20,7 +20,8 @@ class VCAP::PackageCacheClient::Client
 
   def setup_client(config)
     #XXX validate that end-point exists and we can connect to it.
-    @cache_addr = "127.0.0.1:#{config[:listen_port]}"
+    host = config[:listen_host] || "127.0.0.1"
+    @cache_addr = "#{host}:#{config[:listen_port]}"
     base_dir =  config[:base_dir]
     cache_dir = File.join base_dir,'cache'
     inbox_dir = File.join base_dir,'inbox'
