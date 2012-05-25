@@ -1,3 +1,10 @@
+require "logger"
+require "yaml"
+
+require "vcap/common"
+
+require "vcap/staging/gem_installer"
+
 module GemfileSupport
 
   # OK, so this is our workhorse.
@@ -32,8 +39,21 @@ module GemfileSupport
 
     @task = GemfileTask.new(app_dir, library_version, ruby_cmd, base_dir, @staging_uid, @staging_gid)
 
-    @task.install
-    @task.install_bundler
+    if ENV["PACKAGE_CACHE_CONFIG"]
+      config = VCAP.symbolize_keys(YAML.load_file(ENV["PACKAGE_CACHE_CONFIG"]))
+      log_file = File.expand_path(File.join(app_dir, '..', 'logs', 'staging.log'))
+
+      gems = @task.dependencies
+      # Be consistent with old behavior w.r.t. installing bundler
+      gems << ["bundler", "1.0.10"]
+
+      gem_installer = GemInstaller.new(config, Logger.new(log_file))
+      gem_installer.install_gems(gems, app_dir, environment[:runtime])
+    else
+      @task.install
+      @task.install_bundler
+    end
+
     @task.remove_gems_cached_in_app
 
     @rack = @task.bundles_rack?
