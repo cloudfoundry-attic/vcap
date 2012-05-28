@@ -10,5 +10,6 @@
   "chef_type": "role",
   "run_list" : ["recipe[deployment]",
                 "recipe[postgresql]",
+                "recipe[postgresql::system]",
                 "recipe[acmdb]"]
 }

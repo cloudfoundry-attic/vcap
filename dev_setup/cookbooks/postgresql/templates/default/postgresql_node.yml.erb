@@ -18,7 +18,7 @@ db_size_overhead: 5.4
 migration_nfs: /mnt/migration
 postgresql:
   host: <%= node[:postgresql_node][:host] %>
-  port: <%= node[:postgresql][:server_port]%>
+  port: <%= node[:postgresql][:service_port]%>
   user: <%= node[:postgresql][:server_root_user] %>
   pass: <%= node[:postgresql][:server_root_password] %>
   database: <%= node[:postgresql_node][:database]%>

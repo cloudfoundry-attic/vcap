@@ -3,10 +3,10 @@ cloud_controller_uri: <%= node[:cloud_controller][:service_api_uri] %>
 
 service:
   name: postgresql
-  version: "<%= node[:postgresql][:version] %>"
+  version: "<%= node[:postgresql][:service_version] %>"
   description: 'PostgreSQL database service'
   plans: ['free']
-  tags: ['postgresql', 'postgresql-<%= node[:postgresql][:version] %>', 'relational']
+  tags: ['postgresql', 'postgresql-<%= node[:postgresql][:service_version] %>', 'relational']
 
 ip_route: localhost
 index: 0
