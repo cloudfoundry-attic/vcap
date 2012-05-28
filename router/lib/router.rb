@@ -15,6 +15,7 @@ require 'vcap/common'
 require 'vcap/component'
 require 'vcap/logging'
 require 'vcap/rolling_metric'
+require 'vcap/sorted_set_utils'
 
 $:.unshift(File.dirname(__FILE__))
 

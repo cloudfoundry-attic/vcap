@@ -19,3 +19,6 @@ pid: /var/vcap/sys/run/router.pid
 
 #  Uncomment and set true to show requests-per-second stats for all aps not only top 10. If not specified or set false only 10 apps are shown
 #  expose_all_apps: true
+
+# enable_nonprod_apps: false
+# flush_apps_interval: 30

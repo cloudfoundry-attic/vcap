@@ -6,10 +6,11 @@ module Functional
   class TestApp
     class UsageError < StandardError; end
 
-    attr_reader :uris, :droplet
+    attr_reader :uris, :droplet, :id
 
     def initialize(*uris)
       @uris = uris
+      @id = Random.rand(10000)
     end
 
     def bind_droplet(droplet)
@@ -104,6 +105,7 @@ module Functional
       { :dea  => @dea_id,
         :host => @host,
         :port => app.port,
+        :app  => app.id,
         :uris => app.uris,
         :tags => tags
       }

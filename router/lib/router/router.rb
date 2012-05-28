@@ -34,13 +34,24 @@ class Router
 
       @session_key = config['session_key'] || '14fbc303b76bacd1e0a3ab641c11d11400341c5d'
       @expose_all_apps = config['status']['expose_all_apps'] if config['status']
+
+      @enable_nonprod_apps = config['enable_nonprod_apps'] || false
+      if @enable_nonprod_apps
+        @active_apps = SortedSet.new
+
+        flush_apps_interval = config['flush_apps_interval'] || 30
+        EM.add_periodic_timer(flush_apps_interval) do
+          flush_active_apps
+        end
+      end
     end
 
     def setup_listeners
       NATS.subscribe('router.register') { |msg|
         msg_hash = Yajl::Parser.parse(msg, :symbolize_keys => true)
         return unless uris = msg_hash[:uris]
-        uris.each { |uri| register_droplet(uri, msg_hash[:host], msg_hash[:port], msg_hash[:tags]) }
+        uris.each { |uri| register_droplet(uri, msg_hash[:host], msg_hash[:port],
+                                           msg_hash[:tags], msg_hash[:app]) }
       }
       NATS.subscribe('router.unregister') { |msg|
         msg_hash = Yajl::Parser.parse(msg, :symbolize_keys => true)
@@ -154,7 +165,7 @@ class Router
       @droplets[url.downcase]
     end
 
-    def register_droplet(url, host, port, tags)
+    def register_droplet(url, host, port, tags, app_id)
       return unless host && port
       url.downcase!
       droplets = @droplets[url] || []
@@ -168,6 +179,7 @@ class Router
       }
       tags.delete_if { |key, value| key.nil? || value.nil? } if tags
       droplet = {
+        :app => app_id,
         :host => host,
         :port => port,
         :clients => Hash.new(0),
@@ -210,6 +222,18 @@ class Router
           :responses_xxx => 0
         }
       end
+    end
+
+    def add_active_app(app_id)
+      return unless @enable_nonprod_apps
+
+      @active_apps << app_id
+    end
+
+    def flush_active_apps
+      msg = Yajl::Encoder.encode(@active_apps.to_int_array)
+      NATS.publish('router.active_apps', msg)
+      @active_apps.clear
     end
 
   end
