@@ -44,6 +44,9 @@ class RouterULSServer < Sinatra::Base
       # Update droplet stats
       update_droplet_stats(droplet)
 
+      # Update active apps. Only apps in DEA has app_id.
+      Router.add_active_app(droplet[:app]) if droplet[:app]
+
       # Get session cookie for droplet
       new_sticky = Router.get_session_cookie(droplet)
 
