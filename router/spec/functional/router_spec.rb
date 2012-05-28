@@ -2,7 +2,7 @@
 require File.dirname(__FILE__) + '/spec_helper'
 require "base64"
 
-describe 'Router Functional Tests' do
+describe 'Router ULS Functional Tests' do
 
   include Functional
 
@@ -75,6 +75,26 @@ describe 'Router Functional Tests' do
     app.verify_registered
     dea.unregister_app(app)
     app.verify_unregistered
+  end
+
+  it 'should properly publish active applications set' do
+    # setup the "app"
+    app1 = TestApp.new('router_test1.vcap.me')
+    app2 = TestApp.new('router_test2.vcap.me')
+    dea = DummyDea.new(@nats_server.uri, '1234')
+    dea.register_app(app1)
+    dea.register_app(app2)
+    app1.verify_registered
+    app2.verify_registered
+    original_set = SortedSet.new([app1.id, app2.id])
+
+    NATS.start(:uri => @nats_server.uri) do
+      NATS.subscribe('router.active_apps') do |msg|
+        apps_set = SortedSet.from_int_array(Yajl::Parser.parse(msg))
+        apps_set.should == original_set
+        NATS.stop
+      end
+    end
   end
 
   it 'should generate the same token as router v1 did' do
