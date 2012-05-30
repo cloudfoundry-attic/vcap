@@ -15,14 +15,15 @@ GIT
 
 GIT
   remote: git://github.com/cloudfoundry/uaa.git
-  revision: 0000f73653ae3a09279063e4f73f87066a91b14a
-  ref: 0000f736
+  revision: 8d28af07b10d1b00f17803ff8ae8628838af4aaa
+  ref: 8d28af07
   specs:
-    cf-uaa-client (0.0.10)
-      em-http-request (<= 1.0.0.beta.3, < 1.0.1)
+    cf-uaa-client (0.0.12.beta.3)
+      em-http-request (>= 1.0.0.beta.3, <= 1.0.0.beta.3)
       eventmachine
       interact
       json_pure
+      launchy
       rest-client
       thor
 
@@ -55,8 +56,10 @@ GEM
     em-socksify (0.1.0)
       eventmachine
     http_parser.rb (0.5.3)
-    interact (0.4.2)
+    interact (0.4.3)
     json_pure (1.7.3)
+    launchy (2.1.0)
+      addressable (~> 2.2.6)
     mime-types (1.18)
     nats (0.4.24)
       daemons (>= 1.1.5)
