@@ -3,7 +3,7 @@ NOTE: This is an alpha release of these scripts.
 Description:
 This subdirectory contains the chef cookbooks to deploy and setup Cloud Foundry
 in a single or multiple host environment. The cookbooks assume that they are
-running on a freshly installed Ubuntu 10.04 server.
+running on a freshly installed Ubuntu 12.04 server.
 
 Quick Start:
 -----------
