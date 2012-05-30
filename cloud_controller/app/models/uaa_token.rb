@@ -4,17 +4,17 @@ require "uaa/token_issuer"
 class UaaToken
 
   @uaa_token_coder ||= CF::UAA::TokenCoder.new(AppConfig[:uaa][:resource_id],
-                                                         AppConfig[:uaa][:token_secret])
+                                               AppConfig[:uaa][:token_secret])
 
   @token_issuer ||= CF::UAA::TokenIssuer.new(AppConfig[:uaa][:url],
-                                                       AppConfig[:uaa][:resource_id],
-                                                       AppConfig[:uaa][:client_secret],
-                                                       "read write password")
+                                             AppConfig[:uaa][:resource_id],
+                                             AppConfig[:uaa][:client_secret],
+                                             "read write password")
 
   @id_token_issuer ||= CF::UAA::TokenIssuer.new(AppConfig[:uaa][:url],
-                                                       "vmc",
-                                                       nil,
-                                                       "read")
+                                               "vmc",
+                                               nil,
+                                               "read")
 
   class << self
 
@@ -45,6 +45,11 @@ class UaaToken
       expiry.is_a?(Integer) && expiry <= Time.now.to_i
     end
 
+    def expire_access_token
+      @access_token = nil
+      @user_account = nil
+    end
+
     def access_token
       if @access_token.nil? || expired?(@access_token)
         #Get a new one
@@ -61,9 +66,18 @@ class UaaToken
       @id_token_issuer.async = true
       @id_token_issuer.debug = true
       @id_token_issuer.logger = CloudController.logger
-      id_token = @id_token_issuer.implicit_grant(username: email, password: password).auth_header
+      id_token = @id_token_issuer.implicit_grant_with_creds(username: email, password: password).auth_header
       CloudController.logger.debug("id_token #{id_token}")
       id_token
+    end
+
+    def user_account_instance
+      if @user_account.nil?
+        @user_account = CF::UAA::UserAccount.new(AppConfig[:uaa][:url], UaaToken.access_token, true)
+        @user_account.async = true
+        @user_account.logger = CloudController.logger
+      end
+      @user_account
     end
 
   end

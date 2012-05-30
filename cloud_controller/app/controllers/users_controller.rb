@@ -9,13 +9,15 @@ class UsersController < ApplicationController
   def create
     if uaa_enabled?
       begin
-        user_account = CF::UAA::UserAccount.new(AppConfig[:uaa][:url], UaaToken.access_token)
-        user_account.async = true
-        user_account.debug = true
-        user_account.logger = CloudController.logger
+        user_account = UaaToken.user_account_instance
+        retry_on_error = (retry_on_error == true ? false : true)
         user = user_account.create(body_params[:email], body_params[:password], body_params[:email])
-
         CloudController.logger.info("User with email #{body_params[:email]} and id #{user[:id]} created in the UAA") unless user == nil
+      rescue CF::UAA::InvalidToken => ite
+        # Try again. The UAA may have restarted and may have lost it's token cache
+        CloudController.logger.debug("Appears to be an invalid token, retrying - message #{ite.message} trace #{ite.backtrace[0..10]}")
+        UaaToken.expire_access_token
+        retry if retry_on_error == true
       rescue => e
         CloudController.logger.error("Error trying to create a UAA user - message #{e.message} trace #{e.backtrace[0..10]}")
       end
@@ -34,11 +36,14 @@ class UsersController < ApplicationController
   def delete
     if uaa_enabled?
       begin
-        user_account = CF::UAA::UserAccount.new(AppConfig[:uaa][:url], UaaToken.access_token)
-        user_account.async = true
-        user_account.debug = true
-        user_account.logger = CloudController.logger
+        user_account = UaaToken.user_account_instance
+        retry_on_error = (retry_on_error == true ? false : true)
         user_account.delete_by_name(params['email'])
+      rescue CF::UAA::InvalidToken => ite
+        # Try again. The UAA may have restarted and may have lost it's token cache
+        CloudController.logger.debug("Appears to be an invalid token, retrying - message #{ite.message} trace #{ite.backtrace[0..10]}")
+        UaaToken.expire_access_token
+        retry if retry_on_error == true
       rescue => e
         CloudController.logger.error("Error trying to delete a UAA user - message #{e.message} trace #{e.backtrace[0..10]}")
       end
@@ -68,12 +73,14 @@ class UsersController < ApplicationController
   def update
     if uaa_enabled?
       begin
-        user_account = CF::UAA::UserAccount.new(AppConfig[:uaa][:url], UaaToken.access_token)
-        user_account.async = true
-        user_account.debug = true
-        user_account.logger = CloudController.logger
+        user_account = UaaToken.user_account_instance
+        retry_on_error = (retry_on_error == true ? false : true)
         user_account.change_password_by_name(user.email, body_params[:password])
-
+      rescue CF::UAA::InvalidToken => ite
+        # Try again. The UAA may have restarted and may have lost it's token cache
+        CloudController.logger.debug("Appears to be an invalid token, retrying - message #{ite.message} trace #{ite.backtrace[0..10]}")
+        UaaToken.expire_access_token
+        retry if retry_on_error == true
       rescue => e
         CloudController.logger.error("Error trying to change the password for a UAA user - message #{e.message} trace #{e.backtrace[0..10]}")
       end
