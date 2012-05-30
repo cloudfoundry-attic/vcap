@@ -43,6 +43,7 @@ oauth:
       id: cloud_controller
       secret: <%= node[:uaa][:cloud_controller][:password] %>
       resource-ids: scim,password,tokens
+      access-token-validity: 604800
     vmc:
       authorized-grant-types: implicit
       scope: read,password
