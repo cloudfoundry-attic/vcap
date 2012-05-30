@@ -140,6 +140,7 @@ when "ubuntu"
       LUA_LIB=#{lua_path}/lib LUA_INC=#{lua_path}/include ./configure \
         --prefix=#{nginx_path} \
         --with-pcre=../pcre-8.12 \
+        --with-cc-opt=-Wno-error \
         --add-module=../nginx_upload_module-2.2.0 \
         --add-module=../agentzh-headers-more-nginx-module-5fac223 \
         --add-module=../simpl-ngx_devel_kit-bc97eea \
