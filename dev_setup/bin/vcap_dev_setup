@@ -96,6 +96,17 @@ function clear_bundler_settings () {
   (cd $CLOUDFOUNDRY_HOME/vcap && find -type d -name .bundle -prune -exec rm -r {} \; )
 }
 
+function retrieve_key () {
+  local KEYSERVERS="hkp://keyserver.ubuntu.com:80 keyserver.ubuntu.com pgp.mit.edu subkeys.pgp.net keys.gnupg.net"
+  local KEYID=83EF826A
+  for ks in $KEYSERVERS; do
+    if sudo apt-key adv --keyserver $ks --recv $KEYID; then
+      return 0
+    fi
+  done
+  sudo apt-key adv --keyserver keys.gnupg.net --recv $KEYID
+}
+
 # Check if we have access to the web
 if ! run_cmd apt-get $APT_CONFIG install -qym wget; then
   echo "Can't install prerequisite: wget"
@@ -111,7 +122,7 @@ fi
 # Install chef
 if ! (apt-cache policy | grep opscode); then
   echo "deb http://apt.opscode.com/ `lsb_release -cs`-0.10 main" | sudo tee /etc/apt/sources.list.d/opscode.list
-  sudo apt-key adv --keyserver keyserver.ubuntu.com --recv 83EF826A
+  retrieve_key
   echo chef chef/chef_server_url select none | sudo /usr/bin/debconf-set-selections
 fi
 run_cmd apt-get $APT_CONFIG update -qq
