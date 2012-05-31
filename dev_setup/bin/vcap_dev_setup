@@ -137,8 +137,7 @@ fi
 
 # Our deployment code needs this gem. Using bundler seems like an overkill for
 # the deployment code. So for now just manually install the required gem.
-gem list rake -i > /dev/null
-if [ $? != 0 ]; then
+if ! gem list rake -i > /dev/null; then
   gem install rake -q --no-ri --no-rdoc > /dev/null 2>&1
 fi
 
