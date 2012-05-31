@@ -20,7 +20,7 @@ class JobManager
   ACM = "acm"
   ACMDB = "acmdb"
 
-  SERVICES = ["redis", "mysql", "mongodb", "neo4j", "rabbitmq", "memcached"]
+  SERVICES = ["redis", "mysql", "mongodb", "rabbitmq", "memcached"] # neo4j
   SERVICES_NODE = SERVICES.map do |service|
     "#{service}_node"
   end
