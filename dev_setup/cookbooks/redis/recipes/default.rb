@@ -6,14 +6,14 @@ end
 
 directory "#{node[:redis][:path]}" do
   owner node[:deployment][:user]
-  group node[:deployment][:user]
+  group node[:deployment][:group]
   mode "0755"
 end
 
 %w[bin etc var].each do |dir|
   directory File.join(node[:redis][:path], dir) do
     owner node[:deployment][:user]
-    group node[:deployment][:user]
+    group node[:deployment][:group]
     mode "0755"
     recursive true
     action :create
@@ -36,5 +36,5 @@ template File.join(node[:redis][:path], "etc", "redis.conf") do
   source "redis.conf.erb"
   mode 0600
   owner node[:deployment][:user]
-  group node[:deployment][:user]
+  group node[:deployment][:group]
 end
