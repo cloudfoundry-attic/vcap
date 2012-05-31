@@ -19,7 +19,7 @@ when "ubuntu"
 
   directory "#{node[:rabbitmq][:path]}" do
     owner node[:deployment][:user]
-    group node[:deployment][:user]
+    group node[:deployment][:group]
     mode "0755"
   end
 

@@ -14,14 +14,14 @@ end
 
 directory "#{node[:memcached][:path]}" do
   owner node[:deployment][:user]
-  group node[:deployment][:user]
+  group node[:deployment][:group]
   mode "0755"
 end
 
 %w[bin etc var].each do |dir|
   directory File.join(node[:memcached][:path], dir) do
     owner node[:deployment][:user]
-    group node[:deployment][:user]
+    group node[:deployment][:group]
     mode "0755"
     recursive true
     action :create
