@@ -8,7 +8,7 @@
 [node[:neo4j][:service_dir], File.join(node[:neo4j][:service_dir], "instances")].each do |dir|
   directory dir do
     owner node[:deployment][:user]
-    group node[:deployment][:user]
+    group node[:deployment][:group]
     mode "0755"
   end
 end
