@@ -1,7 +1,7 @@
 source 'http://rubygems.org'
 
 # Rails itself
-gem 'rails', '~> 3.0.5'
+gem 'rails', '~> 3.0.13'
 # Message bus
 gem 'nats', :require => 'nats/client'
 

@@ -175,3 +175,11 @@ class ApplicationController < ActionController::Base
   end
 
 end
+
+# HACK: resolves ActiveRecord/json_pure incompatibility
+# to allow an urgent rails security upgrade
+class Fixnum
+  def to_json(options = nil)
+    to_s
+  end
+end

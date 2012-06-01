@@ -61,6 +61,8 @@ describe 'Health Manager' do
       new("ruby -r#{nats_timeout_path} #{hm_path} -c #{@hm_config_file}",
           @hm_cfg['pid'],@hm_cfg, @run_dir)
 
+    @hm.reopen_stdio = false if ENV['HM_NO_STDIO_REOPEN']
+
     @helper.prepare_tests
     receive_message 'healthmanager.start' do
       @hm.start

@@ -1,4 +1,5 @@
 # Copyright (c) 2009-2011 VMware, Inc.
+
 module CloudController
   require 'pathname'
   require 'erb'
@@ -52,6 +53,15 @@ module CloudController
 end
 
 CloudController.setup
+
+# HACK: resolves ActiveRecord/json_pure incompatibility
+# to allow an urgent rails security upgrade
+class ::Fixnum
+  def to_json(options = nil)
+    to_s
+  end
+end
+
 class HealthManager
   VERSION = 0.98
 
@@ -73,9 +83,7 @@ class HealthManager
   RUNNING_STATES    = Set.new([STARTING, RUNNING])
   RESTART_REASONS   = Set.new([CRASHED, DEA_SHUTDOWN, DEA_EVACUATION])
 
-
   INFINITE_PRIORITY = 2_000_000_000
-
 
   def self.start(options)
     health_manager = new(options)
