@@ -57,7 +57,7 @@ when "ubuntu"
   remote_file File.join("", "tmp", "nginx_upload_module-2.2.0.tar.gz") do
     owner node[:deployment][:user]
     source node[:nginx][:module_upload_source]
-    not_if { ::File.exists?(File.join("", "tmp", "nginx_upload_module-2.2.0.tar.g")) }
+    not_if { ::File.exists?(File.join("", "tmp", "nginx_upload_module-2.2.0.tar.gz")) }
   end
 
   remote_file File.join("", "tmp", "headers-more-v0.15rc3.tar.gz") do
