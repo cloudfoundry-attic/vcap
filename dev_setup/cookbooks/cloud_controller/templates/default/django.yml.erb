@@ -2,10 +2,12 @@
 name: "django"
 runtimes:
   - "python2":
+      name: "Python"
       version: "2.6.5"
       description: <%= "Python #{node[:python2][:version]}" %>
       executable: python
       default: true
+      status: "Current"
 app_servers:
 detection:
   - "*.py": '.'

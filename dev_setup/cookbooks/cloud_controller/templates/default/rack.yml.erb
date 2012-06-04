@@ -2,7 +2,8 @@
 name: "rack"
 runtimes:
   - "ruby18":
-      version: "1.8.7" # FIXME change to 1.8.7-p334
+      name: "Ruby"
+      version: "1.8.7p334"
       description: "Ruby 1.8.7"
       executable: "<%= File.join(node[:ruby18][:path], "bin", "ruby") %>"
       default: true
@@ -10,7 +11,9 @@ runtimes:
        rails_env: "production"
        bundle_gemfile:
        rack_env: "production"
+      status: "Current"
   - "ruby19":
+      name: "Ruby"
       version: "1.9.2p180"
       description: "Ruby 1.9.2"
       executable: "<%= File.join(node[:ruby][:path], "bin", "ruby") %>"
@@ -18,6 +21,7 @@ runtimes:
        rails_env: "production"
        bundle_gemfile:
        rack_env: "production"
+      status: "Current"
 app_servers:
   - "thin":
       description: "Thin"

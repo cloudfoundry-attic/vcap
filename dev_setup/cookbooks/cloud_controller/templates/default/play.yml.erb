@@ -2,11 +2,13 @@
 name: "play"
 runtimes:
   - "java":
+      name: "Java"
       description: "Java 6"
-      version: "1.6"
+      version: "1.6.0"
       executable: "java"
       default: true
       environment:
         path: /usr/bin:$PATH
+      status: "Current"
 detection:
   - "lib/play.*.jar": true
