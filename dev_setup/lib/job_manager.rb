@@ -37,7 +37,7 @@ class JobManager
   SYSTEM_JOB = [CF]
 
   # List of the required properties for jobs
-  INSTALLED_JOB_PROPERTIES = {NATS => ["host"], CC => ["service_api_uri", "builtin_services"],
+  INSTALLED_JOB_PROPERTIES = {NATS => ["host"], CC => ["service_api_uri"],
                               CCDB => ["host"]}
   INSTALL_JOB_PROPERTIES = {CC => ["builtin_services"], MYSQL_NODE => ["index"], MONGODB_NODE => ["index"], REDIS_NODE => ["index"], NEO4J_NODE => ["index"], POSTGRESQL_NODE => ["index"], RABBITMQ_NODE => ["index"], VBLOB_NODE => ["index"], MEMCACHED_NODE => ["index"]}
 
