@@ -1,0 +1,70 @@
+---
+python2.current:
+      id: "python2"
+      version: "2.6.5"
+      description: <%= "Python #{node[:python2][:version]}" %>
+      executable: python
+      status: "Current"
+      flavor: "Python"
+java6.current:
+      id: "java"
+      description: "Java 6"
+      version: "1.6.0"
+      executable: "java"
+      status: "Current"
+      flavor: "Java"
+      debug_modes:
+        - run
+        - suspend
+node04.current:
+      id: 'node'
+      version: '0.4.12'
+      description: 'Node.js'
+      executable: <%= File.join(node[:node04][:path], "bin", "node") %>
+      npm: <%= File.join(node[:node04][:npm][:path], "bin", "npm-cli.js") %>
+      status: "Current"
+      flavor: "Node"
+      debug_modes:
+        - run
+        - suspend
+node06.current:
+      id: 'node06'
+      version: '0.6.8'
+      description: 'Node.js'
+      executable: <%= File.join(node[:node06][:path], "bin", "node") %>
+      npm: <%= File.join(node[:node06][:path], "bin", "npm") %>
+      status: "Current"
+      flavor: "Node"
+      debug_modes:
+        - run
+        - suspend
+erlang.current:
+      id: 'erlangR14B02'
+      version: 'R14B02'
+      description: 'Erlang R14B02'
+      executable: <%= File.join(node[:erlang][:path], "bin", "erl") %>
+      status: "Current"
+      flavor: "Erlang"
+php5.current:
+      id: "php"
+      description: "PHP 5"
+      version: "5.3"
+      executable: "php"
+      status: "Current"
+      flavor: "PHP"
+ruby18.current:
+      id: ruby18
+      version: "1.8.7p334"
+      description: "Ruby 1.8.7"
+      executable: "<%= File.join(node[:ruby18][:path], "bin", "ruby") %>"
+      status: "Current"
+      flavor: "Ruby"
+ruby19.current:
+      id: ruby19
+      version: "1.9.2p180"
+      description: "Ruby 1.9.2"
+      executable: "<%= File.join(node[:ruby][:path], "bin", "ruby") %>"
+      status: "Current"
+      flavor: "Ruby"
+
+# vim: filetype=yaml
