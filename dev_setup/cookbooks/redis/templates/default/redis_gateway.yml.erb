@@ -10,6 +10,7 @@ host: localhost
 index: 0
 token: <%= node[:redis_node][:token] %>
 mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
+node_timeout: <%= node[:redis_gateway][:node_timeout] %>
 pid: /var/vcap/sys/run/redis_service.pid
 logging:
   level: debug

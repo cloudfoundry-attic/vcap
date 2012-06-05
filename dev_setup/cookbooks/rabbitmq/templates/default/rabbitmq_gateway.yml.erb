@@ -6,7 +6,7 @@ service:
   description: "RabbitMQ message queue"
   plans: ["free"]
   tags: ["rabbitmq", "rabitmq-2.4", "message-queue", "amqp"]
-  timeout: 15
+  timeout: <%= node[:rabbitmq_gateway][:service][:timeout] %>
 host: localhost
 index: 0
 token: <%= node[:rabbitmq_node][:token] %>
@@ -20,4 +20,4 @@ plan_management:
       low_water: 10
       high_water: 180
       #allow_over_provisioning: false
-node_timeout: 10
+node_timeout: <%= node[:rabbitmq_gateway][:node_timeout] %>

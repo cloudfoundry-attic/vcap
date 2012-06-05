@@ -11,6 +11,7 @@ index: 0
 token: <%= node[:mongodb_node][:token] %>
 mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
 pid: /var/vcap/sys/run/mongodb_service.pid
+node_timeout: <%= node[:mongodb_gateway][:node_timeout] %>
 logging:
   level: debug
 # allow_over_provisioning: false

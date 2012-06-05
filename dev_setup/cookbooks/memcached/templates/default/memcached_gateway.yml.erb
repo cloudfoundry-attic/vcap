@@ -10,5 +10,6 @@ index: 0
 token: <%= node[:memcached_node][:token] %>
 mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
 pid: /var/vcap/sys/run/memcached_gateway.pid
+node_timeout: <%= node[:memcached_gateway][:node_timeout] %>
 logging:
   level: debug
