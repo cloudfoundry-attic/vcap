@@ -7,7 +7,7 @@ service:
   description: 'PostgreSQL database service'
   plans: ['free']
   tags: ['postgresql', 'postgresql-<%= node[:postgresql][:service_version] %>', 'relational']
-
+  timeout: <%= node[:postgresql_gateway][:service][:timeout] %>
 ip_route: localhost
 index: 0
 token: <%= node[:postgresql_node][:token] %>
@@ -15,7 +15,7 @@ logging:
   level: debug
 mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
 pid: /var/vcap/sys/run/postgresql_service.pid
-node_timeout: <%= node[:postgresql_node][:timeout]%>
+node_timeout: <%= node[:postgresql_gateway][:node_timeout] %>
 <%if node[:service_lifecycle][:enable]%>
 resque:
   host: <%= node[:redis_resque][:host]%>

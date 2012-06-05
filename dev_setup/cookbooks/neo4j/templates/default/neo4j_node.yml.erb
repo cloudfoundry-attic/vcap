@@ -9,6 +9,7 @@ pid: /var/vcap/sys/run/neo4j_node.pid
 available_memory: <%= node[:neo4j_node][:available_memory] %>
 max_memory: <%= node[:neo4j_node][:max_memory] %>
 node_id: <%= "neo4j_node_#{node[:neo4j_node][:index]}" %>
+op_time_limit: <%= node[:neo4j_node][:op_time_limit] %>
 neo4j_path: <%= node[:neo4j][:service_dir] %>
 logging:
   level: debug

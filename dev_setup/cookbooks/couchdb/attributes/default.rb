@@ -6,10 +6,13 @@ default[:couchdb][:checksum] = "0f254ddea2471dbc4d3c6cd1fa61e4782c75475fb325024e
 
 default[:xulrunner][:version] = "1.9.2.28"
 
+default[:couchdb_gateway][:service][:timeout] = "15"
+default[:couchdb_gateway][:node_timeout] = "5"
 
 default[:couchdb_node][:index] = "0"
 default[:couchdb_node][:capacity] = "5"
 default[:couchdb_node][:token] = "changecouchdbtoken"
+default[:couchdb_node][:op_time_limit] = "6"
 
 default[:couchdb][:host] ="127.0.0.1"
 default[:couchdb][:port] ="5984"

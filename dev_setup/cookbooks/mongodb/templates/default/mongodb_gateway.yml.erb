@@ -6,11 +6,13 @@ service:
   description: 'MongoDB NoSQL store'
   plans: ['free']
   tags: ['mongodb', 'mongodb-1.6', 'nosql', 'document']
+  timeout: <%= node[:mongodb_gateway][:service][:timeout] %>
 host: localhost
 index: 0
 token: <%= node[:mongodb_node][:token] %>
 mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
 pid: /var/vcap/sys/run/mongodb_service.pid
+node_timeout: <%= node[:mongodb_gateway][:node_timeout] %>
 logging:
   level: debug
 <%if node[:service_lifecycle][:enable]%>

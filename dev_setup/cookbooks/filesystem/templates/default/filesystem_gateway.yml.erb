@@ -6,11 +6,13 @@ service:
   description: 'Persistent filesystem service'
   plans: ['free']
   tags: ['filesystem', 'filesystem-1.0', 'Persistent filesystem service']
+  timeout: <%= node[:filesystem_gateway][:service][:timeout] %>
 token: <%= node[:filesystem_node][:token] %>
 logging:
   level: debug
 mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
 pid: /var/vcap/sys/run/filesystem_service.pid
+node_timeout: <%= node[:filesystem_gateway][:node_timeout] %>
 fs_type: local
 backends:
 <% node[:filesystem_gateway][:backends].each do |path| %>

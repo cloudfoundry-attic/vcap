@@ -8,8 +8,12 @@ default[:neo4j][:jar_id] = "eyJvaWQiOiI0ZTRlNzhiY2E0MWUxMjEyMDRlNGU4NmVlNTM5MjEw
 default[:neo4j][:checksum][:server] = "bf1d5fd477cf8dde8718b2dcced0d74293702083b66b1278fe84284503dd3ce8"
 default[:neo4j][:checksum][:jar] = "37cdfcc91490f1aaf0fd58dc6591e08c1c6c3044348c76a594dbcaeedbdbdbcd"
 
+default[:neo4j_gateway][:service][:timeout] = "15"
+default[:neo4j_gateway][:node_timeout] = "10"
+
 default[:neo4j_node][:capacity] = "200"
 default[:neo4j_node][:index] = "0"
 default[:neo4j_node][:available_memory] = "4096"
 default[:neo4j_node][:max_memory] = "128"
 default[:neo4j_node][:token] = "changeneo4jtoken"
+default[:neo4j_node][:op_time_limit] = "6"
