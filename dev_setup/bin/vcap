@@ -37,7 +37,11 @@ class Component
     @configuration_path = configuration_path
 
     if core?
-      @path = File.join(DIR, name)
+      @path = File.join($vcap_home, name, "bin", name)
+      # FIXME: refactor this to some factory method
+      if name == "cloud_controller" || name == "health_manager"
+        @path = File.join($vcap_home, "cloud_controller", name, "bin", name)
+      end
       # Sane default for location of configuration file
       if @configuration_path.nil?
         if $config_dir
@@ -154,7 +158,7 @@ class Component
         # Make sure db is setup, this is slow and we should make it faster, but
         # should help for now.
         if is_cloud_controller?
-          cc_dir = File.expand_path(File.join(DIR, '..', 'cloud_controller'))
+          cc_dir = File.expand_path(File.join($vcap_home, 'cloud_controller', 'cloud_controller'))
           Dir.chdir(cc_dir) { `bundle exec rake db:migrate` }
         end
         exec("#{component_start_path}")
@@ -554,7 +558,7 @@ opts_parser = OptionParser.new do |opts|
   opts.on('--port PORT')                           { |port| $port = port.to_i }
   opts.on('--configdir CONFIGDIR', '-c CONFIGDIR') { |dir| $config_dir = File.expand_path(dir.to_s) }
   opts.on('--config CONFIGDIR')                    { |dir| $config_dir = File.expand_path(dir.to_s) }
-  opts.on('--vcapdir VCAP_DIR', '-v VCAP_DIR')     { |dir| $vcap_dir = File.expand_path(dir.to_s) }
+  opts.on('--vcapdir VCAP_DIR', '-v VCAP_DIR')     { |dir| $vcap_home = File.expand_path(dir.to_s) }
   opts.on('--logdir LOG_DIR', '-l LOG_DIR')        { |dir| $log_dir = File.expand_path(dir.to_s) }
   opts.on('--no-color', '--nocolor', '--nc')       { $nocolor = true }
   opts.on('--noprompt', '-n')                      { $noprompt = true }
@@ -567,7 +571,7 @@ puts "- Excluded components: #{excluded}.\n  See dev_setup/README for details" i
 args = opts_parser.parse!(args)
 ENV['CLOUD_FOUNDRY_CONFIG_PATH'] = $config_dir
 
-DIR = $vcap_dir || File.expand_path("../../../bin", __FILE__)
+DIR = File.join($vcap_home, "vcap", "bin")
 
 SERVICE_DIR = File.join(DIR, '/services')
 unless $log_dir
