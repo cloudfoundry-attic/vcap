@@ -6,11 +6,12 @@ service:
   description: 'MySQL database service'
   plans: ['free']
   tags: ['mysql', 'mysql-5.1', 'relational']
+  timeout: <%= node[:mysql_gateway][:service][:timeout] %>
 host: localhost
 index: 0
 token: <%= node[:mysql_node][:token] %>
 mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
 pid: /var/vcap/sys/run/mysql_service.pid
-node_timeout: 2
+node_timeout: <%= node[:mysql_gateway][:node_timeout] %>
 logging:
   level: debug

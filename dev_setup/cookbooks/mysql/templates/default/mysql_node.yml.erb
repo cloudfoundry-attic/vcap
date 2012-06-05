@@ -10,6 +10,8 @@ mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] 
 index: <%= node[:mysql_node][:index] %>
 pid: /var/vcap/sys/run/mysql_node.pid
 node_id: <%= "mysql_node_#{node[:mysql_node][:index]}" %>
+op_time_limit: <%= node[:mysql_node][:op_time_limit] %>
+connection_wait_timeout: <%= node[:mysql_node][:connection_wait_timeout] %>
 max_db_size: <%= node[:mysql_node][:max_db_size] %>
 max_long_query: 3
 max_long_tx: 30

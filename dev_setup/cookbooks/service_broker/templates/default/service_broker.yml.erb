@@ -10,3 +10,4 @@ logging:
 mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
 pid: /var/vcap/sys/run/service_broker.pid
 local_db: sqlite3:/var/vcap/services/broker/service_broker.db
+node_timeout: <%= node[:service_broker][:node_timeout] %>
