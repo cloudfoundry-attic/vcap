@@ -17,7 +17,7 @@ default[:lua][:source]  = "http://www.lua.org/ftp/lua-#{lua[:version]}.tar.gz"
 default[:lua][:path]    = File.join(node[:deployment][:home], "deploy", "lua", "lua-#{lua[:version]}")
 default[:lua][:cjson_source]  = "http://github.com/mpx/lua-cjson/tarball/ddbb686f535accac1e3cc375994191883fbe35d8"
 default[:lua][:module_path]    = File.join(lua[:path], 'lib', 'lua', lua[:simple_version])
-default[:lua][:plugin_source_path] = File.join(node["cloudfoundry"]["path"], "router", "ext", "nginx")
+default[:lua][:plugin_source_path] = File.join(node[:cloudfoundry][:home], "router", "ext", "nginx")
 
 default[:nginx][:worker_connections] = 2048
 default[:nginx][:uls_ip] = "localhost"
