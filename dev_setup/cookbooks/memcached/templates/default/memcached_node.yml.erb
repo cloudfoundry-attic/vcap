@@ -10,8 +10,8 @@ pid: /var/vcap/sys/run/memcached_node.pid
 node_id: <%= "memcached_node_#{node[:memcached_node][:index]}" %>
 memcached_server_path: <%= File.join(node[:memcached][:path], "bin", "memcached") %>
 port_range:
-  first: 11000
-  last: 11050
+  first: 5000
+  last: 25000
 logging:
   level: debug
 memcached_memory: 16
