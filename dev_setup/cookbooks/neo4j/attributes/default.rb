@@ -4,8 +4,12 @@ default[:neo4j][:distribution_file] = "neo4j-#{node[:neo4j][:version]}-unix.tar.
 default[:neo4j][:service_dir] = "/var/vcap/services/neo4j"
 default[:neo4j][:hosting_extension] = "authentication-extension-1.4.jar"
 
+default[:neo4j_gateway][:service][:timeout] = "15"
+default[:neo4j_gateway][:node_timeout] = "10"
+
 default[:neo4j_node][:capacity] = "200"
 default[:neo4j_node][:index] = "0"
 default[:neo4j_node][:available_memory] = "4096"
 default[:neo4j_node][:max_memory] = "128"
 default[:neo4j_node][:token] = "changeneo4jtoken"
+default[:neo4j_node][:op_time_limit] = "6"

@@ -12,6 +12,7 @@ vblobd_log_dir: /var/vcap/sys/service-log/vblob
 pid: /var/vcap/sys/run/vblob_node.pid
 max_memory: <%= node[:vblob_node][:max_memory] %>
 node_id: <%= "vblob_node_#{node[:vblob_node][:index]}" %>
+op_time_limit: <%= node[:vblob_node][:op_time_limit] %>
 nodejs_path: <%= node[:node06][:path] %>/bin/node
 vblobd_path: /var/vcap/packages/vblob
 vblobd_auth: <%= node[:vblob_node][:auth] %>
