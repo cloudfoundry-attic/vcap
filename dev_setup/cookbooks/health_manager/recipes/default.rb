@@ -11,4 +11,4 @@ template node[:health_manager][:config_file] do
   mode 0644
 end
 
-cf_bundle_install(File.expand_path(File.join(node["cloudfoundry"]["path"], "health_manager")))
+cf_bundle_install(File.expand_path(File.join("cloud_controller", "health_manager"), node[:cloudfoundry][:home]))

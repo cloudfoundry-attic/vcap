@@ -24,7 +24,7 @@ default[:lua][:id]  = "eyJvaWQiOiI0ZTRlNzhiY2EyMWUxMjEwMDRlNGU3ZDUxMWY1NTMwNGYzM
 default[:lua][:path]    = File.join(node[:deployment][:home], "deploy", "lua", "lua-#{lua[:version]}")
 default[:lua][:cjson_id]  = "eyJvaWQiOiI0ZTRlNzhiY2E2MWUxMjEwMDRlNGU3ZDUxZDk1MGUwNGYzMDY4%0AMzE5YzBiYiIsInNpZyI6IkpGUW01bnRxWWllTUxFM0FteGExaG5FamFQOD0i%0AfQ==%0A"
 default[:lua][:module_path]    = File.join(lua[:path], 'lib', 'lua', lua[:simple_version])
-default[:lua][:plugin_source_path] = File.join(node["cloudfoundry"]["path"], "router", "ext", "nginx")
+default[:lua][:plugin_source_path] = File.join(node["cloudfoundry"]["home"], "router", "ext", "nginx")
 default[:lua][:checksums][:source] = "b038e225eaf2a5b57c9bcc35cd13aa8c6c8288ef493d52970c9545074098af3a"
 default[:lua][:checksums][:cjson_source] = "9659fef3d4d3bc08b3fbd7827636dad6fb236c83d277b632879cb354f1b2e942"
 

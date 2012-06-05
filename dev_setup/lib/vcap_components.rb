@@ -78,7 +78,7 @@ class Component
   end
 
   def get_path
-    @path = File.join(vcap_bin, name)
+    @path ||= File.join(vcap_bin, name)
   end
 
   def configuration_file_in
@@ -213,6 +213,25 @@ end
 class CoreComponent < Component
   def core?
     true
+  end
+
+  def initialize(name, configuration_file = nil)
+    @path ||= File.join($vcap_home, name, "bin", name)
+    super
+  end
+end
+
+class CCComponent < CoreComponent
+  def initialize(*args)
+    @path = File.join($vcap_home, "cloud_controller", "cloud_controller", "bin", "cloud_controller")
+    super
+  end
+end
+
+class HMComponent < CoreComponent
+  def initialize(*args)
+    @path = File.join($vcap_home, "cloud_controller", "health_manager", "bin", "health_manager")
+    super
   end
 end
 
@@ -366,9 +385,11 @@ end
 # register valid named components
 
 ## core
-%w(router cloud_controller dea health_manager uaa acm).each do |core|
+%w(router dea uaa acm).each do |core|
    CoreComponent.register(core)
 end
+CCComponent.register("cloud_controller")
+HMComponent.register("health_manager")
 
 ## standalone
 %w(vcap_redis).each do |redis|
