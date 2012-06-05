@@ -99,8 +99,8 @@ def exec_cmd(cmd)
 end
 
 ruby_binary = File.join(ruby_bin_dir, "ruby")
-vcap_path = File.join(deployment_info["cloudfoundry_path"], "bin")
+vcap_home = File.join(deployment_info["cloudfoundry_home"])
 vcap_launch = File.join(script_dir, "vcap")
 
 puts "Using cloudfoundry config from #{deployment_config_path}"
-exec_cmd("#{ruby_binary} #{vcap_launch} #{command} #{vcap_components["components"].join(" ")} -c #{deployment_config_path} -v #{vcap_path} -l #{deployment_info["deployment_log_path"]}")
+exec_cmd("#{ruby_binary} #{vcap_launch} #{command} #{vcap_components["components"].join(" ")} -c #{deployment_config_path} -v #{vcap_home} -l #{deployment_info["deployment_log_path"]}")

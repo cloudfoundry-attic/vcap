@@ -15,7 +15,7 @@ OPTIONS:
   -c           deployment config
   -d           cloudfoundry home
   -D           cloudfoundry domain (default: vcap.me)
-  -r           cloud foundry repo
+  -r           cloud foundry repo base
   -b           cloud foundry repo branch/tag/SHA
 EOF
 }
@@ -50,7 +50,7 @@ do
       CLOUDFOUNDRY_DOMAIN=$OPTARG
       ;;
     r)
-      VCAP_REPO=$OPTARG
+      VCAP_REPO_BASE=$OPTARG
       ;;
     b)
       VCAP_REPO_BRANCH=$OPTARG
@@ -70,8 +70,8 @@ if [ -z "$CLOUDFOUNDRY_DOMAIN" ]; then
   CLOUDFOUNDRY_DOMAIN=vcap.me
 fi
 
-if [ -z "$VCAP_REPO" ]; then
-  VCAP_REPO=https://github.com/cloudfoundry/vcap.git
+if [ -z "$VCAP_REPO_BASE" ]; then
+  VCAP_REPO_BASE=https://github.com/cloudfoundry
 fi
 
 if [ -z "$VCAP_REPO_BRANCH" ]; then
@@ -87,13 +87,15 @@ function run_cmd () {
 }
 
 function clear_bundler_settings () {
+  [ $# -ge 1 ] || return 1
+  local DIR=$1
   # Do we have a Bundler problem?
-  find $CLOUDFOUNDRY_HOME/vcap -type d -name .bundle | grep -Fq .bundle || return 0
+  find $DIR -type d -name .bundle | grep -Fq .bundle || return 0
   if [ "$ALL" != true ]; then
     read -p "Remembered Bundler options could cause you troubles, do you want me to clear them for you? [Y/n]"
     [[ $REPLY =~ ^[nN] ]] && return 0
   fi
-  (cd $CLOUDFOUNDRY_HOME/vcap && find -type d -name .bundle -prune -exec rm -r {} \; )
+  (cd $DIR && find -type d -name .bundle -prune -exec rm -r {} \; )
 }
 
 function retrieve_key () {
@@ -134,16 +136,21 @@ run_cmd apt-get $APT_CONFIG update -qq
 run_cmd apt-get $APT_CONFIG install -qym chef
 
 run_cmd apt-get $APT_CONFIG install -qym git-core
+
+readonly CORE_REPOS=(cloud_controller dea router stager)
+
 [ -d $CLOUDFOUNDRY_HOME ] || mkdir $CLOUDFOUNDRY_HOME
-if [ ! -d $CLOUDFOUNDRY_HOME/vcap ]; then
-  (cd $CLOUDFOUNDRY_HOME && git clone $VCAP_REPO && cd vcap && git submodule update --init && git checkout $VCAP_REPO_BRANCH)
-  if [ $? != 0 ]; then
-    echo "Unable to clone cloudfoundry repo."
-    exit 1
+for REPO in vcap "${CORE_REPOS[@]}"; do
+  if [ ! -d $CLOUDFOUNDRY_HOME/$REPO ]; then
+    (cd $CLOUDFOUNDRY_HOME && git clone --no-checkout $VCAP_REPO_BASE/$REPO && cd $REPO && git submodule update --init && git checkout $VCAP_REPO_BRANCH)
+    if [ $? != 0 ]; then
+      echo "Unable to clone cloudfoundry $REPO repo."
+      exit 1
+    fi
+  else
+    clear_bundler_settings $CLOUDFOUNDRY_HOME/$REPO
   fi
-else
-  clear_bundler_settings
-fi
+done
 
 
 # Our deployment code needs this gem. Using bundler seems like an overkill for
