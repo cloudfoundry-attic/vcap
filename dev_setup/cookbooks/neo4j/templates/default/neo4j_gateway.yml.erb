@@ -6,6 +6,7 @@ service:
   description: 'Neo4j NOSQL store'
   plans: ['free']
   tags: ['neo4j', 'neo4j-1.4', 'nosql']
+  timeout: <%= node[:neo4j_gateway][:service][:timeout] %>
 host: localhost
 index: 0
 token: <%= node[:neo4j_node][:token] %>
@@ -13,4 +14,4 @@ logging:
   level: debug
 mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
 pid: /var/vcap/sys/run/neo4j_service.pid
-node_timeout: 10
+node_timeout: <%= node[:neo4j_gateway][:node_timeout] %>

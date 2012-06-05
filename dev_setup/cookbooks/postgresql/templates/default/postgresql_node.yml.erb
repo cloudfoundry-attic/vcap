@@ -10,6 +10,7 @@ mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] 
 index: <%= node[:postgresql_node][:index] %>
 pid: /var/vcap/sys/run/postgresql_node.pid
 node_id: <%= "postgresql_node_#{node[:postgresql_node][:index]}" %>
+op_time_limit: <%= node[:postgresql_node][:op_time_limit] %>
 max_db_size: <%= node[:postgresql_node][:max_db_size] %>
 max_long_query: 3
 max_long_tx: 30

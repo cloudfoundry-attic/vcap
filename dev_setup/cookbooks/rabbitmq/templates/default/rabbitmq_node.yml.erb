@@ -9,6 +9,7 @@ logging:
   level: debug
 pid: /var/vcap/sys/run/rabbit_node.pid
 node_id: <%= "rabbit_node_free_#{node[:rabbitmq_node][:index]}" %>
+op_time_limit: <%= node[:rabbitmq_node][:op_time_limit] %>
 migration_nfs: /mnt/vcap
 port_range:
   first: 10001
@@ -19,4 +20,4 @@ admin_port_range:
 max_clients: 1000
 rabbitmq_log_dir: /var/vcap/services/rabbit/logs
 rabbitmq_server: <%= File.join(node[:rabbitmq][:path], "sbin", "rabbitmq-server") %>
-rabbitmq_start_timeout: 5
+rabbitmq_start_timeout: <%= node[:rabbitmq_node][:rabbitmq_start_timeout] %>

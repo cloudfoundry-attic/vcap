@@ -10,6 +10,7 @@ pid: /var/vcap/sys/run/redis_node.pid
 max_memory: <%= node[:redis_node][:max_memory] %>
 max_swap: 32
 node_id: <%= "redis_node_#{node[:redis_node][:index]}" %>
+op_time_limit: <%= node[:redis_node][:op_time_limit] %>
 redis_server_path: <%= File.join(node[:redis][:path], "bin", "redis-server") %>
 port_range:
   first: 5000
@@ -19,3 +20,5 @@ logging:
   level: debug
 command_rename_prefix: protect-command-prefix
 max_clients: 500
+redis_timeout: <%= node[:redis_node][:redis_timeout] %>
+redis_start_timeout: <%= node[:redis_node][:redis_start_timeout] %>

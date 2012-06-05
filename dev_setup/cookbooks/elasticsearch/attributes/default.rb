@@ -10,10 +10,14 @@ default[:elasticsearch][:http_basic_plugin][:distribution_file] = "elasticsearch
 default[:elasticsearch][:http_basic_plugin][:distribution_url] = "http://github.com/downloads/Asquera/elasticsearch-http-basic/#{default[:elasticsearch][:http_basic_plugin][:distribution_file]}"
 default[:elasticsearch][:http_basic_plugin][:path] = File.join(default[:elasticsearch][:path], "plugins", "http-basic")
 
+default[:elasticsearch_gateway][:service][:timeout] = "20"
+default[:elasticsearch_gateway][:node_timeout] = "20"
+
 default[:elasticsearch_node][:capacity] = "50"
 default[:elasticsearch_node][:index] = "0"
 default[:elasticsearch_node][:max_memory] = "512"
 default[:elasticsearch_node][:token] = "changeelasticsearchtoken"
+default[:elasticsearch_node][:op_time_limit] = "6"
 
 default[:elasticsearch][:checksum] = 'dfcfe4189e42b60b049f9b203799cf24c9c1581673eb2df96dda34a67372facd'
 default[:elasticsearch][:http_basic_plugin][:checksum] = 'b7e23538301d2d21abe55f7f871946ea597cc00b57b65657937e0dd384c4f4b4'

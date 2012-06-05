@@ -6,6 +6,7 @@ service:
   description: 'vBlob service'
   plans: ['free']
   tags: ['vblob', 'vblob-1.0', 'nosql']
+  timeout: <%= node[:vblob_gateway][:service][:timeout] %>
 ip_route: localhost
 index: 0
 token: <%= node[:vblob_node][:token] %>
@@ -13,6 +14,7 @@ mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] 
 logging:
   level: debug
 pid: /var/vcap/sys/run/vblob_service.pid
+node_timeout: <%= node[:vblob_gateway][:node_timeout] %>
 # z_interval: 30
 # check_orphan_interval: 3600
 # double_check_orphan_interval: 300
