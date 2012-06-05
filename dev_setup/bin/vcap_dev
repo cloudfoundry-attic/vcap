@@ -56,7 +56,7 @@ if !ARGV.empty? and (vcap_components["components"] & ARGV).empty?
 end
 vcap_components["components"] &= ARGV unless ARGV.empty?
 
-unless File.exists?(File.join(deployment_info["cloudfoundry_path"], "bin", "vcap"))
+unless File.exists?(File.join(deployment_info["cloudfoundry_path"], "dev_setup", "bin", "vcap"))
   puts "Cannot find vcap repo. Please specify the deployment name or the deployment home directory where to find the config file"
   exit 1
 end
@@ -103,8 +103,8 @@ def exec_cmd(cmd)
 end
 
 ruby_binary = File.join(ruby_bin_dir, "ruby")
-vcap_path = File.join(deployment_info["cloudfoundry_path"], "bin")
+vcap_home = File.join(deployment_info["cloudfoundry_home"])
 vcap_launch = File.join(script_dir, "vcap")
 
 puts "Using cloudfoundry config from #{deployment_config_path}"
-exec_cmd("#{ruby_binary} #{vcap_launch} #{command} #{vcap_components["components"].join(" ")} -c #{deployment_config_path} -v #{vcap_path} -l #{deployment_info["deployment_log_path"]}")
+exec_cmd("#{ruby_binary} #{vcap_launch} #{command} #{vcap_components["components"].join(" ")} -c #{deployment_config_path} -v #{vcap_home} -l #{deployment_info["deployment_log_path"]}")

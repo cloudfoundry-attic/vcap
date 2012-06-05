@@ -26,4 +26,4 @@ bash "Build and Deploy UAA" do
   EOH
 end
 
-cf_bundle_install(File.expand_path(File.join(node["cloudfoundry"]["path"], "uaa")))
+cf_bundle_install(File.expand_path("uaa", node["cloudfoundry"]["path"]))

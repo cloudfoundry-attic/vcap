@@ -52,6 +52,7 @@ template node[:deployment][:info_file] do
     :name => node[:deployment][:name],
     :ruby_bin_dir => File.join(node[:ruby][:path], "bin"),
     :maven_bin_dir => File.join(node[:maven][:path], "bin"),
+    :cloudfoundry_home => node[:cloudfoundry][:home],
     :cloudfoundry_path => node[:cloudfoundry][:path],
     :deployment_log_path => node[:deployment][:log_path]
   })
