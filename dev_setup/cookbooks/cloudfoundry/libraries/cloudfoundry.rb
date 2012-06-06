@@ -1,4 +1,5 @@
 require 'socket'
+require 'ipaddr'
 
 module CloudFoundry
   def cf_bundle_install(path)
@@ -18,6 +19,18 @@ module CloudFoundry
   ensure
     Socket.do_not_reverse_lookup = orig
   end
+
+  def cf_local_subnet(ip=cf_local_ip)
+    ip = ip.strip
+    return ip if ip == "127.0.0.1" || ip == "localhost"
+    mask = `ifconfig | grep #{ip} | cut -d: -f4`
+    network = (IPAddr.new(ip) & IPAddr.new(mask)).to_s
+    mask_no = IPAddr.new(mask).to_i.to_s(2).count("1")
+    "#{network}/#{mask_no}"
+  rescue => e
+    nil
+  end
+
 end
 
 class Chef::Recipe
