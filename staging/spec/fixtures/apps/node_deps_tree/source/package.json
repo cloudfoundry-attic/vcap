@@ -1,5 +1,0 @@
-{
-  "name" : "node_deps_tree",
-  "version" : "0.1.0",
-  "dependencies" : { "colors" : "0.5.x", "express" : "*" }
-}

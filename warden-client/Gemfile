@@ -1,9 +1,0 @@
-source "http://rubygems.org"
-
-gemspec
-
-gem "rake"
-
-group :spec do
-  gem "rspec"
-end

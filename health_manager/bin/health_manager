@@ -1,7 +1,0 @@
-#!/usr/bin/env ruby
-# Copyright (c) 2009-2011 VMware, Inc.
-
-home = File.join(File.dirname(__FILE__), '/..')
-ENV['BUNDLE_GEMFILE'] = "#{home}/Gemfile"
-require File.join(home, 'lib/health_manager')
-
