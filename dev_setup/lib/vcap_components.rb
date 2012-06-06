@@ -154,7 +154,7 @@ class Component
         # Make sure db is setup, this is slow and we should make it faster, but
         # should help for now.
         if is_cloud_controller?
-          cc_dir = File.expand_path(File.join(vcap_bin, '..', 'cloud_controller'))
+          cc_dir = File.expand_path(File.join($vcap_home, 'cloud_controller', 'cloud_controller'))
           Dir.chdir(cc_dir) { `bundle exec rake db:migrate` }
         end
         exec("#{component_start_path}")

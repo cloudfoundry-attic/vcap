@@ -1,1 +1,0 @@
-StagingPlugin.validate_configuration!

@@ -1,7 +1,0 @@
-*.log
-tags
-db/*.sqlite3
-db/*.sqlite3-journal
-cloudcontroller.db
-cloud_controller.db
-

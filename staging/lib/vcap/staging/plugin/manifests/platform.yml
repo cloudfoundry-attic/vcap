@@ -1,3 +1,0 @@
----
-cache: /var/vcap.local/staging
-runtime: # if nil, determined at load time by default 'ruby'

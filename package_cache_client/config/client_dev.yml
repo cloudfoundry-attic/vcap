@@ -1,5 +1,0 @@
----
-listen_port: 3000
-logging:
-  level: debug
-base_dir: /var/vcap.local/package_cache
