@@ -1,0 +1,7 @@
+service_name: redis
+backup_base_dir: <%= node[:backup][:dir] %>
+service_base_dir: /var/vcap/services/redis/instances
+timeout: 600
+logging:
+  level: debug
+pid: /var/vcap/sys/run/redis_node/redis_backup.pid

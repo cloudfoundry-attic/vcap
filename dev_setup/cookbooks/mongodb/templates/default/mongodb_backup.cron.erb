@@ -1,0 +1,1 @@
+<%= node[:mongodb_backup][:cron_time] %> <%= File.join(node[:ruby][:path], "bin", "ruby")%> <%= File.join( node[:cloudfoundry][:path], "services", "mongodb", "bin", "mongodb_backup") %> -t -c <%= File.join(node[:deployment][:config_path], node[:mongodb_backup][:config_file]) %> >> <%= File.join(node[:deployment][:log_path], "mongodb_backup_cron.log") %> 2>&1

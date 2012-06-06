@@ -1,0 +1,17 @@
+---
+service_name: mysql
+backup_base_dir: <%= node[:backup][:dir]%>
+backup_cmd: mysqldump --host=:host --user=:user --password=:passwd --result-file=:full_path/:name.sql -R --single-transaction :name
+compress_cmd: gzip :full_path/:name.sql
+mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
+timeout: 600
+index: <%= node[:mysql_node][:index] %>
+pid: /var/vcap/sys/run/mysql_backup.pid
+node_id: <%= "mysql_node_#{node[:mysql_node][:index]}" %>
+mysql:
+  host: <%= node[:mysql][:host] %>
+  port: 3306
+  user: <%= node[:mysql][:server_root_user] %>
+  pass: <%= node[:mysql][:server_root_password] %>
+logging:
+  level: debug
