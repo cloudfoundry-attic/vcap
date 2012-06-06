@@ -25,57 +25,57 @@ when "ubuntu"
   remote_file File.join("", "tmp", "lua-#{lua_version}.tar.gz") do
     owner node[:deployment][:user]
     source lua_source
-    not_if { ::File.exists?(File.join("", "tmp", "lua-#{lua_version}.tar.gz")) }
+    checksum node[:lua][:checksums][:source]
   end
 
   lua_cjson_tarball = File.join(node[:deployment][:setup_cache], "lua-cjson-1.0.3.tar.gz")
   remote_file lua_cjson_tarball do
     owner node[:deployment][:user]
     source node[:lua][:cjson_source]
-    checksum 'b4e3495dde10d087a9550d3a6f364e8998a5dda4f5f4722c69ff89420c9a8c09'
+    checksum node[:lua][:checksums][:cjson_source]
   end
 
   # Nginx related packages
   remote_file File.join("", "tmp", "nginx-#{nginx_version}.tar.gz") do
     owner node[:deployment][:user]
     source nginx_source
-    not_if { ::File.exists?(File.join("", "tmp", "nginx-#{nginx_version}.tar.gz")) }
+    checksum node[:nginx][:checksums][:source]
   end
 
   remote_file File.join("", "tmp", "zero_byte_in_cstr_20120315.patch") do
     owner node[:deployment][:user]
     source node[:nginx][:patch]
-    not_if { ::File.exists?(File.join("", "tmp", "zero_byte_in_cstr_20120315.patch")) }
+    checksum node[:nginx][:checksums][:patch]
   end
 
   remote_file File.join("", "tmp", "pcre-8.12.tar.gz") do
     owner node[:deployment][:user]
     source node[:nginx][:pcre_source]
-    not_if { ::File.exists?(File.join("", "tmp", "pcre-8.12.tar.gz")) }
+    checksum node[:nginx][:checksums][:pcre_source]
   end
 
   remote_file File.join("", "tmp", "nginx_upload_module-2.2.0.tar.gz") do
     owner node[:deployment][:user]
     source node[:nginx][:module_upload_source]
-    not_if { ::File.exists?(File.join("", "tmp", "nginx_upload_module-2.2.0.tar.gz")) }
+    checksum node[:nginx][:checksums][:module_upload_source]
   end
 
   remote_file File.join("", "tmp", "headers-more-v0.15rc3.tar.gz") do
     owner node[:deployment][:user]
     source node[:nginx][:module_headers_more_source]
-    not_if { ::File.exists?(File.join("", "tmp", "headers-more-v0.15rc3.tar.gz")) }
+    checksum node[:nginx][:checksums][:module_headers_more_source]
   end
 
   remote_file File.join("", "tmp", "devel-kit-v0.2.17rc2.tar.gz") do
     owner node[:deployment][:user]
     source node[:nginx][:module_devel_kit_source]
-    not_if { ::File.exists?(File.join("", "tmp", "devel-kit-v0.2.17rc2.tar.gz")) }
+    checksum node[:nginx][:checksums][:module_devel_kit_source]
   end
 
   remote_file File.join("", "tmp", "nginx-lua.v0.3.1rc24.tar.gz") do
     owner node[:deployment][:user]
     source node[:nginx][:module_lua_source]
-    not_if { ::File.exists?(File.join("", "tmp", "nginx-lua.v0.3.1rc24.tar.gz")) }
+    checksum node[:nginx][:checksums][:module_lua_source]
   end
 
   directory nginx_path do
@@ -101,10 +101,7 @@ when "ubuntu"
       tar xzf lua-#{lua_version}.tar.gz
       cd lua-#{lua_version}
       make linux install INSTALL_TOP=#{lua_path}
-      EOH
-      not_if do
-        ::File.exists?(File.join(lua_path, "bin", "lua"))
-      end
+    EOH
   end
 
   bash "Install lua json" do
@@ -118,9 +115,6 @@ when "ubuntu"
       make
       make install
     EOH
-    not_if do
-      ::File.exists?(File.join(lua_module_path, "cjson.so"))
-    end
   end
 
   bash "Install nginx" do
@@ -133,8 +127,8 @@ when "ubuntu"
       tar xzf headers-more-v0.15rc3.tar.gz
       tar xzf devel-kit-v0.2.17rc2.tar.gz
       tar xzf nginx-lua.v0.3.1rc24.tar.gz
-      cd nginx-#{nginx_version}
 
+      cd nginx-#{nginx_version}
       patch -p0 < ../zero_byte_in_cstr_20120315.patch
 
       LUA_LIB=#{lua_path}/lib LUA_INC=#{lua_path}/include ./configure \
@@ -144,10 +138,13 @@ when "ubuntu"
         --add-module=../agentzh-headers-more-nginx-module-5fac223 \
         --add-module=../simpl-ngx_devel_kit-bc97eea \
         --add-module=../chaoslawful-lua-nginx-module-4d92cb1
+
       make
       make install
-
-      EOH
+    EOH
+    not_if do
+      ::File.exists?(File.join(nginx_path, "sbin", "nginx"))
+    end
   end
 
   template "nginx.conf" do
