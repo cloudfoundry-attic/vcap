@@ -1,13 +1,18 @@
 include_attribute "deployment"
-default[:redis][:version] = "2.2.15"
+default[:redis][:version] = "2.2.4"
 default[:redis][:path] = File.join(node[:deployment][:home], "deploy", "redis")
 default[:redis][:runner] = node[:deployment][:user]
 default[:redis][:port] = 6379
 default[:redis][:password] = "redis"
 
-default[:redis][:checksum] = "4143b7fab809c5fe586265b4f792f346206a3a8082bbf79f70081a0538bab3cb"
+default[:redis][:checksum] = "6d612b28137c926fb6b668fd85d25862469f9755af4e15f1b37cbe6f88882b32"
 
 default[:redis_node][:capacity] = "200"
 default[:redis_node][:index] = "0"
 default[:redis_node][:max_memory] = "16"
 default[:redis_node][:token] = "changeredistoken"
+
+default[:redis_backup][:config_file] = "redis_backup.yml"
+default[:redis_backup][:cron_time] = "0 3 * * *"
+default[:redis_backup][:cron_file] = "redis_backup.cron"
+

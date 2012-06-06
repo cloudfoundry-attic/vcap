@@ -12,3 +12,7 @@ default[:postgresql_node][:max_db_size] = "20"
 default[:postgresql_node][:token] = "changepostgresqltoken"
 default[:postgresql_node][:index] = "0"
 default[:postgresql_node][:timeout] = "10"
+
+default[:postgresql_backup][:config_file] = "postgresql_backup.yml"
+default[:postgresql_backup][:cron_time] = "0 2 * * *"
+default[:postgresql_backup][:cron_file] = "postgresql_backup.cron"
