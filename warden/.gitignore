@@ -1,4 +1,0 @@
-*.gem
-.bundle
-pkg/*
-/tmp
