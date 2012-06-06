@@ -1,7 +1,0 @@
-#!/usr/bin/env ruby
-require File.expand_path('../../common', __FILE__)
-plugin_class = StagingPlugin.load_plugin_for('grails')
-plugin_class.validate_arguments!
-plugin_class.new(*ARGV).stage_application
-
-# vim: ts=2 sw=2 filetype=ruby
