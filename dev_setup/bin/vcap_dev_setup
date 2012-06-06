@@ -3,6 +3,7 @@
 # Install vcap components on Ubuntu systems.
 
 set -o errexit
+set -o nounset
 
 usage() {
 cat <<EOF
@@ -20,8 +21,9 @@ OPTIONS:
 EOF
 }
 
-if [ -n "$http_proxy" ]; then
-  if [ -z "$https_proxy" ]; then
+PROXY=""
+if [ -n "${http_proxy-}" ]; then
+  if [ -z "${https_proxy-}" ]; then
     echo "Please set https_proxy env variable."
     exit 1
   fi
@@ -29,6 +31,11 @@ if [ -n "$http_proxy" ]; then
 fi
 
 APT_CONFIG="-o Acquire::http::No-Cache=True -o Acquire::BrokenProxy=true -o Acquire::Retries=3"
+
+CLOUDFOUNDRY_HOME=~/cloudfoundry
+CLOUDFOUNDRY_DOMAIN=vcap.me
+VCAP_REPO_BASE=https://github.com/cloudfoundry
+VCAP_REPO_BRANCH=master
 
 while getopts "had:p:c:D:r:b:" OPTION
 do
@@ -61,22 +68,6 @@ do
       export https_proxy=$PROXY
   esac
 done
-
-if [ -z "$CLOUDFOUNDRY_HOME" ]; then
-  CLOUDFOUNDRY_HOME=~/cloudfoundry
-fi
-
-if [ -z "$CLOUDFOUNDRY_DOMAIN" ]; then
-  CLOUDFOUNDRY_DOMAIN=vcap.me
-fi
-
-if [ -z "$VCAP_REPO_BASE" ]; then
-  VCAP_REPO_BASE=https://github.com/cloudfoundry
-fi
-
-if [ -z "$VCAP_REPO_BRANCH" ]; then
-  VCAP_REPO_BRANCH=master
-fi
 
 function run_cmd () {
   if [ -z "$PROXY" ]; then
@@ -160,16 +151,8 @@ fi
 
 # Launch chef
 ARGS=""
-if [ -n "$CLOUDFOUNDRY_HOME" ]; then
-  ARGS="-d $CLOUDFOUNDRY_HOME"
-fi
-
-if [ -n "$CLOUDFOUNDRY_DOMAIN" ]; then
-  ARGS="$ARGS -D $CLOUDFOUNDRY_DOMAIN"
-fi
-
-if [ -n "$CONFIG_FILE" ]; then
-  ARGS="$ARGS -c $CONFIG_FILE"
-fi
+ARGS+="-d $CLOUDFOUNDRY_HOME"
+ARGS+=" -D $CLOUDFOUNDRY_DOMAIN"
+ARGS+=" -c ${CONFIG_FILE:-$CLOUDFOUNDRY_HOME/vcap/dev_setup/deployments/devbox.yml}"
 
 $CLOUDFOUNDRY_HOME/vcap/dev_setup/lib/chefsolo_launch.rb $ARGS
