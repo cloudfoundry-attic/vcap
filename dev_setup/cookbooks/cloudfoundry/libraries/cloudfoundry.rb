@@ -1,4 +1,5 @@
 require 'socket'
+require 'ipaddr'
 
 module CloudFoundry
   def cf_bundle_install(path)

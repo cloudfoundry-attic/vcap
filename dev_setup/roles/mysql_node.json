@@ -8,5 +8,6 @@
                 "recipe[essentials]",
                 "recipe[ruby]",
                 "recipe[mysql]",
-                "recipe[mysql::node]"]
+                "recipe[mysql::node]",
+                "recipe[mysql::backup]"]
 }

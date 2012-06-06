@@ -70,12 +70,30 @@ o To use a custom domain
   Later, you will target your CloudFoundry installation with:
     vmc target api.myowndomain.com
 
+o Service backup:
+  By default, backup feature is disabled. If you want to enable this feature, you could run
+  a script:
+    $HOME/projects/vcap/dev_setup/bin/vcap_service_backup_ctl start|stop|restart|status <service_type>
+
+  service_type is optional, it could be one of services which support backup feature or all of these
+  when service_type is empty.
+
+  start|restart: add lines to crontab
+  stop:  remove lines from crontab
+  status: get lines from crontab
+
+  If you want to to clean the backups that belongs to the service instance which is un-provisioned, you
+  should use the backup manager.
+
+  By default, backup_manager is excluded (see below), you should remove it from CLOUD_FOUNDRY_EXCLUDED_COMPONENT,
+  and start it.
+    $HOME/projects/vcap/dev_setup/bin/vcap_dev start backup_manager
 
 o Excluded components:
-  By default neo4j and memcached (+ a few other new services) will be excluded by default. 
-  The excluded components are specified by a regex using the environment variable 
+  By default neo4j and memcached (+ a few other new services) will be excluded by default.
+  The excluded components are specified by a regex using the environment variable
   CLOUD_FOUNDRY_EXCLUDED_COMPONENT.
-  NOTE: The exclusion is on the component name. E.g. specifying memcached, will exclude memcached_node 
+  NOTE: The exclusion is on the component name. E.g. specifying memcached, will exclude memcached_node
   and memcached_gateway but nothing else.
 
   To include all components, just set the environment variable to empty which will skip matching. e.g.:
@@ -107,7 +125,7 @@ o Excluded components:
     Skipping excluded component: memcached_node
     Skipping excluded component: rabbitmq_node
 
-  Finally, the default list of excluded components can be restored by undefining the 
+  Finally, the default list of excluded components can be restored by undefining the
   environment variable as follows:
   unset CLOUD_FOUNDRY_EXCLUDED_COMPONENT
 
