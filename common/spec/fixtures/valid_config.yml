@@ -1,8 +1,0 @@
----
-name: test_config
-nums:
-  - 1
-  - 2
-  - 3
-not_needed:
-  float: 1.1

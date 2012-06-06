@@ -1,5 +1,0 @@
-#!/usr/bin/env ruby
-require File.expand_path('../../common', __FILE__)
-plugin_class = StagingPlugin.load_plugin_for('otp_rebar')
-plugin_class.validate_arguments!
-plugin_class.new(*ARGV).stage_application

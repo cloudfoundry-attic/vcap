@@ -1,5 +1,0 @@
-The live-console code packaged here is a copy of https://github.com/jencompgeek/live-console.
-
-The code is copied instead of required as a gem to avoid modifying the Rails app Gemfile.
-
-Please make all changes against the project in Github.
