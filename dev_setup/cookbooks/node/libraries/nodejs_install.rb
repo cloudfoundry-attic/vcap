@@ -5,7 +5,7 @@ module NodeInstall
     end
 
     tarball_path = File.join(node[:deployment][:setup_cache], "node-v#{node_version}.tar.gz")
-    remote_file tarball_path do
+    cf_remote_file tarball_path do
       owner node[:deployment][:user]
       source node_source
       checksum node[:node][:checksums][node_version]
@@ -38,10 +38,11 @@ module NodeInstall
 
     if Gem::Version.new(node_version) < Gem::Version.new(minimal_npm_bundled_node_version)
 
-      remote_file File.join("", "tmp", "npm-#{node_npm[:version]}.tgz") do
+      npm_tarball_path = File.join(node[:deployment][:setup_cache], "npm-#{node_npm[:version]}.tgz")
+      cf_remote_file npm_tarball_path do
         owner node[:deployment][:user]
         source node_npm[:source]
-        not_if { ::File.exists?(File.join("", "tmp", "npm-#{node_npm[:version]}.tgz")) }
+        checksum node[:node][:checksums][:npm]
       end
 
       directory node_npm[:path] do
@@ -56,9 +57,7 @@ module NodeInstall
         cwd File.join("", "tmp")
         user node[:deployment][:user]
         code <<-EOH
-        package=npm-#{node_npm[:version]}
-        mkdir -p $package
-        tar xzf ${package}.tgz --directory=#{node_npm[:path]} --strip-components=1
+        tar xzf #{npm_tarball_path} --directory=#{node_npm[:path]} --strip-components=1
         EOH
         not_if do
           ::File.exists?(File.join(node_npm[:path], "bin", "npm-cli.js"))
