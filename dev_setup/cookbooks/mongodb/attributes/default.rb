@@ -8,6 +8,10 @@ default[:mongodb_node][:index] = "0"
 default[:mongodb_node][:max_memory] = "128"
 default[:mongodb_node][:token] = "changemongodbtoken"
 
+default[:mongodb_backup][:config_file] = "mongodb_backup.yml"
+default[:mongodb_backup][:cron_time] = "0 5 * * *"
+default[:mongodb_backup][:cron_file] = "mongodb_backup.cron"
+
 # The checksums are for mongodb-1.8.1
 if node[:kernel][:machine] == 'x86_64'
   default[:mongodb][:checksum] = '8f6a58293068e0fb28b463b955f3660f492094e53129fb88af4a7efcfc7995da'

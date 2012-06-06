@@ -5,6 +5,10 @@ default[:redis][:runner] = node[:deployment][:user]
 default[:redis][:port] = 6379
 default[:redis][:password] = "redis"
 
+default[:redis_backup][:config_file] = "redis_backup.yml"
+default[:redis_backup][:cron_time] = "0 3 * * *"
+default[:redis_backup][:cron_file] = "redis_backup.cron"
+
 default[:redis][:checksum] = "6d612b28137c926fb6b668fd85d25862469f9755af4e15f1b37cbe6f88882b32"
 
 default[:redis_node][:capacity] = "200"

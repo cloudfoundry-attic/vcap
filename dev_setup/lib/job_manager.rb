@@ -19,6 +19,7 @@ class JobManager
   UAADB = "uaadb"
   ACM = "acm"
   ACMDB = "acmdb"
+  NFS = "nfs_server"
 
   SERVICES = ["redis", "mysql", "mongodb", "neo4j", "rabbitmq", "postgresql", "vblob", "memcached"]
   SERVICES_NODE = SERVICES.map do |service|
@@ -32,8 +33,11 @@ class JobManager
     # Service name constant e.g. REDIS_NODE -> "redis_node"
     const_set(node.upcase, node)
   end
+
+  SERVICE_TOOLS = ["backup_manager"]
+
   # All supported jobs
-  JOBS = [ALL, NATS, ROUTER, CF, CC, HM, DEA, CCDB, UAA, UAADB] + SERVICES_NODE + SERVICES_GATEWAY
+  JOBS = [ALL, NATS, ROUTER, CF, CC, HM, DEA, CCDB, UAA, UAADB, NFS] + SERVICES_NODE + SERVICES_GATEWAY + SERVICE_TOOLS
   SYSTEM_JOB = [CF]
 
   # List of the required properties for jobs
@@ -53,7 +57,12 @@ class JobManager
     SERVICE_GATEWAY_RUN_COMPONENTS[gateway] = gateway
   end
 
-  RUN_COMPONENTS = {ROUTER => ROUTER, CC => CC, HM => HM, DEA => DEA, UAA => UAA}.update(SERVICE_NODE_RUN_COMPONENTS).update(SERVICE_GATEWAY_RUN_COMPONENTS)
+  SERVICE_TOOL_RUN_COMPONENTS = Hash.new
+  SERVICE_TOOLS.each do |tool|
+    SERVICE_TOOL_RUN_COMPONENTS[tool] = tool
+  end
+
+  RUN_COMPONENTS = {ROUTER => ROUTER, CC => CC, HM => HM, DEA => DEA, UAA => UAA}.update(SERVICE_NODE_RUN_COMPONENTS).update(SERVICE_GATEWAY_RUN_COMPONENTS).update(SERVICE_TOOL_RUN_COMPONENTS)
 
   class << self
     if defined?(Rake::DSL)

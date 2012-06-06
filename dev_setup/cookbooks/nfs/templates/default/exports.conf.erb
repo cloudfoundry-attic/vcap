@@ -1,0 +1,2 @@
+<% no_root_squash = (node[:nfs][:server_no_root_squash]) ? ',no_root_squash' : '' %>
+<%= node[:nfs][:server_exports_dir] %>      <%= node[:nfs][:server_local_subnet]%>(rw,fsid=0,no_subtree_check,sync<%= no_root_squash %>)
