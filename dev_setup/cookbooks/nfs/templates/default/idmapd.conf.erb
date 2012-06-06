@@ -1,0 +1,10 @@
+[General]
+
+Verbosity = 0
+Pipefs-Directory = /var/lib/nfs/rpc_pipefs
+Domain = <%= node[:nfs_server][:idmapd_domain] ? node[:nfs_server][:idmapd_domain] : "localdomain" %>
+
+[Mapping]
+
+Nobody-User = nobody
+Nobody-Group = nogroup

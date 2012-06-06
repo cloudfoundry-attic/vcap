@@ -10,6 +10,9 @@ node[:acmdb][:host] ||= cf_local_ip
 node[:uaadb][:host] ||= cf_local_ip
 node[:postgresql][:host] ||= cf_local_ip
 
+node[:deployment][:local_host] ||= cf_local_ip
+node[:deployment][:local_subnet] ||= cf_local_subnet
+
 [
   node[:deployment][:home], File.join(node[:deployment][:home], "deploy"),
   node[:deployment][:log_path], File.join(node[:deployment][:home], "sys", "log"),

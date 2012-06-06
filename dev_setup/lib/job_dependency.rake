@@ -11,14 +11,20 @@ class JobManager
     end
   end
 
-  [ROUTER, DEA, UAA, ACM].each do |job|
+  [ROUTER, DEA, UAA, ACM, NFS].each do |job|
     task job.to_sym => [CF.to_sym, NATS.to_sym] do
       install(job)
     end
   end
 
+  SERVICE_TOOLS.each do |job|
+    task job.to_sym => [CF.to_sym, NATS.to_sym, NFS.to_sym] do
+      install(job)
+    end
+  end
+
   SERVICES_NODE.each do |job|
-    task job.to_sym => [CF.to_sym, NATS.to_sym] do
+    task job.to_sym => [CF.to_sym, NATS.to_sym, NFS.to_sym] do
       install(job)
     end
   end
