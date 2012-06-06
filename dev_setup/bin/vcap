@@ -18,6 +18,8 @@
 # - mysql
 # - mongo
 #
+# service_tools
+# - backup_manager
 
 require 'yaml'
 require 'fileutils'
@@ -47,18 +49,28 @@ class Component
         end
       end
     else
-      # Sane default for location of service configuration file
-      pre = name.sub(/_node|_gateway/,'')
-      # mapping 'rabbitmq' in dev_setup to 'rabbit' in services
-      pre = 'rabbit' if pre == 'rabbitmq'
-      bin_name = name.index('rabbitmq')? name.sub(/mq/, '') : name
-      @path = File.join(DIR, "../services", pre, "bin", bin_name)
-      # Sane default for location of configuration file
-      if @configuration_path.nil?
-        if $config_dir
-          @configuration_path = File.join($config_dir, "#{name}.yml")
+      if service_tool?
+        @path = File.join(SERVICE_DIR, name)
+        @configuration_path = File.join($config_dir, "#{name}.yml") if @configuration_path.nil? && $config_dir
+        if name =~ /backup_manager|snapshot_manager/
+          @configuration_path ||= File.join(DIR, "../services", "tools", "backup", "manager", "config", "#{name}.yml")
         else
-          @configuration_path ||= File.join(DIR, "../services", pre, "config", "#{name}.yml")
+          @configuration_path ||= File.join(DIR, "../services", "tools", name, "config", "#{name}.yml")
+        end
+      else
+          # Sane default for location of service configuration file
+          pre = name.sub(/_node|_gateway/,'')
+          # mapping 'rabbitmq' in dev_setup to 'rabbit' in services
+          pre = 'rabbit' if pre == 'rabbitmq'
+          bin_name = name.index('rabbitmq')? name.sub(/mq/, '') : name
+          @path = File.join(DIR, "../services", pre, "bin", bin_name)
+          # Sane default for location of configuration file
+          if @configuration_path.nil?
+            if $config_dir
+              @configuration_path = File.join($config_dir, "#{name}.yml")
+          else
+            @configuration_path ||= File.join(DIR, "../services", pre, "config", "#{name}.yml")
+          end
         end
       end
     end
@@ -84,7 +96,11 @@ class Component
     Run.services.include? name
   end
 
-  DEFAULT_CLOUD_FOUNDRY_EXCLUDED_COMPONENT = 'neo4j|memcached|couchdb|service_broker|elasticsearch'
+  def service_tool?
+    Run.service_tools.include? name
+  end
+
+  DEFAULT_CLOUD_FOUNDRY_EXCLUDED_COMPONENT = 'neo4j|memcached|couchdb|service_broker|elasticsearch|backup_manager'
   def is_excluded?
     @excluded ||= ENV['CLOUD_FOUNDRY_EXCLUDED_COMPONENT']
     @excluded ||= DEFAULT_CLOUD_FOUNDRY_EXCLUDED_COMPONENT
@@ -409,6 +425,10 @@ module Run
     %w(redis mysql mongodb)
   end
 
+  def self.service_tools
+    %w(backup_manager)
+  end
+
   def self.alias_args(args)
     aliased = []
     args.each do |arg|
@@ -419,6 +439,8 @@ module Run
         aliased.concat Run.core
       when 'services'
         aliased.concat Run.services
+      when 'service_tools'
+        aliased.concat Run.service_tools
       when 'mongo'
         aliased << 'mongodb'
       else
@@ -434,6 +456,8 @@ module Run
     args.each do |arg|
       if Run.core.include? arg
         new_args << arg
+      elsif Run.service_tools.include? arg
+        new_args << arg
       elsif arg =~ /_node|_gateway|_backup|_broker/
         new_args << arg
       else # This is a service, expand in place here..
@@ -445,7 +469,7 @@ module Run
   end
 
   def self.components(args)
-    args = (Run.core + Run.services) if args.empty?
+    args = (Run.core + Run.services + Run.service_tools) if args.empty?
     args = Run.expand_args(args)
     components = args.map do |arg|
       component = Component.new(arg)

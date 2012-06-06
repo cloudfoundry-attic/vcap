@@ -1,0 +1,27 @@
+---
+mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>
+z_interval: 30
+logging:
+  level: debug
+pid: /var/vcap/sys/run/backup_manager.pid
+rotation:
+  max_days: <%= node[:backup_manager][:rotation_max_days] %>
+  cloud_controller_uri: <%= node[:cloud_controller][:service_api_uri]%>
+services:
+  mongodb:
+    version: "1.8"
+    token: <%= node[:mongodb_node][:token] %>
+  redis:
+    version: "2.2"
+    token: <%= node[:redis_node][:token] %>
+  mysql:
+    version: "5.1"
+    token: <%= node[:mysql_node][:token] %>
+  postgresql:
+    version: "9.0"
+    token: <%= node[:postgresql_node][:token]%>
+root: <%= node[:backup][:dir] %>
+wakeup_interval: <%= node[:backup_manager][:wakeup_interval_in_sec] %>
+enable: <%= node[:backup][:enable] ? "true" : "false" %>
+
+

@@ -8,5 +8,6 @@
                 "recipe[essentials]",
                 "recipe[ruby]",
                 "recipe[redis]",
-                "recipe[redis::node]"]
+                "recipe[redis::node]",
+                "recipe[redis::backup]"]
 }

@@ -11,3 +11,8 @@ default[:redis_node][:capacity] = "200"
 default[:redis_node][:index] = "0"
 default[:redis_node][:max_memory] = "16"
 default[:redis_node][:token] = "changeredistoken"
+
+default[:redis_backup][:config_file] = "redis_backup.yml"
+default[:redis_backup][:cron_time] = "0 3 * * *"
+default[:redis_backup][:cron_file] = "redis_backup.cron"
+
