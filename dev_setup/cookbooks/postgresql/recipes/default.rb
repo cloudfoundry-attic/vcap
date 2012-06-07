@@ -6,30 +6,24 @@
 #
 #
 #
-%w[libpq-dev postgresql].each do |pkg|
-  package pkg
+
+if node[:postgresql][:system_version] != node[:postgresql][:service_version] && node[:postgresql][:system_port] == node[:postgresql][:service_port]
+  Chef::Log.error("Different versions of postgresql will be installed, but they should listen different ports")
+  exit 1
+else
+  if node[:postgresql][:system_version] == node[:postgresql][:service_version] && node[:postgresql][:system_port] != node[:postgresql][:service_port]
+    Chef::Log.error("Fail to listen on differnt ports using the same  postgresql for diffrent components")
+    exit 1
+  end
 end
 
 case node['platform']
 when "ubuntu"
-  ruby_block "postgresql_conf_update" do
-    block do
-      / \d*.\d*/ =~ `pg_config --version`
-      pg_major_version = $&.strip
 
-      # update postgresql.conf
-      postgresql_conf_file = File.join("", "etc", "postgresql", pg_major_version, "main", "postgresql.conf")
-      `grep "^\s*listen_addresses" #{postgresql_conf_file}`
-      if $?.exitstatus != 0
-        `echo "listen_addresses='#{node[:postgresql][:host]},localhost'" >> #{postgresql_conf_file}`
-      else
-        `sed -i.bkup -e "s/^\s*listen_addresses.*$/listen_addresses='#{node[:postgresql][:host]},localhost'/" #{postgresql_conf_file}`
-      end
-
-      # Cant use service resource as service name needs to be statically defined
-      `#{File.join("", "etc", "init.d", "postgresql-#{pg_major_version}")} restart`
-    end
+  %w[python-software-properties postgresql-common postgresql-client-common libpq-dev].each do |pkg|
+    package pkg
   end
+
 else
   Chef::Log.error("Installation of PostgreSQL is not supported on this platform.")
 end

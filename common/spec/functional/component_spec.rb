@@ -67,7 +67,8 @@ describe VCAP::Component do
           :keys => 'sekret!keys',
           :password => 'crazy',
           :pass => 'crazy',
-          :database_environment => { :stuff => 'should not see' }
+          :database_environment => { :stuff => 'should not see' },
+          :token => 't0ken'
         }
         VCAP::Component.register(options)
         done
@@ -84,7 +85,7 @@ describe VCAP::Component do
           :password => 'crazy',
           :pass => 'crazy',
           :database_environment => { :stuff => 'should not see' },
-          :this_is_ok => { :password => 'sekret!', :pass => 'sekret!', :test => 'ok'}
+          :this_is_ok => { :password => 'sekret!', :pass => 'sekret!', :test => 'ok', :token => 't0ken'}
         }
         VCAP::Component.register(options)
         done
@@ -102,7 +103,7 @@ describe VCAP::Component do
           :password => 'crazy',
           :pass => 'crazy',
           :database_environment => { :stuff => 'should not see' },
-          :this_is_ok => { :password => 'sekret!', :pass => 'sekret!', :mysql => 'sekret!', :test => 'ok'}
+          :this_is_ok => { :password => 'sekret!', :pass => 'sekret!', :mysql => 'sekret!', :test => 'ok', :token => 't0ken'}
         }
         VCAP::Component.register(options)
 
@@ -113,7 +114,7 @@ describe VCAP::Component do
           :password => 'crazy',
           :pass => 'crazy',
           :database_environment => { :stuff => 'should not see' },
-          :this_is_ok => { :password => 'sekret!', :pass => 'sekret!', :mysql => 'sekret!', :test => 'ok'}
+          :this_is_ok => { :password => 'sekret!', :pass => 'sekret!', :mysql => 'sekret!', :test => 'ok', :token => 't0ken'}
         })
         done
       end

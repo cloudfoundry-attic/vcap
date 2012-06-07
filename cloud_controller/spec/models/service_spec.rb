@@ -53,9 +53,29 @@ describe Service do
     svc.should_not be_valid
   end
 
+  it "requires a valid cf_plan_id" do
+    svc = make_service(:label => "foo-bar", :url => "http://www.google.com", :token => "foo")
+    svc.plans = ['foo']
+    svc.should be_valid
+
+    svc.cf_plan_id = "foobar"
+    svc.should_not be_valid
+
+    svc.cf_plan_id = {'123' => '456'}
+    svc.should_not be_valid
+
+    svc.cf_plan_id = {'foo' => 'bar'}
+    svc.should be_valid
+  end
+
   it "should serialize complex fields" do
     plans = ["foo", "bar"]
-    svc = make_service(:label => "foo-bar", :url => "http://www.google.com", :token => "foo", :plans => plans)
+    svc = make_service(
+      :label => "foo-bar",
+      :url => "http://www.google.com",
+      :token => "foo",
+      :plans => plans,
+    )
     svc.should be_valid
     svc.save
 

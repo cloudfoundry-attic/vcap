@@ -8,5 +8,6 @@
   "json_class": "Chef::Role",
   "description": "PostgreSQL services gateway",
   "chef_type": "role",
-  "run_list" : ["role[services]"]
+  "run_list" : ["role[services]",
+                "recipe[postgresql::gateway]"]
 }

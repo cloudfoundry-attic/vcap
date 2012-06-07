@@ -20,18 +20,18 @@ class JobManager
   ACM = "acm"
   ACMDB = "acmdb"
 
-  SERVICES = ["redis", "mysql", "mongodb", "rabbitmq", "memcached"] # neo4j
+  SERVICES = ["redis", "mysql", "mongodb", "neo4j", "rabbitmq", "postgresql", "vblob", "memcached"]
   SERVICES_NODE = SERVICES.map do |service|
-    "#{service}_node"
+     "#{service}_node"
   end
   SERVICES_GATEWAY = SERVICES.map do |service|
     "#{service}_gateway"
   end
+  SERVICES_GATEWAY << "filesystem_gateway"
   SERVICES_NODE.each do |node|
     # Service name constant e.g. REDIS_NODE -> "redis_node"
     const_set(node.upcase, node)
   end
-
   # All supported jobs
   JOBS = [ALL, NATS, ROUTER, CF, CC, HM, DEA, CCDB, UAA, UAADB] + SERVICES_NODE + SERVICES_GATEWAY
   SYSTEM_JOB = [CF]
@@ -39,7 +39,7 @@ class JobManager
   # List of the required properties for jobs
   INSTALLED_JOB_PROPERTIES = {NATS => ["host"], CC => ["service_api_uri", "builtin_services"],
                               CCDB => ["host"]}
-  INSTALL_JOB_PROPERTIES = {CC => ["builtin_services"], MYSQL_NODE => ["index"], MONGODB_NODE => ["index"], REDIS_NODE => ["index"], RABBITMQ_NODE => ["index"], MEMCACHED_NODE => ["index"]} # NEO4J_NODE => ["index"]
+  INSTALL_JOB_PROPERTIES = {CC => ["builtin_services"], MYSQL_NODE => ["index"], MONGODB_NODE => ["index"], REDIS_NODE => ["index"], NEO4J_NODE => ["index"], POSTGRESQL_NODE => ["index"], RABBITMQ_NODE => ["index"], VBLOB_NODE => ["index"], MEMCACHED_NODE => ["index"]}
 
   # Dependency between JOBS and  components that are consumed by "vcap_dev" when cf is started or
   # stopped
