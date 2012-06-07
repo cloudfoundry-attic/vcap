@@ -1,0 +1,26 @@
+---
+capacity: <%= node[:postgresql_node][:capacity] %>
+plan: free
+local_db: sqlite3:/var/vcap/services/postgresql/postgresql_node.db
+ip_route: 127.0.0.1
+base_dir: /var/vcap/services/postgresql/
+dump_bin: pg_dump
+restore_bin: pg_resotre
+mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
+index: <%= node[:postgresql_node][:index] %>
+pid: /var/vcap/sys/run/postgresql_node.pid
+node_id: <%= "postgresql_node_#{node[:postgresql_node][:index]}" %>
+max_db_size: <%= node[:postgresql_node][:max_db_size] %>
+max_long_query: 3
+max_long_tx: 30
+max_db_conns: 20
+db_size_overhead: 5.4
+migration_nfs: /mnt/migration
+postgresql:
+  host: <%= node[:postgresql_node][:host] %>
+  port: <%= node[:postgresql][:service_port]%>
+  user: <%= node[:postgresql][:server_root_user] %>
+  pass: <%= node[:postgresql][:server_root_password] %>
+  database: <%= node[:postgresql_node][:database]%>
+logging:
+  level: debug
