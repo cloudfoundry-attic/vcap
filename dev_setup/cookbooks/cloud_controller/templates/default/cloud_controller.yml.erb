@@ -136,6 +136,13 @@ runtimes:
     debug_modes:
       - run
       - suspend
+<% if node[:java7][:available?] %>
+  java7:
+    version: 1.7.0
+    debug_modes:
+      - run
+      - suspend
+<% end %>
   php:
     version: 5.3.[2-6]
   erlangR14B02:
