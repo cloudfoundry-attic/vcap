@@ -95,6 +95,20 @@ runtimes:
       suspend:
         - JAVA_OPTS="$JAVA_OPTS -Xdebug -Xrunjdwp:transport=dt_socket,address=$VCAP_DEBUG_PORT,server=y,suspend=y"
 <% end %>
+<% if node[:dea][:runtimes].include?("java7") %>
+  java7:
+    executable: <%= File.join(node[:java7][:path], "java") %>
+    version: 1.7.0
+    version_flag: '-version'
+    environment:
+      PATH: <%= File.join(node[:java7][:path]) %>:$PATH
+      JAVA_HOME: <%= File.join(node[:java7][:java_home]) %>
+    debug_env:
+      run:
+        - JAVA_OPTS="$JAVA_OPTS -Xdebug -Xrunjdwp:transport=dt_socket,address=$VCAP_DEBUG_PORT,server=y,suspend=n"
+      suspend:
+        - JAVA_OPTS="$JAVA_OPTS -Xdebug -Xrunjdwp:transport=dt_socket,address=$VCAP_DEBUG_PORT,server=y,suspend=y"
+<% end %>
 <% if node[:dea][:runtimes].include?("erlang") %>
   erlangR14B02:
     executable: <%= File.join(node[:erlang][:path], "bin", "erl") %>
