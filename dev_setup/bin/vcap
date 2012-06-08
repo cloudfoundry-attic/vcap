@@ -47,9 +47,9 @@ class Component
         end
       end
     else
-      @path = File.join(SERVICE_DIR, name)
       # Sane default for location of service configuration file
       pre = name.sub(/_node|_gateway/,'')
+      @path = File.join(SERVICE_DIR, name)
       # Sane default for location of configuration file
       if @configuration_path.nil?
         if $config_dir
@@ -81,7 +81,7 @@ class Component
     Run.services.include? name
   end
 
-  DEFAULT_CLOUD_FOUNDRY_EXCLUDED_COMPONENT = 'neo4j|memcached|couchdb'
+  DEFAULT_CLOUD_FOUNDRY_EXCLUDED_COMPONENT = 'neo4j|memcached|couchdb|service_broker'
   def is_excluded?
     @excluded ||= ENV['CLOUD_FOUNDRY_EXCLUDED_COMPONENT']
     @excluded ||= DEFAULT_CLOUD_FOUNDRY_EXCLUDED_COMPONENT
@@ -431,7 +431,7 @@ module Run
     args.each do |arg|
       if Run.core.include? arg
         new_args << arg
-      elsif arg =~ /_node|_gateway|_backup/
+      elsif arg =~ /_node|_gateway|_backup|_broker/
         new_args << arg
       else # This is a service, expand in place here..
         new_args << "#{arg}_gateway"
