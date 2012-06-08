@@ -47,9 +47,9 @@ class Component
         end
       end
     else
-      @path = File.join(SERVICE_DIR, name)
       # Sane default for location of service configuration file
       pre = name.sub(/_node|_gateway/,'')
+      @path = File.join(SERVICE_DIR, name)
       # Sane default for location of configuration file
       if @configuration_path.nil?
         if $config_dir
@@ -431,7 +431,7 @@ module Run
     args.each do |arg|
       if Run.core.include? arg
         new_args << arg
-      elsif arg =~ /_node|_gateway|_backup/
+      elsif arg =~ /_node|_gateway|_backup|_broker/
         new_args << arg
       else # This is a service, expand in place here..
         new_args << "#{arg}_gateway"
