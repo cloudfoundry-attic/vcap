@@ -21,6 +21,7 @@ class JobManager
   ACMDB = "acmdb"
 
   SERVICES = ["redis", "mysql", "mongodb", "rabbitmq", "memcached"] # neo4j
+  SERVICES_AUXILIARY = ["service_broker"]
   SERVICES_NODE = SERVICES.map do |service|
     "#{service}_node"
   end
@@ -33,7 +34,7 @@ class JobManager
   end
 
   # All supported jobs
-  JOBS = [ALL, NATS, ROUTER, CF, CC, HM, DEA, CCDB, UAA, UAADB] + SERVICES_NODE + SERVICES_GATEWAY
+  JOBS = [ALL, NATS, ROUTER, CF, CC, HM, DEA, CCDB, UAA, UAADB] + SERVICES_NODE + SERVICES_GATEWAY + SERVICES_AUXILIARY
   SYSTEM_JOB = [CF]
 
   # List of the required properties for jobs
@@ -53,7 +54,12 @@ class JobManager
     SERVICE_GATEWAY_RUN_COMPONENTS[gateway] = gateway
   end
 
-  RUN_COMPONENTS = {ROUTER => ROUTER, CC => CC, HM => HM, DEA => DEA, UAA => UAA}.update(SERVICE_NODE_RUN_COMPONENTS).update(SERVICE_GATEWAY_RUN_COMPONENTS)
+  SERVICE_AUXILIARY_RUN_COMPONENTS = Hash.new
+  SERVICES_AUXILIARY.each do |service|
+    SERVICE_AUXILIARY_RUN_COMPONENTS[service] = service
+  end
+
+  RUN_COMPONENTS = {ROUTER => ROUTER, CC => CC, HM => HM, DEA => DEA, UAA => UAA}.update(SERVICE_NODE_RUN_COMPONENTS).update(SERVICE_GATEWAY_RUN_COMPONENTS).update(SERVICE_AUXILIARY_RUN_COMPONENTS)
 
   class << self
     if defined?(Rake::DSL)
