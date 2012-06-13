@@ -4,7 +4,7 @@ module RubyInstall
     bundler_version = node[:rubygems][:bundler][:version]
     rake_version = node[:rubygems][:rake][:version]
 
-    %w[ build-essential libssl-dev zlib1g-dev libreadline6-dev libxml2-dev libpq-dev].each do |pkg|
+    %w[ build-essential libssl-dev zlib1g-dev libreadline5-dev libxml2-dev libpq-dev].each do |pkg|
       package pkg
     end
 
@@ -31,8 +31,6 @@ module RubyInstall
       # solution is found
       tar xzf #{tarball_path}
       cd ruby-#{ruby_version}
-      # See http://deadmemes.net/2011/10/28/rvm-install-fails-on-ubuntu-11-10/
-      sed -i 's/\\(OSSL_SSL_METHOD_ENTRY(SSLv2[^3]\\)/\\/\\/\\1/g' ./ext/openssl/ossl_ssl.c
       ./configure --disable-pthread --prefix=#{ruby_path}
       make
       make install
