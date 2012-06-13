@@ -11,8 +11,8 @@ end
 tarball_path = File.join(node[:deployment][:setup_cache], "otp_src_#{node[:erlang][:version]}.tar.gz")
 cf_remote_file tarball_path do
   owner node[:deployment][:user]
-  source node[:erlang][:source]
-  checksum "849d050b59821e9f2831fee2e3267d84b410eee860a55f6fc9320cc00b5205bd"
+  id node[:erlang][:id]
+  checksum node[:erlang][:checksum]
 end
 
 directory node[:erlang][:path] do
@@ -33,7 +33,4 @@ bash "Install Erlang" do
   make
   make install
   EOH
-  not_if do
-    ::File.exists?(File.join(node[:erlang][:path], "bin", "erl"))
-  end
 end

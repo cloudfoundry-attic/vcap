@@ -110,7 +110,7 @@ runtimes:
         - JAVA_OPTS="$JAVA_OPTS -Xdebug -Xrunjdwp:transport=dt_socket,address=$VCAP_DEBUG_PORT,server=y,suspend=y"
 <% end %>
 <% if node[:dea][:runtimes].include?("erlang") %>
-  erlangR14B02:
+  erlangR14B01:
     executable: <%= File.join(node[:erlang][:path], "bin", "erl") %>
     version: ".* 5.8.3"
     version_flag: '-version'

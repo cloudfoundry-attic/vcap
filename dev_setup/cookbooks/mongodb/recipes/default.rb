@@ -8,7 +8,7 @@
 mongodb_tarball_path = File.join(node[:deployment][:setup_cache], "mongodb-linux-#{node[:kernel][:machine]}-#{node[:mongodb][:version]}.tgz")
 cf_remote_file mongodb_tarball_path do
   owner node[:deployment][:user]
-  source node[:mongodb][:source]
+  id node[:mongodb][:id]
   checksum node[:mongodb][:checksum]
 end
 
@@ -28,7 +28,4 @@ bash "Install Mongodb" do
   cd mongodb-linux-#{node[:kernel][:machine]}-#{node[:mongodb][:version]}
   cp #{File.join("bin", "*")} #{File.join(node[:mongodb][:path], "bin")}
   EOH
-  not_if do
-    ::File.exists?(File.join(node[:mongodb][:path], "bin", "mongo"))
-  end
 end
