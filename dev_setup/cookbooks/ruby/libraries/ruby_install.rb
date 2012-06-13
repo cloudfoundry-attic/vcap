@@ -1,5 +1,5 @@
 module RubyInstall
-  def cf_ruby_install(ruby_version, ruby_source, ruby_path)
+  def cf_ruby_install(ruby_version, ruby_source_id, ruby_path, ruby_tarball_suffix)
     rubygems_version = node[:rubygems][:version]
     bundler_version = node[:rubygems][:bundler][:version]
     rake_version = node[:rubygems][:rake][:version]
@@ -8,10 +8,10 @@ module RubyInstall
       package pkg
     end
 
-    tarball_path = File.join(node[:deployment][:setup_cache], "ruby-#{ruby_version}.tar.gz")
-    cf_remote_file tarball_path do
+    ruby_tarball_path = File.join(node[:deployment][:setup_cache], "ruby-#{ruby_version}.tar.#{ruby_tarball_suffix}")
+    cf_remote_file ruby_tarball_path do
       owner node[:deployment][:user]
-      source ruby_source
+      id ruby_source_id
       checksum node[:ruby][:checksums][ruby_version]
     end
 
@@ -29,7 +29,11 @@ module RubyInstall
       code <<-EOH
       # work around chef's decompression of source tarball before a more elegant
       # solution is found
-      tar xzf #{tarball_path}
+      if [ "#{ruby_tarball_suffix}" = "bz2" ];then
+        tar xf #{ruby_tarball_path}
+      else
+        tar xzf #{ruby_tarball_path}
+      fi
       cd ruby-#{ruby_version}
       # See http://deadmemes.net/2011/10/28/rvm-install-fails-on-ubuntu-11-10/
       sed -i 's/\\(OSSL_SSL_METHOD_ENTRY(SSLv2[^3]\\)/\\/\\/\\1/g' ./ext/openssl/ossl_ssl.c
@@ -37,30 +41,23 @@ module RubyInstall
       make
       make install
       EOH
-      not_if do
-        ::File.exists?(File.join(ruby_path, "bin", "ruby"))
-      end
     end
 
-    cf_remote_file File.join("", "tmp", "rubygems-#{rubygems_version}.tgz") do
+    rubygem_tarball_path = File.join(node[:deployment][:setup_cache], "rubygems-#{rubygems_version}.tgz")
+    cf_remote_file rubygem_tarball_path do
       owner node[:deployment][:user]
-      source "http://production.cf.rubygems.org/rubygems/rubygems-#{rubygems_version}.tgz"
+      id node[:rubygems][:id]
       checksum node[:rubygems][:checksum]
-      not_if { ::File.exists?(File.join("", "tmp", "rubygems-#{rubygems_version}.tgz")) }
     end
 
     bash "Install RubyGems #{ruby_path}" do
       cwd File.join("", "tmp")
       user node[:deployment][:user]
       code <<-EOH
-      tar xzf rubygems-#{rubygems_version}.tgz
+      tar xzf #{rubygem_tarball_path}
       cd rubygems-#{rubygems_version}
       #{File.join(ruby_path, "bin", "ruby")} setup.rb
       EOH
-      not_if do
-        ::File.exists?(File.join(ruby_path, "bin", "gem")) &&
-            system("#{File.join(ruby_path, "bin", "gem")} -v | grep -q '#{rubygems_version}$'")
-      end
     end
 
     gem_package "bundler" do
