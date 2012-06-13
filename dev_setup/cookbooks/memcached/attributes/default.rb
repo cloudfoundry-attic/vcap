@@ -1,9 +1,9 @@
 include_attribute "deployment"
 default[:libevent][:version] = "2.0.19"
-default[:libevent][:source] = "http://cloud.github.com/downloads/libevent/libevent/libevent-#{node[:libevent][:version]}-stable.tar.gz"
+default[:libevent][:id] = "eyJzaWciOiJIaWtwTHBwS3QyMjZQUDdycHJuTlFYQWlFRDA9Iiwib2lkIjoi%0ANGU0ZTc4YmNhMTFlMTIyMDA0ZTRlOGVjNjQ4NDMxMDRmYjZkNjI0M2ViZmMi%0AfQ==%0A"
 default[:memcached][:version] = "1.4.13"
 default[:memcached][:path] = File.join(node[:deployment][:home], "deploy", "memcached")
-default[:memcached][:source] = "http://memcached.googlecode.com/files/memcached-#{node[:memcached][:version]}.tar.gz"
+default[:memcached][:id] = "eyJzaWciOiIyRy9MK0JsbEtTYnF2SjgwLzZ2Qm5qbE93VDA9Iiwib2lkIjoi%0ANGU0ZTc4YmNhMTFlMTIyMjA0ZTRlOTg2MzhiNzYzMDRmYjZkNjI4ZDI4Y2Ii%0AfQ==%0A"
 default[:memcached][:runner] = node[:deployment][:user]
 default[:memcached][:password] = "memcached"
 

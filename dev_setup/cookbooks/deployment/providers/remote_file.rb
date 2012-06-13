@@ -1,9 +1,14 @@
 require 'chef/mixin/checksum'
 require 'chef/mixin/enforce_ownership_and_permissions'
+require 'blobstore_client'
 
+include Bosh::Blobstore
 include Chef::Mixin::Checksum
 
-require 'net/http'
+BLOBSTORE_HOST = {
+  :url => "https://blob.cfblob.com",
+  :uid => "bb6a0c89ef4048a8a0f814e25385d1c5/user1"
+}
 
 def load_current_resource
   @current_resource = @new_resource.class.new(@new_resource.name)
@@ -12,15 +17,11 @@ def load_current_resource
   end
 end
 
-def stream_to_tempfile(uri)
-  Net::HTTP.start(uri.host, uri.port) do |http|
-    http.request_get(uri.path) do |response|
-      Tempfile.open('cf-temp') do |tf|
-        response.read_body {|chunk| tf.write(chunk) }
-        tf.close
-        yield tf.path
-      end
-    end
+def download_blob(id)
+  Tempfile.open('cf-temp') do |tf|
+    AtmosBlobstoreClient.new(BLOBSTORE_HOST).get_file(id, tf)
+    tf.close
+    yield tf.path
   end
 end
 
@@ -34,18 +35,16 @@ def action_create
   if @current_resource.path.exist? && @current_resource.checksum == @new_resource.checksum
     Chef::Log.debug("#{@new_resource} checksum matches target checksum (#{@new_resource.checksum}) - not updating")
   else
-    uri = URI(@new_resource.source)
-    stream_to_tempfile(uri) do |tempfile|
-      # new download should be rejected if checksum is invalid
+    download_blob(@new_resource.id) do |tempfile|
       Chef::Log.debug "#{@new_resource} has checksum set to: #{@new_resource.checksum}, checking remote file checksum"
-      c = checksum(tempfile)
-      if c == @new_resource.checksum
-        Chef::Log.debug "remote file checksum: #{c}, validated!"
+      remote_file_checksum = checksum(tempfile)
+      if remote_file_checksum == @new_resource.checksum
+        Chef::Log.debug "remote file checksum: #{remote_file_checksum}, validated!"
         FileUtils.cp(tempfile, @new_resource.path)
         Chef::Log.info "#{@new_resource} updated"
         @new_resource.updated_by_last_action(true)
       else
-        Chef::Log.debug "remote file checksum: #{c}, invalid"
+        Chef::Log.debug "remote file checksum: #{remote_file_checksum}, invalid"
         # TODO: retry?
         raise "Checksum mismatch for cf_remote_file #{@new_resource}"
       end
