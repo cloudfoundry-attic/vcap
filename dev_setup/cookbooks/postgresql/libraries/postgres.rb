@@ -18,6 +18,7 @@ module CloudFoundryPostgres
     cf_pg_check_port(pg_major_version, pg_port)
 
     # install postgresql server & client
+    `apt-get install -y python-software-properties`
     `add-apt-repository ppa:pitti/postgresql`
     `apt-get update`
     postgresql_client_pkg = "postgresql-client-#{pg_major_version}"
