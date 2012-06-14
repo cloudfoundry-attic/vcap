@@ -1,0 +1,3 @@
+#!/usr/bin/env ruby
+
+exec(File.expand_path("../../../services/couchdb/bin/couchdb_node", __FILE__), *ARGV)
