@@ -1,0 +1,12 @@
+---
+capacity: <%= node[:echo_node][:capacity] %>
+plan: free
+local_db: sqlite3:/var/vcap/services/echo/echo_node.db
+mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
+index: <%= node[:echo_node][:index] %>
+base_dir: /var/vcap/services/echo/
+logging:
+  level: debug
+pid: /var/vcap/sys/run/echo_node.pid
+node_id: <%= "echo_node_#{node[:echo_node][:index]}" %>
+port: 5002
