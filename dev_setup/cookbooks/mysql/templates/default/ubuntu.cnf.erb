@@ -39,7 +39,10 @@ nice		= 0
 #   also need to also adjust /etc/apparmor.d/usr.sbin.mysqld.
 #
 
+collation_server	= utf8_unicode_ci
+character_set_server    = utf8
 user		= mysql
+pid-file	= /var/run/mysqld/mysqld.pid
 socket		= /var/run/mysqld/mysqld.sock
 port		= 3306
 basedir		= /usr
@@ -56,14 +59,14 @@ skip-external-locking
 #
 key_buffer		= 16M
 max_allowed_packet	= 16M
-thread_stack		= 192K
+thread_stack		= 256K
 thread_cache_size       = 8
 # This replaces the startup script and checks MyISAM tables if needed
 # the first time they are touched
 myisam-recover         = BACKUP
-#max_connections        = 100
-#table_cache            = 64
-#thread_concurrency     = 10
+max_connections        = 16
+table_cache            = 256
+thread_concurrency     = 2
 #
 # * Query Cache Configuration
 #
