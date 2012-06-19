@@ -47,9 +47,9 @@ class Component
         end
       end
     else
-      @path = File.join(SERVICE_DIR, name)
       # Sane default for location of service configuration file
       pre = name.sub(/_node|_gateway/,'')
+      @path = File.join(DIR, "../services", pre, "bin", name)
       # Sane default for location of configuration file
       if @configuration_path.nil?
         if $config_dir
