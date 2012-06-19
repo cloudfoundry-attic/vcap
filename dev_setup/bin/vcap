@@ -47,9 +47,12 @@ class Component
         end
       end
     else
-      @path = File.join(SERVICE_DIR, name)
       # Sane default for location of service configuration file
       pre = name.sub(/_node|_gateway/,'')
+      # mapping 'rabbitmq' in dev_setup to 'rabbit' in services
+      pre = 'rabbit' if pre == 'rabbitmq'
+      bin_name = name.index('rabbitmq')? name.sub(/mq/, '') : name
+      @path = File.join(DIR, "../services", pre, "bin", bin_name)
       # Sane default for location of configuration file
       if @configuration_path.nil?
         if $config_dir
