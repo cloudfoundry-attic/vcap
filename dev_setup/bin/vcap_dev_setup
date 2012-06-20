@@ -137,7 +137,7 @@ fi
 # the deployment code. So for now just manually install the required gem.
 gem list rake -i > /dev/null
 if [ $? != 0 ]; then
-  gem install rake -q --no-ri --no-rdoc > /dev/null 2>&1
+  sudo gem install rake -q --no-ri --no-rdoc > /dev/null 2>&1
 fi
 
 # Launch chef
