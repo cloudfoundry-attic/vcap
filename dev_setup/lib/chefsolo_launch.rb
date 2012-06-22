@@ -21,7 +21,7 @@ def is_excluded?(name)
   name.match(@excluded) if !@excluded.empty?
 end
 
-excluded ||= ENV['CLOUD_FOUNDRY_EXCLUDED_COMPONENT'] || Component::DEFAULT_CLOUD_FOUNDRY_EXCLUDED_COMPONENT
+excluded ||= ENV['CLOUD_FOUNDRY_EXCLUDED_COMPONENT'] || DEFAULT_CLOUD_FOUNDRY_EXCLUDED_COMPONENT
 puts "- DEV_SETUP Excluded components: #{excluded}.\n  See dev_setup/README for details" if !excluded.empty?
 
 script_dir = File.expand_path(File.dirname(__FILE__))
