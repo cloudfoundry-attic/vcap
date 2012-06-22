@@ -13,6 +13,17 @@ $LOAD_PATH.unshift(File.dirname(__FILE__))
 require File.expand_path('vcap_defs', File.dirname(__FILE__))
 require File.expand_path('job_manager', File.dirname(__FILE__))
 
+
+DEFAULT_CLOUD_FOUNDRY_EXCLUDED_COMPONENT = 'neo4j|memcached|couchdb'
+def is_excluded?(name)
+  @excluded ||= ENV['CLOUD_FOUNDRY_EXCLUDED_COMPONENT']
+  @excluded ||= DEFAULT_CLOUD_FOUNDRY_EXCLUDED_COMPONENT
+  name.match(@excluded) if !@excluded.empty?
+end
+
+excluded ||= ENV['CLOUD_FOUNDRY_EXCLUDED_COMPONENT'] || Component::DEFAULT_CLOUD_FOUNDRY_EXCLUDED_COMPONENT
+puts "- DEV_SETUP Excluded components: #{excluded}.\n  See dev_setup/README for details" if !excluded.empty?
+
 script_dir = File.expand_path(File.dirname(__FILE__))
 cloudfoundry_home = Deployment.get_cloudfoundry_home
 cloudfoundry_domain = Deployment.get_cloudfoundry_domain
@@ -69,9 +80,13 @@ end
 # Prepare the chef run list
 run_list = []
 job_roles.each do |role|
-  run_list << "role[#{role}]"
+  STDOUT.puts "Skipping excluded component: #{role}" if is_excluded?(role)
+  run_list << "role[#{role}]" if !is_excluded?(role)
 end
+
 spec["run_list"] = run_list
+
+puts "RUN LIST = #{run_list}"
 
 # Merge the job specs
 spec.merge!(job_specs)
