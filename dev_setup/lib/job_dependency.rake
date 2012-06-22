@@ -17,6 +17,12 @@ class JobManager
     end
   end
 
+  SERVICE_TOOLS.each do |job|
+    task job.to_sym => [CF.to_sym, NATS.to_sym] do
+      install(job)
+    end
+  end
+
   SERVICES_NODE.each do |job|
     task job.to_sym => [CF.to_sym, NATS.to_sym] do
       install(job)
@@ -24,6 +30,12 @@ class JobManager
   end
 
   SERVICES_GATEWAY.each do |job|
+    task job.to_sym => [CF.to_sym, CC.to_sym, NATS.to_sym] do
+      install(job)
+    end
+  end
+
+  SERVICES_AUXILIARY.each do |job|
     task job.to_sym => [CF.to_sym, CC.to_sym, NATS.to_sym] do
       install(job)
     end

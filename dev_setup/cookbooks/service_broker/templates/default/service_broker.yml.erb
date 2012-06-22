@@ -1,0 +1,12 @@
+---
+cloud_controller_uri: <%= node[:cloud_controller][:service_api_uri] %>
+external_uri: <%=node[:service_broker][:host] %>.<%= node[:deployment][:domain] %>
+
+index: <%= node[:service_broker][:index] %>
+token: <%= node[:service_broker][:token] %>
+logging:
+  level: debug
+
+mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
+pid: /var/vcap/sys/run/service_broker.pid
+local_db: sqlite3:/var/vcap/services/broker/service_broker.db

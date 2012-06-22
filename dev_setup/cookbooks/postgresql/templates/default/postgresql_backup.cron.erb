@@ -1,0 +1,1 @@
+<%= node[:postgresql_backup][:cron_time] %> <%= File.join(node[:ruby][:path], "bin", "ruby")%> <%= File.join( node[:cloudfoundry][:path], "services", "postgresql", "bin", "postgresql_backup") %> -t -c <%= File.join(node[:deployment][:config_path], node[:postgresql_backup][:config_file]) %> >> <%= File.join(node[:deployment][:log_path], "postgresql_backup_cron.log") %> 2>&1

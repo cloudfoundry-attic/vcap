@@ -11,5 +11,6 @@
   "run_list" : ["role[services]",
                 "recipe[postgresql]",
                 "recipe[postgresql::service]",
-                "recipe[postgresql::node]"]
+                "recipe[postgresql::node]",
+                "recipe[postgresql::backup]"]
 }
