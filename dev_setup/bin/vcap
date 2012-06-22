@@ -50,11 +50,12 @@ class Component
       end
     else
       if service_tool?
-        @path = File.join(SERVICE_DIR, name)
         @configuration_path = File.join($config_dir, "#{name}.yml") if @configuration_path.nil? && $config_dir
         if name =~ /backup_manager|snapshot_manager/
+          @path = File.join(DIR, "../services", "tools", "backup", "manager", "bin", name)
           @configuration_path ||= File.join(DIR, "../services", "tools", "backup", "manager", "config", "#{name}.yml")
         else
+          @path = File.join(DIR, "../services", "tools", name, "bin", name)
           @configuration_path ||= File.join(DIR, "../services", "tools", name, "config", "#{name}.yml")
         end
       else
