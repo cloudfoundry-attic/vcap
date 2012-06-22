@@ -1,5 +1,5 @@
 include_attribute "deployment"
-default[:mongodb][:version] = "1.8.1"
+default[:mongodb][:version] = "1.8.5"
 default[:mongodb][:source] = "http://fastdl.mongodb.org/linux/mongodb-linux-#{node[:kernel][:machine]}-#{mongodb[:version]}.tgz"
 default[:mongodb][:path] = File.join(node[:deployment][:home], "deploy", "mongodb")
 
@@ -8,11 +8,15 @@ default[:mongodb_node][:index] = "0"
 default[:mongodb_node][:max_memory] = "128"
 default[:mongodb_node][:token] = "changemongodbtoken"
 
+default[:mongodb_backup][:config_file] = "mongodb_backup.yml"
+default[:mongodb_backup][:cron_time] = "0 5 * * *"
+default[:mongodb_backup][:cron_file] = "mongodb_backup.cron"
+
 # The checksums are for mongodb-1.8.1
 if node[:kernel][:machine] == 'x86_64'
-  default[:mongodb][:checksum] = '8f6a58293068e0fb28b463b955f3660f492094e53129fb88af4a7efcfc7995da'
+  default[:mongodb][:checksum] = '0a84e0c749604cc5d523a8d8040beb0633ef8413ecd9e85b10190a30c568bb37'
 elsif node[:kernel][:machine] == 'i686'
-  default[:mongodb][:checksum] = '19415154974d62e745977e1bc01e24c0ca3b9d1149881da255315fb4f1cfbf31'
+  default[:mongodb][:checksum] = '24c6c7706ae2925b1a1b73241ca5a1de0812d32bc7927c939dbeebb045b929e5'
 else
   Chef::Log.error("Installation of mongodb on #{node[:kernel][:machine]} is not supported")
 end

@@ -111,6 +111,9 @@ builtin_services:
     token: <%= node[(service_name + "_node").to_sym][:token] %>
   <% end %>
 
+service_broker:
+  token: ["<%= node[:service_broker][:token] %>"]
+
 # Enable/disable starting apps in debug modes.
 allow_debug: true
 
@@ -136,6 +139,13 @@ runtimes:
     debug_modes:
       - run
       - suspend
+<% if node[:java7][:available?] %>
+  java7:
+    version: 1.7.0
+    debug_modes:
+      - run
+      - suspend
+<% end %>
   php:
     version: 5.3.[2-6]
   erlangR14B02:

@@ -1,0 +1,79 @@
+#!/bin/bash
+
+SUPPORTED_SERVICES="mysql postgresql redis mongodb"
+TARGETED_SERVICES=""
+
+function print_usage {
+  echo "service_backup_ctl [start|stop|restart|status] [service_type]"
+  echo "Supported following services:"
+  for type in `echo $SUPPORTED_SERVICES`
+  do
+    echo "${type}"
+  done
+  echo "If no service_type, you will operate all supported services"
+}
+
+service_type=$2
+if test -z "$service_type"
+then
+  TARGETED_SERVICES=$SUPPORTED_SERVICES
+else
+  for type in `echo $SUPPORTED_SERVICES`
+  do
+    if test "$type" = "$service_type"
+    then
+      TARGETED_SERVICES="${type}"
+      break
+    fi
+  done
+fi
+
+if test -z "TARGETED_SERVICES"
+then
+  print_usage
+  echo "Error: #{service_type} is not supported."
+  echo "You should specify one supported service_type or let it empty"
+  exit 1
+fi
+
+config_path=<%= node[:deployment][:config_path]%>
+
+case $1 in
+  start|restart)
+    for type in `echo $TARGETED_SERVICES`
+    do
+    cron_file="$config_path/${type}_backup.cron"
+      if test -e "$cron_file"
+      then
+        (crontab -l | sed /${type}_backup/d; cat ${config_path}/${type}_backup.cron) | sed /^$/d | crontab
+        printf '%-15s %-20s\n' "${type}:" "backup is ${1}ed"
+      else
+        printf '%-15s %-20s\n' "${type}:" "backup is disabled, won't be started "
+      fi
+    done
+    ;;
+  stop)
+    for type in $TARGETED_SERVICES
+    do
+      (crontab -l | sed /${type}_backup/d;) | sed /^$/d | crontab
+      printf '%-15s %-20s\n' "${type}:" "backup is stopped."
+    done
+    ;;
+  status)
+    for type in $TARGETED_SERVICES
+    do
+      ret=`crontab -l | grep "${type}_backup"`
+      if test -z "$ret"
+      then
+        printf '%-15s %-20s\n' "${type}:" "backup is stoped"
+      else
+        printf '%-15s %-20s\n' "${type}:" "backup is started"
+      fi
+    done
+    ;;
+  *)
+    print_usage
+    exit 1
+    ;;
+esac
+exit 0

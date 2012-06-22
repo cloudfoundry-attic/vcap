@@ -1,0 +1,11 @@
+---
+service_name: mongodb
+backup_base_dir: <%= node[:backup][:dir] %>
+service_base_dir: /var/vcap/services/mongodb/instances
+mongodump_path: <%= File.join(node[:mongodb][:path], "bin", "mongodump") %>
+logging:
+  level: debug
+local_db: sqlite3:/var/vcap/services/mongodb/mongodb_node.db
+timeout: 600
+pid: /var/vcap/sys/run/mongodb_node/mongodb_backup.pid
+
