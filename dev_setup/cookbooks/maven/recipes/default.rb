@@ -24,11 +24,11 @@ when "redhat", "centos", "fedora"
   include_recipe "jpackage"
 end
 
-remote_file  File.join("", "tmp", "apache-maven-#{node[:maven][:version]}.tar.gz") do
+maven_tarball_path = File.join(node[:deployment][:setup_cache], "apache-maven-#{node[:maven][:version]}.tar.gz")
+cf_remote_file  maven_tarball_path do
   owner node[:deployment][:user]
-  source node[:maven][:source]
-  not_if { ::File.exists?(File.join("", "tmp", "apache-maven-#{node[:maven][:version]}.tar.gz")) }
-  checksum 'd35a876034c08cb7e20ea2fbcf168bcad4dff5801abad82d48055517513faa2f'
+  id node[:maven][:id]
+  checksum node[:maven][:checksum]
 end
 
 directory node[:maven][:base] do
@@ -42,11 +42,7 @@ end
 bash "Install Maven #{node[:maven][:path]}" do
   cwd node[:maven][:base]
   user node[:deployment][:user]
-  tarball = File.join("", "tmp", "apache-maven-#{node[:maven][:version]}.tar.gz")
   code <<-EOH
-      tar xzf #{tarball}
+      tar xzf #{maven_tarball_path}
   EOH
-  not_if do
-    ::File.exists?(File.join(node[:maven][:path], "bin", "mvn"))
-  end
 end

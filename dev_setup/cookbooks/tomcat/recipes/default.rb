@@ -6,10 +6,11 @@ when "redhat", "centos", "fedora"
   include_recipe "jpackage"
 end
 
-remote_file  File.join("", "tmp", "apache-tomcat-#{node[:tomcat][:version]}.tar.gz") do
+tomcat_tarball_path = File.join(node[:deployment][:setup_cache], "apache-tomcat-#{node[:tomcat][:version]}.tar.gz")
+cf_remote_file tomcat_tarball_path do
   owner node[:deployment][:user]
-  source node[:tomcat][:source]
-  not_if { ::File.exists?(File.join("", "tmp", "apache-tomcat-#{node[:tomcat][:version]}.tar.gz")) }
+  id node[:tomcat][:id]
+  checksum node[:tomcat][:checksum]
 end
 
 directory node[:tomcat][:base] do
@@ -23,13 +24,9 @@ end
 bash "Install Tomcat #{node[:tomcat][:path]}" do
   cwd "#{node[:tomcat][:base]}"
   user node[:deployment][:user]
-  tarball = File.join("", "tmp", "apache-tomcat-#{node[:tomcat][:version]}.tar.gz")
   code <<-EOH
-    tar xzf #{tarball}
+    tar xzf #{tomcat_tarball_path}
     cp -Rf #{node[:tomcat][:base]}/apache-tomcat-#{node[:tomcat][:version]}/* #{node[:tomcat][:base]}
     rm -Rf #{node[:tomcat][:base]}/apache-tomcat-#{node[:tomcat][:version]}
   EOH
-  not_if do
-    ::File.exists?(File.join(node[:tomcat][:base], "bin", "catalina.sh"))
-  end
 end

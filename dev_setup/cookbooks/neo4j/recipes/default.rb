@@ -13,14 +13,14 @@
   end
 end
 
-remote_file File.join(node[:neo4j][:service_dir], "neo4j-server.tgz") do
+cf_remote_file File.join(node[:neo4j][:service_dir], "neo4j-server.tgz") do
   owner node[:deployment][:user]
-  source "http://dist.neo4j.org/#{node[:neo4j][:distribution_file]}"
-  not_if { ::File.exists?(File.join(node[:neo4j][:service_dir], "neo4j-server.tgz")) }
+  id node[:neo4j][:server_id]
+  checksum node[:neo4j][:checksum][:server]
 end
 
-remote_file File.join(node[:neo4j][:service_dir], "neo4j-hosting-extension.jar") do
+cf_remote_file File.join(node[:neo4j][:service_dir], "neo4j-hosting-extension.jar") do
   owner node[:deployment][:user]
-  source "http://m2.neo4j.org/content/repositories/releases/org/neo4j/server/authentication-extension/1.4/#{node[:neo4j][:hosting_extension]}"
-  not_if { ::File.exists?(File.join(node[:neo4j][:service_dir], "neo4j-hosting-extension.jar")) }
+  id node[:neo4j][:jar_id]
+  checksum node[:neo4j][:checksum][:jar]
 end

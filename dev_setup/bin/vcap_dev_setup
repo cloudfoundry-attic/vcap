@@ -18,6 +18,28 @@ OPTIONS:
 EOF
 }
 
+function run_cmd () {
+  if [ -z "$PROXY" ]; then
+    sudo $*
+  else
+    sudo env http_proxy=$PROXY $*
+  fi
+}
+
+function clear_bundler_settings () {
+  # Do we have a Bundler problem?
+  find $CLOUDFOUNDRY_HOME/vcap -type d -name .bundle | grep -Fq .bundle || return 0
+  if [ "$ALL" != true ]; then
+    read -p "Remembered Bundler options could cause you troubles, do you want me to clear them for you? [Y/n]"
+    [[ $REPLY =~ ^[nN] ]] && return 0
+  fi
+  (cd $CLOUDFOUNDRY_HOME/vcap && find -type d -name .bundle -prune -exec rm -r {} \; )
+}
+
+RUBY="/usr/bin/ruby"
+GEM="/usr/bin/gem"
+APT_CONFIG="-o Acquire::http::No-Cache=True -o Acquire::BrokenProxy=true -o Acquire::Retries=3"
+
 if [ -n "$http_proxy" ]; then
   if [ -z "$https_proxy" ]; then
     echo "Please set https_proxy env variable."
@@ -25,8 +47,6 @@ if [ -n "$http_proxy" ]; then
   fi
   PROXY=$http_proxy
 fi
-
-APT_CONFIG="-o Acquire::http::No-Cache=True -o Acquire::BrokenProxy=true -o Acquire::Retries=3"
 
 while getopts "had:p:c:D:r:b:" OPTION
 do
@@ -76,26 +96,9 @@ if [ -z "$VCAP_REPO_BRANCH" ]; then
   VCAP_REPO_BRANCH=master
 fi
 
-function run_cmd () {
-  if [ -z "$PROXY" ]; then
-    sudo $*
-  else
-    sudo env http_proxy=$PROXY $*
-  fi
-}
-
-function clear_bundler_settings () {
-  # Do we have a Bundler problem?
-  find $CLOUDFOUNDRY_HOME/vcap -type d -name .bundle | grep -Fq .bundle || return 0
-  if [ "$ALL" != true ]; then
-    read -p "Remembered Bundler options could cause you troubles, do you want me to clear them for you? [Y/n]"
-    [[ $REPLY =~ ^[nN] ]] && return 0
-  fi
-  (cd $CLOUDFOUNDRY_HOME/vcap && find -type d -name .bundle -prune -exec rm -r {} \; )
-}
-
 # Check if we have access to the web
-run_cmd apt-get $APT_CONFIG install -qym wget
+echo "Installing wget..."
+run_cmd apt-get $APT_CONFIG install -qym wget > /dev/null
 if [ $? -ne 0 ]; then
   echo "Can't install prerequisite: wget"
   exit 1
@@ -103,8 +106,8 @@ fi
 
 which wget > /dev/null
 if [ $? -eq 0 ]; then
-  echo "Checking web connectivity."
-  wget -q -T 2 -t 2 -O - http://api.cloudfoundry.com/info | grep "Cloud Application Platform" > /dev/null
+  echo "Checking web connectivity..."
+  wget -q -T 5 -t 2 -O - http://api.cloudfoundry.com/info | grep "Cloud Application Platform" > /dev/null
   if [ $? -ne 0 ]; then
     echo "Giving up. Cannot connect to the web. Check your proxy settings if you are behind a proxy."
     exit 1
@@ -112,32 +115,63 @@ if [ $? -eq 0 ]; then
 fi
 
 # Install chef
-if ! (apt-cache policy | grep opscode); then
-  echo "deb http://apt.opscode.com/ `lsb_release -cs`-0.10 main" | sudo tee /etc/apt/sources.list.d/opscode.list
-  sudo apt-key adv --keyserver keyserver.ubuntu.com --recv 83EF826A
-  echo chef chef/chef_server_url select none | sudo /usr/bin/debconf-set-selections
-fi
-run_cmd apt-get $APT_CONFIG update -qq
-run_cmd apt-get $APT_CONFIG install -qym chef
+for utility in ruby ruby-dev libopenssl-ruby rdoc ri irb build-essential ssl-cert
+do
+  echo "Installing ${utility}..."
+  run_cmd apt-get $APT_CONFIG install -qym ${utility} > /dev/null
+  if [ $? -ne 0 ]; then
+    echo "Can't install prerequisit: ${utility}"
+    exit 1
+  fi
+done
 
-run_cmd apt-get $APT_CONFIG install -qym git-core
+if [ ! -f ${GEM} ] || [ `${GEM} -v` \< "1.3.6" ]; then
+  # Blobstore_client requires gem >= 1.3.6
+  echo "Installing rubygems..."
+  CWD=`pwd`
+  cd /tmp
+  wget -q http://production.cf.rubygems.org/rubygems/rubygems-1.3.6.tgz
+  tar zxf rubygems-1.3.6.tgz
+  cd rubygems-1.3.6
+  sudo ${RUBY} setup.rb --no-format-executable > /dev/null
+  cd ${CWD}
+fi
+
+${GEM} list chef -i > /dev/null
+if [ $? -ne 0 ]; then
+  echo "Installing chef..."
+  sudo ${GEM} install chef -q --no-ri --no-rdoc > /dev/null
+fi
+
+# Install blobstore_client
+${GEM} list blobstore_client -i > /dev/null
+if [ $? -ne 0 ]; then
+  echo "Installing blobstore_client..."
+  sudo ${GEM} install blobstore_client -q --no-ri --no-rdoc > /dev/null
+fi
+
+# Install rake
+${GEM} list rake -i > /dev/null
+if [ $? -ne 0 ]; then
+  echo "Installing rake..."
+  sudo ${GEM} install rake -q --no-ri --no-rdoc > /dev/null
+fi
+
+# Clone cloudfoundry repo
+echo "Installing git..."
+run_cmd apt-get $APT_CONFIG install -qym git-core > /dev/null
+
 [ -d $CLOUDFOUNDRY_HOME ] || mkdir $CLOUDFOUNDRY_HOME
 if [ ! -d $CLOUDFOUNDRY_HOME/vcap ]; then
+  echo ""
+  echo "Creating cloudfoundry repo..."
   (cd $CLOUDFOUNDRY_HOME && git clone $VCAP_REPO && cd vcap && git submodule update --init && git checkout $VCAP_REPO_BRANCH)
-  if [ $? != 0 ]; then
+  if [ $? -ne 0 ]; then
     echo "Unable to clone cloudfoundry repo."
     exit 1
   fi
 else
   clear_bundler_settings
-fi
-
-
-# Our deployment code needs this gem. Using bundler seems like an overkill for
-# the deployment code. So for now just manually install the required gem.
-gem list rake -i > /dev/null
-if [ $? != 0 ]; then
-  gem install rake -q --no-ri --no-rdoc > /dev/null 2>&1
 fi
 
 # Launch chef
@@ -154,4 +188,7 @@ if [ -n "$CONFIG_FILE" ]; then
   ARGS="$ARGS -c $CONFIG_FILE"
 fi
 
+echo ""
+echo "Lanching chef..."
+sleep 3
 $CLOUDFOUNDRY_HOME/vcap/dev_setup/lib/chefsolo_launch.rb $ARGS
