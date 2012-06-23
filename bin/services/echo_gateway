@@ -1,0 +1,2 @@
+#!/usr/bin/env ruby
+exec(File.expand_path("../../../services/echo/bin/echo_gateway", __FILE__), *ARGV)
