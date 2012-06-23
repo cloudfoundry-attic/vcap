@@ -10,7 +10,7 @@ class Component
   @@named_components = {}
   @@excluded = []
 
-  DEFAULT_CLOUD_FOUNDRY_EXCLUDED_COMPONENT = 'neo4j|memcached|couchdb|service_broker|elasticsearch|backup_manager'
+  DEFAULT_CLOUD_FOUNDRY_EXCLUDED_COMPONENT = 'neo4j|memcached|couchdb|service_broker|elasticsearch|backup_manager|echo'
 
   attr :name
 
@@ -306,11 +306,11 @@ end
 end
 
 ## services: gateways & nodes
-%w(redis mysql mongodb rabbitmq postgresql vblob neo4j memcached couchdb elasticsearch filesystem).each do |service|
+%w(redis mysql mongodb rabbitmq postgresql vblob neo4j memcached couchdb elasticsearch filesystem echo).each do |service|
   ServiceComponent.register("#{service}_gateway")
 end
 
-%w(redis mysql mongodb rabbitmq postgresql vblob neo4j memcached couchdb elasticsearch).each do |service|
+%w(redis mysql mongodb rabbitmq postgresql vblob neo4j memcached couchdb elasticsearch echo).each do |service|
  ServiceComponent.register("#{service}_node")
 end
 
