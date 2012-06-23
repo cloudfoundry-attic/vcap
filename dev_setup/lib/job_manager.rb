@@ -23,7 +23,7 @@ class JobManager
 
   SERVICE_LIFECYCLE = ["serialization_data_server"]
 
-  SERVICES = ["redis", "mysql", "mongodb", "neo4j", "rabbitmq", "postgresql", "vblob", "memcached", "elasticsearch", "couchdb"]
+  SERVICES = ["redis", "mysql", "mongodb", "neo4j", "rabbitmq", "postgresql", "vblob", "memcached", "elasticsearch", "couchdb", "echo"]
   SERVICES_LIFECYCLE_ENABLED = ["redis", "mysql", "mongodb", "postgresql"]
   SERVICES_AUXILIARY = ["service_broker"]
   SERVICES_NODE = SERVICES.map do |service|
@@ -51,7 +51,7 @@ class JobManager
   INSTALLED_JOB_PROPERTIES = {NATS => ["host"], CC => ["service_api_uri"],
                               CCDB => ["host"]}
 
-  INSTALL_JOB_PROPERTIES = {CC => ["builtin_services"], MYSQL_NODE => ["index"], MONGODB_NODE => ["index"], REDIS_NODE => ["index"], NEO4J_NODE => ["index"], POSTGRESQL_NODE => ["index"], RABBITMQ_NODE => ["index"], VBLOB_NODE => ["index"], MEMCACHED_NODE => ["index"], ELASTICSEARCH_NODE => ["index"], COUCHDB_NODE => ["index"]}
+  INSTALL_JOB_PROPERTIES = {CC => ["builtin_services"], MYSQL_NODE => ["index"], MONGODB_NODE => ["index"], REDIS_NODE => ["index"], NEO4J_NODE => ["index"], POSTGRESQL_NODE => ["index"], RABBITMQ_NODE => ["index"], VBLOB_NODE => ["index"], MEMCACHED_NODE => ["index"], ELASTICSEARCH_NODE => ["index"], COUCHDB_NODE => ["index"], ECHO_NODE => ["index"]}
 
   # Dependency between JOBS and  components that are consumed by "vcap_dev" when cf is started or
   # stopped
