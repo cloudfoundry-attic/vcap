@@ -129,8 +129,5 @@ o Excluded components:
   environment variable as follows:
   unset CLOUD_FOUNDRY_EXCLUDED_COMPONENT
 
-  To modify the default exclusion list, add the component name in dev_setup/bin/vcap to:
-  DEFAULT_CLOUD_FOUNDRY_EXCLUDED_sCOMPONENT
-
 NOTE: To learn more about custom deployment config files and multi host setups
 see the README file vcap/dev_setup/deployments/README.

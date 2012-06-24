@@ -1,36 +1,7 @@
 require 'rubygems'
 require 'json'
 
-module VcapStringExtensions
-
-  def red
-    colorize("\e[0m\e[31m")
-  end
-
-  def green
-    colorize("\e[0m\e[32m")
-  end
-
-  def yellow
-    colorize("\e[0m\e[33m")
-  end
-
-  def bold
-    colorize("\e[0m\e[1m")
-  end
-
-  def colorize(color_code)
-    unless $nocolor
-      "#{color_code}#{self}\e[0m"
-    else
-      self
-    end
-  end
-end
-
-class String
-  include VcapStringExtensions
-end
+require File.expand_path("./vcap_common.rb", File.dirname(__FILE__))
 
 DEPLOYMENT_DEFAULT_SPEC = File.join("deployments", "devbox.yml")
 DEPLOYMENT_DEFAULT_NAME = "devbox"
