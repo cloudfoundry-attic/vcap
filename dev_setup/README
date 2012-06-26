@@ -89,6 +89,13 @@ o Service backup:
   and start it.
     $HOME/projects/vcap/dev_setup/bin/vcap_dev start backup_manager
 
+o Service lifecycle:
+  By default, service lifecycle feature is disabled. If you want to enable this feature, you should remove the
+  following components from CLOUD_FOUNDRY_EXCLUDED_COMPONENT (see below section).
+  vcap_redis|worker|snapshot_manager
+
+  snapshot_manager is used to clean the snapshots which belong to the service un-provisioned instances.
+
 o Excluded components:
   By default neo4j and memcached (+ a few other new services) will be excluded by default.
   The excluded components are specified by a regex using the environment variable

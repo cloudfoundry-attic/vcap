@@ -1,21 +1,25 @@
 ---
-capacity: <%= node[:postgresql_node][:capacity] %>
-plan: free
+service_name: postgresql
+snapshots_base_dir: <%= node[:snapshot][:dir]%>
+serialization_base_dir: <%= node[:snapshot][:dir] %>
 local_db: sqlite3:/var/vcap/services/postgresql/postgresql_node.db
-ip_route: 127.0.0.1
-base_dir: /var/vcap/services/postgresql/
+tmp_dir: <%= node[:service_lifecycle][:tmp_dir]|| "/tmp"%>
+resque:
+  host: <%= node[:redis_resque][:host]%>
+  port: <%= node[:redis_resque][:port]%>
+  password: <%= node[:redis_resque][:password] %>
+  expire: <%= node[:redis_resque][:expire]%>
 dump_bin: /usr/lib/postgresql/<%=node[:postgresql][:service_version]%>/bin/pg_dump
 restore_bin: /usr/lib/postgresql/<%=node[:postgresql][:service_version]%>/bin/pg_restore
 mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
 index: <%= node[:postgresql_node][:index] %>
-pid: /var/vcap/sys/run/postgresql_node.pid
 node_id: <%= "postgresql_node_#{node[:postgresql_node][:index]}" %>
-max_db_size: <%= node[:postgresql_node][:max_db_size] %>
-max_long_query: 3
-max_long_tx: 30
-max_db_conns: 20
-db_size_overhead: 5.4
-migration_nfs: /mnt/migration
+download_url_template: "http://service-serialization.<%= node[:deployment][:domain] %>/serialized/%{service}/%{name}/snapshots/%{snapshot_id}?token=%{token}"
+<%if node[:service_lifecycle][:enable]%>
+snapshot_quota: <%= node[:postgresql_node][:snapshot_quota] || "5" %>
+<%else%>
+snapshot_quota: 0
+<%end%>
 postgresql:
   host: <%= node[:postgresql_node][:host] %>
   port: <%= node[:postgresql][:service_port]%>

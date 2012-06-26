@@ -9,6 +9,7 @@ node[:ccdb][:host] ||= cf_local_ip
 node[:acmdb][:host] ||= cf_local_ip
 node[:uaadb][:host] ||= cf_local_ip
 node[:postgresql][:host] ||= cf_local_ip
+node[:redis_resque][:host] ||= cf_local_ip
 
 [
   node[:deployment][:home], File.join(node[:deployment][:home], "deploy"),

@@ -1,0 +1,27 @@
+---
+service_name: redis
+base_dir: /var/vcap/services/redis/instances
+snapshots_base_dir: <%= node[:snapshot][:dir]%>
+serialization_base_dir: <%= node[:snapshot][:dir] %>
+local_db: sqlite3:/var/vcap/services/redis/redis_node.db
+tmp_dir: <%= node[:service_lifecycle][:tmp_dir]|| "/tmp"%>
+resque:
+  host: <%= node[:redis_resque][:host]%>
+  port: <%= node[:redis_resque][:port]%>
+  password: <%= node[:redis_resque][:password] %>
+  expire: <%= node[:redis_resque][:expire]%>
+mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
+index: <%= node[:redis_node][:index] %>
+node_id: <%= "redis_node_#{node[:redis_node][:index]}" %>
+download_url_template: "http://service-serialization.<%= node[:deployment][:domain] %>/serialized/%{service}/%{name}/snapshots/%{snapshot_id}?token=%{token}"
+<%if node[:service_lifecycle][:enable]%>
+snapshot_quota: <%= node[:mysql_node][:snapshot_quota] || "5" %>
+<%else%>
+snapshot_quota: 0
+<%end%>
+logging:
+  level: debug
+command_rename_prefix: protect-command-prefix
+gzip_bin: /bin/gzip
+redis_server_path: <%= File.join(node[:redis][:path], "bin", "redis-server") %>
+pid_file:

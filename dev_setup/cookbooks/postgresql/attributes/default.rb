@@ -1,3 +1,6 @@
+include_attribute "backup"
+include_attribute "service_lifecycle"
+
 default[:postgresql][:server_root_password] = "changeme"
 default[:postgresql][:server_root_user] = "root"
 default[:postgresql][:system_port] = "5432"
@@ -16,3 +19,5 @@ default[:postgresql_node][:timeout] = "10"
 default[:postgresql_backup][:config_file] = "postgresql_backup.yml"
 default[:postgresql_backup][:cron_time] = "0 2 * * *"
 default[:postgresql_backup][:cron_file] = "postgresql_backup.cron"
+
+default[:postgresql_worker][:config_file] = "postgresql_worker.yml"

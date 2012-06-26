@@ -3,8 +3,8 @@
 # Copyright 2011, VMware
 #
 
-define :service_backup, :service_type => "mysql" do
-  if node[:backup][:enable] == true
+define :service_backup do
+  if node[:backup][:enable] == true && params[:service_type]
 
     include_recipe "backup"
     service_backup_sym = "#{params[:service_type]}_backup".to_sym
@@ -26,4 +26,3 @@ define :service_backup, :service_type => "mysql" do
   end
 
 end
-
