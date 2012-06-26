@@ -1,4 +1,6 @@
 include_attribute "deployment"
+include_attribute "backup"
+include_attribute "service_lifecycle"
 
 default[:mongodb][:version] = "1.8.5"
 default[:mongodb][:path] = File.join(node[:deployment][:home], "deploy", "mongodb")
@@ -22,3 +24,5 @@ elsif node[:kernel][:machine] == 'i686'
 else
   Chef::Log.error("Installation of mongodb on #{node[:kernel][:machine]} is not supported")
 end
+
+default[:mongodb_worker][:config_file] = "mongodb_worker.yml"

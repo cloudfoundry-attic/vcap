@@ -66,6 +66,10 @@ maven_bin_dir = deployment_info["maven_bin_dir"]
 gemdir = `#{File.join(ruby_bin_dir, "gem")} environment gemdir`.split("\n")[0]
 ENV["PATH"] = "#{ruby_bin_dir}:#{File.join(gemdir, "bin")}:#{maven_bin_dir}:#{ENV["PATH"]}"
 
+if vcap_components["components"].include?("vcap_redis")
+  vcap_components["components"].unshift(vcap_components["components"].delete("vcap_redis"))
+end
+
 if vcap_components["components"].include?("cloud_controller")
   puts "Setting up cloud controller environment"
   ENV["CLOUD_CONTROLLER_CONFIG"]=File.join(deployment_config_path, "cloud_controller.yml")

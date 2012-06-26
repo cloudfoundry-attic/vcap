@@ -19,8 +19,12 @@ class JobManager
   UAADB = "uaadb"
   ACM = "acm"
   ACMDB = "acmdb"
+  VCAP_REDIS= "vcap_redis"
+
+  SERVICE_LIFECYCLE = ["serialization_data_server"]
 
   SERVICES = ["redis", "mysql", "mongodb", "neo4j", "rabbitmq", "postgresql", "vblob", "memcached", "elasticsearch", "couchdb"]
+  SERVICES_LIFECYCLE_ENABLED = ["redis", "mysql", "mongodb", "postgresql"]
   SERVICES_AUXILIARY = ["service_broker"]
   SERVICES_NODE = SERVICES.map do |service|
      "#{service}_node"
@@ -28,16 +32,19 @@ class JobManager
   SERVICES_GATEWAY = SERVICES.map do |service|
     "#{service}_gateway"
   end
+  SERVICES_WORKER = SERVICES_LIFECYCLE_ENABLED.map do |service|
+    "#{service}_worker"
+  end
   SERVICES_GATEWAY << "filesystem_gateway"
   SERVICES_NODE.each do |node|
     # Service name constant e.g. REDIS_NODE -> "redis_node"
     const_set(node.upcase, node)
   end
 
-  SERVICE_TOOLS = ["backup_manager"]
+  SERVICE_TOOLS = ["backup_manager", "snapshot_manager"]
 
   # All supported jobs
-  JOBS = [ALL, NATS, ROUTER, CF, CC, HM, DEA, CCDB, UAA, UAADB] + SERVICES_NODE + SERVICES_GATEWAY + SERVICES_AUXILIARY + SERVICE_TOOLS
+  JOBS = [ALL, NATS, ROUTER, CF, CC, HM, DEA, CCDB, UAA, UAADB, VCAP_REDIS] + SERVICE_LIFECYCLE + SERVICES_NODE + SERVICES_GATEWAY + SERVICES_AUXILIARY + SERVICE_TOOLS + SERVICES_WORKER
   SYSTEM_JOB = [CF]
 
   # List of the required properties for jobs
@@ -48,6 +55,11 @@ class JobManager
 
   # Dependency between JOBS and  components that are consumed by "vcap_dev" when cf is started or
   # stopped
+  SERVICE_LIFECYCLE_RUN_COMPONENTS = Hash.new
+  SERVICE_LIFECYCLE.each do |lifecycle|
+    SERVICE_LIFECYCLE_RUN_COMPONENTS[lifecycle] = lifecycle
+  end
+
   SERVICE_NODE_RUN_COMPONENTS = Hash.new
   SERVICES_NODE.each do |node|
     SERVICE_NODE_RUN_COMPONENTS[node] = node
@@ -56,6 +68,11 @@ class JobManager
   SERVICE_GATEWAY_RUN_COMPONENTS = Hash.new
   SERVICES_GATEWAY.each do |gateway|
     SERVICE_GATEWAY_RUN_COMPONENTS[gateway] = gateway
+  end
+
+  SERVICE_WORKER_RUN_COMPONENTS = Hash.new
+  SERVICES_WORKER.each do |worker|
+    SERVICE_WORKER_RUN_COMPONENTS[worker] = worker
   end
 
   SERVICE_AUXILIARY_RUN_COMPONENTS = Hash.new
@@ -68,7 +85,7 @@ class JobManager
     SERVICE_TOOL_RUN_COMPONENTS[tool] = tool
   end
 
-  RUN_COMPONENTS = {ROUTER => ROUTER, CC => CC, HM => HM, DEA => DEA, UAA => UAA}.update(SERVICE_NODE_RUN_COMPONENTS).update(SERVICE_GATEWAY_RUN_COMPONENTS).update(SERVICE_AUXILIARY_RUN_COMPONENTS).update(SERVICE_TOOL_RUN_COMPONENTS)
+  RUN_COMPONENTS = {ROUTER => ROUTER, CC => CC, HM => HM, DEA => DEA, UAA => UAA, VCAP_REDIS => VCAP_REDIS}.update(SERVICE_LIFECYCLE_RUN_COMPONENTS).update(SERVICE_NODE_RUN_COMPONENTS).update(SERVICE_GATEWAY_RUN_COMPONENTS).update(SERVICE_AUXILIARY_RUN_COMPONENTS).update(SERVICE_TOOL_RUN_COMPONENTS).update(SERVICE_WORKER_RUN_COMPONENTS)
 
   class << self
     if defined?(Rake::DSL)

@@ -1,0 +1,14 @@
+{
+  "name": "serialization_data_server",
+  "default_attributes": {},
+  "override_attributes": {},
+  "json_class": "Chef::Role",
+  "description": "Cloudfoundry Serialization Data Server",
+  "chef_type": "role",
+  "run_list" : [ "recipe[deployment]",
+                 "recipe[essentials]",
+                 "recipe[ruby]",
+                 "recipe[service_lifecycle]",
+                 "recipe[service_lifecycle::serialization_data_server]"]
+
+}
