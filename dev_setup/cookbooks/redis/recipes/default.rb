@@ -38,3 +38,4 @@ template File.join(node[:redis][:path], "etc", "redis.conf") do
   owner node[:deployment][:user]
   group node[:deployment][:user]
 end
+

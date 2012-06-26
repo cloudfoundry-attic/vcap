@@ -2,7 +2,7 @@
 service_name: postgresql
 local_db: sqlite3:/var/vcap/services/postgresql/postgresql_node.db
 backup_base_dir: <%= node[:backup][:dir]%>
-backup_cmd: /usr/lib/postgresql/<%=node[:postgresql][:service_version]%>/bin/pgdump -Fc --host=:host --port=:port --username=:user --file=:full_path/:name.dump :name
+backup_cmd: /usr/lib/postgresql/<%=node[:postgresql][:service_version]%>/bin/pg_dump -Fc --host=:host --port=:port --username=:user --file=:full_path/:name.dump :name
 mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
 timeout: 600
 index: <%= node[:postgresql_node][:index] %>

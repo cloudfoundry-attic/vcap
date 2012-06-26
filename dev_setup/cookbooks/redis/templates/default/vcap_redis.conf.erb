@@ -1,0 +1,32 @@
+# General
+bind 0.0.0.0
+port <%= node[:redis_resque][:port] %>
+daemonize yes
+pidfile /var/vcap/sys/run/vcap_redis.pid
+# Close the connection after a client is idle for 10 min
+timeout 600
+
+# Auth
+requirepass <%= node[:redis_resque][:password] %>
+
+# Logging
+loglevel notice
+
+# LRU - Evict any key (regardless of expiry being set)
+#maxmemory-policy allkeys-lru
+
+# RDB persistent options
+# Save every 15min if at least 1   key changed
+# Save every 5min  if at least 10  keys changed
+# Save every 60sec if at least 10k keys changed
+save 900 1
+save 300 10
+save 60 10000
+dbfilename vcap_redis.rdb
+dir <%= node[:redis_resque][:persistence_dir]|| "/var/vcap/vcap_redis" %>
+rdbcompression yes
+# AOF append only file persistent options
+appendonly yes
+appendfilename vcap_redis.aof
+# fsync every second is the recommend interval
+appendfsync everysec
