@@ -107,7 +107,7 @@ default_account_capacity:
 # Services we provide, and their tokens. Avoids bootstrapping DB.
 builtin_services:
   <% @builtin_services.each do |service_name| %>
-  <%= service_name %>:
+  <%= service_name=="vblob"?"blob":service_name %>:
     token: <%= node[(service_name + "_node").to_sym][:token] %>
   <% end %>
 
