@@ -9,13 +9,21 @@ logging:
   level: debug
 vblobd_log_dir: /var/vcap/sys/service-log/vblob
 pid: /var/vcap/sys/run/vblob_node.pid
+
+<%
+  keys = node[:vblob][:supported_versions].keys
+  keys = keys.collect {|e| "\"#{e}\""}
+%>
+
+supported_versions: [<%= keys.join(", ") %>]
+default_version: <%= node[:vblob][:default_version] %>
 max_memory: <%= node[:vblob_node][:max_memory] %>
 node_id: <%= "vblob_node_#{node[:vblob_node][:index]}" %>
 op_time_limit: <%= node[:vblob_node][:op_time_limit] %>
 vblob_timeout: <%= node[:vblob_node][:vblob_timeout] %>
 vblob_start_timeout: <%= node[:vblob_node][:vblob_start_timeout] %>
 nodejs_path: <%= node[:node06][:path] %>/bin/node
-vblobd_path: /var/vcap/packages/vblob
+vblobd_path: <%= File.join(node[:vblob][:path], node[:vblob][:default_version]) %>
 vblobd_auth: <%= node[:vblob_node][:auth] %>
 port_range:
   first: 45001
