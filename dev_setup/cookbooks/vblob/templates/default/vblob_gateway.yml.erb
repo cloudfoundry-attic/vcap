@@ -1,14 +1,23 @@
 ---
 cloud_controller_uri: <%= node[:cloud_controller][:service_api_uri] %>
 service:
-  name: vblob
-  version: "1.0"
+  name: blob
+  version: "0.51"
   description: 'vBlob service'
   plans: ['free']
   default_plan: 'free'
-  tags: ['vblob', 'vblob-1.0', 'nosql']
+  tags: ['blob', 'blob-0.51', 'nosql']
   timeout: <%= node[:vblob_gateway][:service][:timeout] %>
+<% versions = node[:vblob][:supported_versions].collect {|v| "\"#{v}\""} %>
+  supported_versions: [ <%= versions.join(", ") %> ]
+  version_aliases:
+<%
+  node[:vblob][:version_aliases].each do |a, v|
+%>
+    "<%= a %>": "<%= v %>"
+<% end %>
 index: 0
+
 token: <%= node[:vblob_node][:token] %>
 mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
 logging:

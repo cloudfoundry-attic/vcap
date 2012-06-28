@@ -1,7 +1,14 @@
 include_attribute "node::node06"
+
 default[:vblob][:source] = "https://github.com/cloudfoundry/vblob.git"
 default[:vblob][:path] = "/var/vcap/packages/vblob"
-default[:vblob][:commit] = "ec432e6ebaf8b25c2ad900bbbee642f096fef93b"
+
+default[:vblob][:supported_versions] = [ "0.51" ]
+default[:vblob][:version_aliases] = { "current" => "0.51" }
+default[:vblob][:default_version] = "0.51"
+default[:vblob][:commit]= {
+        "0.51" => "ec432e6ebaf8b25c2ad900bbbee642f096fef93b"
+}
 
 default[:vblob_gateway][:service][:timeout] = "15"
 default[:vblob_gateway][:node_timeout] = "10"
