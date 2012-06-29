@@ -5,9 +5,9 @@ bind_address = "bind_address = #{node[:couchdb][:host]}"
 output_prefix = "#{node[:deployment][:home]}/log/couchdb."
 output_prefix = output_prefix.gsub(/\//, "\\/")
 
-remote_file couchdb_tarball_path do
+cf_remote_file couchdb_tarball_path do
   owner node[:deployment][:user]
-  source node[:couchdb][:source]
+  id node[:couchdb][:id]
   checksum node[:couchdb][:checksum]
 end
 
