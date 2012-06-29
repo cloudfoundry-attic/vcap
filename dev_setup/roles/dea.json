@@ -7,5 +7,6 @@
   "chef_type": "role",
   "run_list" : ["recipe[deployment]",
                 "recipe[essentials]",
-                "recipe[dea]"]
+                "recipe[dea]",
+                "recipe[imagemagick]"]
 }
