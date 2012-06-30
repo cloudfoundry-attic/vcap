@@ -8,9 +8,30 @@ base_dir: /var/vcap/services/mongodb/instances
 mongod_log_dir: /var/vcap/services/mongodb/logs
 pid: /var/vcap/sys/run/mongodb_node.pid
 max_memory: <%= node[:mongodb_node][:max_memory] %>
-node_id: <%= "mongodb_node_#{node[:mongodb_node][:index]}" %>
-mongod_path: <%= File.join(node[:mongodb][:path], "bin", "mongod") %>
-mongorestore_path: <%= File.join(node[:mongodb][:path], "bin", "mongorestore") %>
+
+node_id: <%= "mongodb_node_#{node[:mongodb_node][:index ]}" %>
+
+<%
+  keys = node[:mongodb][:supported_versions].keys
+  keys = keys.collect {|e| "\"#{e}\""}
+%>
+supported_versions: [<%= keys.join(", ") %>]
+default_version: "<%= node[:mongodb][:default_version] %>"
+
+mongod_path:
+<%
+  node[:mongodb][:supported_versions].each_key do |version|
+%>
+  "<%= version %>": "<%= File.join(node[:deployment][:home], "deploy", "mongodb", node[:mongodb][:supported_versions][version], "bin", "mongod") %>"
+<% end %>
+
+mongorestore_path:
+<%
+  node[:mongodb][:supported_versions].each_key do |version|
+%>
+  "<%= version %>": "<%= File.join(node[:deployment][:home], "deploy", "mongodb", node[:mongodb][:supported_versions][version], "bin", "mongorestore") %>"
+<% end %>
+
 port_range:
   first: 25001
   last: 45000

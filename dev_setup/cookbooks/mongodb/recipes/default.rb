@@ -5,30 +5,41 @@
 # Copyright 2011, VMware
 #
 
-mongodb_tarball_path = File.join(node[:deployment][:setup_cache], "mongodb-linux-#{node[:kernel][:machine]}-#{node[:mongodb][:version]}.tgz")
-cf_remote_file mongodb_tarball_path do
-  owner node[:deployment][:user]
-  source node[:mongodb][:source]
-  checksum node[:mongodb][:checksum]
-end
+node[:mongodb][:supported_versions].each_key do |version|
 
-directory File.join(node[:mongodb][:path], "bin") do
-  owner node[:deployment][:user]
-  group node[:deployment][:group]
-  mode "0755"
-  recursive true
-  action :create
-end
+  install_version = node[:mongodb][:supported_versions][version]
+  Chef::Log.info("Building Mongo Version: #{version} - #{install_version}")
 
-bash "Install Mongodb" do
-  cwd File.join("", "tmp")
-  user node[:deployment][:user]
-  code <<-EOH
-  tar xvzf #{mongodb_tarball_path}
-  cd mongodb-linux-#{node[:kernel][:machine]}-#{node[:mongodb][:version]}
-  cp #{File.join("bin", "*")} #{File.join(node[:mongodb][:path], "bin")}
-  EOH
-  not_if do
-    ::File.exists?(File.join(node[:mongodb][:path], "bin", "mongo"))
+  mongo_source_file = "#{node[:mongodb][:download_base_path_prefix]}-#{install_version}.tgz"
+  install_path = File.join(node[:deployment][:home], "deploy", "mongodb", install_version)
+  source_file_checksum = checksum_for_version(install_version)
+
+  mongodb_tarball_path = File.join(node[:deployment][:setup_cache], "mongodb-linux-#{node[:kernel][:machine]}-#{install_version}.tgz")
+
+  cf_remote_file mongodb_tarball_path do
+    owner node[:deployment][:user]
+    source mongo_source_file
+    checksum source_file_checksum
+  end
+
+  directory File.join(install_path, "bin") do
+    owner node[:deployment][:user]
+    group node[:deployment][:group]
+    mode "0755"
+    recursive true
+    action :create
+  end
+
+  bash "Install Mongodb #{version} (#{install_version})" do
+    cwd File.join("", "tmp")
+    user node[:deployment][:user]
+    code <<-EOH
+    tar xvzf #{mongodb_tarball_path}
+    cd mongodb-linux-#{node[:kernel][:machine]}-#{install_version}
+    cp #{File.join("bin", "*")} #{File.join(install_path, "bin")}
+    EOH
+    not_if do
+      ::File.exists?(File.join(install_path, "bin", "mongo"))
+    end
   end
 end
