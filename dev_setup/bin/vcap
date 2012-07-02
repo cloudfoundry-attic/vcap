@@ -3,23 +3,6 @@
 #
 # Usage: bin/vcap_system [start|stop|restart|tail|status] [component ...]
 #
-# Omit component name to apply the operation to these components:
-#
-# core
-# - router
-# - cloud_controller
-# - health_manager
-# - dea
-# - uaa
-# - acm
-#
-# services
-# - redis
-# - mysql
-# - mongo
-#
-# service_tools
-# - backup_manager
 
 require 'yaml'
 require 'fileutils'
@@ -29,206 +12,7 @@ require 'rubygems'
 require 'eventmachine'
 require 'nats/client'
 
-
-class Component
-  attr :name
-  attr :path
-
-  def initialize(name, configuration_path = nil)
-    @name = name
-    @configuration_path = configuration_path
-
-    if core?
-      @path = File.join(DIR, name)
-      # Sane default for location of configuration file
-      if @configuration_path.nil?
-        if $config_dir
-          @configuration_path = File.join($config_dir, "#{name}.yml")
-        else
-          @configuration_path = File.join(DIR, "..", name, "config", "#{name}.yml")
-        end
-      end
-    else
-      if service_tool?
-        @configuration_path = File.join($config_dir, "#{name}.yml") if @configuration_path.nil? && $config_dir
-        if name =~ /backup_manager|snapshot_manager/
-          @path = File.join(DIR, "../services", "tools", "backup", "manager", "bin", name)
-          @configuration_path ||= File.join(DIR, "../services", "tools", "backup", "manager", "config", "#{name}.yml")
-        else
-          @path = File.join(DIR, "../services", "tools", name, "bin", name)
-          @configuration_path ||= File.join(DIR, "../services", "tools", name, "config", "#{name}.yml")
-        end
-      else
-          # Sane default for location of service configuration file
-          pre = name.sub(/_node|_gateway/,'')
-          # mapping 'rabbitmq' in dev_setup to 'rabbit' in services
-          pre = 'rabbit' if pre == 'rabbitmq'
-          bin_name = name.index('rabbitmq')? name.sub(/mq/, '') : name
-          @path = File.join(DIR, "../services", pre, "bin", bin_name)
-          # Sane default for location of configuration file
-          if @configuration_path.nil?
-            if $config_dir
-              @configuration_path = File.join($config_dir, "#{name}.yml")
-          else
-            @configuration_path ||= File.join(DIR, "../services", pre, "config", "#{name}.yml")
-          end
-        end
-      end
-    end
-  end
-
-  def is_cloud_controller?
-    @name =~ /cloud_controller/i
-  end
-
-  def is_router?
-    @name =~ /router/i
-  end
-
-  def to_s
-    name
-  end
-
-  def core?
-    Run.core.include? name
-  end
-
-  def service?
-    Run.services.include? name
-  end
-
-  def service_tool?
-    Run.service_tools.include? name
-  end
-
-  DEFAULT_CLOUD_FOUNDRY_EXCLUDED_COMPONENT = 'neo4j|memcached|couchdb|service_broker|elasticsearch|backup_manager'
-  def is_excluded?
-    @excluded ||= ENV['CLOUD_FOUNDRY_EXCLUDED_COMPONENT']
-    @excluded ||= DEFAULT_CLOUD_FOUNDRY_EXCLUDED_COMPONENT
-    name.match(@excluded) if !@excluded.empty?
-  end
-
-  def exists?
-    File.exists? @path
-  end
-
-  def configuration
-    @configuration ||= YAML.load(File.read(@configuration_path))
-  end
-
-  def pid_file
-    configuration["pid"] || raise("#{@configuration_path} does not specify location of pid file")
-  end
-
-  def log_file?
-    !configuration["log_file"].nil?
-  end
-
-  def log_file
-    log_file = configuration["log_file"]
-    log_file || File.join($log_dir, "#{name}.log")
-  end
-
-  def pid
-    if File.exists?(pid_file)
-      body = File.read(pid_file)
-      body.to_i if body
-    end
-  end
-
-  def running?
-    running = false
-    # Only evaluate 'pid' once per call to 'running?'
-    if procid = pid
-      running = `ps -o rss= -p #{procid}`.length > 0
-    end
-    running
-  end
-
-  def component_start_path
-    exec_path = path.dup
-    if $config_dir
-      config_file = File.join($config_dir, "#{name}.yml")
-      if File.exists?(config_file)
-        exec_path << " -c #{config_file}"
-      end
-    end
-    if is_router? && $port
-      exec_path << " -p #{$port}"
-    end
-    exec_path
-  end
-
-  def start
-    if !running?
-
-      pid = fork do
-        # Capture STDOUT when no log file is configured
-        if !log_file?
-          stdout = File.open(log_file, 'a')
-          stdout.truncate(0)
-          STDOUT.reopen(stdout)
-          stderr = File.open(log_file, 'a')
-          STDERR.reopen(stderr)
-        end
-        # Make sure db is setup, this is slow and we should make it faster, but
-        # should help for now.
-        if is_cloud_controller?
-          cc_dir = File.expand_path(File.join(DIR, '..', 'cloud_controller'))
-          Dir.chdir(cc_dir) { `bundle exec rake db:migrate` }
-        end
-        exec("#{component_start_path}")
-      end
-
-      Process.detach(pid)
-
-      start = Time.now
-      while ((Time.now - start) < 20)
-        break if running?
-        sleep (0.25)
-      end
-    end
-
-    status
-
-    if !running?
-      if File.exists?(log_file)
-        log = File.read(log_file)
-        STDERR.puts "LOG:\n #{log}" if !log.empty?
-      end
-    end
-  end
-
-  def stop
-    return status unless running?
-
-    kill = "kill -TERM #{pid}"
-    `#{kill} 2> /dev/null`
-
-    if $? != 0
-      STDERR.puts "#{'Failed'.red} to stop #{name}, possible permission problem\?"
-      return
-    end
-
-    # Return status if we succeeded in stopping
-    return status unless running?
-
-    if running?
-      sleep(0.25)
-      if running?
-        kill = "kill -9 #{pid}"
-        `#{kill} 2> /dev/null`
-      end
-    end
-    status
-  end
-
-  def status
-    status = running? ? 'RUNNING'.green : 'STOPPED'.red
-    puts "#{name.ljust(20)}:\t #{status}"
-  end
-
-end
+require File.expand_path(File.join("..", "lib", "vcap_components"), File.dirname(__FILE__))
 
 # This is used to bring up and down the NATS messaging server.
 class NatsServer
@@ -418,34 +202,33 @@ module Run
 
   private
 
-  def self.core
-    %w(router cloud_controller dea health_manager uaa acm)
-  end
-
-  def self.services
-    %w(redis mysql mongodb)
-  end
-
-  def self.service_tools
-    %w(backup_manager)
+  # type: all, core, service, service_tool, service_auxilary, and name of registered components, e.g. router, mysql_node ...
+  def self.component_collection(type)
+    return Component.getNamedComponents().keys if type == "all"
+    return [type] if Component.getNamedComponents().include?(type)
+    collection = []
+    check_type_method_sym = "#{type}?".to_sym
+    Component.getNamedComponents().each do |k, v|
+      if v.method_defined?(check_type_method_sym) && v.new('foo').send(check_type_method_sym)
+        collection << k
+      end
+    end
+    collection
   end
 
   def self.alias_args(args)
     aliased = []
     args.each do |arg|
       case arg
-      when 'all'
-        aliased.concat(Run.core + Run.services)
-      when 'core'
-        aliased.concat Run.core
-      when 'services'
-        aliased.concat Run.services
-      when 'service_tools'
-        aliased.concat Run.service_tools
       when 'mongo'
         aliased << 'mongodb'
       else
-        aliased << arg
+        collection = Run.component_collection(arg)
+        if collection.empty?
+          aliased << arg
+        else
+          aliased.concat collection
+        end
       end
     end
     aliased
@@ -455,11 +238,7 @@ module Run
     args = Run.alias_args(args)
     new_args = []
     args.each do |arg|
-      if Run.core.include? arg
-        new_args << arg
-      elsif Run.service_tools.include? arg
-        new_args << arg
-      elsif arg =~ /_node|_gateway|_backup|_broker/
+      if Component.getNamedComponents().keys.include? arg
         new_args << arg
       else # This is a service, expand in place here..
         new_args << "#{arg}_gateway"
@@ -470,12 +249,16 @@ module Run
   end
 
   def self.components(args)
-    args = (Run.core + Run.services + Run.service_tools) if args.empty?
+    args = Component.getNamedComponents().keys if args.empty?
     args = Run.expand_args(args)
     components = args.map do |arg|
-      component = Component.new(arg)
-      STDOUT.puts "Skipping excluded component: #{component.name}" if component.is_excluded?
-      component if (component.exists? && !component.is_excluded?)
+      component = Component.create(arg)
+      if component.nil?
+        STDOUT.puts "Skipping invalid component: #{arg}"
+      else
+        STDOUT.puts "Skipping excluded component: #{component.name}" if component.is_excluded?
+      end
+      component if (component && component.exists? && !component.is_excluded?)
     end.compact
     STDERR.puts "Don't know how to process '#{args.inspect}' \?\?" if components.empty?
     components
@@ -545,37 +328,6 @@ module Run
 
 end
 
-module VcapStringExtensions
-
-  def red
-    colorize("\e[0m\e[31m")
-  end
-
-  def green
-    colorize("\e[0m\e[32m")
-  end
-
-  def yellow
-    colorize("\e[0m\e[33m")
-  end
-
-  def bold
-    colorize("\e[0m\e[1m")
-  end
-
-  def colorize(color_code)
-    unless $nocolor
-      "#{color_code}#{self}\e[0m"
-    else
-      self
-    end
-  end
-end
-
-class String
-  include VcapStringExtensions
-end
-
 $config_dir ||= ENV['CLOUD_FOUNDRY_CONFIG_PATH']
 args = ARGV.dup
 opts_parser = OptionParser.new do |opts|
@@ -588,8 +340,7 @@ opts_parser = OptionParser.new do |opts|
   opts.on('--noprompt', '-n')                      { $noprompt = true }
 end
 
-
-excluded ||= ENV['CLOUD_FOUNDRY_EXCLUDED_COMPONENT'] || Component::DEFAULT_CLOUD_FOUNDRY_EXCLUDED_COMPONENT
+excluded ||= ENV['CLOUD_FOUNDRY_EXCLUDED_COMPONENT'] || Component.getExcludedComponents().join('|')
 puts "- Excluded components: #{excluded}.\n  See dev_setup/README for details" if !excluded.empty?
 
 args = opts_parser.parse!(args)

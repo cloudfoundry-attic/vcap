@@ -1,0 +1,15 @@
+---
+serialization_base_dir: <%= node[:snapshot][:dir]%>
+pid: /var/vcap/sys/run/serialization_data_server.pid
+mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>
+ip_route: localhost
+external_uri: service-serialization.<%= node[:deployment][:domain]%>
+logging:
+  level: debug
+redis:
+  host: <%= node[:redis_resque][:host]%>
+  port: <%= node[:redis_resque][:port]%>
+  password: <%= node[:redis_resque][:password] %>
+  expire: <%= node[:redis_resque][:expire]%>
+index: 0
+

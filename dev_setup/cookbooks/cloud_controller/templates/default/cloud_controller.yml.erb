@@ -148,7 +148,12 @@ runtimes:
 <% end %>
   php:
     version: 5.3.[2-6]
-  erlangR14B02:
+  erlangR14B01:
     version: ".* 5.8.3"
   python2:
     version: 2.[67]
+
+<% if node[:service_lifecycle][:enable] == true %>
+service_lifecycle:
+  max_upload_size: <%= node[:service_lifecycle][:max_upload_size] || 1 %>
+<% end %>

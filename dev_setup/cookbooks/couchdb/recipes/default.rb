@@ -7,7 +7,7 @@ output_prefix = output_prefix.gsub(/\//, "\\/")
 
 cf_remote_file couchdb_tarball_path do
   owner node[:deployment][:user]
-  source node[:couchdb][:source]
+  id node[:couchdb][:id]
   checksum node[:couchdb][:checksum]
 end
 

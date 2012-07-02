@@ -1,6 +1,1 @@
-# convenience variables
-ruby_version = node[:ruby][:version]
-ruby_source = node[:ruby][:source]
-ruby_path = node[:ruby][:path]
-
-cf_ruby_install(ruby_version, ruby_source, ruby_path)
+cf_ruby_install(node[:ruby][:version], node[:ruby][:id], node[:ruby][:path], "gz")

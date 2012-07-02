@@ -1,0 +1,30 @@
+---
+service_name: postgresql
+snapshots_base_dir: <%= node[:snapshot][:dir]%>
+serialization_base_dir: <%= node[:snapshot][:dir] %>
+local_db: sqlite3:/var/vcap/services/postgresql/postgresql_node.db
+tmp_dir: <%= node[:service_lifecycle][:tmp_dir]|| "/tmp"%>
+resque:
+  host: <%= node[:redis_resque][:host]%>
+  port: <%= node[:redis_resque][:port]%>
+  password: <%= node[:redis_resque][:password] %>
+  expire: <%= node[:redis_resque][:expire]%>
+dump_bin: /usr/lib/postgresql/<%=node[:postgresql][:service_version]%>/bin/pg_dump
+restore_bin: /usr/lib/postgresql/<%=node[:postgresql][:service_version]%>/bin/pg_restore
+mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
+index: <%= node[:postgresql_node][:index] %>
+node_id: <%= "postgresql_node_#{node[:postgresql_node][:index]}" %>
+download_url_template: "http://service-serialization.<%= node[:deployment][:domain] %>/serialized/%{service}/%{name}/snapshots/%{snapshot_id}?token=%{token}"
+<%if node[:service_lifecycle][:enable]%>
+snapshot_quota: <%= node[:postgresql_node][:snapshot_quota] || "5" %>
+<%else%>
+snapshot_quota: 0
+<%end%>
+postgresql:
+  host: <%= node[:postgresql_node][:host] %>
+  port: <%= node[:postgresql][:service_port]%>
+  user: <%= node[:postgresql][:server_root_user] %>
+  pass: <%= node[:postgresql][:server_root_password] %>
+  database: <%= node[:postgresql_node][:database]%>
+logging:
+  level: debug

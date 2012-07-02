@@ -5,7 +5,7 @@ local_db: sqlite3:/var/vcap/services/postgresql/postgresql_node.db
 ip_route: 127.0.0.1
 base_dir: /var/vcap/services/postgresql/
 dump_bin: /usr/lib/postgresql/<%=node[:postgresql][:service_version]%>/bin/pg_dump
-restore_bin: /usr/lib/postgresql//<%=node[:postgresql][:service_version]%>bin/pg_resotre
+restore_bin: /usr/lib/postgresql/<%=node[:postgresql][:service_version]%>/bin/pg_restore
 mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
 index: <%= node[:postgresql_node][:index] %>
 pid: /var/vcap/sys/run/postgresql_node.pid

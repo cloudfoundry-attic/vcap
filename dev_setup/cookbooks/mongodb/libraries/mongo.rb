@@ -1,11 +1,13 @@
 module CloudFoundryMongo
 
-  def checksum_for_version(version)
+  def id_and_checksum_for_version(version)
+    id = ''
     checksum = ''
     machine = node[:kernel][:machine]
     Chef::Log.info("Machine: #{machine}")
 
-    checksums_for_version = node[:mongodb][:checksum]["#{version}"]
+    ids_for_version = node[:mongodb][:id]["#{version}"]
+    checksums_for_version = node[:mongodb][:checksum]["#{version}"]    
 
     if checksums_for_version
       if !checksums_for_version.has_key?(machine)
@@ -13,12 +15,13 @@ module CloudFoundryMongo
         return
       else
         checksum = checksums_for_version["#{machine}"]
+        id = ids_for_version["#{machine}"]
       end
     else
       Chef::Log.error("Unsupported version: #{version}")
     end
 
-    checksum
+    [id, checksum]
   end
 end
 

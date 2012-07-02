@@ -1,0 +1,30 @@
+---
+service_name: mysql
+snapshots_base_dir: <%= node[:snapshot][:dir]%>
+serialization_base_dir: <%= node[:snapshot][:dir] %>
+local_db: sqlite3:/var/vcap/services/mysql/mysql_node.db
+tmp_dir: <%= node[:service_lifecycle][:tmp_dir]|| "/tmp"%>
+resque:
+  host: <%= node[:redis_resque][:host]%>
+  port: <%= node[:redis_resque][:port]%>
+  password: <%= node[:redis_resque][:password] %>
+  expire: <%= node[:redis_resque][:expire]%>
+mysqldump_bin: mysqldump
+gzip_bin: gzip
+mysql_bin: mysql
+mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
+index: <%= node[:mysql_node][:index] %>
+node_id: <%= "mysql_node_#{node[:mysql_node][:index]}" %>
+download_url_template: "http://service-serialization.<%= node[:deployment][:domain] %>/serialized/%{service}/%{name}/snapshots/%{snapshot_id}?token=%{token}"
+<%if node[:service_lifecycle][:enable]%>
+snapshot_quota: <%= node[:mysql_node][:snapshot_quota] || "5" %>
+<%else%>
+snapshot_quota: 0
+<%end%>
+mysql:
+  host: <%= node[:mysql][:host] %>
+  port: 3306
+  user: <%= node[:mysql][:server_root_user] %>
+  pass: <%= node[:mysql][:server_root_password] %>
+logging:
+  level: debug
