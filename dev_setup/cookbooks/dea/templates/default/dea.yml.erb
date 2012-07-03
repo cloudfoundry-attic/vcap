@@ -83,6 +83,18 @@ runtimes:
       suspend:
         - NODE_ARGS="--debug-brk=$VCAP_DEBUG_PORT"
 <% end %>
+<% if node[:dea][:runtimes].include?("node08") %>
+  node08:
+    executable: <%= File.join(node[:node08][:path], "bin", "node") %>
+    version: 0.8.2
+    version_flag: '-v'
+    environment:
+    debug_env:
+      run:
+        - NODE_ARGS="--debug=$VCAP_DEBUG_PORT"
+      suspend:
+        - NODE_ARGS="--debug-brk=$VCAP_DEBUG_PORT"
+<% end %>
 <% if node[:dea][:runtimes].include?("java") %>
   java:
     executable: java
