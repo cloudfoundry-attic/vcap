@@ -1,6 +1,7 @@
 include_recipe "deployment"
 include_attribute "postgresql"
 include_attributes "uaa"
+include_attributes "service_lifecycle"
 
 default[:deployment][:welcome] = "VMware's Cloud Application Platform"
 

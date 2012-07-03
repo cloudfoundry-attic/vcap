@@ -1,5 +1,5 @@
 class JobManager
-  [NATS, CF, CCDB, ACMDB, UAADB].each do |job|
+  [NATS, CF, CCDB, ACMDB, UAADB, VCAP_REDIS].each do |job|
     task job.to_sym do
       install(job)
     end
@@ -23,8 +23,20 @@ class JobManager
     end
   end
 
+  SERVICE_LIFECYCLE.each do |job|
+    task job.to_sym => [CF.to_sym, NATS.to_sym, VCAP_REDIS.to_sym] do
+      install(job)
+    end
+  end
+
   SERVICES_NODE.each do |job|
-    task job.to_sym => [CF.to_sym, NATS.to_sym] do
+    task job.to_sym => [CF.to_sym, NATS.to_sym, VCAP_REDIS.to_sym] do
+      install(job)
+    end
+  end
+
+  SERVICES_WORKER.each do |job|
+    task job.to_sym => [VCAP_REDIS.to_sym] do
       install(job)
     end
   end

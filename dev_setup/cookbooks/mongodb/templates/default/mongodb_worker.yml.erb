@@ -1,0 +1,41 @@
+---
+service_name: mongodb
+base_dir: /var/vcap/services/mongodb/instances
+snapshots_base_dir: <%= node[:snapshot][:dir]%>
+serialization_base_dir: <%= node[:snapshot][:dir] %>
+local_db: sqlite3:/var/vcap/services/mongodb/mongodb_node.db
+tmp_dir: <%= node[:service_lifecycle][:tmp_dir]|| "/tmp"%>
+resque:
+  host: <%= node[:redis_resque][:host]%>
+  port: <%= node[:redis_resque][:port]%>
+  password: <%= node[:redis_resque][:password] %>
+  expire: <%= node[:redis_resque][:expire]%>
+mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
+index: <%= node[:mongodb_node][:index] %>
+node_id: <%= "mongodb_node_#{node[:mongodb_node][:index]}" %>
+download_url_template: "http://service-serialization.<%= node[:deployment][:domain] %>/serialized/%{service}/%{name}/snapshots/%{snapshot_id}?token=%{token}"
+<%if node[:service_lifecycle][:enable]%>
+snapshot_quota: <%= node[:mongodb_node][:snapshot_quota] || "5" %>
+<%else%>
+snapshot_quota: 0
+<%end%>
+
+mongodump_path:
+<%
+  node[:mongodb][:supported_versions].each_key do |version|
+%>
+  "<%= version %>": "<%= File.join(node[:deployment][:home], "deploy", "mongodb", node[:mongodb][:supported_versions][version], "bin", "mongodump") %>"
+<% end %>
+mongorestore_path:
+<%
+  node[:mongodb][:supported_versions].each_key do |version|
+%>
+  "<%= version %>": "<%= File.join(node[:deployment][:home], "deploy", "mongodb", node[:mongodb][:supported_versions][version], "bin", "mongorestore") %>"
+<% end %>
+
+tar_path: /bin/tar
+port_range:
+  first: 25001
+  last: 45000
+logging:
+  level: debug

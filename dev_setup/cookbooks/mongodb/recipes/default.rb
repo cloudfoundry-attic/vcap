@@ -6,19 +6,18 @@
 #
 
 node[:mongodb][:supported_versions].each_key do |version|
-
   install_version = node[:mongodb][:supported_versions][version]
   Chef::Log.info("Building Mongo Version: #{version} - #{install_version}")
 
   mongo_source_file = "#{node[:mongodb][:download_base_path_prefix]}-#{install_version}.tgz"
   install_path = File.join(node[:deployment][:home], "deploy", "mongodb", install_version)
-  source_file_checksum = checksum_for_version(install_version)
+  source_file_id, source_file_checksum = id_and_checksum_for_version(install_version)
 
   mongodb_tarball_path = File.join(node[:deployment][:setup_cache], "mongodb-linux-#{node[:kernel][:machine]}-#{install_version}.tgz")
 
   cf_remote_file mongodb_tarball_path do
     owner node[:deployment][:user]
-    source mongo_source_file
+    id source_file_id
     checksum source_file_checksum
   end
 

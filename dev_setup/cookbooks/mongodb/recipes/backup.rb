@@ -1,5 +1,5 @@
 #
-# Cookbook Name:: mysql
+# Cookbook Name:: mongodb
 # Recipe:: backup
 #
 # Copyright 2011, VMware
