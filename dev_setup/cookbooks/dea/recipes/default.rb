@@ -17,6 +17,8 @@ node[:dea][:runtimes].each do |runtime|
     include_recipe "ruby::ruby18"
   when "node06"
     include_recipe "node::node06"
+  when "node08"
+    include_recipe "node::node08"
   when "node", "node04"
     include_recipe "node::node04"
   when "python2"
