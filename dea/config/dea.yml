@@ -79,6 +79,16 @@ runtimes:
         - NODE_ARGS="--debug=$VCAP_DEBUG_PORT"
       suspend:
         - NODE_ARGS="--debug-brk=$VCAP_DEBUG_PORT"
+  node08:
+    executable: node
+    version: 0.8.1
+    version_flag: '-v'
+    environment:
+    debug_env:
+      run:
+        - NODE_ARGS="--debug=$VCAP_DEBUG_PORT"
+      suspend:
+        - NODE_ARGS="--debug-brk=$VCAP_DEBUG_PORT"
   java:
     executable: java
     version: 1.6.0

@@ -178,6 +178,11 @@ runtimes:
     debug_modes:
       - run
       - suspend
+  node08:
+    version: 0.8.1
+    debug_modes:
+      - run
+      - suspend
   java:
     version: 1.6.0
     debug_modes:

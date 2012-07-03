@@ -31,6 +31,12 @@ runtimes:
       executable: <%= File.join(node[:node06][:path], "bin", "node") %>
       environment:
         path: <%= File.join(node[:node06][:path], "bin") %>:$PATH
+  - node08:
+      version: '0.8.1'
+      description: 'Node.js'
+      executable: <%= File.join(node[:node08][:path], "bin", "node") %>
+      environment:
+        path: <%= File.join(node[:node08][:path], "bin") %>:$PATH
   - erlangR14B01:
       version: 'R14B01'
       description: 'Erlang R14B01'
