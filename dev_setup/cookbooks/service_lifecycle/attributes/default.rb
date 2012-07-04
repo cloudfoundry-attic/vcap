@@ -1,4 +1,4 @@
-default[:service_lifecycle][:enable] = true
+default[:service_lifecycle][:enable] = false
 default[:service_lifecycle][:max_upload_size] = 5
 default[:service_lifecycle][:tmp_dir] = "/tmp"
 default[:snapshot][:dir]="/var/vcap/snapshot"
