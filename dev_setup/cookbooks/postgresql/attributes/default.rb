@@ -6,7 +6,7 @@ default[:postgresql][:server_root_user] = "root"
 default[:postgresql][:system_port] = "5432"
 default[:postgresql][:service_port] = "5433"
 default[:postgresql][:system_version] = "8.4"
-default[:postgresql][:service_version] = "9.0"
+default[:postgresql][:service_version] = "9.1"
 
 default[:postgresql_gateway][:service][:timeout] = "15"
 default[:postgresql_gateway][:node_timeout] = "10"
