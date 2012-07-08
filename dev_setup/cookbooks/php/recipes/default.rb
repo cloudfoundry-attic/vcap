@@ -45,7 +45,7 @@ when "ubuntu"
       yes | pecl install memcache
       yes | pecl install mongo
 
-      git clone git://github.com/owlient/phpredis.git
+      git clone --depth 1 git://github.com/owlient/phpredis.git
       cd phpredis
       phpize && ./configure && make && sudo make install
       cd ..

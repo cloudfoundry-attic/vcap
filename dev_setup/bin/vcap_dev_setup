@@ -165,7 +165,7 @@ run_cmd apt-get $APT_CONFIG install -qym git-core > /dev/null
 if [ ! -d $CLOUDFOUNDRY_HOME/vcap ]; then
   echo ""
   echo "Creating cloudfoundry repo..."
-  (cd $CLOUDFOUNDRY_HOME && git clone $VCAP_REPO && cd vcap && git submodule update --init && git checkout $VCAP_REPO_BRANCH)
+  (cd $CLOUDFOUNDRY_HOME && git clone --depth 1 $VCAP_REPO && cd vcap && git submodule update --init && git checkout $VCAP_REPO_BRANCH)
   if [ $? -ne 0 ]; then
     echo "Unable to clone cloudfoundry repo."
     exit 1
