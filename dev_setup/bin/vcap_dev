@@ -74,6 +74,7 @@ if vcap_components["components"].include?("cloud_controller")
   puts "Setting up cloud controller environment"
   ENV["CLOUD_CONTROLLER_CONFIG"]=File.join(deployment_config_path, "cloud_controller.yml")
   ENV["RAILS_ENV"]="production"
+  ENV["PLATFORM_CONFIG"]=File.join(deployment_config_path, "staging","platform.yml")
 
   # Start the cloud controller component first as other components like the
   # health manager depend on it. Specifically, the health manager uses the same

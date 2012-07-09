@@ -1,0 +1,11 @@
+---
+name: "play"
+runtimes:
+  - "java":
+      default: true
+<% if node[:java7][:available?] %>
+  - "java7":
+      default: false
+<% end %>
+detection:
+  - "lib/play.*.jar": true

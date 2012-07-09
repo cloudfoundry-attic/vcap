@@ -1,0 +1,11 @@
+---
+name: "lift"
+runtimes:
+  - "java":
+      default: true
+<% if node[:java7][:available?] %>
+  - "java7":
+      default: false
+<% end %>
+detection:
+  - "*.war": true
