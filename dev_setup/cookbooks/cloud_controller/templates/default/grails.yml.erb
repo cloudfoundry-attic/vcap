@@ -1,0 +1,11 @@
+---
+name: "grails"
+runtimes:
+  - "java":
+      default: true
+<% if node[:java7][:available?] %>
+  - "java7":
+      default: false
+<% end %>
+detection:
+  - "*.war": true # TODO - this thinks everything with an XML file is Spring
