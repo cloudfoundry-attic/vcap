@@ -29,5 +29,12 @@ template node[:cloud_controller][:config_file] do
   })
 end
 
+template node[:cloud_controller][:runtimes_file] do
+   path File.join(node[:deployment][:config_path], node[:cloud_controller][:runtimes_file])
+   source "runtimes.yml.erb"
+   owner node[:deployment][:user]
+   mode 0644
+end
+
 cf_bundle_install(File.expand_path(File.join("cloud_controller", "cloud_controller"), node[:cloudfoundry][:home]))
 cf_pg_reset_user_password(:ccdb)
