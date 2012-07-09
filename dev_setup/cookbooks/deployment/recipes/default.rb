@@ -18,6 +18,7 @@ node[:serialization_data_server][:host] ||= cf_local_ip
   node[:deployment][:log_path], File.join(node[:deployment][:home], "sys", "log"),
   node[:deployment][:config_path],
   File.join(node[:deployment][:config_path], "staging"),
+  File.join(node[:deployment][:config_path], "legacy_staging"),
   node[:deployment][:setup_cache],
 ].each do |dir|
   directory dir do

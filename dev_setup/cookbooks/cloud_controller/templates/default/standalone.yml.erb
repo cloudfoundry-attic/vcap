@@ -1,0 +1,27 @@
+---
+name: "standalone"
+runtimes:
+  - "python2":
+      default: false
+  - "java":
+      default: false
+<% if node[:java7][:available?] %>
+  - "java7":
+      default: false
+<% end %>
+  - "node":
+      default: false
+  - "node06":
+     default: false
+  - "node08":
+     default: false
+  - "erlangR14B01":
+      default: false
+  - "php":
+      default: false
+  - "ruby18":
+     default: false
+  - "ruby19":
+      default: false
+
+# vim: filetype=yaml

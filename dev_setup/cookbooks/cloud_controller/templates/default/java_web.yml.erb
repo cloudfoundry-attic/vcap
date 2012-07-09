@@ -1,0 +1,13 @@
+---
+name: "java_web"
+runtimes:
+  - "java":
+      default: true
+<% if node[:java7][:available?] %>
+  - "java7":
+      default: false
+<% end %>
+detection:
+  - "*.war": true
+
+# vim: filetype=yaml

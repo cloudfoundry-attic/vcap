@@ -11,7 +11,7 @@ queues:
   - staging
 
 dirs:
-  manifests: <%= File.join(node[:deployment][:config_path], "staging") %>
+  manifests: <%= File.join(node[:deployment][:config_path], "legacy_staging") %>
   tmp: /var/vcap/data/stager/tmp
 
 ruby_path: <%= File.join(node[:ruby][:path], "bin", "ruby")%>

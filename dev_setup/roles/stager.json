@@ -9,7 +9,6 @@
                  "recipe[essentials]",
                  "recipe[ruby]",
                  "recipe[redis]",
-                 "recipe[staging_manifest]",
                  "recipe[stager]",
                  "recipe[imagemagick]"]
 }
