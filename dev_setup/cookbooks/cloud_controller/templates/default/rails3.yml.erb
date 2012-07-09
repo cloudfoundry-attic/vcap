@@ -7,18 +7,14 @@ runtimes:
       executable: "<%= File.join(node[:ruby18][:path], "bin", "ruby") %>"
       default: true
       environment:
-       rails_env: "production"
        bundle_gemfile:
-       rack_env: "production"
        path: <%= File.join(node[:ruby18][:path], "bin") %>:$PATH
   - "ruby19":
       version: "1.9.2p180"
       description: "Ruby 1.9.2"
       executable: "<%= File.join(node[:ruby][:path], "bin", "ruby") %>"
       environment:
-       rails_env: "production"
        bundle_gemfile:
-       rack_env: "production"
        path: <%= File.join(node[:ruby][:path], "bin") %>:$PATH
 app_servers:
   - "thin":
