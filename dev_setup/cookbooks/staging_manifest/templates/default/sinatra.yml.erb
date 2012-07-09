@@ -2,30 +2,9 @@
 name: "sinatra"
 runtimes:
   - "ruby18":
-      version: "1.8.7" # FIXME change to 1.8.7-p357
-      description: "Ruby 1.8.7"
-      executable: "<%= File.join(node[:ruby18][:path], "bin", "ruby") %>"
       default: true
-      environment:
-       bundle_gemfile:
   - "ruby19":
-      version: "1.9.2p180"
-      description: "Ruby 1.9.2"
-      executable: "<%= File.join(node[:ruby][:path], "bin", "ruby") %>"
-      environment:
-       bundle_gemfile:
-app_servers:
-  - "thin":
-      description: "Thin"
-      executable: false # determined during staging
-      default: true
+     default: false
 detection:
   - "*.rb": "require\\s+'sinatra'|require\\s+\"sinatra\"" # .rb files in the root dir containing a require?
   - "config/environment.rb": false # and config/environment.rb must not exist
-staged_services:
-  - "name": "mysql"
-    "version": "*"
-  - "name": "postgresql"
-    "version": "*"
-  - "name": "redis"
-    "version": "2"
