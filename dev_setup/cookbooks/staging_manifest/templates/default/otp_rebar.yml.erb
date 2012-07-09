@@ -2,11 +2,6 @@
 name: "otp_rebar"
 runtimes:
   - erlangR14B01:
-      version: 'R14B01'
-      description: 'Erlang R14B01'
-      executable: <%= File.join(node[:erlang][:path], "bin", "erl") %>
       default: true
-app_servers:
 detection:
   - "releases/*/*.rel": '.'
-staged_services:
