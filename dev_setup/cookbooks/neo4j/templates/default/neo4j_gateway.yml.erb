@@ -5,6 +5,7 @@ service:
   version: "1.4"
   description: 'Neo4j NOSQL store'
   plans: ['free']
+  default_plan: 'free'
   tags: ['neo4j', 'neo4j-1.4', 'nosql']
   timeout: <%= node[:neo4j_gateway][:service][:timeout] %>
 host: localhost

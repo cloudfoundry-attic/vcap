@@ -5,6 +5,7 @@ service:
   version: "2.2"
   description: 'Redis key-value store service'
   plans: ['free']
+  default_plan: 'free'
   tags: ['redis', 'redis-2.2', 'key-value', 'nosql']
   timeout: <%= node[:redis_gateway][:service][:timeout] %>
 host: localhost

@@ -5,6 +5,7 @@ service:
   version: "1.8"
   description: 'MongoDB NoSQL store'
   plans: ['free']
+  default_plan: 'free'
   tags: ['mongodb', 'mongodb-1.6', 'nosql', 'document']
   timeout: <%= node[:mongodb_gateway][:service][:timeout] %>
 host: localhost

@@ -5,6 +5,7 @@ service:
   version: "1.4"
   description: "Memcached in-memory object cache service"
   plans: ['free']
+  default_plan: 'free'
   tags: ['memcached', 'memcached-1.4', 'key-value', 'cache']
   timeout: <%= node[:memcached_gateway][:service][:timeout] %>
 index: 0

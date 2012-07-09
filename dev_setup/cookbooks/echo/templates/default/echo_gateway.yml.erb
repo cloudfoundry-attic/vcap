@@ -5,6 +5,7 @@ service:
   version: "1.0"
   description: 'Echo service'
   plans: ['free']
+  default_plan: 'free'
   tags: ['echo', 'echo-1.0', 'echobased', 'demo']
 index: 0
 token: <%= node[:echo_node][:token] %>

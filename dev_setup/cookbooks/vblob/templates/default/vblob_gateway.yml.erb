@@ -5,6 +5,7 @@ service:
   version: "1.0"
   description: 'vBlob service'
   plans: ['free']
+  default_plan: 'free'
   tags: ['vblob', 'vblob-1.0', 'nosql']
   timeout: <%= node[:vblob_gateway][:service][:timeout] %>
 index: 0

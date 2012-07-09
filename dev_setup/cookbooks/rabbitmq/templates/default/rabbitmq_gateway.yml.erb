@@ -5,6 +5,7 @@ service:
   version: "2.4"
   description: "RabbitMQ message queue"
   plans: ["free"]
+  default_plan: 'free'
   tags: ["rabbitmq", "rabitmq-2.4", "message-queue", "amqp"]
   timeout: <%= node[:rabbitmq_gateway][:service][:timeout] %>
 host: localhost

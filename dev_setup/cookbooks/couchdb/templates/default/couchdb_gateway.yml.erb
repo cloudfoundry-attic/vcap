@@ -5,6 +5,7 @@ service:
   version: "1.2"
   description: "CouchDB service"
   plans: ['free']
+  default_plan: 'free'
   tags: ['couchdb', 'couchdb-1.2', 'key-value', 'cache']
   timeout: <%= node[:couchdb_gateway][:service][:timeout] %>
 index: 0
