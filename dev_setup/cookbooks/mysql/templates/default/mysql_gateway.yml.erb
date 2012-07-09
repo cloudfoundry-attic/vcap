@@ -5,6 +5,7 @@ service:
   version: "5.1"
   description: 'MySQL database service'
   plans: ['free']
+  default_plan: 'free'
   tags: ['mysql', 'mysql-5.1', 'relational']
   timeout: <%= node[:mysql_gateway][:service][:timeout] %>
 host: localhost
