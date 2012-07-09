@@ -5,6 +5,7 @@ service:
   version: "0.19"
   description: 'Elasticsearch text search service'
   plans: ['free']
+  default_plan: 'free'
   tags: ['elasticsearch', 'elasticsearch-0.19', 'search']
   timeout: <%= node[:elasticsearch_gateway][:service][:timeout] %>
 host: localhost
