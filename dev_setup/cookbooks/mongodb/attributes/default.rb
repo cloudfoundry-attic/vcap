@@ -10,6 +10,11 @@ default[:mongodb][:version_aliases] = {
         "next"    => "2.0"
 }
 
+default[:mongod_options] = {
+        "1.8" => "",
+        "2.0" => "--nojournal"
+}
+
 default[:mongodb][:default_version] = "1.8"
 default[:mongodb][:download_base_path_prefix] = "http://fastdl.mongodb.org/linux/mongodb-linux-#{node[:kernel][:machine]}"
 
