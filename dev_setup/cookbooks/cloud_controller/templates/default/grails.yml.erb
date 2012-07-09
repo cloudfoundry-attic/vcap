@@ -2,15 +2,9 @@
 name: "grails"
 runtimes:
   - "java":
-      description: "Java 6"
-      version: "1.6"
-      executable: "java"
       default: true
 <% if node[:java7][:available?] %>
   - "java7":
-      description: "Java 7"
-      version: "1.7"
-      executable: "java"
       default: false
 <% end %>
 app_servers:

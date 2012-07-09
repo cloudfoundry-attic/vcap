@@ -117,47 +117,6 @@ service_broker:
 # Enable/disable starting apps in debug modes.
 allow_debug: true
 
-# Supported runtime versions and debug modes.
-# Used for /info/runtimes endpoint (served unfiltered as JSON)
-runtimes:
-  ruby18:
-    version: 1.8.7
-  ruby19:
-    version: 1.9.2
-  node:
-    version: 0.4.12
-    debug_modes:
-      - run
-      - suspend
-  node06:
-    version: 0.6.8
-    debug_modes:
-      - run
-      - suspend
-  node08:
-    version: 0.8.2
-    debug_modes:
-      - run
-      - suspend
-  java:
-    version: 1.6.0
-    debug_modes:
-      - run
-      - suspend
-<% if node[:java7][:available?] %>
-  java7:
-    version: 1.7.0
-    debug_modes:
-      - run
-      - suspend
-<% end %>
-  php:
-    version: 5.3.[2-6]
-  erlangR14B01:
-    version: ".* 5.8.3"
-  python2:
-    version: 2.[67]
-
 <% if node[:service_lifecycle][:enable] == true %>
 service_lifecycle:
   max_upload_size: <%= node[:service_lifecycle][:max_upload_size] || 1 %>
