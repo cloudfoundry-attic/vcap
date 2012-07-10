@@ -28,7 +28,7 @@ bash "Install Redis" do
   cd redis-#{node[:redis][:version]}
   make
   cd src
-  cp redis-benchmark redis-cli redis-server redis-check-dump redis-check-aof #{File.join(node[:redis][:path], "bin")}
+  install redis-benchmark redis-cli redis-server redis-check-dump redis-check-aof #{File.join(node[:redis][:path], "bin")}
   EOH
 end
 
