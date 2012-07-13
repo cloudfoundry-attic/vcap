@@ -12,3 +12,4 @@ ci-working-dir
 *.swp
 .rvmrc
 *.pid
+vcap_service_backup_ctl
