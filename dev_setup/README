@@ -95,7 +95,7 @@ o Service lifecycle:
   1. Edit file "$HOMW/projects/vcap/dev_setup/cookbooks/service_lifecycle/attributes/default.rb".
      Set default[:service_lifecycle][:enable] to be "true", and then re-run dev-setup to update the configuration.
   2. Remove the following components from CLOUD_FOUNDRY_EXCLUDED_COMPONENT (see below section).
-     vcap_redis|worker|snapshot_manager
+     vcap_redis|worker|snapshot_manager|serialization_data_server
 
   snapshot_manager is used to clean the snapshots which belong to the service un-provisioned instances.
 
