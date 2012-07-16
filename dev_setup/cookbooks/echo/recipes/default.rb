@@ -24,12 +24,12 @@ when "ubuntu"
 
   bash "Install Echo Server" do
     code <<-EOH
-      unzip #{echoserver_tarball_path}
-      mv echoserver #{File.join(node[:deployment][:home], 'deploy')}
+      unzip #{echoserver_tarball_path} -d /tmp
+      cp -r /tmp/echoserver #{File.join(node[:deployment][:home], 'deploy')}
       ln -s -t /etc/init.d/ #{File.join(node[:echo_server][:path], 'bin', 'echoserver')}
     EOH
     not_if do
-      ::File.exists?(File.join('', 'etc', 'init.d', 'echoserver'))
+      ::File.exists?(File.join(node[:echo_server][:path], 'bin', 'echoserver'))
     end
   end
 
