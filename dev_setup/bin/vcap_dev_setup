@@ -132,15 +132,15 @@ fi
 
 # FIXME: at some point you will want a version spec like "~> 10.12.0" here
 echo "Installing chef..."
-${GEM} list -i chef || sudo ${GEM} install chef -q --no-ri --no-rdoc > /dev/null
+${GEM} list -i chef || run_cmd ${GEM} install chef -q --no-ri --no-rdoc > /dev/null
 
 # Install blobstore_client
 echo "Installing blobstore_client..."
-${GEM} list -i blobstore_client || sudo ${GEM} install blobstore_client -q --no-ri --no-rdoc > /dev/null
+${GEM} list -i blobstore_client || run_cmd ${GEM} install blobstore_client -q --no-ri --no-rdoc > /dev/null
 
 # Install rake
 echo "Installing rake..."
-${GEM} list -i rake -i || sudo ${GEM} install rake -q --no-ri --no-rdoc > /dev/null
+${GEM} list -i rake -i || run_cmd ${GEM} install rake -q --no-ri --no-rdoc > /dev/null
 
 # Clone cloudfoundry repo
 echo "Installing git..."
