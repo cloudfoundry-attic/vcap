@@ -7,7 +7,6 @@ service:
   plans: ['free']
   tags: ['vblob', 'vblob-1.0', 'nosql']
   timeout: <%= node[:vblob_gateway][:service][:timeout] %>
-ip_route: localhost
 index: 0
 token: <%= node[:vblob_node][:token] %>
 mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
