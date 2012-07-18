@@ -2,8 +2,8 @@
 user  root root;
 worker_processes  1;
 
-error_log <%= node[:nginx][:log_home] %>/nginx_error.log debug;
-pid        /var/run/nginx.pid;
+error_log <%= node[:nginx][:log_home] %>/nginx_router_error.log debug;
+pid        /var/run/nginx_router.pid;
 
 events {
     worker_connections  <%= node[:nginx][:worker_connections] %>;
@@ -21,7 +21,7 @@ http {
                    '"$http_referer" "$http_user_agent" '
                    '$remote_addr response_time:$upstream_response_time';
 
-  access_log   <%= node[:nginx][:log_home] %>/nginx_main_access.log main;
+  access_log   <%= node[:nginx][:log_home] %>/nginx_router_main_access.log main;
 
   sendfile             on;
   tcp_nopush           on;
@@ -61,7 +61,7 @@ http {
     }
 
     location / {
-      access_log   <%= node[:nginx][:log_home] %>/nginx_access.log main;
+      access_log   <%= node[:nginx][:log_home] %>/nginx_router_access.log main;
       proxy_buffering             off;
       proxy_set_header            Host $host;
       proxy_set_header            X-Forwarded-For $proxy_add_x_forwarded_for;
