@@ -15,6 +15,7 @@ connection_wait_timeout: <%= node[:mysql_node][:connection_wait_timeout] %>
 max_db_size: <%= node[:mysql_node][:max_db_size] %>
 max_long_query: 3
 max_long_tx: 30
+kill_long_tx: true
 migration_nfs: /mnt/migration
 mysql:
   host: <%= node[:mysql][:host] %>
