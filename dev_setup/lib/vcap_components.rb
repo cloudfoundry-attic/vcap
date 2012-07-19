@@ -221,6 +221,20 @@ class CoreComponent < Component
   end
 end
 
+class UAAComponent < CoreComponent
+  def initialize(*args)
+    @path = File.join($vcap_home, "vcap", "bin", "uaa")
+    super
+  end
+end
+
+class ACMComponent < CoreComponent
+  def initialize(*args)
+    @path = File.join($vcap_home, "vcap", "bin", "acm")
+    super
+  end
+end
+
 class CCComponent < CoreComponent
   def initialize(*args)
     @path = File.join($vcap_home, "cloud_controller", "cloud_controller", "bin", "cloud_controller")
@@ -385,9 +399,11 @@ end
 # register valid named components
 
 ## core
-%w(router dea uaa acm).each do |core|
+%w(router dea).each do |core|
    CoreComponent.register(core)
 end
+ACMComponent.register("acm")
+UAAComponent.register("uaa")
 CCComponent.register("cloud_controller")
 HMComponent.register("health_manager")
 
