@@ -1,0 +1,37 @@
+#! /bin/sh
+
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+PROG=<%= node[:redis][:path] %>/bin/redis-server
+ARGS=<%= node[:deployment][:config_path] %>/staging_redis.conf
+NAME=staging_redis
+
+test -x $PROG || exit 0
+
+set -e
+
+. /lib/lsb/init-functions
+
+case "$1" in
+  start)
+    log_action_begin_msg "Starting: $NAME"
+    start-stop-daemon --start --quiet --pidfile /var/run/$NAME.pid --exec $PROG -- $ARGS
+    log_action_end_msg $?
+    ;;
+  stop)
+    log_action_begin_msg "Stopping: $NAME"
+    start-stop-daemon --stop --quiet --pidfile /var/run/$NAME.pid --exec $PROG || true
+    log_action_end_msg $?
+    ;;
+  restart)
+    $0 stop; sleep 1; $0 start
+    ;;
+  status)
+    status_of_proc -p /var/run/$NAME.pid "$PROG" $NAME && exit 0 || exit $?
+    ;;
+  *)
+    echo "Usage: $NAME {start|stop|restart|status}" >&2
+    exit 1
+    ;;
+esac
+
+exit 0
