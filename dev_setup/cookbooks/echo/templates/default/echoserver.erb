@@ -1,0 +1,46 @@
+#!/bin/bash -e
+
+cd <%= node[:echo_server][:path] %>
+source ./lib/utils.sh
+
+PIDFILE=./run/echoserver.pid
+LOG_DIR=./logs
+
+start_echoserver() {
+    echo "starting echo server"
+    java \
+       -jar lib/EchoServer-0.1.0.jar \
+       -port <%= node[:echo_server][:port] %>  \
+       >>$LOG_DIR/echoserver.stdout.log \
+       2>>$LOG_DIR/echoserver.stderr.log &
+    echo $! > $PIDFILE
+    echo "echo server has been started successfully"
+}
+
+case $1 in
+
+  start)
+    pid_guard $PIDFILE "echo server"
+    start_echoserver
+
+    ;;
+
+  stop)
+    kill_and_wait $PIDFILE
+
+    ;;
+
+  restart)
+    if [ -f "$PIDFILE" ]; then
+      kill_and_wait $PIDFILE
+    fi
+    start_echoserver
+
+    ;;
+
+  *)
+    echo "Usage: echoserver {start|stop|restart}"
+
+    ;;
+
+esac

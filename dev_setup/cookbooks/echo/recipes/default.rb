@@ -18,18 +18,18 @@ when "ubuntu"
     code <<-EOH
       unzip #{echoserver_tarball_path} -d /tmp
       cp -r /tmp/echoserver #{File.join(node[:deployment][:home], 'deploy')}
-      ln -s -t /etc/init.d/ #{File.join(node[:echo_server][:path], 'bin', 'echoserver')}
+      ln -s -t /etc/init.d/ #{File.join(node[:echo_server][:path], 'echoserver')}
     EOH
     not_if do
-      ::File.exists?(File.join(node[:echo_server][:path], 'bin', 'echoserver'))
+      ::File.exists?(File.join(node[:echo_server][:path], 'echoserver'))
     end
   end
 
-  template File.join(node[:echo_server][:path], 'conf', 'wrapper.conf') do
-    source "wrapper.conf.erb"
+  template File.join(node[:echo_server][:path], 'echoserver') do
+    source "echoserver.erb"
     owner "root"
     group "root"
-    mode "0600"
+    mode "0700"
     notifies :restart, "service[echoserver]"
   end
 
