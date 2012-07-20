@@ -10,6 +10,7 @@ node[:acmdb][:host] ||= cf_local_ip
 node[:uaadb][:host] ||= cf_local_ip
 node[:postgresql][:host] ||= cf_local_ip
 node[:redis_resque][:host] ||= cf_local_ip
+node[:staging_redis][:host] ||= cf_local_ip
 
 [
   node[:deployment][:home], File.join(node[:deployment][:home], "deploy"),
@@ -30,7 +31,8 @@ end
 var_vcap = File.join("", "var", "vcap")
 [var_vcap, File.join(var_vcap, "sys"), File.join(var_vcap, "db"), File.join(var_vcap, "services"),
  File.join(var_vcap, "data"), File.join(var_vcap, "data", "cloud_controller"),
- File.join(var_vcap, "sys", "log"), File.join(var_vcap, "sys", "run"), File.join(var_vcap, "data", "cloud_controller", "tmp"),
+ File.join(var_vcap, "sys", "log"), File.join(var_vcap, "sys", "run"),
+ File.join(var_vcap, "data", "stager", "tmp"), File.join(var_vcap, "data", "cloud_controller", "tmp"),
  File.join(var_vcap, "data", "cloud_controller", "staging"),
  File.join(var_vcap, "data", "db"), File.join("", "var", "vcap.local"),
  File.join("", "var", "vcap.local", "staging")].each do |dir|
