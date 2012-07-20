@@ -1,15 +1,15 @@
 {
-  "name": "cloud_controller",
+  "name": "stager",
   "default_attributes": {},
   "override_attributes": {},
   "json_class": "Chef::Role",
-  "description": "Cloudfoundry Cloud Controller",
+  "description": "Cloudfoundry Stager",
   "chef_type": "role",
   "run_list" : [ "recipe[deployment]",
                  "recipe[essentials]",
                  "recipe[ruby]",
-                 "recipe[ruby::ruby18]",
-                 "recipe[ccdb]",
+                 "recipe[redis]",
                  "recipe[staging_manifest]",
-                 "recipe[cloud_controller]"]
+                 "recipe[stager]",
+                 "recipe[imagemagick]"]
 }

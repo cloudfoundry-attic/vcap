@@ -1,0 +1,19 @@
+# General
+bind 0.0.0.0
+port <%= node[:staging_redis][:port] %>
+daemonize yes
+pidfile /var/vcap/sys/run/staging_redis.pid
+
+# Close the connection after a client is idle for 10 min
+timeout 600
+
+# Auth
+requirepass <%= node[:staging_redis][:password] %>
+
+# Logging
+loglevel notice
+logfile <%= node[:deployment][:home] %>/log/staging_redis.log
+
+# LRU - Evict any key (regardless of expiry being set)
+maxmemory 2000000000
+maxmemory-policy allkeys-lru

@@ -221,6 +221,12 @@ class CoreComponent < Component
   end
 end
 
+class StagerComponent < CoreComponent
+  def pid_file
+    configuration["pid_filename"] || raise("#{get_configuration_path} does not specify location of pid file")
+  end
+end
+
 class UAAComponent < CoreComponent
   def initialize(*args)
     @path = File.join($vcap_home, "vcap", "bin", "uaa")
@@ -402,6 +408,7 @@ end
 %w(router dea).each do |core|
    CoreComponent.register(core)
 end
+StagerComponent.register("stager")
 ACMComponent.register("acm")
 UAAComponent.register("uaa")
 CCComponent.register("cloud_controller")
