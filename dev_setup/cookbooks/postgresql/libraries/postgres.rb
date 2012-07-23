@@ -152,9 +152,11 @@ module CloudFoundryPostgres
           `sed -i /local[[:space:]]*all[[:space:]]*all/d #{pg_hba_conf_file}`
           `sed -i /host[[:space:]]*all[[:space:]]*all[[:space:]]*127\.0\.0\.1/d #{pg_hba_conf_file}`
           `sed -i /host[[:space:]]*all[[:space:]]*all[[:space:]]*::1/d #{pg_hba_conf_file}`
+          `sed -i /host[[:space:]]*all[[:space:]]*all[[:space:]]*0\.0\.0\.0/d #{pg_hba_conf_file}`
           `echo "local   all             all                                     trust" >> #{pg_hba_conf_file}`
           `echo "host    all             all             127.0.0.1/32            trust" >> #{pg_hba_conf_file}`
           `echo "host    all             all             ::1/128                 trust" >> #{pg_hba_conf_file}`
+          `echo "host    all             all             0.0.0.0/0               md5"   >> #{pg_hba_conf_file}`
 
           # restart postgrsql
           init_file = "#{File.join("", "etc", "init.d", "postgresql-#{pg_major_version}")}"

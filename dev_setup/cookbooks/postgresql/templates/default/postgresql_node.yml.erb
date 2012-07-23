@@ -2,7 +2,6 @@
 capacity: <%= node[:postgresql_node][:capacity] %>
 plan: free
 local_db: sqlite3:/var/vcap/services/postgresql/postgresql_node.db
-ip_route: 127.0.0.1
 base_dir: /var/vcap/services/postgresql/
 dump_bin: /usr/lib/postgresql/<%=node[:postgresql][:service_version]%>/bin/pg_dump
 restore_bin: /usr/lib/postgresql/<%=node[:postgresql][:service_version]%>/bin/pg_restore
