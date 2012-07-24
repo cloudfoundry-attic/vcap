@@ -92,6 +92,14 @@ when "ubuntu"
     action :create
   end
 
+  directory node[:nginx][:log_home] do
+    owner node[:deployment][:user]
+    group node[:deployment][:group]
+    mode "0755"
+    recursive true
+    action :create
+  end
+
   directory lua_path do
     owner node[:deployment][:user]
     group node[:deployment][:group]
@@ -151,13 +159,6 @@ when "ubuntu"
     EOH
   end
 
-  template "nginx.conf" do
-    path File.join(nginx_path, "conf", "nginx.conf")
-    source "ubuntu-nginx.conf.erb"
-    owner node[:deployment][:user]
-    mode 0644
-  end
-
   template "uls.lua" do
     path File.join(lua_module_path, "uls.lua")
     source File.join(node[:lua][:plugin_source_path], "uls.lua")
@@ -174,9 +175,30 @@ when "ubuntu"
     mode 0644
   end
 
-  template "nginx" do
-    path File.join("", "etc", "init.d", "nginx")
-    source "nginx.erb"
+  template "nginx_router.conf" do
+    path File.join(nginx_path, "conf", "nginx_router.conf")
+    source "router-nginx.conf.erb"
+    owner node[:deployment][:user]
+    mode 0644
+  end
+
+  template "nginx_router" do
+    path File.join("", "etc", "init.d", "nginx_router")
+    source "router-nginx.erb"
+    owner node[:deployment][:user]
+    mode 0755
+  end
+
+  template "nginx_cc.conf" do
+    path File.join(nginx_path, "conf", "nginx_cc.conf")
+    source "cc-nginx.conf.erb"
+    owner node[:deployment][:user]
+    mode 0644
+  end
+
+  template "nginx_cc" do
+    path File.join("", "etc", "init.d", "nginx_cc")
+    source "cc-nginx.erb"
     owner node[:deployment][:user]
     mode 0755
   end
@@ -188,7 +210,12 @@ when "ubuntu"
     EOH
   end
 
-  service "nginx" do
+  service "nginx_router" do
+    supports :status => true, :restart => true, :reload => true
+    action [ :enable, :restart ]
+  end
+
+  service "nginx_cc" do
     supports :status => true, :restart => true, :reload => true
     action [ :enable, :restart ]
   end

@@ -31,7 +31,7 @@ default[:lua][:checksums][:cjson_source] = "9659fef3d4d3bc08b3fbd7827636dad6fb23
 default[:nginx][:worker_connections] = 2048
 default[:nginx][:uls_ip] = "localhost"
 default[:nginx][:uls_port] = 8081
-default[:nginx][:log_home] = File.join(node[:deployment][:home], "log")
+default[:nginx][:log_home] = File.join(node[:deployment][:home], "log", "nginx")
 default[:nginx][:status_user] = "admin"
 default[:nginx][:status_passwd] = "password"
 
