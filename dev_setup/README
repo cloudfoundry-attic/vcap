@@ -139,8 +139,8 @@ o Excluded components:
   environment variable as follows:
   unset CLOUD_FOUNDRY_EXCLUDED_COMPONENT
 
-  To modify the default exclusion list, add the component name in dev_setup/lib/vcap_components.rb to:
-  DEFAULT_CLOUD_FOUNDRY_EXCLUDED_COMPONENT
+  The default exclusion list can be changed by updating the DEFAULT_CLOUD_FOUNDRY_EXCLUDED_COMPONENT
+  in dev_setup/lib/excluded_components_helper.rb
 
 NOTE: To learn more about custom deployment config files and multi host setups
 see the README file vcap/dev_setup/deployments/README.
