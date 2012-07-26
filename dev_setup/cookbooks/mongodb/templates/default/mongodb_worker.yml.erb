@@ -19,8 +19,20 @@ snapshot_quota: <%= node[:mongodb_node][:snapshot_quota] || "5" %>
 <%else%>
 snapshot_quota: 0
 <%end%>
-mongodump_path: <%= File.join(node[:mongodb][:path], "bin", "mongodump") %>
-mongorestore_path: <%= File.join(node[:mongodb][:path], "bin", "mongorestore") %>
+
+mongodump_path:
+<%
+  node[:mongodb][:supported_versions].each_key do |version|
+%>
+  "<%= version %>": "<%= File.join(node[:deployment][:home], "deploy", "mongodb", node[:mongodb][:supported_versions][version], "bin", "mongodump") %>"
+<% end %>
+mongorestore_path:
+<%
+  node[:mongodb][:supported_versions].each_key do |version|
+%>
+  "<%= version %>": "<%= File.join(node[:deployment][:home], "deploy", "mongodb", node[:mongodb][:supported_versions][version], "bin", "mongorestore") %>"
+<% end %>
+
 tar_path: /bin/tar
 port_range:
   first: 25001
