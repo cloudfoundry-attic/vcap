@@ -84,21 +84,10 @@ do
   esac
 done
 
-if [ -z "$CLOUDFOUNDRY_HOME" ]; then
-  CLOUDFOUNDRY_HOME=~/cloudfoundry
-fi
-
-if [ -z "$CLOUDFOUNDRY_DOMAIN" ]; then
-  CLOUDFOUNDRY_DOMAIN=vcap.me
-fi
-
-if [ -z "$VCAP_REPO_BASE" ]; then
-  VCAP_REPO_BASE=https://github.com/cloudfoundry
-fi
-
-if [ -z "$VCAP_REPO_BRANCH" ]; then
-  VCAP_REPO_BRANCH=master
-fi
+[ -z "$CLOUDFOUNDRY_HOME" ] && CLOUDFOUNDRY_HOME=~/cloudfoundry
+[ -z "$CLOUDFOUNDRY_DOMAIN" ] && CLOUDFOUNDRY_DOMAIN=vcap.me
+[ -z "$VCAP_REPO_BASE" ] && VCAP_REPO_BASE=https://github.com/cloudfoundry
+[ -z "$VCAP_REPO_BRANCH" ] && VCAP_REPO_BRANCH=master
 
 # Check if we have access to the web
 echo "Installing wget..."
@@ -113,11 +102,12 @@ if ! wget -q -T 2 -t 2 -O - http://api.cloudfoundry.com/info | grep "Cloud Appli
   exit 1
 fi
 
-# Install chef
+# Install prerequisites
 readonly PREREQUISITES=(ruby ruby-dev libopenssl-ruby rdoc ri irb build-essential ssl-cert)
 echo "Installing prerequisites..."
 run_cmd apt-get $APT_CONFIG install -qym "${PREREQUISITES[@]}"
 
+# Install rubygems
 if [ ! -f ${GEM} ] || [ `${GEM} -v` \< "1.3.6" ]; then
   # Blobstore_client requires gem >= 1.3.6
   echo "Installing rubygems..."
@@ -130,17 +120,13 @@ if [ ! -f ${GEM} ] || [ `${GEM} -v` \< "1.3.6" ]; then
   cd ${CWD}
 fi
 
+# Install gem packages
 # FIXME: at some point you will want a version spec like "~> 10.12.0" here
-echo "Installing chef..."
-${GEM} list -i chef || sudo ${GEM} install chef -q --no-ri --no-rdoc > /dev/null
-
-# Install blobstore_client
-echo "Installing blobstore_client..."
-${GEM} list -i blobstore_client || sudo ${GEM} install blobstore_client -q --no-ri --no-rdoc > /dev/null
-
-# Install rake
-echo "Installing rake..."
-${GEM} list -i rake -i || sudo ${GEM} install rake -q --no-ri --no-rdoc > /dev/null
+for gem_pkg in chef blobstore_client rake; do
+  ${GEM} list -i ${gem_pkg} > /dev/null && continue
+  echo "Installing ${gem_pkg}..."
+  sudo ${GEM} install ${gem_pkg} -q --no-ri --no-rdoc
+done
 
 # Clone cloudfoundry repo
 echo "Installing git..."
@@ -148,7 +134,7 @@ run_cmd apt-get $APT_CONFIG install -qym git-core
 
 readonly CORE_REPOS=(cloud_controller dea router stager)
 
-[ -d $CLOUDFOUNDRY_HOME ] || mkdir $CLOUDFOUNDRY_HOME
+[ -d $CLOUDFOUNDRY_HOME ] || mkdir -p $CLOUDFOUNDRY_HOME
 for REPO in vcap "${CORE_REPOS[@]}"; do
   if [ ! -d $CLOUDFOUNDRY_HOME/$REPO ]; then
     if ! (cd $CLOUDFOUNDRY_HOME
@@ -165,28 +151,13 @@ for REPO in vcap "${CORE_REPOS[@]}"; do
   fi
 done
 
-
-# Our deployment code needs this gem. Using bundler seems like an overkill for
-# the deployment code. So for now just manually install the required gem.
-if ! gem list rake -i > /dev/null; then
-  gem install rake -q --no-ri --no-rdoc > /dev/null 2>&1
-fi
-
 # Launch chef
 ARGS=""
-if [ -n "$CLOUDFOUNDRY_HOME" ]; then
-  ARGS="-d $CLOUDFOUNDRY_HOME"
-fi
-
-if [ -n "$CLOUDFOUNDRY_DOMAIN" ]; then
-  ARGS="$ARGS -D $CLOUDFOUNDRY_DOMAIN"
-fi
-
-if [ -n "$CONFIG_FILE" ]; then
-  ARGS="$ARGS -c $CONFIG_FILE"
-fi
+[ -n "$CLOUDFOUNDRY_HOME" ] && ARGS="-d $CLOUDFOUNDRY_HOME"
+[ -n "$CLOUDFOUNDRY_DOMAIN" ] && ARGS="$ARGS -D $CLOUDFOUNDRY_DOMAIN"
+[ -n "$CONFIG_FILE" ] && ARGS="$ARGS -c $CONFIG_FILE"
 
 echo ""
-echo "Lanching chef..."
+echo "Launching chef..."
 sleep 3
 $CLOUDFOUNDRY_HOME/vcap/dev_setup/lib/chefsolo_launch.rb $ARGS
