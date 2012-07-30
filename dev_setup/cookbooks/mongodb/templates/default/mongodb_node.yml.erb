@@ -5,17 +5,27 @@ local_db: sqlite3:/var/vcap/services/mongodb/mongodb_node.db
 mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
 index: <%= node[:mongodb_node][:index] %>
 base_dir: /var/vcap/services/mongodb/instances
+ip_route: 127.0.0.1
+logging:
+  level: debug
 mongod_log_dir: /var/vcap/services/mongodb/logs
 pid: /var/vcap/sys/run/mongodb_node.pid
 max_memory: <%= node[:mongodb_node][:max_memory] %>
 node_id: <%= "mongodb_node_#{node[:mongodb_node][:index]}" %>
+
+supported_versions: ["1.8"]
+default_version: "1.8"
+
 op_time_limit: <%= node[:mongodb_node][:op_time_limit] %>
-mongod_path: <%= File.join(node[:mongodb][:path], "bin", "mongod") %>
-mongorestore_path: <%= File.join(node[:mongodb][:path], "bin", "mongorestore") %>
-mongo_timeout: <%= node[:mongodb_node][:mongo_timeout] %>
+
+mongod_path:
+  "1.8": <%= File.join(node[:mongodb][:path], "bin", "mongod") %>
+mongorestore_path:
+  "1.8": <%= File.join(node[:mongodb][:path], "bin", "mongorestore") %>
+mongod_options:
+  "1.8": ""
+
 port_range:
   first: 25001
   last: 45000
 migration_nfs: /mnt/migration
-logging:
-  level: debug
