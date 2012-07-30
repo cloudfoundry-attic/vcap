@@ -12,14 +12,7 @@ $LOAD_PATH.unshift(File.dirname(__FILE__))
 
 require File.expand_path('vcap_defs', File.dirname(__FILE__))
 require File.expand_path('job_manager', File.dirname(__FILE__))
-
-
-DEFAULT_CLOUD_FOUNDRY_EXCLUDED_COMPONENT = 'neo4j|memcached|couchdb'
-def is_excluded?(name)
-  @excluded ||= ENV['CLOUD_FOUNDRY_EXCLUDED_COMPONENT']
-  @excluded ||= DEFAULT_CLOUD_FOUNDRY_EXCLUDED_COMPONENT
-  name.match(@excluded) if !@excluded.empty?
-end
+require File.expand_path("./excluded_components_helper.rb", File.dirname(__FILE__))
 
 excluded ||= ENV['CLOUD_FOUNDRY_EXCLUDED_COMPONENT'] || DEFAULT_CLOUD_FOUNDRY_EXCLUDED_COMPONENT
 puts "- DEV_SETUP Excluded components: #{excluded}.\n  See dev_setup/README for details" if !excluded.empty?
