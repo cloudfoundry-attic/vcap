@@ -3,7 +3,7 @@ service_name: mysql
 snapshots_base_dir: <%= node[:snapshot][:dir]%>
 serialization_base_dir: <%= node[:snapshot][:dir] %>
 local_db: sqlite3:/var/vcap/services/mysql/mysql_node.db
-tmp_dir: <%= node[:service_lifecycle][:tmp_dir]|| "/tmp"%>
+tmp_dir: <%= node[:service_lifecycle][:tmp_dir]|| "/var/vcap/snapshot/tmp"%>
 resque:
   host: <%= node[:redis_resque][:host]%>
   port: <%= node[:redis_resque][:port]%>
@@ -21,6 +21,8 @@ snapshot_quota: <%= node[:mysql_node][:snapshot_quota] || "5" %>
 <%else%>
 snapshot_quota: 0
 <%end%>
+serialization:
+  max_download_size_mb: <%= node[:service_lifecycle][:serialization_max_download_size]|| 10 %>
 mysql:
   host: <%= node[:mysql][:host] %>
   port: 3306

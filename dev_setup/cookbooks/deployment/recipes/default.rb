@@ -11,6 +11,7 @@ node[:uaadb][:host] ||= cf_local_ip
 node[:postgresql][:host] ||= cf_local_ip
 node[:redis_resque][:host] ||= cf_local_ip
 node[:vcap_redis][:host] ||= cf_local_ip
+node[:serialization_data_server][:host] ||= cf_local_ip
 
 [
   node[:deployment][:home], File.join(node[:deployment][:home], "deploy"),
