@@ -203,6 +203,20 @@ when "ubuntu"
     mode 0755
   end
 
+  template "nginx_sds.conf" do
+    path File.join(nginx_path, "conf", "nginx_sds.conf")
+    source "sds-nginx.conf.erb"
+    owner node[:deployment][:user]
+    mode 0644
+  end
+
+  template "nginx_sds" do
+    path File.join("", "etc", "init.d", "nginx_sds")
+    source "sds-nginx.erb"
+    owner node[:deployment][:user]
+    mode 0755
+  end
+
   bash "Stop running nginx" do
     code <<-EOH
       pid=`ps -ef | grep nginx | grep -v grep | awk '{print $2}'`
@@ -216,6 +230,11 @@ when "ubuntu"
   end
 
   service "nginx_cc" do
+    supports :status => true, :restart => true, :reload => true
+    action [ :enable, :restart ]
+  end
+
+  service "nginx_sds" do
     supports :status => true, :restart => true, :reload => true
     action [ :enable, :restart ]
   end

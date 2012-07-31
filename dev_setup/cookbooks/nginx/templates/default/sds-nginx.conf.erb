@@ -1,0 +1,80 @@
+#deployment cloudcontroller nginx.conf
+user  <%= node[:deployment][:user] %> root;
+worker_processes  1;
+
+error_log <%= node[:nginx][:log_home] %>/nginx_sds_error.log debug;
+pid        /var/run/nginx_sds.pid;
+
+events {
+  worker_connections   <%= node[:nginx][:worker_connections] %>;
+  use epoll;
+}
+
+http {
+  include       mime.types;
+  default_type  text/html;
+  server_tokens off;
+
+  log_format main  '$host - [$time_local] '
+                   '"$request" $status $bytes_sent '
+                   '"$http_referer" "$http_user_agent" '
+                   '$remote_addr response_time:$upstream_response_time';
+
+  access_log  <%= node[:nginx][:log_home] %>/nginx_sds_main.log  main;
+
+  sendfile             on;  #enable use of sendfile()
+  tcp_nopush           on;
+  tcp_nodelay          on;  #disable nagel's algorithm
+
+  keepalive_timeout  75 20; #inherited from router
+
+  client_max_body_size 256M; #already enforced upstream/but doesn't hurt.
+
+  upstream serialization_data_server {
+  server 127.0.0.1:<%= node[:serialization_data_server][:upstream_port] || "20000"%>;
+  }
+
+  server {
+    listen    <%= node[:serialization_data_server][:nginx_port] || "4997"%>;
+    server_name  _;
+    server_name_in_redirect off;
+
+    #proxy and log all SDS traffic
+    location / {
+      access_log <%= node[:nginx][:log_home] %>/nginx_sds_access.log  main;
+      proxy_pass                 http://serialization_data_server;
+    }
+
+    location /protected {
+      internal;
+      alias   <%= node[:snapshot][:dir] %>;
+    }
+
+    location ~ /serialized/.*/.*/serialized/data {
+      upload_pass @sds_uploads;
+      upload_pass_args on;
+
+      # Storee files to this directory
+      upload_store /var/vcap/data/serialization_data_server/tmp/uploads;
+
+      # No limit for output body    forwarded to SDS
+      upload_max_output_body_len 0;
+
+      # Allow uploaded files to be read only by user
+      # upload_store_accesscess user:r;
+
+      # Set specified fields in request body
+      upload_set_form_field "${upload_field_name}_name" $upload_file_name;
+      upload_set_form_field "${upload_field_name}_path" $upload_tmp_path;
+
+      upload_pass_form_field "^_method$";
+
+      #only any error, delete uploaded files.
+      upload_cleanup 400-505;
+    }
+
+    location @sds_uploads {
+      proxy_pass http://serialization_data_server;
+    }
+  }
+}

@@ -60,7 +60,7 @@ http {
       root   /var/vcap/shared;
     }
 
-    location ~ /apps/.*/application {
+    location ~ (/apps/.*/application|/services/v\d+/configurations/.*/serialized/data) {
       # Pass altered request body to this location
       upload_pass   @cc_uploads;
       upload_pass_args on;
