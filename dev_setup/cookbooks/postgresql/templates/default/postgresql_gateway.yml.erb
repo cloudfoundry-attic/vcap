@@ -23,7 +23,6 @@ resque:
   password: <%= node[:redis_resque][:password] %>
   expire: <%= node[:redis_resque][:expire]%>
 download_url_template: "http://service-serialization.<%= node[:deployment][:domain] %>/serialized/%{service}/%{name}/snapshots/%{snapshot_id}?token=%{token}"
-upload_temp_dir: /tmp
 plan_management:
   plans:
     free:

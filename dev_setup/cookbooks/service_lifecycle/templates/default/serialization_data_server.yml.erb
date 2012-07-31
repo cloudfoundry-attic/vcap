@@ -2,8 +2,19 @@
 serialization_base_dir: <%= node[:snapshot][:dir]%>
 pid: /var/vcap/sys/run/serialization_data_server.pid
 mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>
-ip_route: localhost
 external_uri: service-serialization.<%= node[:deployment][:domain]%>
+upload_token: <%= node[:serialization_data_server][:upload_token] %>
+expire_time: <%= node[:serialization_data_server][:expire_time]%>
+purge_expired_interval: <%= node[:serialization_data_server][:purge_expired_interval]%>
+purge_num: <%= node[:serialization_data_server][:purge_num]%>
+<% if node[:serialization_data_server][:use_nginx] === true %>
+port: <%= node[:serialization_data_server][:upstream_port]%>
+nginx:
+  nginx_path: /protected
+  nginx_port: <%= node[:serialization_data_server][:nginx_port]%>
+<% else %>
+port:  <%= node[:serialization_data_server][:port]%>
+<% end %>
 logging:
   level: debug
 redis:
@@ -12,4 +23,3 @@ redis:
   password: <%= node[:redis_resque][:password] %>
   expire: <%= node[:redis_resque][:expire]%>
 index: 0
-

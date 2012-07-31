@@ -171,7 +171,17 @@ runtimes:
   python2:
     version: 2.[67]
 
-<% if node[:service_lifecycle][:enable] == true %>
+<% if node[:service_lifecycle][:enable] == true
+  if node[:serialization_data_server][:use_nginx] === true
+    sds_port = node[:serialization_data_server][:nginx_port] || 4997
+  else
+    sds_port = node[:serialization_data_server][:port] || 4998
+  end
+%>
 service_lifecycle:
   max_upload_size: <%= node[:service_lifecycle][:max_upload_size] || 1 %>
+  upload_token: <%= node[:serialization_data_server][:upload_token]%>
+  upload_timeout: <%= node[:serialization_data_server][:upload_timeout]%>
+  serialization_data_server:
+  - <%= node[:serialization_data_server][:host]%>:<%= sds_port %>
 <% end %>
