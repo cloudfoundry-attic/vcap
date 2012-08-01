@@ -10,9 +10,36 @@ pid: /var/vcap/sys/run/mongodb_node.pid
 max_memory: <%= node[:mongodb_node][:max_memory] %>
 node_id: <%= "mongodb_node_#{node[:mongodb_node][:index]}" %>
 op_time_limit: <%= node[:mongodb_node][:op_time_limit] %>
-mongod_path: <%= File.join(node[:mongodb][:path], "bin", "mongod") %>
-mongorestore_path: <%= File.join(node[:mongodb][:path], "bin", "mongorestore") %>
 mongo_timeout: <%= node[:mongodb_node][:mongo_timeout] %>
+
+<%
+  keys = node[:mongodb][:supported_versions].keys
+  keys = keys.collect {|e| "\"#{e}\""}
+%>
+supported_versions: [<%= keys.join(", ") %>]
+default_version: "<%= node[:mongodb][:default_version] %>"
+
+mongod_path:
+<%
+  node[:mongodb][:supported_versions].each_key do |version|
+%>
+  "<%= version %>": "<%= File.join(node[:deployment][:home], "deploy", "mongodb", node[:mongodb][:supported_versions][version], "bin", "mongod") %>"
+<% end %>
+
+mongorestore_path:
+<%
+  node[:mongodb][:supported_versions].each_key do |version|
+%>
+  "<%= version %>": "<%= File.join(node[:deployment][:home], "deploy", "mongodb", node[:mongodb][:supported_versions][version], "bin", "mongorestore") %>"
+<% end %>
+
+mongod_options:
+<%
+  node[:mongodb][:supported_versions].each_key do |version|
+%>
+  "<%= version %>": "<%= node[:mongod_options][version] %>"
+<% end %>
+
 port_range:
   first: 25001
   last: 45000
