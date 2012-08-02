@@ -1,13 +1,13 @@
 include_attribute "deployment"
 
 default[:nginx][:version] = "0.8.54"
-default[:nginx][:id]  = "eyJvaWQiOiI0ZTRlNzhiY2EyMWUxMjEwMDRlNGU3ZDUxMWY1NTMwNGYzMDY4%0AMWM4NjI4YyIsInNpZyI6IjQ5V01mRHdHSmJKTkZ0dDh3RFlHRTBna3ROWT0i%0AfQ==%0A"
-default[:nginx][:patch_id] = "eyJvaWQiOiI0ZTRlNzhiY2E2MWUxMjIyMDRlNGU5ODY0M2Q5YWUwNGZkNmI5%0AYTk4MTQxNiIsInNpZyI6IjN0N2dIYnhuVmwzUy82cFgwSDFoYUZuc3FQYz0i%0AfQ==%0A"
-default[:nginx][:pcre_id]  = "eyJvaWQiOiI0ZTRlNzhiY2E1MWUxMjIwMDRlNGU4ZWM2ODQwNzcwNGYzMDY4%0ANDEyNGY0YyIsInNpZyI6IjhMZ29KQnZVbmN3UzVCWS9VS0pTVTJLdEZYdz0i%0AfQ==%0A"
-default[:nginx][:module_upload_id]  = "eyJvaWQiOiI0ZTRlNzhiY2E2MWUxMjIwMDRlNGU4ZWM2YjQ0YjYwNGYzMDY4%0AMjI2ZmMwNCIsInNpZyI6IjVZTnZsRXdjeW1UbGJsWTlQRDhadGtiRUtJND0i%0AfQ==%0A"
-default[:nginx][:module_headers_more_id]  = "eyJvaWQiOiI0ZTRlNzhiY2E0MWUxMjIwMDRlNGU4ZWM2NWY2N2YwNGYzMDY4%0AMzZhYzcwZCIsInNpZyI6Illmd0FibTNWdGtpYWdlSTRLQ2RQMmdKWkE1cz0i%0AfQ==%0A"
-default[:nginx][:module_devel_kit_id]  = "eyJvaWQiOiI0ZTRlNzhiY2EzMWUxMjIwMDRlNGU4ZWM2NDZlMjEwNGYzMDY4%0AMmM4ZDdjMSIsInNpZyI6Im5waHZ0N2xFaVlBNDhldXB3NU9qVGc5bmhuRT0i%0AfQ==%0A"
-default[:nginx][:module_lua_id]  = "eyJvaWQiOiI0ZTRlNzhiY2EzMWUxMjEwMDRlNGU3ZDUxNDc0NWYwNGYzMDY4%0AM2JkY2MyMSIsInNpZyI6IkRhNklIaVc5RFVvVENsbWJtT1RUWlRxcUVRQT0i%0AfQ==%0A"
+default[:nginx][:id]  = "eyJzaWciOiJYaGxvTGFpVktXR3B6MExZVDBBdFNod3RDdzg9Iiwib2lkIjoi%0ANGU0ZTc4YmNhMjFlMTIyMjA0ZTRlOTg2MzkyNmIxMDUwMThmMmNiNGFiNjki%0AfQ==%0A"
+default[:nginx][:patch_id] = "eyJzaWciOiJkVGp2bjEyMXZYT0VWUHFUQjhrdjZ3Zk56WHc9Iiwib2lkIjoi%0ANGU0ZTc4YmNhNjFlMTIyMDA0ZTRlOGVjNmI0NGI2MDUwMThmM2JmMGMzOTQi%0AfQ==%0A"
+default[:nginx][:pcre_id]  = "eyJzaWciOiJidU8zVW4rMEE5SVpYdkIxakpTb1NmNkV4N0k9Iiwib2lkIjoi%0ANGU0ZTc4YmNhMTFlMTIyMDA0ZTRlOGVjNjQ4NDMxMDUwMThmNDFjMDA1NWMi%0AfQ==%0A"
+default[:nginx][:module_upload_id]  = "eyJzaWciOiJNU2VoeXVtVTZabDQxaHNLT2xLTFhka2hpTVU9Iiwib2lkIjoi%0ANGU0ZTc4YmNhNjFlMTIxMjA0ZTRlODZlZWJlNTkxMDUwMThmMmU0YWYzNTUi%0AfQ==%0A"
+default[:nginx][:module_headers_more_id]  = "eyJzaWciOiJHNmZUd092Wk03MTBIdWZGbTZsdVhlUkkvQkk9Iiwib2lkIjoi%0ANGU0ZTc4YmNhMjFlMTIxMDA0ZTRlN2Q1MTFmNTUzMDUwMThmM2I2YTEzMGQi%0AfQ==%0A"
+default[:nginx][:module_devel_kit_id]  = "eyJzaWciOiJPZ0dPL3BBbmszOS96MWYvWFNadm11bGZDNFk9Iiwib2lkIjoi%0ANGU0ZTc4YmNhNTFlMTIyMDA0ZTRlOGVjNjg0MDc3MDUwMThmM2FkYmExZmMi%0AfQ==%0A"
+default[:nginx][:module_lua_id]  = "eyJzaWciOiIrODdSUXRTbUFINm5Sd3NNcFc2YlFDSVNPUXM9Iiwib2lkIjoi%0ANGU0ZTc4YmNhNTFlMTIyMDA0ZTRlOGVjNjg0MDc3MDUwMThmMmQ2ZGVhZTci%0AfQ==%0A"
 default[:nginx][:path]    = File.join(node[:deployment][:home], "deploy", "nginx", "nginx-#{nginx[:version]}")
 default[:nginx][:vcap_log] = File.join(node[:deployment][:home], "sys", "log", "vcap.access.log")
 default[:nginx][:checksums][:source] = "12e28efb9a54452fa6e579e08ce7c864e49d6ea6104cc2b3de5a4416ead90593"
@@ -20,9 +20,9 @@ default[:nginx][:checksums][:module_lua_source] = "249042d34a44dddd0ab06a37066fc
 
 default[:lua][:version] = "5.1.4"
 default[:lua][:simple_version] = lua[:version].match(/\d+\.\d+/).to_s # something like 5.1
-default[:lua][:id]  = "eyJvaWQiOiI0ZTRlNzhiY2EyMWUxMjEwMDRlNGU3ZDUxMWY1NTMwNGYzMDY4%0ANDZjOWZlNiIsInNpZyI6InoydzlWa1VTc3Y2ZHJTTDVGUmU3aGxrbWt6TT0i%0AfQ==%0A"
+default[:lua][:id]  = "eyJzaWciOiJrd0YvTVVmV24zb3pscHFHN0cwcXhQZ2RjV3c9Iiwib2lkIjoi%0ANGU0ZTc4YmNhMzFlMTIyMjA0ZTRlOTg2M2IxYjc0MDUwMThmMjUzMTUyNzQi%0AfQ==%0A"
 default[:lua][:path]    = File.join(node[:deployment][:home], "deploy", "lua", "lua-#{lua[:version]}")
-default[:lua][:cjson_id]  = "eyJvaWQiOiI0ZTRlNzhiY2E2MWUxMjEwMDRlNGU3ZDUxZDk1MGUwNGYzMDY4%0AMzE5YzBiYiIsInNpZyI6IkpGUW01bnRxWWllTUxFM0FteGExaG5FamFQOD0i%0AfQ==%0A"
+default[:lua][:cjson_id]  = "eyJzaWciOiJ5OGp2YWlvUWptNXhrc3hTODdYQ0x0N0JXemM9Iiwib2lkIjoi%0ANGU0ZTc4YmNhNjFlMTIxMjA0ZTRlODZlZWJlNTkxMDUwMThmMjViZGE3MDYi%0AfQ==%0A"
 default[:lua][:module_path]    = File.join(lua[:path], 'lib', 'lua', lua[:simple_version])
 default[:lua][:plugin_source_path] = File.join(node["cloudfoundry"]["home"], "router", "ext", "nginx")
 default[:lua][:checksums][:source] = "b038e225eaf2a5b57c9bcc35cd13aa8c6c8288ef493d52970c9545074098af3a"

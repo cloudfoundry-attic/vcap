@@ -2,12 +2,12 @@ include_attribute "deployment"
 
 default[:elasticsearch][:version] = "0.19.4"
 default[:elasticsearch][:distribution_file] = "elasticsearch-#{elasticsearch[:version]}.tar.gz"
-default[:elasticsearch][:id] = "eyJvaWQiOiI0ZTRlNzhiY2E0MWUxMjEyMDRlNGU4NmVlNTM5MjEwNGZlOTI5%0AZTMyNWViOSIsInNpZyI6IlNxUUlXMjBSaFlRTkRrdldZREtSR08raERGRT0i%0AfQ==%0A"
+default[:elasticsearch][:id] = "eyJzaWciOiJRR3o1cnVZUGFzQ1gxVTNCZFZiQ3pZcUdTbU09Iiwib2lkIjoi%0ANGU0ZTc4YmNhNTFlMTIyMDA0ZTRlOGVjNjg0MDc3MDUwMTlmMGJhYWMxODki%0AfQ==%0A"
 default[:elasticsearch][:path] = File.join(node[:deployment][:home], "deploy", "elasticsearch")
 
 default[:elasticsearch][:http_basic_plugin][:version] = "1.0.3"
 default[:elasticsearch][:http_basic_plugin][:distribution_file] = "elasticsearch-http-basic-#{elasticsearch[:http_basic_plugin][:version]}.jar"
-default[:elasticsearch][:http_basic_plugin][:id] = "eyJvaWQiOiI0ZTRlNzhiY2E0MWUxMjEwMDRlNGU3ZDUxNzYxOGYwNGZlOTI5%0AZGYzNGFlZSIsInNpZyI6IjBjVFZMTHBtLzBoUjRaMDQyU2JEb0wxU1p1QT0i%0AfQ==%0A"
+default[:elasticsearch][:http_basic_plugin][:id] = "eyJzaWciOiJjNkcwNVhOeGxVMkl1Ung3cVFhU3B1RzBBYms9Iiwib2lkIjoi%0ANGU0ZTc4YmNhNjFlMTIxMDA0ZTRlN2Q1MWQ5NTBlMDUwMTlmMGM3YWYwMDMi%0AfQ==%0A"
 default[:elasticsearch][:http_basic_plugin][:path] = File.join(default[:elasticsearch][:path], "plugins", "http-basic")
 
 default[:elasticsearch_gateway][:service][:timeout] = "20"

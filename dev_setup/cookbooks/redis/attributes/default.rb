@@ -10,7 +10,7 @@ default[:redis][:port] = 6379
 default[:redis][:password] = "redis"
 default[:redis][:expire] = 60
 
-default[:redis][:id] = "eyJvaWQiOiI0ZTRlNzhiY2ExMWUxMjIyMDRlNGU5ODYzOGI3NjMwNGZlOTJj%0AMzc1Yjc3MCIsInNpZyI6IlBPUkw5WDkxYmErTnlXdnNyWlVaOEtrV1JQZz0i%0AfQ==%0A"
+default[:redis][:id] = "eyJzaWciOiJ0akRiejV6Mk9aT2ZLcHlqdHJCaW1QbnJrVUk9Iiwib2lkIjoi%0ANGU0ZTc4YmNhNDFlMTIyMjA0ZTRlOTg2M2QwNzYzMDUwMTlmOGY5YzVkZjci%0AfQ==%0A"
 default[:redis][:checksum] = "4143b7fab809c5fe586265b4f792f346206a3a8082bbf79f70081a0538bab3cb"
 
 default[:redis_gateway][:service][:timeout] = "15"
