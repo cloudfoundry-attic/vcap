@@ -1,9 +1,9 @@
 include_attribute "deployment"
 default[:libevent][:version] = "2.0.19"
-default[:libevent][:id] = "eyJzaWciOiJIaWtwTHBwS3QyMjZQUDdycHJuTlFYQWlFRDA9Iiwib2lkIjoi%0ANGU0ZTc4YmNhMTFlMTIyMDA0ZTRlOGVjNjQ4NDMxMDRmYjZkNjI0M2ViZmMi%0AfQ==%0A"
+default[:libevent][:id] = "eyJzaWciOiJoemRHWEtZTWdKYm9OSUJIeU5kcHc5Ti9TNEk9Iiwib2lkIjoi%0ANGU0ZTc4YmNhNTFlMTIyMjA0ZTRlOTg2M2YyOGYzMDUwMTlmOWMxYzE4N2Ei%0AfQ==%0A"
 default[:memcached][:version] = "1.4.13"
 default[:memcached][:path] = File.join(node[:deployment][:home], "deploy", "memcached")
-default[:memcached][:id] = "eyJzaWciOiIyRy9MK0JsbEtTYnF2SjgwLzZ2Qm5qbE93VDA9Iiwib2lkIjoi%0ANGU0ZTc4YmNhMTFlMTIyMjA0ZTRlOTg2MzhiNzYzMDRmYjZkNjI4ZDI4Y2Ii%0AfQ==%0A"
+default[:memcached][:id] = "eyJzaWciOiJmZzdRNDJvZ3pZTnYvNHBjeEpjM1UvMWVVK2c9Iiwib2lkIjoi%0ANGU0ZTc4YmNhNTFlMTIxMjA0ZTRlODZlZThlMmM5MDUwMTlmOWJhY2UxYWIi%0AfQ==%0A"
 default[:memcached][:runner] = node[:deployment][:user]
 default[:memcached][:password] = "memcached"
 

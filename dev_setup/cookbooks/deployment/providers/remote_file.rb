@@ -6,8 +6,8 @@ include Bosh::Blobstore
 include Chef::Mixin::Checksum
 
 BLOBSTORE_HOST = {
-  :url => "https://blob.cfblob.com",
-  :uid => "bb6a0c89ef4048a8a0f814e25385d1c5/user1"
+  :url => "http://blob.cfblob.com",
+  :uid => "4d6de7ba9e3f46a8b3c022703b016696/cf_release"
 }
 
 def load_current_resource

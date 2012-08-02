@@ -19,12 +19,12 @@ default[:mongodb][:default_version] = "1.8"
 
 default[:mongodb][:id] = {
         "1.8.5" => {
-                "x86_64" => 'eyJzaWciOiIzNG9GazhkWFRNZCtZOXVCK0xlMWt0b2VDNVU9Iiwib2lkIjoi%0ANGU0ZTc4YmNhNTFlMTIxMjA0ZTRlODZlZThlMmM5MDRmYzdmMjY3Nzc1ZWIi%0AfQ==%0A',
-                "i686"   => 'eyJzaWciOiIzaEZub2dWYi9ad0Y5MVVQSU0rV0hKcUVrZzA9Iiwib2lkIjoi%0ANGU0ZTc4YmNhNTFlMTIxMDA0ZTRlN2Q1MTkwNmNkMDRmYzdmMWY3OGQ4MTAi%0AfQ==%0A'
+                "x86_64" => 'eyJzaWciOiJ0NHk5ZzBhRFkxSFZmaGhyNmQ5a0FQZFMxS1U9Iiwib2lkIjoi%0ANGU0ZTc4YmNhNTFlMTIxMjA0ZTRlODZlZThlMmM5MDUwMWEwZTYwOGI4YTMi%0AfQ==%0A',
+                "i686"   => 'eyJzaWciOiJ3cHY2Sk5BelhmTUVDYUhWUE1UM2RMYm1tRkk9Iiwib2lkIjoi%0ANGU0ZTc4YmNhMzFlMTIyMjA0ZTRlOTg2M2IxYjc0MDUwMWEwZTZjMDVkNjgi%0AfQ==%0A'
         },
         "2.0.6" => {
-                "x86_64" => 'eyJzaWciOiJXcFFIdzhINXlWcHd5aitZMUNDQ0JJMUZheHM9Iiwib2lkIjoi%0ANGU0ZTc4YmNhNjFlMTIxMjA0ZTRlODZlZWJlNTkxMDRmZjIzMzA1NTUxMmEi%0AfQ==%0A',
-                "i686"   => 'eyJzaWciOiJ4aXJ5STRaeDdreXozdDcrRVZjYUZWOWpoeXc9Iiwib2lkIjoi%0ANGU0ZTc4YmNhMjFlMTIyMDA0ZTRlOGVjNjQ3YTU0MDRmZjIzMzI0NDAzOTMi%0AfQ==%0A'
+                "x86_64" => 'eyJzaWciOiJNTDBqWkJ6NjJ2cWNYWmVaZ3dsUENRWlhjbFE9Iiwib2lkIjoi%0ANGU0ZTc4YmNhNDFlMTIxMjA0ZTRlODZlZTUzOTIxMDUwMWEwZTg2M2IzNTgi%0AfQ==%0A',
+                "i686"   => 'eyJzaWciOiJnZUZ5dkNQanNndTc0WUZIUkxUYU80UjhkajA9Iiwib2lkIjoi%0ANGU0ZTc4YmNhMjFlMTIyMjA0ZTRlOTg2MzkyNmIxMDUwMWEwZTk1M2M4MmEi%0AfQ==%0A'
         }
 }
 default[:mongodb][:checksum] = {

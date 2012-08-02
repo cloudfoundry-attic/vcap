@@ -2,8 +2,8 @@ include_attribute "deployment"
 default[:neo4j][:version] = "community-1.4.1"
 default[:neo4j][:service_dir] = "/var/vcap/services/neo4j"
 
-default[:neo4j][:server_id] = "eyJvaWQiOiI0ZTRlNzhiY2E1MWUxMjIyMDRlNGU5ODYzZjI4ZjMwNGZkNmMw%0AYTM0MWE1MiIsInNpZyI6Imh0dVhRa3pLd2FxN0dxTC9YZlJKODUwbzJ1VT0i%0AfQ==%0A"
-default[:neo4j][:jar_id] = "eyJvaWQiOiI0ZTRlNzhiY2E0MWUxMjEyMDRlNGU4NmVlNTM5MjEwNGZkNmMw%0AYjNjODc4NSIsInNpZyI6ImZrSm5aL1k1THpzaHoxL1hMak9Rb1FHREpSRT0i%0AfQ==%0A"
+default[:neo4j][:server_id] = "eyJzaWciOiJ1aENFMlpLVm1qU2JVaVdzSmtadXhJV0F5Y1E9Iiwib2lkIjoi%0ANGU0ZTc4YmNhNDFlMTIyMDA0ZTRlOGVjNjVmNjdmMDUwMWEwYTc5ZGZjNjYi%0AfQ==%0A"
+default[:neo4j][:jar_id] = "eyJzaWciOiJMRURKclNvOTNHWWo1dzBjNngrelZFVFZvSkU9Iiwib2lkIjoi%0ANGU0ZTc4YmNhNTFlMTIxMDA0ZTRlN2Q1MTkwNmNkMDUwMWEwYTg1N2IyMjUi%0AfQ==%0A"
 
 default[:neo4j][:checksum][:server] = "bf1d5fd477cf8dde8718b2dcced0d74293702083b66b1278fe84284503dd3ce8"
 default[:neo4j][:checksum][:jar] = "37cdfcc91490f1aaf0fd58dc6591e08c1c6c3044348c76a594dbcaeedbdbdbcd"
