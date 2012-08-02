@@ -92,10 +92,10 @@ o Service backup:
 o Service lifecycle:
   By default, service lifecycle feature is disabled.
   If you want to enable this feature, please follow the two steps below:
-  1. Edit file "$HOMW/projects/vcap/dev_setup/cookbooks/service_lifecycle/attributes/default.rb".
-     Set default[:service_lifecycle][:enable] to be "true", and then re-run dev-setup to update the configuration.
-  2. Remove the following components from CLOUD_FOUNDRY_EXCLUDED_COMPONENT (see below section).
+  1. Remove the following components from CLOUD_FOUNDRY_EXCLUDED_COMPONENT (see below section).
      vcap_redis|worker|snapshot_manager|serialization_data_server
+  2. Edit file "$HOME/projects/vcap/dev_setup/cookbooks/service_lifecycle/attributes/default.rb".
+     Set default[:service_lifecycle][:enable] to be "true", re-run "vcap_dev_setup", then do "vcap_dev start".
 
   snapshot_manager is used to clean the snapshots which belong to the service un-provisioned instances.
 
