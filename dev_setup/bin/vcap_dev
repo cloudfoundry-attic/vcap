@@ -66,8 +66,8 @@ maven_bin_dir = deployment_info["maven_bin_dir"]
 gemdir = `#{File.join(ruby_bin_dir, "gem")} environment gemdir`.split("\n")[0]
 ENV["PATH"] = "#{ruby_bin_dir}:#{File.join(gemdir, "bin")}:#{maven_bin_dir}:#{ENV["PATH"]}"
 
-if vcap_components["components"].include?("vcap_redis")
-  vcap_components["components"].unshift(vcap_components["components"].delete("vcap_redis"))
+if vcap_components["components"].include?("services_redis")
+  vcap_components["components"].unshift(vcap_components["components"].delete("services_redis"))
 end
 
 if vcap_components["components"].include?("cloud_controller")
