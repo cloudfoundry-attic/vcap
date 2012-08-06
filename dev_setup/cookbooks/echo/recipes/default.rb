@@ -16,6 +16,17 @@ when "ubuntu"
 
   bash "Install Echo Server" do
     code <<-EOH
+      if [ -L "/etc/init.d/echoserver" ]; then
+        service echoserver stop
+        rm /etc/init.d/echoserver
+      fi
+      if [ -d "/tmp/echoserver/" ]; then
+        rm -rf /tmp/echoserver/
+      fi
+      if [ -d #{File.join(node[:echo_server][:path])} ]; then
+        rm -rf #{File.join(node[:echo_server][:path])}
+      fi  
+
       unzip #{echoserver_tarball_path} -d /tmp
       cp -r /tmp/echoserver #{File.join(node[:deployment][:home], 'deploy')}
       ln -s -t /etc/init.d/ #{File.join(node[:echo_server][:path], 'echoserver')}
