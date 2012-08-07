@@ -4,8 +4,8 @@ directory "#{node[:redis_resque][:persistence_dir]}" do
   mode "0755"
 end
 
-template File.join(node[:deployment][:config_path], "vcap_redis.conf") do
-  source "vcap_redis.conf.erb"
+template File.join(node[:deployment][:config_path], "services_redis.conf") do
+  source "services_redis.conf.erb"
   mode 0600
   owner node[:deployment][:user]
   group node[:deployment][:group]

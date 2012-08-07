@@ -85,9 +85,9 @@ uaa:
 
 # redis for new stager
 redis:
-  host: <%= node[:staging_redis][:host] %>
-  port: <%= node[:staging_redis][:port] %>
-  password: <%= node[:staging_redis][:password] %>
+  host: <%= node[:vcap_redis][:host] %>
+  port: <%= node[:vcap_redis][:port] %>
+  password: <%= node[:vcap_redis][:password] %>
 
 # App staging parameters
 staging:

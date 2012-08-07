@@ -2,8 +2,8 @@
 
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 PROG=<%= node[:redis][:path] %>/bin/redis-server
-ARGS=<%= node[:deployment][:config_path] %>/staging_redis.conf
-NAME=staging_redis
+ARGS=<%= node[:deployment][:config_path] %>/vcap_redis.conf
+NAME=vcap_redis
 
 test -x $PROG || exit 0
 

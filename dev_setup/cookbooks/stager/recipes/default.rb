@@ -14,21 +14,21 @@ template node[:stager][:config_file] do
   mode 0644
 end
 
-template "staging_redis.conf" do
-  path File.join(node[:deployment][:config_path], "staging_redis.conf")
-  source "staging_redis.conf.erb"
+template "vcap_redis.conf" do
+  path File.join(node[:deployment][:config_path], "vcap_redis.conf")
+  source "vcap_redis.conf.erb"
   owner node[:deployment][:user]
   mode 0644
 end
 
-template "staging_redis" do
-  path File.join("", "etc", "init.d", "staging_redis")
-  source "staging_redis.erb"
+template "vcap_redis" do
+  path File.join("", "etc", "init.d", "vcap_redis")
+  source "vcap_redis.erb"
   owner node[:deployment][:user]
   mode 0755
 end
 
-service "staging_redis" do
+service "vcap_redis" do
   supports :status => true, :restart => true, :reload => true
   action [ :enable, :restart ]
 end

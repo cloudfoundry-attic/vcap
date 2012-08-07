@@ -2,7 +2,7 @@
 bind 0.0.0.0
 port <%= node[:redis_resque][:port] %>
 daemonize yes
-pidfile /var/vcap/sys/run/vcap_redis.pid
+pidfile /var/vcap/sys/run/services_redis.pid
 # Close the connection after a client is idle for 10 min
 timeout 600
 
@@ -22,11 +22,11 @@ loglevel notice
 save 900 1
 save 300 10
 save 60 10000
-dbfilename vcap_redis.rdb
-dir <%= node[:redis_resque][:persistence_dir]|| "/var/vcap/vcap_redis" %>
+dbfilename services_redis.rdb
+dir <%= node[:redis_resque][:persistence_dir]|| "/var/vcap/services_redis" %>
 rdbcompression yes
 # AOF append only file persistent options
 appendonly yes
-appendfilename vcap_redis.aof
+appendfilename services_redis.aof
 # fsync every second is the recommend interval
 appendfsync everysec

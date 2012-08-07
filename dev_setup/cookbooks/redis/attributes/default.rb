@@ -28,7 +28,7 @@ default[:redis_backup][:config_file] = "redis_backup.yml"
 default[:redis_backup][:cron_time] = "0 3 * * *"
 default[:redis_backup][:cron_file] = "redis_backup.cron"
 
-default[:redis_resque][:config_file] = "vcap_redis.conf"
-default[:redis_resque][:persistence_dir] = "/var/vcap/vcap_redis"
+default[:redis_resque][:config_file] = "services_redis.conf"
+default[:redis_resque][:persistence_dir] = "/var/vcap/services_redis"
 
 default[:redis_worker][:config_file] = "redis_worker.yml"

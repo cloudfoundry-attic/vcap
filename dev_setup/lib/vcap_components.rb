@@ -254,15 +254,15 @@ class HMComponent < CoreComponent
   end
 end
 
-class VcapRedisComponent < Component
-  def vcap_redis?
+class ServicesRedisComponent < Component
+  def services_redis?
     true
   end
 
   def get_path
     return @path if @path
     if $config_dir.nil?
-      raise "Fail to get path of redis-server for VcapRedisComponent #{name}"
+      raise "Fail to get path of redis-server for ServicesRedisComponent #{name}"
     end
     @path = File.join($config_dir, "..", "deploy", "redis", "bin", "redis-server")
   end
@@ -270,7 +270,7 @@ class VcapRedisComponent < Component
   def get_configuration_path
     return @configuration_path if @configuration_path
     if $config_dir.nil?
-      raise "Fail to get configuration file of redis-server for VcapRedisComponent #{name}"
+      raise "Fail to get configuration file of redis-server for ServicesRedisComponent #{name}"
     end
     @configuration_path = File.join($config_dir, "#{name}.conf")
   end
@@ -414,8 +414,8 @@ CCComponent.register("cloud_controller")
 HMComponent.register("health_manager")
 
 ## standalone
-%w(vcap_redis).each do |redis|
-  VcapRedisComponent.register(redis)
+%w(services_redis).each do |redis|
+  ServicesRedisComponent.register(redis)
 end
 
 ## services: gateways & nodes
