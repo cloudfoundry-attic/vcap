@@ -82,65 +82,36 @@ o Service backup:
   stop:  remove lines from crontab
   status: get lines from crontab
 
-  If you want to to clean the backups that belongs to the service instance which is un-provisioned, you
+  If you want to clean the backups that belongs to the service instance which is un-provisioned, you
   should use the backup manager.
 
-  By default, backup_manager is excluded (see below), you should remove it from CLOUD_FOUNDRY_EXCLUDED_COMPONENT,
-  and start it.
+  By default, backup_manager is not installed, you should add "backup_manager" in your deployment config file, and
+  re-run vcap_dev_setup.
+    $HOME/projects/vcap/dev_setup/bin/vcap_dev_setup -c <your config file>
     $HOME/projects/vcap/dev_setup/bin/vcap_dev start backup_manager
 
 o Service lifecycle:
   By default, service lifecycle feature is disabled.
-  If you want to enable this feature, please follow the two steps below:
-  1. Edit file "$HOMW/projects/vcap/dev_setup/cookbooks/service_lifecycle/attributes/default.rb".
-     Set default[:service_lifecycle][:enable] to be "true", and then re-run dev-setup to update the configuration.
-  2. Remove the following components from CLOUD_FOUNDRY_EXCLUDED_COMPONENT (see below section).
-     services_redis|worker|snapshot_manager|serialization_data_server
+  If you want to enable this feature, please add the below items in your deployment config file.
+    - services_redis
+    - serialization_data_server
+    - snapshot_manager
+    - redis_worker
+    - mysql_worker
+    - mongodb_worker
+    - postgresql_worker
+  Then, re-run vcap_dev_setup and start.
+    $HOME/projects/vcap/dev_setup/bin/vcap_dev_setup -c <your config file>
+    $HOME/projects/vcap/dev_setup/bin/vcap_dev restart
 
   snapshot_manager is used to clean the snapshots which belong to the service un-provisioned instances.
 
-o Excluded components:
-  By default neo4j and memcached (+ a few other new services) will be excluded by default.
-  The excluded components are specified by a regex using the environment variable
-  CLOUD_FOUNDRY_EXCLUDED_COMPONENT.
-  NOTE: The exclusion is on the component name. E.g. specifying memcached, will exclude memcached_node
-  and memcached_gateway but nothing else.
-
-  To include all components, just set the environment variable to empty which will skip matching. e.g.:
-  export CLOUD_FOUNDRY_EXCLUDED_COMPONENT=
-
-  To exclude mysql, neo4j and memcached, set the variable as follows:
-  export CLOUD_FOUNDRY_EXCLUDED_COMPONENT="mysql|memcached|neo4j"
-  This will skip:
-    Skipping excluded component: mysql_gateway
-    Skipping excluded component: mysql_node
-    Skipping excluded component: neo4j_gateway
-    Skipping excluded component: neo4j_node
-    Skipping excluded component: memcached_gateway
-    Skipping excluded component: memcached_node
-
-  To skip all node and gateway components:
-  export CLOUD_FOUNDRY_EXCLUDED_COMPONENT="node|gateway"
-  This will skip:
-    Skipping excluded component: redis_gateway
-    Skipping excluded component: redis_node
-    Skipping excluded component: mongodb_gateway
-    Skipping excluded component: mysql_gateway
-    Skipping excluded component: mysql_node
-    Skipping excluded component: neo4j_gateway
-    Skipping excluded component: neo4j_node
-    Skipping excluded component: mongodb_node
-    Skipping excluded component: memcached_gateway
-    Skipping excluded component: rabbitmq_gateway
-    Skipping excluded component: memcached_node
-    Skipping excluded component: rabbitmq_node
-
-  Finally, the default list of excluded components can be restored by undefining the
-  environment variable as follows:
-  unset CLOUD_FOUNDRY_EXCLUDED_COMPONENT
-
-  The default exclusion list can be changed by updating the DEFAULT_CLOUD_FOUNDRY_EXCLUDED_COMPONENT
-  in dev_setup/lib/excluded_components_helper.rb
+o To deploy all the components:
+  By default, vcap_dev_setup uses "$HOME/projects/vcap/dev_setup/deployments/devbox.yml" as the deployment
+  config file, containing most components in cloudfoundry, but not all.
+  To deploy all the components, see below:
+    $HOME/projects/vcap/dev_setup/bin/vcap_dev_setup -c $HOME/projects/vcap/dev_setup/deployments/devbox_all.yml
+    $HOME/projects/vcap/dev_setup/bin/vcap_dev start
 
 NOTE: To learn more about custom deployment config files and multi host setups
 see the README file vcap/dev_setup/deployments/README.

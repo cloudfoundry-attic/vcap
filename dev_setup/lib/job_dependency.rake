@@ -30,7 +30,7 @@ class JobManager
   end
 
   SERVICES_NODE.each do |job|
-    task job.to_sym => [CF.to_sym, NATS.to_sym, SERVICES_REDIS.to_sym] do
+    task job.to_sym => [CF.to_sym, NATS.to_sym] do
       install(job)
     end
   end
