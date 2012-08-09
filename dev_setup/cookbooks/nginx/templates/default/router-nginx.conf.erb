@@ -115,6 +115,7 @@ http {
         set $timestamp 0;
         set $trace '';
         set $sticky '';
+        set $app_id '';
 
         access_by_lua '
           -- add package.path and package.cpath
