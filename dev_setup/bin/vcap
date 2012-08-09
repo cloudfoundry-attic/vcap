@@ -253,12 +253,8 @@ module Run
     args = Run.expand_args(args)
     components = args.map do |arg|
       component = Component.create(arg)
-      if component.nil?
-        STDOUT.puts "Skipping invalid component: #{arg}"
-      else
-        STDOUT.puts "Skipping excluded component: #{component.name}" if component.is_excluded?
-      end
-      component if (component && component.exists? && !component.is_excluded?)
+      STDOUT.puts "Skipping invalid component: #{arg}" if component.nil?
+      component if (component && component.exists?)
     end.compact
     STDERR.puts "Don't know how to process '#{args.inspect}' \?\?" if components.empty?
     components
@@ -339,9 +335,6 @@ opts_parser = OptionParser.new do |opts|
   opts.on('--no-color', '--nocolor', '--nc')       { $nocolor = true }
   opts.on('--noprompt', '-n')                      { $noprompt = true }
 end
-
-excluded ||= ENV['CLOUD_FOUNDRY_EXCLUDED_COMPONENT'] || Component.getExcludedComponents().join('|')
-puts "- Excluded components: #{excluded}.\n  See dev_setup/README for details" if !excluded.empty?
 
 args = opts_parser.parse!(args)
 ENV['CLOUD_FOUNDRY_CONFIG_PATH'] = $config_dir

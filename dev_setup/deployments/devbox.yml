@@ -1,6 +1,42 @@
 ---
 deployment:
   name: "devbox"
+
 jobs:
   install:
-    - all
+    - nats_server
+    - router
+    - stager
+    - ccdb
+    - cloud_controller:
+        builtin_services:
+          - mysql
+          - redis
+          - mongodb
+          - rabbitmq
+          - postgresql
+          - vblob
+          - filesystem
+    - health_manager
+    - dea
+    - uaa
+    - uaadb
+    - redis_node:
+        index: "0"
+    - mysql_node:
+        index: "0"
+    - mongodb_node:
+        index: "0"
+    - rabbitmq_node:
+        index: "0"
+    - postgresql_node:
+        index: "0"
+    - vblob_node:
+        index: "0"
+    - redis_gateway
+    - mysql_gateway
+    - mongodb_gateway
+    - rabbitmq_gateway
+    - postgresql_gateway
+    - vblob_gateway
+    - filesystem_gateway

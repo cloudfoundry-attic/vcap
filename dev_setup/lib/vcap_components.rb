@@ -5,11 +5,9 @@ require 'yaml'
 require 'fileutils'
 
 require File.expand_path("./vcap_common.rb", File.dirname(__FILE__))
-require File.expand_path("./excluded_components_helper.rb", File.dirname(__FILE__))
 
 class Component
   @@named_components = {}
-  @@excluded = []
 
   attr :name
 
@@ -22,20 +20,12 @@ class Component
     end
   end
 
-  def self.register(name, excluded=nil)
+  def self.register(name)
     @@named_components[name] = self
-    default_excluded=/#{DEFAULT_CLOUD_FOUNDRY_EXCLUDED_COMPONENT}/
-    if excluded == true || (excluded.nil? && name =~ default_excluded)
-      @@excluded << name
-    end
   end
 
   def self.getNamedComponents()
     @@named_components
-  end
-
-  def self.getExcludedComponents()
-    @@excluded
   end
 
   def initialize(name, configuration_file = nil)
@@ -53,19 +43,6 @@ class Component
 
   def to_s
     name
-  end
-
-  def is_excluded?
-    excluded_env = $excluded || ENV['CLOUD_FOUNDRY_EXCLUDED_COMPONENT']
-    unless excluded_env.nil?
-      if excluded_env.empty?
-        false
-      else
-        name.match(excluded_env)
-      end
-    else
-      @@excluded.include?(name)
-    end
   end
 
   def exists?

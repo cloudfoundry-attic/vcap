@@ -215,6 +215,10 @@ class JobManager
         end
       end
 
+      if job == "snapshot_manager"
+        @spec["service_lifecycle"] = { :enable => true }
+      end
+
       @roles << job
     end
 

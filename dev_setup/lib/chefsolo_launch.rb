@@ -12,10 +12,6 @@ $LOAD_PATH.unshift(File.dirname(__FILE__))
 
 require File.expand_path('vcap_defs', File.dirname(__FILE__))
 require File.expand_path('job_manager', File.dirname(__FILE__))
-require File.expand_path("./excluded_components_helper.rb", File.dirname(__FILE__))
-
-excluded ||= ENV['CLOUD_FOUNDRY_EXCLUDED_COMPONENT'] || DEFAULT_CLOUD_FOUNDRY_EXCLUDED_COMPONENT
-puts "- DEV_SETUP Excluded components: #{excluded}.\n  See dev_setup/README for details" if !excluded.empty?
 
 script_dir = File.expand_path(File.dirname(__FILE__))
 cloudfoundry_home = Deployment.get_cloudfoundry_home
@@ -73,8 +69,7 @@ end
 # Prepare the chef run list
 run_list = []
 job_roles.each do |role|
-  STDOUT.puts "Skipping excluded component: #{role}" if is_excluded?(role)
-  run_list << "role[#{role}]" if !is_excluded?(role)
+  run_list << "role[#{role}]"
 end
 
 spec["run_list"] = run_list
