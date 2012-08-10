@@ -19,7 +19,7 @@ http {
   log_format main  '$host - [$time_local] '
                    '"$request" $status $bytes_sent '
                    '"$http_referer" "$http_user_agent" '
-                   '$remote_addr response_time:$upstream_response_time';
+                   '$remote_addr response_time:$upstream_response_time app_id:$app_id';
 
   access_log   <%= node[:nginx][:log_home] %>/nginx_router_main_access.log main;
 
@@ -71,6 +71,7 @@ http {
       proxy_read_timeout          120;
 
       set $health_monitor '';
+      set $app_id 0;
       if ($http_user_agent = "HTTP-Monitor/1.1") {
         set $health_monitor T;
       }
