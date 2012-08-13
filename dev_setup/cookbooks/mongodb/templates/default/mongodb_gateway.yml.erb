@@ -8,11 +8,7 @@ service:
   default_plan: 'free'
   tags: ['mongodb', 'mongodb-1.6', 'nosql', 'document']
   timeout: <%= node[:mongodb_gateway][:service][:timeout] %>
-<%
-keys = node[:mongodb][:supported_versions].keys
-keys = keys.collect {|e| "\"#{e}\""}
-%>
-  supported_versions: [<%= keys.join(", ") %>]
+  supported_versions: <%= "['#{node[:mongodb][:supported_versions].keys.join("', '")}']"%>
   version_aliases:
 <%
   node[:mongodb][:version_aliases].each do |a, v|

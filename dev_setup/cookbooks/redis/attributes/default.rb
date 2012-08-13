@@ -3,6 +3,14 @@ include_attribute "deployment"
 include_attribute "backup"
 include_attribute "service_lifecycle"
 
+default[:redis][:supported_versions] = {
+        "2.2" => "2.2.15",
+}
+default[:redis][:version_aliases] = {
+        "current" => "2.2",
+}
+default[:redis][:default_version] = "2.2"
+
 default[:redis][:version] = "2.2.15"
 default[:redis][:path] = File.join(node[:deployment][:home], "deploy", "redis")
 default[:redis][:runner] = node[:deployment][:user]

@@ -1,4 +1,13 @@
 include_attribute "deployment"
+
+default[:rabbitmq][:supported_versions] = {
+        "2.4" => "2.4.1",
+}
+default[:rabbitmq][:version_aliases] = {
+        "current" => "2.4",
+}
+default[:rabbitmq][:default_version] = "2.4"
+
 default[:rabbitmq][:version] = "2.4.1"
 default[:rabbitmq][:version_full] = "generic-unix-2.4.1"
 default[:rabbitmq][:path] = File.join(node[:deployment][:home], "deploy", "rabbitmq")

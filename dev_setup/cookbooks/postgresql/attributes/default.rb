@@ -1,6 +1,14 @@
 include_attribute "backup"
 include_attribute "service_lifecycle"
 
+default[:postgresql][:supported_versions] = {
+        "9.0" => "9.0",
+}
+default[:postgresql][:version_aliases] = {
+        "current" => "9.0",
+}
+default[:postgresql][:default_version] = "9.0"
+
 default[:postgresql][:server_root_password] = "changeme"
 default[:postgresql][:server_root_user] = "root"
 default[:postgresql][:system_port] = "5432"

@@ -9,6 +9,11 @@ service:
   default_plan: 'free'
   tags: ['postgresql', 'postgresql-<%= node[:postgresql][:service_version] %>', 'relational']
   timeout: <%= node[:postgresql_gateway][:service][:timeout] %>
+  supported_versions: <%= "['#{node[:postgresql][:supported_versions].keys.join("', '")}']"%>
+  version_aliases:
+<% node[:postgresql][:version_aliases].each do |a, v| %>
+    "<%= a %>": "<%= v %>"
+<% end %>
 index: 0
 token: <%= node[:postgresql_node][:token] %>
 logging:

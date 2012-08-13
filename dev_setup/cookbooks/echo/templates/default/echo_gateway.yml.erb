@@ -7,6 +7,11 @@ service:
   plans: ['free']
   default_plan: 'free'
   tags: ['echo', 'echo-1.0', 'echobased', 'demo']
+  supported_versions: <%= "['#{node[:echo][:supported_versions].keys.join("', '")}']"%>
+  version_aliases:
+<% node[:echo][:version_aliases].each do |a, v| %>
+    "<%= a %>": "<%= v %>"
+<% end %>
 index: 0
 token: <%= node[:echo_node][:token] %>
 logging:
