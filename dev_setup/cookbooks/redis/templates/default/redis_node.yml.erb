@@ -10,6 +10,8 @@ pid: /var/vcap/sys/run/redis_node.pid
 max_memory: <%= node[:redis_node][:max_memory] %>
 max_swap: 32
 node_id: <%= "redis_node_#{node[:redis_node][:index]}" %>
+supported_versions: <%= "['#{node[:redis][:supported_versions].keys.join("', '")}']"%>
+default_version: "<%= node[:redis][:default_version] %>"
 op_time_limit: <%= node[:redis_node][:op_time_limit] %>
 redis_server_path: <%= File.join(node[:redis][:path], "bin", "redis-server") %>
 port_range:

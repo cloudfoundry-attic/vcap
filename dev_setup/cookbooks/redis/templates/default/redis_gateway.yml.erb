@@ -8,6 +8,11 @@ service:
   default_plan: 'free'
   tags: ['redis', 'redis-2.2', 'key-value', 'nosql']
   timeout: <%= node[:redis_gateway][:service][:timeout] %>
+  supported_versions: <%= "['#{node[:redis][:supported_versions].keys.join("', '")}']"%>
+  version_aliases:
+<% node[:redis][:version_aliases].each do |a, v| %>
+    "<%= a %>": "<%= v %>"
+<% end %>
 host: localhost
 index: 0
 token: <%= node[:redis_node][:token] %>

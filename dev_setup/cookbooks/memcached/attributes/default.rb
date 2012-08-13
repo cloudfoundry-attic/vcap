@@ -1,4 +1,13 @@
 include_attribute "deployment"
+
+default[:memcached][:supported_versions] = {
+        "1.4" => "1.4.13",
+}
+default[:memcached][:version_aliases] = {
+        "current" => "1.4",
+}
+default[:memcached][:default_version] = "1.4"
+
 default[:libevent][:version] = "2.0.19"
 default[:libevent][:id] = "eyJzaWciOiJoemRHWEtZTWdKYm9OSUJIeU5kcHc5Ti9TNEk9Iiwib2lkIjoi%0ANGU0ZTc4YmNhNTFlMTIyMjA0ZTRlOTg2M2YyOGYzMDUwMTlmOWMxYzE4N2Ei%0AfQ==%0A"
 default[:memcached][:version] = "1.4.13"

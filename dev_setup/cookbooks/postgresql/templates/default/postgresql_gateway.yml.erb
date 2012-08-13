@@ -3,12 +3,17 @@ cloud_controller_uri: <%= node[:cloud_controller][:service_api_uri] %>
 
 service:
   name: postgresql
-  version: "<%= node[:postgresql][:service_version] %>"
+  version: "9.0"
   description: 'PostgreSQL database service'
   plans: ['free']
   default_plan: 'free'
   tags: ['postgresql', 'postgresql-<%= node[:postgresql][:service_version] %>', 'relational']
   timeout: <%= node[:postgresql_gateway][:service][:timeout] %>
+  supported_versions: <%= "['#{node[:postgresql][:supported_versions].keys.join("', '")}']"%>
+  version_aliases:
+<% node[:postgresql][:version_aliases].each do |a, v| %>
+    "<%= a %>": "<%= v %>"
+<% end %>
 index: 0
 token: <%= node[:postgresql_node][:token] %>
 logging:

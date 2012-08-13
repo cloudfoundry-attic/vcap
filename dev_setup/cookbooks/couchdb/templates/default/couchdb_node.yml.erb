@@ -9,6 +9,8 @@ couchdb_log_dir: /var/vcap/services/couchdb/logs
 plan: free
 pid: /var/vcap/sys/run/couchdb_node.pid
 node_id: <%= "couchdb_node_#{node[:couchdb_node][:index]}" %>
+supported_versions: <%= "['#{node[:couchdb][:supported_versions].keys.join("', '")}']"%>
+default_version: "<%= node[:couchdb][:default_version] %>"
 op_time_limit: <%= node[:couchdb_node][:op_time_limit] %>
 couchdb_install_path: <%= node[:couchdb][:path] %>
 logging:
