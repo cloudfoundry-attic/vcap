@@ -9,6 +9,8 @@ logging:
   level: debug
 pid: /var/vcap/sys/run/rabbit_node.pid
 node_id: <%= "rabbit_node_free_#{node[:rabbitmq_node][:index]}" %>
+supported_versions: <%= "['#{node[:rabbitmq][:supported_versions].keys.join("', '")}']"%>
+default_version: "<%= node[:rabbitmq][:default_version] %>"
 op_time_limit: <%= node[:rabbitmq_node][:op_time_limit] %>
 migration_nfs: /mnt/vcap
 port_range:

@@ -8,6 +8,11 @@ service:
   default_plan: 'free'
   tags: ['mysql', 'mysql-5.1', 'relational']
   timeout: <%= node[:mysql_gateway][:service][:timeout] %>
+  supported_versions: <%= "['#{node[:mysql][:supported_versions].keys.join("', '")}']"%>
+  version_aliases:
+<% node[:mysql][:version_aliases].each do |a, v| %>
+    "<%= a %>": "<%= v %>"
+<% end %>
 host: localhost
 index: 0
 token: <%= node[:mysql_node][:token] %>

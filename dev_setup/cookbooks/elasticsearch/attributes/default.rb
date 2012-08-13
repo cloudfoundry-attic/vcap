@@ -1,7 +1,13 @@
 include_attribute "deployment"
 
-default[:elasticsearch][:version] = "0.19.4"
-default[:elasticsearch][:distribution_file] = "elasticsearch-#{elasticsearch[:version]}.tar.gz"
+default[:elasticsearch][:supported_versions] = {
+        "0.19" => "0.19.4",
+}
+default[:elasticsearch][:version_aliases] = {
+        "current" => "0.19",
+}
+default[:elasticsearch][:default_version] = "0.19"
+
 default[:elasticsearch][:id] = "eyJzaWciOiJRR3o1cnVZUGFzQ1gxVTNCZFZiQ3pZcUdTbU09Iiwib2lkIjoi%0ANGU0ZTc4YmNhNTFlMTIyMDA0ZTRlOGVjNjg0MDc3MDUwMTlmMGJhYWMxODki%0AfQ==%0A"
 default[:elasticsearch][:path] = File.join(node[:deployment][:home], "deploy", "elasticsearch")
 

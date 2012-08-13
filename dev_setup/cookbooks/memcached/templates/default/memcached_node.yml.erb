@@ -8,6 +8,8 @@ base_dir: /var/vcap/services/memcached/instances
 memcached_log_dir: /var/vcap/services/memcached/logs
 pid: /var/vcap/sys/run/memcached_node.pid
 node_id: <%= "memcached_node_#{node[:memcached_node][:index]}" %>
+supported_versions: <%= "['#{node[:memcached][:supported_versions].keys.join("', '")}']"%>
+default_version: "<%= node[:memcached][:default_version] %>"
 op_time_limit: <%= node[:memcached_node][:op_time_limit] %>
 memcached_server_path: <%= File.join(node[:memcached][:path], "bin", "memcached") %>
 port_range:

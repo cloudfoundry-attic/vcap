@@ -5,8 +5,7 @@
 # Copyright 2011, VMware
 #
 
-node[:mongodb][:supported_versions].each_key do |version|
-  install_version = node[:mongodb][:supported_versions][version]
+node[:mongodb][:supported_versions].each do |version, install_version|
   Chef::Log.info("Building Mongo Version: #{version} - #{install_version}")
 
   install_path = File.join(node[:deployment][:home], "deploy", "mongodb", install_version)
