@@ -1,4 +1,4 @@
----
+
 
 pid: /var/vcap/sys/run/uaa.pid
 # NATS message bus URI
@@ -31,24 +31,19 @@ oauth:
   clients:
     admin:
       authorized-grant-types: client_credentials
-      scope: read,write,password
-      authorities: ROLE_CLIENT,ROLE_ADMIN
+      authorities: clients.read,clients.write,clients.secret,uaa.admin
       id: admin
       secret: <%= node[:uaa][:admin][:password] %>
-      resource-ids: scim,password,tokens,clients,openid
     cloud_controller:
       authorized-grant-types: client_credentials
-      scope: read,write,password
-      authorities: ROLE_CLIENT,ROLE_ADMIN
+      authorities: scim.read,scim.write,password.write
       id: cloud_controller
       secret: <%= node[:uaa][:cloud_controller][:password] %>
-      resource-ids: scim,password,tokens
       access-token-validity: 604800
     vmc:
       authorized-grant-types: implicit
-      scope: read,password
-      authorities: ROLE_UNTRUSTED
+      scope: cloud_controller.read,cloud_controller.write,openid
+      authorities: uaa.none
       id: vmc
-      resource-ids: cloud_controller,openid,password
-      redirect-uri: http://uaa.cloudfoundry.com/redirect/vmc
+      redirect-uri: http://uaa.cloudfoundry.com/redirect/vmc https://uaa.cloudfoundry.com/redirect/vmc
       access-token-validity: 604800
