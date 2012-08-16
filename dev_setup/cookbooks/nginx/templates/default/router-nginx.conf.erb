@@ -40,6 +40,9 @@ http {
 
   client_max_body_size 256M;
 
+  lua_package_path "<%= node[:lua][:module_path] %>/?.lua;;";
+  lua_package_cpath "<%= node[:lua][:module_path] %>/?.so;;";
+
   upstream router_status {
     server <%= node[:nginx][:uls_ip] %>:<%= node[:nginx][:uls_port] %>;
   }
@@ -83,9 +86,6 @@ http {
         # if we have multiple workers, there will be still few stats not synced for
         # the workers which don't get this monitor request.
         access_by_lua '
-          -- add package.path and package.cpath
-          package.path = package.path..";<%= node[:lua][:module_path] %>/?.lua"
-          package.cpath = package.cpath..";<%= node[:lua][:module_path] %>/?.so"
           local uls = require ("uls")
 
           ngx.log(ngx.DEBUG, "monitor trigger stats syncup")
@@ -118,9 +118,6 @@ http {
         set $sticky '';
 
         access_by_lua '
-          -- add package.path and package.cpath
-          package.path = package.path..";<%= node[:lua][:module_path] %>/?.lua"
-          package.cpath = package.cpath..";<%= node[:lua][:module_path] %>/?.so"
           local uls = require ("uls")
 
           uls.pre_process_subrequest(ngx, "<%= node[:router][:trace_key] %>")
@@ -139,9 +136,6 @@ http {
 
         # Handling response from backend servers
         header_filter_by_lua '
-          -- add package.path and package.cpath
-          package.path = package.path..";<%= node[:lua][:module_path] %>/?.lua"
-          package.cpath = package.cpath..";<%= node[:lua][:module_path] %>/?.so"
           local uls = require ("uls")
 
           uls.post_process_response(ngx)
