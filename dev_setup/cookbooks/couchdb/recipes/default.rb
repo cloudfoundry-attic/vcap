@@ -1,38 +1,49 @@
-couchdb_tarball_path = File.join(node[:deployment][:setup_cache], "apache-couchdb-#{node[:couchdb][:version]}.tar.gz")
-admin_user = "#{node[:couchdb][:username]} = #{node[:couchdb][:password]}"
-port = "port = #{node[:couchdb][:port]}"
-bind_address = "bind_address = #{node[:couchdb][:host]}"
-output_prefix = "#{node[:deployment][:home]}/log/couchdb."
-output_prefix = output_prefix.gsub(/\//, "\\/")
+#
+# Cookbook Name:: couchdb
+# Recipe:: default
+#
+# Copyright 2012, VMware
+#
 
-cf_remote_file couchdb_tarball_path do
-  owner node[:deployment][:user]
-  id node[:couchdb][:id]
-  checksum node[:couchdb][:checksum]
-end
+node[:couchdb][:supported_versions].each do |version, install_version|
+  #TODO, need more refine to actually support mutiple versions
+  Chef::Log.info("Building couchdb version: #{version} - #{install_version}")
 
-directory "#{node[:couchdb][:path]}" do
-  owner node[:deployment][:user]
-  group node[:deployment][:user]
-  mode "0755"
-end
+  couchdb_tarball_path = File.join(node[:deployment][:setup_cache], "apache-couchdb-#{install_version}.tar.gz")
+  admin_user = "#{node[:couchdb][:username]} = #{node[:couchdb][:password]}"
+  port = "port = #{node[:couchdb][:port]}"
+  bind_address = "bind_address = #{node[:couchdb][:host]}"
+  output_prefix = "#{node[:deployment][:home]}/log/couchdb."
+  output_prefix = output_prefix.gsub(/\//, "\\/")
 
-%w[bin etc var].each do |dir|
-  directory File.join(node[:couchdb][:path], dir) do
+  cf_remote_file couchdb_tarball_path do
+    owner node[:deployment][:user]
+    id node[:couchdb][:id]
+    checksum node[:couchdb][:checksum]
+  end
+
+  directory "#{node[:couchdb][:path]}" do
     owner node[:deployment][:user]
     group node[:deployment][:user]
     mode "0755"
-    recursive true
-    action :create
   end
-end
 
-bash "Install couchdb" do
-  cwd File.join("", "tmp")
-  user node[:deployment][:user]
-  code <<-EOH
+  %w[bin etc var].each do |dir|
+    directory File.join(node[:couchdb][:path], dir) do
+      owner node[:deployment][:user]
+      group node[:deployment][:user]
+      mode "0755"
+      recursive true
+      action :create
+    end
+  end
+
+  bash "Install couchdb" do
+    cwd File.join("", "tmp")
+    user node[:deployment][:user]
+    code <<-EOH
   tar xzf #{couchdb_tarball_path}
-  cd apache-couchdb-#{node[:couchdb][:version]}
+  cd apache-couchdb-#{install_version}
   ./configure \
      --prefix=#{node[:couchdb][:path]} \
      --with-js-lib=/usr/lib/xulrunner-devel-#{node[:xulrunner][:version]}/lib \
@@ -54,5 +65,6 @@ bash "Install couchdb" do
   EOH
   not_if do
     ::File.exists?(File.join(node[:couchdb][:path], "bin", "couchdb"))
+  end
   end
 end

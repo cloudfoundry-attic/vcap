@@ -18,7 +18,7 @@ when "ubuntu"
     code <<-EOH
       unzip #{echoserver_tarball_path} -d /tmp
       cp -r /tmp/echoserver #{File.join(node[:deployment][:home], 'deploy')}
-      ln -s -t /etc/init.d/ #{File.join(node[:echo_server][:path], 'echoserver')}
+      ln -s -f -t /etc/init.d/ #{File.join(node[:echo_server][:path], 'echoserver')}
     EOH
     not_if do
       ::File.exists?(File.join(node[:echo_server][:path], 'echoserver'))

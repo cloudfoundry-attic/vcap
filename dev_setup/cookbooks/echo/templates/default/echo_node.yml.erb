@@ -9,4 +9,6 @@ logging:
   level: debug
 pid: /var/vcap/sys/run/echo_node.pid
 node_id: <%= "echo_node_#{node[:echo_node][:index]}" %>
+supported_versions: <%= "['#{node[:echo][:supported_versions].keys.join("', '")}']"%>
+default_version: "<%= node[:echo][:default_version] %>"
 port: <%= node[:echo_server][:port] %>
