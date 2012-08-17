@@ -52,6 +52,8 @@ http {
     server_name  _;
     server_name_in_redirect off;
 
+    underscores_in_headers on;
+
     #TODO: how to make this internal location totally transparent to outside
     location = /vcapuls {
       internal;
