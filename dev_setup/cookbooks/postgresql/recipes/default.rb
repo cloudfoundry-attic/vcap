@@ -20,8 +20,34 @@ end
 case node['platform']
 when "ubuntu"
 
-  %w[python-software-properties postgresql-common postgresql-client-common libpq-dev].each do |pkg|
+  %w[libc6 libcomerr2 libgssapi-krb5-2 libkrb5-3 libldap-2.4-2 libpam0g libssl0.9.8 libxml2 tzdata ssl-cert locales libedit2 zlib1g].each do |pkg|
     package pkg
+  end
+
+  client_common_path = File.join(node[:deployment][:setup_cache], "postgresql-client-common_130.deb")
+  cf_remote_file client_common_path do
+    owner node[:deployment][:user]
+    id node[:postgresql][:id][:client_common]
+    checksum node[:postgresql][:checksum][:client_common]
+  end
+
+  server_common_path = File.join(node[:deployment][:setup_cache], "postgresql-common_130.deb")
+  cf_remote_file server_common_path do
+    owner node[:deployment][:user]
+    id node[:postgresql][:id][:server_common]
+    checksum node[:postgresql][:checksum][:server_common]
+  end
+
+  bash "Install postgresql client common" do
+    code <<-EOH
+    dpkg -i #{client_common_path}
+    EOH
+  end
+
+  bash "Install postgresql common" do
+    code <<-EOH
+    dpkg -i #{server_common_path}
+    EOH
   end
 
 else
