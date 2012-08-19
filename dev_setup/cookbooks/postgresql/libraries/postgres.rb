@@ -20,52 +20,66 @@ module CloudFoundryPostgres
     case node['platform']
     when "ubuntu"
       # install postgresql server & client
-      `apt-get install -y python-software-properties`
-      `add-apt-repository ppa:pitti/postgresql`
-      `apt-get update`
-
-      postgresql_client_pkg = "postgresql-client-#{pg_major_version}"
-      postgresql_pkg = "postgresql-#{pg_major_version}"
-
-      `apt-get install -y #{postgresql_client_pkg}`
-      if $?.exitstatus != 0
-         Chef::Log.error("Installation of PostgreSQL client package #{postgresql_client_pkg} failed") && (exit 1)
+      machine =  node[:kernel][:machine]
+      client_pkg_path = File.join(node[:deployment][:setup_cache], "postgresql-client-#{pg_major_version}.deb")
+      cf_remote_file client_pkg_path do
+        owner node[:deployment][:user]
+        id node[:postgresql][:id][:client]["#{pg_major_version}"]["#{machine}"]
+        checksum node[:postgresql][:checksum][:client]["#{pg_major_version}"]["#{machine}"]
       end
 
-      `apt-get install -y #{postgresql_pkg}`
-      if $?.exitstatus != 0
-         Chef::Log.error("Installation of PostgreSQL server package #{postgresql_pkg} failed") && (exit 1)
+      server_pkg_path = File.join(node[:deployment][:setup_cache], "postgresql-#{pg_major_version}.deb")
+      cf_remote_file server_pkg_path do
+        owner node[:deployment][:user]
+        id node[:postgresql][:id][:server]["#{pg_major_version}"]["#{machine}"]
+        checksum node[:postgresql][:checksum][:server]["#{pg_major_version}"]["#{machine}"]
       end
 
-      # update postgresql.conf
-      postgresql_conf_file = File.join("", "etc", "postgresql", pg_major_version, "main", "postgresql.conf")
-      Chef::Log.error("Installation of PostgreSQL #{postgresql_pkg} failed, could not find config file #{postgresql_conf_file}") && (exit 1) unless File.exist?(postgresql_conf_file)
-
-      `grep "^\s*listen_addresses" #{postgresql_conf_file}`
-      if $?.exitstatus != 0
-        `echo "listen_addresses='#{node[:postgresql][:host]},localhost'" >> #{postgresql_conf_file}`
-      else
-        `sed -i.bkup -e "s/^\s*listen_addresses.*$/listen_addresses='#{node[:postgresql][:host]},localhost'/" #{postgresql_conf_file}`
+      bash "Install postgresql client #{pg_major_version}" do
+        code <<-EOH
+        dpkg -i #{client_pkg_path}
+        EOH
       end
 
-      `grep "^\s*port\s*=\s*\d*" #{postgresql_conf_file}`
-      if $?.exitstatus != 0
-        `echo "port = #{pg_port}" >> #{postgresql_conf_file}`
-      else
-        `sed -i.bkup -e "s/^\s*port\s*=\s*.*/port = #{pg_port}/" #{postgresql_conf_file}`
+      bash "Install postgresql #{pg_major_version}" do
+        code <<-EOH
+        dpkg -i #{server_pkg_path}
+        EOH
       end
 
-      # restart postgrsql
-      init_file = File.join("", "etc", "init.d", "postgresql-#{pg_major_version}")
-      backup_init_file = File.join("", "etc", "init.d", "postgresql")
+      ruby_block "Update PostgreSQL config" do
+        block do
+          # update postgresql.conf
+          postgresql_conf_file = File.join("", "etc", "postgresql", pg_major_version, "main", "postgresql.conf")
+          Chef::Log.error("Installation of PostgreSQL #{postgresql_pkg} failed, could not find config file #{postgresql_conf_file}") && (exit 1) unless File.exist?(postgresql_conf_file)
 
-      if File.exists?(init_file)
-        Chef::Log.error("Fail to restart postgresql using #{init_file}") && (exit 1) unless system("#{init_file} restart")
-      elsif File.exists?(backup_init_file)
-        Chef::Log.error("Fail to restart postgresql using #{backup_init_file}") && (exit 1) unless system("#{backup_init_file} restart #{pg_major_version}")
-      else
-        Chef::Log.error("Installation of PostgreSQL maybe failed, could not find init script")
-        exit 1
+          `grep "^\s*listen_addresses" #{postgresql_conf_file}`
+          if $?.exitstatus != 0
+            `echo "listen_addresses='#{node[:postgresql][:host]},localhost'" >> #{postgresql_conf_file}`
+          else
+            `sed -i.bkup -e "s/^\s*listen_addresses.*$/listen_addresses='#{node[:postgresql][:host]},localhost'/" #{postgresql_conf_file}`
+          end
+
+          `grep "^\s*port\s*=\s*\d*" #{postgresql_conf_file}`
+          if $?.exitstatus != 0
+            `echo "port = #{pg_port}" >> #{postgresql_conf_file}`
+          else
+            `sed -i.bkup -e "s/^\s*port\s*=\s*.*/port = #{pg_port}/" #{postgresql_conf_file}`
+          end
+
+          # restart postgrsql
+          init_file = File.join("", "etc", "init.d", "postgresql-#{pg_major_version}")
+          backup_init_file = File.join("", "etc", "init.d", "postgresql")
+
+          if File.exists?(init_file)
+            Chef::Log.error("Fail to restart postgresql using #{init_file}") && (exit 1) unless system("#{init_file} restart")
+          elsif File.exists?(backup_init_file)
+            Chef::Log.error("Fail to restart postgresql using #{backup_init_file}") && (exit 1) unless system("#{backup_init_file} restart #{pg_major_version}")
+          else
+            Chef::Log.error("Installation of PostgreSQL maybe failed, could not find init script")
+            exit 1
+          end
+        end
       end
     else
       Chef::Log.error("PostgreSQL database setup is not supported on this platform.")
