@@ -7,7 +7,7 @@ service:
   description: 'PostgreSQL database service'
   plans: ['free']
   default_plan: 'free'
-  tags: ['postgresql', 'postgresql-<%= node[:postgresql][:service_version] %>', 'relational']
+  tags: ['relational']
   timeout: <%= node[:postgresql_gateway][:service][:timeout] %>
   supported_versions: <%= "['#{node[:postgresql][:supported_versions].keys.join("', '")}']"%>
   version_aliases:

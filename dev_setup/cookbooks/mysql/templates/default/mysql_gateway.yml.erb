@@ -6,7 +6,7 @@ service:
   description: 'MySQL database service'
   plans: ['free']
   default_plan: 'free'
-  tags: ['mysql', 'mysql-5.1', 'relational']
+  tags: ['relational']
   timeout: <%= node[:mysql_gateway][:service][:timeout] %>
   supported_versions: <%= "['#{node[:mysql][:supported_versions].keys.join("', '")}']"%>
   version_aliases:
