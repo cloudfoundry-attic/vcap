@@ -6,7 +6,7 @@ service:
   description: 'Blob service'
   plans: ['free']
   default_plan: 'free'
-  tags: ['blob', 'blob-0.51', 'nosql']
+  tags: ['nosql']
   timeout: <%= node[:vblob_gateway][:service][:timeout] %>
 <% versions = node[:vblob][:supported_versions].collect {|v| "\"#{v}\""} %>
   supported_versions: [ <%= versions.join(", ") %> ]
