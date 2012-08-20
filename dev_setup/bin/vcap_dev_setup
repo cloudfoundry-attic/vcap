@@ -100,6 +100,9 @@ if [ -z "$VCAP_REPO_BRANCH" ]; then
   VCAP_REPO_BRANCH=master
 fi
 
+# apt-get update
+run_cmd apt-get update
+
 # Check if we have access to the web
 echo "Installing wget..."
 if ! run_cmd apt-get $APT_CONFIG install -qym wget; then
