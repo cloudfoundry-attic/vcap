@@ -6,7 +6,7 @@ service:
   description: "RabbitMQ message queue"
   plans: ["free"]
   default_plan: 'free'
-  tags: ["rabbitmq", "rabitmq-2.4", "message-queue", "amqp"]
+  tags: ["message-queue", "amqp"]
   timeout: <%= node[:rabbitmq_gateway][:service][:timeout] %>
   supported_versions: <%= "['#{node[:rabbitmq][:supported_versions].keys.join("', '")}']"%>
   version_aliases:

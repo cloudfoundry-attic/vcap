@@ -6,7 +6,7 @@ service:
   description: 'Persistent filesystem service'
   plans: ['free']
   default_plan: 'free'
-  tags: ['filesystem', 'filesystem-1.0', 'Persistent filesystem service']
+  tags: ['Persistent filesystem service']
   timeout: <%= node[:filesystem_gateway][:service][:timeout] %>
   supported_versions: <%= "['#{node[:filesystem][:supported_versions].keys.join("', '")}']"%>
   version_aliases:
