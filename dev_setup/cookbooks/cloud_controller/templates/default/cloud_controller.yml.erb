@@ -124,7 +124,7 @@ builtin_services:
     token: <%= node[(service_name + "_node").to_sym][:token] %>
   <% end %>
 
-service_broker:
+service_proxy:
   token: ["<%= node[:service_broker][:token] %>"]
 
 # Enable/disable starting apps in debug modes.
