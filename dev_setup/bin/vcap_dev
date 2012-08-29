@@ -82,6 +82,10 @@ if vcap_components["components"].include?("cloud_controller")
   vcap_components["components"].unshift(vcap_components["components"].delete("cloud_controller"))
 end
 
+if vcap_components["components"].include?("stager")
+  ENV["PLATFORM_CONFIG"]=File.join(deployment_config_path, "platform.yml")
+end
+
 if vcap_components["components"].include?("uaa")
   puts "Setting up the uaa environment"
   ENV["CLOUD_CONTROLLER_CONFIG_PATH"]=deployment_config_path

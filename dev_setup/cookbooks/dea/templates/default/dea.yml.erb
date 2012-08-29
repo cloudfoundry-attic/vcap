@@ -44,103 +44,32 @@ force_http_sharing: true
 
 runtimes:
 <% if node[:dea][:runtimes].include?("ruby18") %>
-  ruby18:
-    executable: <%= File.join(node[:ruby18][:path], "bin", "ruby") %>
-    version: 1.8.7
-    version_flag: "-e 'puts RUBY_VERSION'"
-    additional_checks: "-e 'puts RUBY_PATCHLEVEL >= 174'"
-    environment:
+  - ruby18
 <% end %>
 <% if node[:dea][:runtimes].include?("ruby19") %>
-  ruby19:
-    executable: <%= File.join(node[:ruby][:path], "bin", "ruby") %>
-    version: 1.9.2
-    version_flag: "-e 'puts RUBY_VERSION'"
-    additional_checks: "-e 'puts RUBY_PATCHLEVEL >= 180'"
-    environment:
+  - ruby19
 <% end %>
 <% if node[:dea][:runtimes].include?("node04") %>
-  node:
-    executable: <%= File.join(node[:node04][:path], "bin", "node") %>
-    version: 0.4.12
-    version_flag: '-v'
-    environment:
-    debug_env:
-      run:
-        - NODE_ARGS="--debug=$VCAP_DEBUG_PORT"
-      suspend:
-        - NODE_ARGS="--debug-brk=$VCAP_DEBUG_PORT"
+  - node
 <% end %>
 <% if node[:dea][:runtimes].include?("node06") %>
-  node06:
-    executable: <%= File.join(node[:node06][:path], "bin", "node") %>
-    version: 0.6.8
-    version_flag: '-v'
-    environment:
-    debug_env:
-      run:
-        - NODE_ARGS="--debug=$VCAP_DEBUG_PORT"
-      suspend:
-        - NODE_ARGS="--debug-brk=$VCAP_DEBUG_PORT"
+  - node06
 <% end %>
 <% if node[:dea][:runtimes].include?("node08") %>
-  node08:
-    executable: <%= File.join(node[:node08][:path], "bin", "node") %>
-    version: 0.8.2
-    version_flag: '-v'
-    environment:
-    debug_env:
-      run:
-        - NODE_ARGS="--debug=$VCAP_DEBUG_PORT"
-      suspend:
-        - NODE_ARGS="--debug-brk=$VCAP_DEBUG_PORT"
+  - node08
 <% end %>
 <% if node[:dea][:runtimes].include?("java") %>
-  java:
-    executable: <%= File.join(node[:java6][:path], "java") %>
-    version: 1.6.0
-    version_flag: '-version'
-    environment:
-      PATH: <%= File.join(node[:java6][:path]) %>:$PATH
-      JAVA_HOME: <%= File.join(node[:java6][:java_home]) %>
-    debug_env:
-      run:
-        - JAVA_OPTS="$JAVA_OPTS -Xdebug -Xrunjdwp:transport=dt_socket,address=$VCAP_DEBUG_PORT,server=y,suspend=n"
-      suspend:
-        - JAVA_OPTS="$JAVA_OPTS -Xdebug -Xrunjdwp:transport=dt_socket,address=$VCAP_DEBUG_PORT,server=y,suspend=y"
+  - java
 <% end %>
 <% if node[:dea][:runtimes].include?("java7") %>
-  java7:
-    executable: <%= File.join(node[:java7][:path], "java") %>
-    version: 1.7.0
-    version_flag: '-version'
-    environment:
-      PATH: <%= File.join(node[:java7][:path]) %>:$PATH
-      JAVA_HOME: <%= File.join(node[:java7][:java_home]) %>
-    debug_env:
-      run:
-        - JAVA_OPTS="$JAVA_OPTS -Xdebug -Xrunjdwp:transport=dt_socket,address=$VCAP_DEBUG_PORT,server=y,suspend=n"
-      suspend:
-        - JAVA_OPTS="$JAVA_OPTS -Xdebug -Xrunjdwp:transport=dt_socket,address=$VCAP_DEBUG_PORT,server=y,suspend=y"
+  - java7
 <% end %>
 <% if node[:dea][:runtimes].include?("erlang") %>
-  erlangR14B01:
-    executable: <%= File.join(node[:erlang][:path], "bin", "erl") %>
-    version: ".* 5.8.3"
-    version_flag: '-version'
-    environment:
+  - erlangR14B01
 <% end %>
 <% if node[:dea][:runtimes].include?("php") %>
-  php:
-    executable: <%= File.join(node[:php][:path], "bin", "php") %>
-    version: 5.3.[2-6]
-    version_flag: '-vn'
-    environment:
+  - php
 <% end %>
 <% if node[:dea][:runtimes].include?("python2") %>
-  python2:
-    executable: python
-    version: 2.[5-7]
-    version_flag: '--version'
-    environment:
+  - python2
 <% end %>
