@@ -33,14 +33,11 @@ service "vcap_redis" do
   action [ :enable, :restart ]
 end
 
-cf_bundle_install(File.expand_path("stager", node[:cloudfoundry][:home]))
-
-staging_dir = File.join(node[:deployment][:config_path], "legacy_staging")
-node[:stager][:staging].each_pair do |framework, config|
-  template config do
-    path File.join(staging_dir, config)
-    source "#{config}.erb"
-    owner node[:deployment][:user]
-    mode 0644
-  end
+template node[:stager][:platform] do
+  path File.join(node[:deployment][:config_path], node[:stager][:platform])
+  source "platform.yml.erb"
+  owner node[:deployment][:user]
+  mode 0644
 end
+
+cf_bundle_install(File.expand_path("stager", node[:cloudfoundry][:home]))
