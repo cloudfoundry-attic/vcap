@@ -85,6 +85,10 @@ kill_and_wait() {
 
 start_echoserver() {
     echo "starting echo server"
+    lsof -i:<%= node[:echo_server][:port] %> > /dev/null \
+    && echo "Port <%= node[:echo_server][:port] %> is not available" \
+    && exit 1
+
     java \
        -jar $ECHOSEVER_ROOT/lib/EchoServer-0.1.0.jar \
        -port <%= node[:echo_server][:port] %>  \
