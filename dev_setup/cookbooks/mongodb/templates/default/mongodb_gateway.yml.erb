@@ -6,7 +6,7 @@ service:
   description: 'MongoDB NoSQL store'
   plans: ['free']
   default_plan: 'free'
-  tags: ['mongodb', 'mongodb-1.8', 'nosql', 'document']
+  tags: ['nosql', 'document']
   timeout: <%= node[:mongodb_gateway][:service][:timeout] %>
   supported_versions: <%= "['#{node[:mongodb][:supported_versions].keys.join("', '")}']"%>
   version_aliases:
