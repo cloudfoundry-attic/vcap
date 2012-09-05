@@ -1,131 +1,132 @@
 ---
 python2:
-    version: "2.6.5"
-    description: <%= "Python #{node[:python2][:version]}" %>
-    executable: python
-    version_output: 2.[5-7]
-    version_flag: '--version'
-    environment:
-      PATH: /usr/bin:$PATH
+  version: "2.6.5"
+  description: <%= "Python #{node[:python2][:version]}" %>
+  executable: python
+  version_output: 2.[5-7]
+  version_flag: '--version'
+  environment:
+    PATH: /usr/bin:$PATH
 java:
-    description: "Java 6"
-    version: "1.6"
-    executable: <%= File.join(node[:java6][:path], "java") %>
-    version_flag: '-version'
-    version_output: 1.6.0
-    debug_modes:
-      - run
-      - suspend
-    debug_env:
-      run:
-        - JAVA_OPTS="$JAVA_OPTS -Xdebug -Xrunjdwp:transport=dt_socket,address=$VCAP_DEBUG_PORT,server=y,suspend=n"
-      suspend:
-        - JAVA_OPTS="$JAVA_OPTS -Xdebug -Xrunjdwp:transport=dt_socket,address=$VCAP_DEBUG_PORT,server=y,suspend=y"
-    environment:
-      PATH: <%= File.join(node[:java6][:path]) %>:$PATH
+  description: "Java 6"
+  version: "1.6"
+  executable: <%= File.join(node[:java6][:path], "java") %>
+  version_flag: '-version'
+  version_output: 1.6.0
+  debug_modes:
+    - run
+    - suspend
+  debug_env:
+    run:
+      - JAVA_OPTS="$JAVA_OPTS -Xdebug -Xrunjdwp:transport=dt_socket,address=$VCAP_DEBUG_PORT,server=y,suspend=n"
+    suspend:
+      - JAVA_OPTS="$JAVA_OPTS -Xdebug -Xrunjdwp:transport=dt_socket,address=$VCAP_DEBUG_PORT,server=y,suspend=y"
+  environment:
+    PATH: <%= File.join(node[:java6][:path]) %>:$PATH
+    JAVA_HOME: <%= File.join(node[:java6][:java_home]) %>
 <% if node[:java7][:available?] %>
 java7:
-    description: "Java 7"
-    version: "1.7"
-    executable: <%= File.join(node[:java7][:path], "java") %>
-    version_output: 1.7.0
-    version_flag: '-version'
-    environment:
-      PATH: <%= File.join(node[:java7][:path]) %>:$PATH
-      JAVA_HOME: <%= File.join(node[:java7][:java_home]) %>
-    debug_modes:
-      - run
-      - suspend
-    debug_env:
-      run:
-        - JAVA_OPTS="$JAVA_OPTS -Xdebug -Xrunjdwp:transport=dt_socket,address=$VCAP_DEBUG_PORT,server=y,suspend=n"
-      suspend:
-        - JAVA_OPTS="$JAVA_OPTS -Xdebug -Xrunjdwp:transport=dt_socket,address=$VCAP_DEBUG_PORT,server=y,suspend=y"
+  description: "Java 7"
+  version: "1.7"
+  executable: <%= File.join(node[:java7][:path], "java") %>
+  version_output: 1.7.0
+  version_flag: '-version'
+  environment:
+    PATH: <%= File.join(node[:java7][:path]) %>:$PATH
+    JAVA_HOME: <%= File.join(node[:java7][:java_home]) %>
+  debug_modes:
+    - run
+    - suspend
+  debug_env:
+    run:
+      - JAVA_OPTS="$JAVA_OPTS -Xdebug -Xrunjdwp:transport=dt_socket,address=$VCAP_DEBUG_PORT,server=y,suspend=n"
+    suspend:
+      - JAVA_OPTS="$JAVA_OPTS -Xdebug -Xrunjdwp:transport=dt_socket,address=$VCAP_DEBUG_PORT,server=y,suspend=y"
 <% end %>
 node:
-    version: '0.4.12'
-    version_flag: '-v'
-    version_output: 0.4.12
-    description: 'Node.js'
-    executable: <%= File.join(node[:node04][:path], "bin", "node") %>
-    npm: <%= File.join(node[:node04][:npm][:path], "bin", "npm-cli.js") %>
-    debug_modes:
-      - run
-      - suspend
-    debug_env:
-      run:
-        - NODE_ARGS="--debug=$VCAP_DEBUG_PORT"
-      suspend:
-        - NODE_ARGS="--debug-brk=$VCAP_DEBUG_PORT"
-    environment:
-      PATH: <%= File.join(node[:node04][:path], "bin") %>:$PATH
+  version: '0.4.12'
+  version_flag: '-v'
+  version_output: 0.4.12
+  description: 'Node.js'
+  executable: <%= File.join(node[:node04][:path], "bin", "node") %>
+  npm: <%= File.join(node[:node04][:npm][:path], "bin", "npm-cli.js") %>
+  debug_modes:
+    - run
+    - suspend
+  debug_env:
+    run:
+      - NODE_ARGS="--debug=$VCAP_DEBUG_PORT"
+    suspend:
+      - NODE_ARGS="--debug-brk=$VCAP_DEBUG_PORT"
+  environment:
+    PATH: <%= File.join(node[:node04][:path], "bin") %>:$PATH
 node06:
-    version: '0.6.8'
-    version_flag: '-v'
-    version_output: 0.6.8
-    description: 'Node.js'
-    executable: <%= File.join(node[:node06][:path], "bin", "node") %>
-    npm: <%= File.join(node[:node06][:path], "bin", "npm") %>
-    debug_modes:
-      - run
-      - suspend
-    debug_env:
-      run:
-        - NODE_ARGS="--debug=$VCAP_DEBUG_PORT"
-      suspend:
-        - NODE_ARGS="--debug-brk=$VCAP_DEBUG_PORT"
-    environment:
-      PATH: <%= File.join(node[:node06][:path], "bin") %>:$PATH
+  version: '0.6.8'
+  version_flag: '-v'
+  version_output: 0.6.8
+  description: 'Node.js'
+  executable: <%= File.join(node[:node06][:path], "bin", "node") %>
+  npm: <%= File.join(node[:node06][:path], "bin", "npm") %>
+  debug_modes:
+    - run
+    - suspend
+  debug_env:
+    run:
+      - NODE_ARGS="--debug=$VCAP_DEBUG_PORT"
+    suspend:
+      - NODE_ARGS="--debug-brk=$VCAP_DEBUG_PORT"
+  environment:
+    PATH: <%= File.join(node[:node06][:path], "bin") %>:$PATH
 node08:
-    version: 0.8.2
-    version_flag: '-v'
-    version_output: 0.8.2
-    description: 'Node.js'
-    executable: <%= File.join(node[:node08][:path], "bin", "node") %>
-    npm: <%= File.join(node[:node08][:path], "bin", "npm") %>
-    debug_modes:
-      - run
-      - suspend
-    debug_env:
-      run:
-        - NODE_ARGS="--debug=$VCAP_DEBUG_PORT"
-      suspend:
-        - NODE_ARGS="--debug-brk=$VCAP_DEBUG_PORT"
-    environment:
-      PATH: <%= File.join(node[:node08][:path], "bin") %>:$PATH
+  version: 0.8.2
+  version_flag: '-v'
+  version_output: 0.8.2
+  description: 'Node.js'
+  executable: <%= File.join(node[:node08][:path], "bin", "node") %>
+  npm: <%= File.join(node[:node08][:path], "bin", "npm") %>
+  debug_modes:
+    - run
+    - suspend
+  debug_env:
+    run:
+      - NODE_ARGS="--debug=$VCAP_DEBUG_PORT"
+    suspend:
+      - NODE_ARGS="--debug-brk=$VCAP_DEBUG_PORT"
+  environment:
+    PATH: <%= File.join(node[:node08][:path], "bin") %>:$PATH
 erlangR14B01:
-    version: 'R14B01'
-    description: 'Erlang R14B01'
-    executable: <%= File.join(node[:erlang][:path], "bin", "erl") %>
-    version_output: ".* 5.8.3"
-    version_flag: '-version'
-    environment:
-      PATH: <%= File.join(node[:erlang][:path], "bin") %>:$PATH
+  version: 'R14B01'
+  description: 'Erlang R14B01'
+  executable: <%= File.join(node[:erlang][:path], "bin", "erl") %>
+  version_output: ".* 5.8.3"
+  version_flag: '-version'
+  environment:
+    PATH: <%= File.join(node[:erlang][:path], "bin") %>:$PATH
 php:
-    description: "PHP 5"
-    version: "5.3"
-    executable: "php"
-    version_output: 5.3.[2-6]
-    version_flag: '-vn'
-    environment:
-      PATH: /usr/bin:$PATH
+  description: "PHP 5"
+  version: "5.3"
+  executable: "php"
+  version_output: 5.3.[2-6]
+  version_flag: '-vn'
+  environment:
+    PATH: /usr/bin:$PATH
 ruby18:
-    version: "1.8.7" # FIXME change to 1.8.7-p334
-    description: "Ruby 1.8.7"
-    executable: "<%= File.join(node[:ruby18][:path], "bin", "ruby") %>"
-    version_flag: "-e 'puts RUBY_VERSION'"
-    additional_checks: "-e 'puts RUBY_PATCHLEVEL >= 174'"
-    version_output: 1.8.7
-    environment:
-      PATH: <%= File.join(node[:ruby18][:path], "bin") %>:$PATH
-      BUNDLE_GEMFILE:
+  version: "1.8.7" # FIXME change to 1.8.7-p334
+  description: "Ruby 1.8.7"
+  executable: "<%= File.join(node[:ruby18][:path], "bin", "ruby") %>"
+  version_flag: "-e 'puts RUBY_VERSION'"
+  additional_checks: "-e 'puts RUBY_PATCHLEVEL >= 174'"
+  version_output: 1.8.7
+  environment:
+    PATH: <%= File.join(node[:ruby18][:path], "bin") %>:$PATH
+    BUNDLE_GEMFILE:
 ruby19:
-    version: "1.9.2p180"
-    description: "Ruby 1.9.2"
-    executable: "<%= File.join(node[:ruby][:path], "bin", "ruby") %>"
-    version_flag: "-e 'puts RUBY_VERSION'"
-    additional_checks: "-e 'puts RUBY_PATCHLEVEL >= 180'"
-    version_output: 1.9.2
-    environment:
-      PATH: <%= File.join(node[:ruby][:path], "bin") %>:$PATH
-      BUNDLE_GEMFILE:
+  version: "1.9.2p180"
+  description: "Ruby 1.9.2"
+  executable: "<%= File.join(node[:ruby][:path], "bin", "ruby") %>"
+  version_flag: "-e 'puts RUBY_VERSION'"
+  additional_checks: "-e 'puts RUBY_PATCHLEVEL >= 180'"
+  version_output: 1.9.2
+  environment:
+    PATH: <%= File.join(node[:ruby][:path], "bin") %>:$PATH
+    BUNDLE_GEMFILE:
