@@ -35,12 +35,12 @@ node[:redis][:supported_versions].each do |version, install_version|
     cwd File.join("", "tmp")
     user node[:deployment][:user]
     code <<-EOH
-  tar xzf #{File.join(node[:deployment][:setup_cache], "redis-#{install_version}.tar.gz")}
-  cd redis-#{install_version}
-  make
-  cd src
-  install redis-benchmark redis-cli redis-server redis-check-dump redis-check-aof #{File.join(node[:redis][:path], "bin")}
-  EOH
+    tar xzf #{File.join(node[:deployment][:setup_cache], "redis-#{install_version}.tar.gz")}
+    cd redis-#{install_version}
+    make
+    cd src
+    install redis-benchmark redis-cli redis-server redis-check-dump redis-check-aof #{File.join(node[:redis][:path], "bin")}
+    EOH
   end
 
   template File.join(node[:redis][:path], "etc", "redis.conf") do
