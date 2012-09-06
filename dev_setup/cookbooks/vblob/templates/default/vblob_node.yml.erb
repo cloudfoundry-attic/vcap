@@ -20,8 +20,10 @@ op_time_limit: <%= node[:vblob_node][:op_time_limit] %>
 vblob_timeout: <%= node[:vblob_node][:vblob_timeout] %>
 vblob_start_timeout: <%= node[:vblob_node][:vblob_start_timeout] %>
 nodejs_path: <%= node[:node06][:path] %>/bin/node
-vblobd_path: <%= File.join(node[:vblob][:path], node[:vblob][:default_version]) %>
+vblobd_path: <%= File.join(node[:vblob][:path_in_warden], node[:vblob][:default_version]) %>
 vblobd_auth: <%= node[:vblob_node][:auth] %>
 port_range:
   first: 45001
   last: 65000
+
+max_disk: 2048

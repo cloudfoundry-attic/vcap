@@ -23,3 +23,6 @@ max_clients: 1000
 rabbitmq_log_dir: /var/vcap/services/rabbit/logs
 rabbitmq_server: <%= File.join(node[:rabbitmq][:path], "sbin", "rabbitmq-server") %>
 rabbitmq_start_timeout: <%= node[:rabbitmq_node][:rabbitmq_start_timeout] %>
+
+image_dir: /var/vcap/store/rabbitmq_image
+max_disk: 2048
