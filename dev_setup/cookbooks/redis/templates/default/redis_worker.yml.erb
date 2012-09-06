@@ -25,5 +25,6 @@ logging:
   level: debug
 command_rename_prefix: protect-command-prefix
 gzip_bin: /bin/gzip
-redis_server_path: <%= File.join(node[:redis][:path], "bin", "redis-server") %>
+redis_server_path: /usr/bin/redis-server-<%= node[:redis][:default_version] %>
+image_dir: /var/vcap/store/redis_image
 pid_file:
