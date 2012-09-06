@@ -100,6 +100,19 @@ if [ -z "$VCAP_REPO_BRANCH" ]; then
   VCAP_REPO_BRANCH=master
 fi
 
+# check if need to install warden
+[ -z "${CONFIG_FILE}" ] && config="$CLOUDFOUNDRY_HOME/vcap/dev_setup/deployments/devbox.yml" || config="${CONFIG_FILE}"
+if grep "_node" ${config} > /dev/null && [ `uname -r` \< "2.6.38" ]; then
+  echo ""
+  echo "Warning, it is detected that some service compoents will be deployed, and linux kernel need to be upgraded"
+  echo "To continue the deployment, please follow the steps below"
+  echo "  sudo apt-get install -y linux-image-generic-lts-backport-natty"
+  echo "  reboot system"
+  echo "  re-run vcap_dev_setup"
+  echo ""
+  exit
+fi
+
 # apt-get update
 run_cmd apt-get update
 

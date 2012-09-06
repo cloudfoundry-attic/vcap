@@ -1,0 +1,46 @@
+#! /bin/sh
+
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+PATH=<%= node[:ruby][:path] %>/bin:${PATH}
+NAME=warden_server
+PID_FILE=/var/run/${NAME}.pid
+
+. /lib/lsb/init-functions
+
+is_started() {
+  ps -ef | grep -v grep | grep "warden:start" > /dev/null 2>&1
+  return $?
+}
+
+case "$1" in
+  start)
+    log_action_begin_msg "Starting: $NAME"
+    is_started && exit 0
+    cd <%= node[:cloudfoundry][:path] %>/warden/warden
+    bundle exec rake warden:start[<%= node[:deployment][:config_path] %>/warden_server.conf] > <%= node[:deployment][:home] %>/log/warden_server.log 2>&1 &
+    echo $! > ${PID_FILE}
+    sleep 5
+    ;;
+  stop)
+    log_action_begin_msg "Stopping: $NAME"
+    [ -e ${PID_FILE} ] && kill `cat ${PID_FILE}` > /dev/null 2>&1
+    ;;
+  restart)
+    $0 stop; sleep 1; $0 start
+    ;;
+  status)
+    if is_started; then
+      log_success_msg "warden_server is on"
+      exit 0
+    else
+      log_failure_msg "warden_server is off"
+      exit 1
+    fi
+    ;;
+  *)
+    echo "Usage: $NAME {start|stop|restart|status}" >&2
+    exit 1
+    ;;
+esac
+
+exit 0

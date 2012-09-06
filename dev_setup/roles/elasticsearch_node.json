@@ -8,6 +8,7 @@
                 "recipe[essentials]",
                 "recipe[ruby]",
                 "recipe[java]",
+                "recipe[warden]",
                 "recipe[elasticsearch]",
                 "recipe[elasticsearch::node]"]
 }

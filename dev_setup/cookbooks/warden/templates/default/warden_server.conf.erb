@@ -1,0 +1,64 @@
+---
+server:
+  container_klass: Warden::Container::Linux
+
+  # Wait this long before destroying a container, after the last client
+  # referencing it disconnected. The timer is cancelled when during this
+  # period, another client references the container.
+  #
+  # Clients can be forced to specify this setting by setting the
+  # server-wide variable to an invalid value:
+  #   container_grace_time: invalid
+  #
+  # The grace time can be disabled by setting it to nil:
+  #   container_grace_time: ~
+  #
+  container_grace_time: 300
+
+  unix_domain_permissions: 0777
+
+  # Specifies the path to the base chroot used as the read-only root
+  # filesystem
+  container_rootfs_path: /tmp/warden/rootfs
+
+  # Specifies the path to the parent directory under which all containers
+  # will live.
+  container_depot_path: /tmp/warden/containers
+
+  # Specifies the resource limits to use in limits.conf(5)
+  container_limits_conf:
+    # - core - limits the core file size (KB)
+    # - data - max data size (KB)
+    # - fsize - maximum filesize (KB)
+    # - memlock - max locked-in-memory address space (KB)
+    # - nofile - max number of open files
+    # - rss - max resident set size (KB)
+    # - stack - max stack size (KB)
+    # - cpu - max CPU time (MIN)
+    # - nproc - max number of processes
+    # - as - address space limit (KB)
+    # - maxlogins - max number of logins for this user
+    # - maxsyslogins - max number of logins on the system
+    # - priority - the priority to run user process with
+    # - locks - max number of file locks the user can hold
+    # - sigpending - max number of pending signals
+    # - msgqueue - max memory used by POSIX message queues (bytes)
+    # - nice - max nice priority allowed to raise to values: [-20, 19]
+    # - rtprio - max realtime priority
+    nofile: 8192
+    nproc: 512
+    as: 4194304
+
+logging:
+  level: debug2
+
+network:
+  # Use this /30 network as offset for the network pool.
+  pool_start_address: 10.254.0.0
+
+  # Pool this many /30 networks.
+  pool_size: 256
+
+user:
+  pool_start_uid: 10000
+  pool_size: 256
