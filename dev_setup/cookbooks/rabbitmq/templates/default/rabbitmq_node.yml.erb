@@ -23,11 +23,5 @@ max_clients: 1000
 rabbitmq_log_dir: /var/vcap/services/rabbit/logs
 rabbitmq_server: <%= File.join(node[:rabbitmq][:path], "2.4.1", "sbin", "rabbitmq-server") %>
 rabbitmq_start_timeout: <%= node[:rabbitmq_node][:rabbitmq_start_timeout] %>
-rabbit:
-  '2.4':
-    config_template: ../../../resources/rabbitmq24.config.erb
-    rabbitmq_server: <%= File.join(node[:rabbitmq][:path], "2.4.1", "sbin", "rabbitmq-server") %>
-  '2.8':
-    config_template: ../../../resources/rabbitmq28.config.erb
-    rabbitmq_server: <%= File.join(node[:rabbitmq][:path], "2.8.7", "sbin", "rabbitmq-server") %>
-    disk_free_limit: 13421772
+image_dir: /var/vcap/store/rabbitmq_image
+max_disk: 2048
