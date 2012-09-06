@@ -1,7 +1,7 @@
 include_attribute "node::node06"
 
 default[:vblob][:source] = "https://github.com/cloudfoundry/vblob.git"
-default[:vblob][:path] = "/var/vcap/packages/vblob"
+default[:vblob][:path_in_warden] = File.join("", "var", "vcap", "packages", "vblob")
 
 default[:vblob][:supported_versions] = [ "0.51" ]
 default[:vblob][:version_aliases] = { "current" => "0.51" }

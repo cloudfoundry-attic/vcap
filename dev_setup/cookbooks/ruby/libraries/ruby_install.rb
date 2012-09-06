@@ -65,11 +65,6 @@ module RubyInstall
       gem_binary File.join(ruby_path, "bin", "gem")
     end
 
-    gem_package "rake" do
-      version rake_version
-      gem_binary File.join(ruby_path, "bin", "gem")
-    end
-
     # The default chef installed with Ubuntu 10.04 does not support the "retries" option
     # for gem_package. It may be a good idea to add/use that option once the ubuntu
     # chef package gets updated.

@@ -8,13 +8,6 @@
 
 FileUtils.rm_rf(File.join("", "tmp", "vblob"))
 
-directory node[:vblob][:path] do
-  owner node[:deployment][:user]
-  group node[:deployment][:group]
-  recursive true
-  action :create
-end
-
 bash "prepare to install vBlob" do
   cwd File.join(node[:node06][:path], "bin")
   user node[:deployment][:user]
@@ -28,17 +21,28 @@ bash "prepare to install vBlob" do
   EOH
 end
 
+bash "copy node to warden base" do
+  code <<-EOH
+  cp -r #{node[:node06][:path]}/* #{node[:warden][:rootfs_path]}/usr/
+  EOH
+end
+
+template "vblob_startup.sh" do
+   path File.join(node[:warden][:rootfs_path], "usr", "bin", "vblob_startup.sh")
+   source "vblob_startup.sh.erb"
+   mode 0755
+end
+
 node[:vblob][:supported_versions].each do |version|
   bash "install vblob version #{version}" do
-    cwd File.join("", "tmp")
-    user node[:deployment][:user]
     code <<-EOH
-    mkdir -p #{File.join(node[:vblob][:path], version)}
+    mkdir -p #{File.join(node[:warden][:rootfs_path], node[:vblob][:path_in_warden], version)}
+    cd /tmp
     git reset --hard #{node[:vblob][:commit][version]}
-    cp -af vblob/* #{File.join(node[:vblob][:path], version)}
+    cp -af vblob/* #{File.join(node[:warden][:rootfs_path], node[:vblob][:path_in_warden], version)}
     EOH
     not_if do
-      ::File.exists?(File.join(node[:vblob][:path], version, "server.js"))
+      ::File.exists?(File.join(node[:warden][:rootfs_path], node[:vblob][:path_in_warden], version, "server.js"))
     end
   end
 end
