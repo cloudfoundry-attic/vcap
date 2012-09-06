@@ -8,7 +8,7 @@
 node[:mongodb][:supported_versions].each do |version, install_version|
   Chef::Log.info("Building Mongo Version: #{version} - #{install_version}")
 
-  install_path = File.join(node[:deployment][:home], "deploy", "mongodb", install_version)
+  install_path = File.join(node[:warden][:rootfs_path], "usr", "share", "mongodb", "mongodb-#{version}")
   source_file_id, source_file_checksum = id_and_checksum_for_version(install_version)
 
   mongodb_tarball_path = File.join(node[:deployment][:setup_cache], "mongodb-linux-#{node[:kernel][:machine]}-#{install_version}.tgz")
@@ -19,9 +19,7 @@ node[:mongodb][:supported_versions].each do |version, install_version|
     checksum source_file_checksum
   end
 
-  directory File.join(install_path, "bin") do
-    owner node[:deployment][:user]
-    group node[:deployment][:group]
+  directory File.join(install_path) do
     mode "0755"
     recursive true
     action :create
@@ -29,14 +27,25 @@ node[:mongodb][:supported_versions].each do |version, install_version|
 
   bash "Install Mongodb #{version} (#{install_version})" do
     cwd File.join("", "tmp")
-    user node[:deployment][:user]
     code <<-EOH
     tar xvzf #{mongodb_tarball_path}
     cd mongodb-linux-#{node[:kernel][:machine]}-#{install_version}
-    cp #{File.join("bin", "*")} #{File.join(install_path, "bin")}
+    cp #{File.join("bin", "*")} #{File.join(install_path)}
     EOH
     not_if do
-      ::File.exists?(File.join(install_path, "bin", "mongo"))
+      ::File.exists?(File.join(install_path, "mongo"))
     end
   end
+end
+
+template "mongod_startup.sh" do
+   path File.join(node[:warden][:rootfs_path], "usr", "bin", "mongod_startup.sh")
+   source "mongod_startup.sh.erb"
+   mode 0755
+end
+
+template "mongodb.conf" do
+   path File.join(node[:warden][:rootfs_path], "etc", "mongodb.conf")
+   source "mongodb.conf.erb"
+   mode 0644
 end
