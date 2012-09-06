@@ -1,0 +1,8 @@
+pre-start script
+  chown vcap:vcap -R /store
+  touch /tmp/vcap_chown.out
+end script
+
+#start on runlevel [2345]
+start on filesystem
+stop on runlevel S

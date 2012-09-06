@@ -10,3 +10,6 @@
 [submodule "acm"]
 	path = acm
 	url = https://github.com/cloudfoundry/acm.git
+[submodule "warden"]
+	path = warden
+	url = https://github.com/cloudfoundry/warden.git
