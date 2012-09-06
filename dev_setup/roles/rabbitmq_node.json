@@ -7,6 +7,8 @@
   "run_list" : ["recipe[deployment]",
                 "recipe[essentials]",
                 "recipe[ruby]",
+                "recipe[warden]",
                 "recipe[rabbitmq]",
-                "recipe[rabbitmq::node]"]
+                "recipe[rabbitmq::node]",
+                "recipe[warden::start]"]
 }
