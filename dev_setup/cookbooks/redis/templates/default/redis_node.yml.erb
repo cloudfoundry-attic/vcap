@@ -13,7 +13,7 @@ node_id: <%= "redis_node_#{node[:redis_node][:index]}" %>
 supported_versions: <%= "['#{node[:redis][:supported_versions].keys.join("', '")}']"%>
 default_version: "<%= node[:redis][:default_version] %>"
 op_time_limit: <%= node[:redis_node][:op_time_limit] %>
-redis_server_path: <%= File.join(node[:redis][:path], "bin", "redis-server") %>
+redis_server_path: /usr/bin/redis-server-<%= node[:redis][:default_version] %>
 port_range:
   first: 5000
   last: 25000
@@ -24,3 +24,5 @@ command_rename_prefix: protect-command-prefix
 max_clients: 500
 redis_timeout: <%= node[:redis_node][:redis_timeout] %>
 redis_start_timeout: <%= node[:redis_node][:redis_start_timeout] %>
+image_dir: /var/vcap/store/redis_image
+max_disk: 2048

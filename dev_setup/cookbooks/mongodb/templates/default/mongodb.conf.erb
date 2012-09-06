@@ -1,0 +1,25 @@
+dbpath = /store/instance/data
+logpath = /store/log/mongodb.log
+logappend = false  # This doesn't works
+
+bind_ip = 0.0.0.0
+port = 27017
+
+auth = true
+
+nohttpinterface = true
+
+maxConns = 500
+
+# mms-token = 33f75ccb-ec85-4294-b6ec-e6ae7a63901f
+
+# journaling is currently preallocating 4G of space on disk
+# we can't do that.
+#
+#journal    = true
+noprealloc = true
+
+# smallfiles = start first container file at 16MB, doubling 4 times.
+# so this = 240MB per user. (i.e. 16MB container + 32MB + 64MB + 128MB)
+#quota      = true
+smallfiles = true
