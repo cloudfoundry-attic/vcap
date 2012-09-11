@@ -20,7 +20,7 @@ app_servers:
       executable: false # determined during staging
       default: true
 detection:
-  - "*.rb": "\\s*require[\\s\\(]*['\"]sinatra['\"(/base['\"])]" # .rb files in the root dir containing a require?
+  - "*.rb": "\\s*require[\\s\\(]*['\"]sinatra(/base)?['\"]" # .rb files in the root dir containing a require?
   - "config/environment.rb": false # and config/environment.rb must not exist
 staged_services:
   - "name": "mysql"
