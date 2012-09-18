@@ -6,7 +6,7 @@
 #
 #
 
-%w{apt-utils build-essential libssl-dev
+%w{apt-utils build-essential libssl-dev xulrunner-1.9.2-dev
    libxml2 libxml2-dev libxslt1.1 libxslt1-dev git-core sqlite3 libsqlite3-ruby
    libsqlite3-dev unzip zip ruby-dev libmysql-ruby libmysqlclient-dev libcurl4-openssl-dev}.each do |p|
   package p do

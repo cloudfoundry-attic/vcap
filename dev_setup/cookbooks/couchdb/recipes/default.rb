@@ -6,7 +6,7 @@
 #
 
 
-%w{xulrunner-1.9.2-dev libicu-dev libcurl4-gnutls-dev libtool erlang-dev erlang-eunit erlang-inets erlang-os-mon erlang-xmerl}.each do |p|
+%w{libicu-dev libcurl4-gnutls-dev libtool erlang-dev erlang-eunit erlang-inets erlang-os-mon erlang-xmerl}.each do |p|
   package p do
     action [:install]
   end
