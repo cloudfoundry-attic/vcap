@@ -24,8 +24,8 @@ allow_external_app_uris: false
 app_uris:
   # Allow applications to register URIs that are outside your domain.
   allow_external: false
+  reserved_list: [uaa, login, www, test, dash, register, foo, bar]
 #  reserved_file:
-#  reserved_list: [www, test, dash, register, foo, bar]
 #  reserved_length: 3
 
 external_port: 9022 #public CC port

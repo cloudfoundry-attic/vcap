@@ -1,13 +1,19 @@
-
-
 pid: /var/vcap/sys/run/uaa.pid
+
 # NATS message bus URI
 mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
 
 name: UAA
 
+uaa:
+  host: 127.0.0.1
+  port: 8080
+  uris: [ api.<%= node[:deployment][:domain] %>, login.<%= node[:deployment][:domain] %> ]
+
 database:
   url: jdbc:postgresql://<%= node[:uaadb][:host] %>:<%= node[:uaadb][:port] %>/<%= node[:uaadb][:database] %>
+  username: <%= node[:uaadb][:user] %>
+  password: <%= node[:uaadb][:password] %>
 
 jvm_args: -Xmx512m
 spring_profiles: postgresql
