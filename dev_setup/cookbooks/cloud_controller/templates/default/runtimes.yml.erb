@@ -130,3 +130,13 @@ ruby19:
   environment:
     PATH: <%= File.join(node[:ruby][:path], "bin") %>:<%= File.join(node[:node08][:path], "bin") %>:$PATH
     BUNDLE_GEMFILE:
+ruby193:
+  version: "1.9.3p194"
+  description: "Ruby 1.9.3"
+  executable: "<%= File.join(node[:ruby193][:path], "bin", "ruby") %>"
+  version_flag: "-e 'puts RUBY_VERSION'"
+  additional_checks: "-e 'puts RUBY_PATCHLEVEL == 194'"
+  version_output: 1.9.3
+  environment:
+    PATH: <%= File.join(node[:ruby193][:path], "bin") %>:<%= File.join(node[:node08][:path], "bin") %>:$PATH
+    BUNDLE_GEMFILE:
