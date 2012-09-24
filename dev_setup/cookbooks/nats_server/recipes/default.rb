@@ -7,6 +7,7 @@
 
 gem_package "nats" do
   gem_binary File.join(node[:ruby][:path], "bin", "gem")
+  version "0.4.26"
 end
 
 nats_config_dir = File.join(node[:deployment][:config_path], "nats_server")
