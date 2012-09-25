@@ -10,6 +10,7 @@
   package pkg
 end
 
+# Add -E for http_proxy use
 bash "Installing pip" do
-  code "sudo easy_install pip"
+  code "sudo -E easy_install pip"
 end
