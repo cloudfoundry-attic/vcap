@@ -8,7 +8,6 @@
   "run_list" : [ "recipe[deployment]",
                  "recipe[essentials]",
                  "recipe[ruby]",
-                 "recipe[redis]",
                  "recipe[stager]",
                  "recipe[imagemagick]"]
 }
