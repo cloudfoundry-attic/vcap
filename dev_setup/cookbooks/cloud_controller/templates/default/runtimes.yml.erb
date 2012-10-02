@@ -44,7 +44,7 @@ java7:
       - JAVA_OPTS="$JAVA_OPTS -Xdebug -Xrunjdwp:transport=dt_socket,address=$VCAP_DEBUG_PORT,server=y,suspend=y"
 <% end %>
 node:
-  version: '0.4.12'
+  version: "0.4.12"
   version_flag: '-v'
   version_output: 0.4.12
   description: 'Node.js'
@@ -61,7 +61,7 @@ node:
   environment:
     PATH: <%= File.join(node[:node04][:path], "bin") %>:$PATH
 node06:
-  version: '0.6.8'
+  version: "0.6.8"
   version_flag: '-v'
   version_output: 0.6.8
   description: 'Node.js'
@@ -78,7 +78,7 @@ node06:
   environment:
     PATH: <%= File.join(node[:node06][:path], "bin") %>:$PATH
 node08:
-  version: 0.8.2
+  version: "0.8.2"
   version_flag: '-v'
   version_output: 0.8.2
   description: 'Node.js'
@@ -95,7 +95,7 @@ node08:
   environment:
     PATH: <%= File.join(node[:node08][:path], "bin") %>:$PATH
 erlangR14B01:
-  version: 'R14B01'
+  version: "R14B01"
   description: 'Erlang R14B01'
   executable: <%= File.join(node[:erlang][:path], "bin", "erl") %>
   version_output: ".* 5.8.3"
