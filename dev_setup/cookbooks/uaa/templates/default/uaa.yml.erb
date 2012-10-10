@@ -1,5 +1,3 @@
-
-
 pid: /var/vcap/sys/run/uaa.pid
 # NATS message bus URI
 mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
@@ -50,5 +48,5 @@ oauth:
       authorities: uaa.none
       id: vmc
       resource-ids: none
-      redirect-uri: http://uaa.cloudfoundry.com/redirect/vmc,https://uaa.cloudfoundry.com/redirect/vmc
+      redirect-uri: http://uaa.<%= node[:deployment][:domain] %>/redirect/vmc,https://uaa.<%= node[:deployment][:domain] %>/redirect/vmc
       access-token-validity: 604800
