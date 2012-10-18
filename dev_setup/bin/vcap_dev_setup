@@ -133,9 +133,8 @@ if [ ! -f ${GEM} ] || [ `${GEM} -v` \< "1.3.6" ]; then
   cd ${CWD}
 fi
 
-# FIXME: at some point you will want a version spec like "~> 10.12.0" here
 echo "Installing chef..."
-${GEM} list -i chef || sudo ${GEM} install chef -q --no-ri --no-rdoc > /dev/null
+${GEM} list -i chef || sudo ${GEM} install chef --version 10.12.0 -q --no-ri --no-rdoc > /dev/null
 
 # Install blobstore_client
 echo "Installing blobstore_client..."
