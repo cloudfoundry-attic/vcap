@@ -205,14 +205,14 @@ end
 
 class UAAComponent < CoreComponent
   def initialize(*args)
-    @path = File.join($vcap_home, "vcap", "bin", "uaa")
+    @path = File.join($vcap_home, "bin", "uaa")
     super
   end
 end
 
 class ACMComponent < CoreComponent
   def initialize(*args)
-    @path = File.join($vcap_home, "vcap", "bin", "acm")
+    @path = File.join($vcap_home, "bin", "acm")
     super
   end
 end

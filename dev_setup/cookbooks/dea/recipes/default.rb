@@ -35,4 +35,4 @@ template node[:dea][:config_file] do
   mode 0644
 end
 
-cf_bundle_install(File.join(node[:cloudfoundry][:home], "dea"))
+cf_bundle_install(File.join(node[:cloudfoundry][:path], "dea"))

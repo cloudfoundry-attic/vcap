@@ -21,4 +21,4 @@ template node[:stager][:platform] do
   mode 0644
 end
 
-cf_bundle_install(File.expand_path("stager", node[:cloudfoundry][:home]))
+cf_bundle_install(File.expand_path("stager", node[:cloudfoundry][:path]))

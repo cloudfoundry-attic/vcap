@@ -11,4 +11,4 @@ template node[:router][:config_file] do
   mode 0644
 end
 
-cf_bundle_install(File.expand_path("router", node[:cloudfoundry][:home]))
+cf_bundle_install(File.expand_path("router", node[:cloudfoundry][:path]))
