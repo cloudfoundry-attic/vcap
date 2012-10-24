@@ -29,12 +29,8 @@ when "ubuntu"
     zend-framework
   ].each {|pkg| package pkg }
 
-
   bash "Setup php" do
     code <<-EOH
-      /etc/init.d/apache2 stop
-      update-rc.d -f apache2 remove
-
       cd /tmp/
       pear channel-discover pear.phpunit.de
       pear channel-discover pear.symfony-project.com
@@ -59,6 +55,13 @@ when "ubuntu"
 
   end
 
+  bash "Stop apache" do
+    code <<-EOH
+      /etc/init.d/apache2 stop
+      update-rc.d -f apache2 remove
+      exit 0
+    EOH
+  end
 
   template File.join("", "etc", "php5", "apache2", "conf.d", "cf.ini") do
     source "apache2.cnf.erb"
