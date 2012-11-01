@@ -98,7 +98,7 @@ erlangR14B01:
   version: "R14B01"
   description: 'Erlang R14B01'
   executable: <%= File.join(node[:erlang][:path], "bin", "erl") %>
-  version_output: ".* 5.8.3"
+  version_output: "5.8.2"
   version_flag: '-version'
   environment:
     PATH: <%= File.join(node[:erlang][:path], "bin") %>:$PATH
@@ -111,11 +111,11 @@ php:
   environment:
     PATH: /usr/bin:$PATH
 ruby18:
-  version: "1.8.7" # FIXME change to 1.8.7-p334
+  version: "1.8.7p357"
   description: "Ruby 1.8.7"
   executable: "<%= File.join(node[:ruby18][:path], "bin", "ruby") %>"
   version_flag: "-e 'puts RUBY_VERSION'"
-  additional_checks: "-e 'puts RUBY_PATCHLEVEL >= 174'"
+  additional_checks: "-e 'puts RUBY_PATCHLEVEL == 357'"
   version_output: 1.8.7
   environment:
     PATH: <%= File.join(node[:ruby18][:path], "bin") %>:<%= File.join(node[:node08][:path], "bin") %>:$PATH
@@ -125,7 +125,7 @@ ruby19:
   description: "Ruby 1.9.2"
   executable: "<%= File.join(node[:ruby][:path], "bin", "ruby") %>"
   version_flag: "-e 'puts RUBY_VERSION'"
-  additional_checks: "-e 'puts RUBY_PATCHLEVEL >= 180'"
+  additional_checks: "-e 'puts RUBY_PATCHLEVEL == 180'"
   version_output: 1.9.2
   environment:
     PATH: <%= File.join(node[:ruby][:path], "bin") %>:<%= File.join(node[:node08][:path], "bin") %>:$PATH
