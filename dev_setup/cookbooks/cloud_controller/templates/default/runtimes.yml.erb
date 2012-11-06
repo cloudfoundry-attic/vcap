@@ -7,6 +7,10 @@ python2:
   version_flag: '--version'
   environment:
     PATH: /usr/bin:$PATH
+  status:
+    name: Current
+  series: python2
+  category: python
 java:
   description: "Java 6"
   version: "1.6"
@@ -24,6 +28,10 @@ java:
   environment:
     PATH: <%= File.join(node[:java6][:path]) %>:$PATH
     JAVA_HOME: <%= File.join(node[:java6][:java_home]) %>
+  status:
+    name: Current
+  series: java
+  category: java
 <% if node[:java7][:available?] %>
 java7:
   description: "Java 7"
@@ -42,6 +50,10 @@ java7:
       - JAVA_OPTS="$JAVA_OPTS -Xdebug -Xrunjdwp:transport=dt_socket,address=$VCAP_DEBUG_PORT,server=y,suspend=n"
     suspend:
       - JAVA_OPTS="$JAVA_OPTS -Xdebug -Xrunjdwp:transport=dt_socket,address=$VCAP_DEBUG_PORT,server=y,suspend=y"
+  status:
+    name: Current
+  series: java7
+  category: java
 <% end %>
 node:
   version: "0.4.12"
@@ -60,6 +72,10 @@ node:
       - NODE_ARGS="--debug-brk=$VCAP_DEBUG_PORT"
   environment:
     PATH: <%= File.join(node[:node04][:path], "bin") %>:$PATH
+  status:
+    name: Current
+  series: node
+  category: node
 node06:
   version: "0.6.8"
   version_flag: '-v'
@@ -77,6 +93,10 @@ node06:
       - NODE_ARGS="--debug-brk=$VCAP_DEBUG_PORT"
   environment:
     PATH: <%= File.join(node[:node06][:path], "bin") %>:$PATH
+  status:
+    name: Current
+  series: node06
+  category: node
 node08:
   version: "0.8.2"
   version_flag: '-v'
@@ -94,6 +114,10 @@ node08:
       - NODE_ARGS="--debug-brk=$VCAP_DEBUG_PORT"
   environment:
     PATH: <%= File.join(node[:node08][:path], "bin") %>:$PATH
+  status:
+    name: Current
+  series: node08
+  category: node
 erlangR14B01:
   version: "R14B01"
   description: 'Erlang R14B01'
@@ -102,6 +126,10 @@ erlangR14B01:
   version_flag: '-version'
   environment:
     PATH: <%= File.join(node[:erlang][:path], "bin") %>:$PATH
+  status:
+    name: Current
+  series: erlangR14B01
+  category: erlang
 php:
   description: "PHP 5"
   version: "5.3"
@@ -110,6 +138,10 @@ php:
   version_flag: '-vn'
   environment:
     PATH: /usr/bin:$PATH
+  status:
+    name: Current
+  series: php
+  category: php
 ruby18:
   version: "1.8.7p357"
   description: "Ruby 1.8.7"
@@ -120,6 +152,10 @@ ruby18:
   environment:
     PATH: <%= File.join(node[:ruby18][:path], "bin") %>:<%= File.join(node[:node08][:path], "bin") %>:$PATH
     BUNDLE_GEMFILE:
+  status:
+    name: Current
+  series: ruby18
+  category: ruby
 ruby19:
   version: "1.9.2p180"
   description: "Ruby 1.9.2"
@@ -130,6 +166,10 @@ ruby19:
   environment:
     PATH: <%= File.join(node[:ruby][:path], "bin") %>:<%= File.join(node[:node08][:path], "bin") %>:$PATH
     BUNDLE_GEMFILE:
+  status:
+    name: Current
+  series: ruby19
+  category: ruby
 ruby193:
   version: "1.9.3p194"
   description: "Ruby 1.9.3"
@@ -140,3 +180,7 @@ ruby193:
   environment:
     PATH: <%= File.join(node[:ruby193][:path], "bin") %>:<%= File.join(node[:node08][:path], "bin") %>:$PATH
     BUNDLE_GEMFILE:
+  status:
+    name: Current
+  series: ruby193
+  category: ruby
