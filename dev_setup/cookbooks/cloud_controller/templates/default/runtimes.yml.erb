@@ -146,12 +146,14 @@ ruby18:
   version: "1.8.7p357"
   description: "Ruby 1.8.7"
   executable: "<%= File.join(node[:ruby18][:path], "bin", "ruby") %>"
+  bundler: "<%= File.join(node[:ruby18][:path], "bin", "bundle") %>"
   version_flag: "-e 'puts RUBY_VERSION'"
   additional_checks: "-e 'puts RUBY_PATCHLEVEL == 357'"
   version_output: 1.8.7
   environment:
     PATH: <%= File.join(node[:ruby18][:path], "bin") %>:<%= File.join(node[:node08][:path], "bin") %>:$PATH
     BUNDLE_GEMFILE:
+    GEM_PATH: <%= File.join(node[:ruby18][:path], "lib", "ruby", "gems", "1.8") %>:$GEM_PATH
   status:
     name: current
   series: ruby18
@@ -160,12 +162,14 @@ ruby19:
   version: "1.9.2p180"
   description: "Ruby 1.9.2"
   executable: "<%= File.join(node[:ruby][:path], "bin", "ruby") %>"
+  bundler: "<%= File.join(node[:ruby][:path], "bin", "bundle") %>"
   version_flag: "-e 'puts RUBY_VERSION'"
   additional_checks: "-e 'puts RUBY_PATCHLEVEL == 180'"
   version_output: 1.9.2
   environment:
     PATH: <%= File.join(node[:ruby][:path], "bin") %>:<%= File.join(node[:node08][:path], "bin") %>:$PATH
     BUNDLE_GEMFILE:
+    GEM_PATH: <%= File.join(node[:ruby][:path], "lib", "ruby", "gems", "1.9.1") %>:$GEM_PATH
   status:
     name: current
   series: ruby19
@@ -174,12 +178,14 @@ ruby193:
   version: "1.9.3p194"
   description: "Ruby 1.9.3"
   executable: "<%= File.join(node[:ruby193][:path], "bin", "ruby") %>"
+  bundler: "<%= File.join(node[:ruby193][:path], "bin", "bundle") %>"
   version_flag: "-e 'puts RUBY_VERSION'"
   additional_checks: "-e 'puts RUBY_PATCHLEVEL == 194'"
   version_output: 1.9.3
   environment:
     PATH: <%= File.join(node[:ruby193][:path], "bin") %>:<%= File.join(node[:node08][:path], "bin") %>:$PATH
     BUNDLE_GEMFILE:
+    GEM_PATH: <%= File.join(node[:ruby193][:path], "lib", "ruby", "gems", "1.9.1") %>:$GEM_PATH
   status:
     name: current
   series: ruby193
