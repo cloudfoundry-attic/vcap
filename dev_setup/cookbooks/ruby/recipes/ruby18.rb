@@ -3,5 +3,6 @@ cf_ruby_install(node[:ruby18][:version], node[:ruby18][:id], node[:ruby18][:path
 cf_rubygems_install(node[:ruby18][:path], node[:rubygems][:version], node[:rubygems][:id], node[:rubygems][:checksum])
 cf_gem_install(node[:ruby18][:path], "bundler", node[:ruby][:bundler][:version])
 cf_gem_install(node[:ruby18][:path], "rake", node[:ruby18][:rake][:version])
+cf_gem_install(node[:ruby18][:path], "vmc", node[:ruby][:vmc][:version])
 
-%w[ rack eventmachine thin sinatra mysql pg vmc ].each {|gem| cf_gem_install(node[:ruby18][:path], gem)}
+%w[ rack eventmachine thin sinatra mysql pg ].each {|gem| cf_gem_install(node[:ruby18][:path], gem)}
