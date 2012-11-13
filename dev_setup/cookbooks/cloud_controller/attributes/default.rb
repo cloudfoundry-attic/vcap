@@ -1,5 +1,6 @@
 include_recipe "deployment"
 include_attribute "postgresql"
+include_attribute "redis"
 include_attributes "uaa"
 include_attributes "service_lifecycle"
 
