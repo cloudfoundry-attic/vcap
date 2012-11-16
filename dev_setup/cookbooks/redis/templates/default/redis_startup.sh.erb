@@ -6,4 +6,4 @@ for n in `seq 1 100`; do
 done
 
 [ -z $1 ] && version=<%= node[:redis][:default_version] %> || version=$1
-exec start-stop-daemon --start --quiet --chuid vcap --exec  /usr/bin/redis-server-${version} /store/instance/redis.conf
+exec start-stop-daemon --start --quiet --chuid vcap --exec  <%= node[:redis][:path_in_warden] %>/redis-${version}/bin/redis-server /store/instance/redis.conf

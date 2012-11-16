@@ -40,26 +40,6 @@ cf_bundle_install(File.expand_path(File.join("cloud_controller", "cloud_controll
 
 cf_pg_reset_user_password(:ccdb)
 
-
-template "vcap_redis.conf" do
-  path File.join(node[:deployment][:config_path], "vcap_redis.conf")
-  source "vcap_redis.conf.erb"
-  owner node[:deployment][:user]
-  mode 0644
-end
-
-template "vcap_redis" do
-  path File.join("", "etc", "init.d", "vcap_redis")
-  source "vcap_redis.erb"
-  owner node[:deployment][:user]
-  mode 0755
-end
-
-service "vcap_redis" do
-  supports :status => true, :restart => true, :reload => true
-  action [ :enable, :restart ]
-end
-
 staging_dir = File.join(node[:deployment][:config_path], "staging")
 node[:cloud_controller][:staging].each_pair do |framework, config|
   template config do
