@@ -21,7 +21,16 @@ admin_port_range:
   last: 30000
 max_clients: 1000
 rabbitmq_log_dir: /var/vcap/services/rabbit/logs
-rabbitmq_server: <%= File.join(node[:rabbitmq][:path], "2.4.1", "sbin", "rabbitmq-server") %>
+rabbitmq_server: <%= File.join(node[:rabbitmq][:path], "sbin", "rabbitmq-server") %>
 rabbitmq_start_timeout: <%= node[:rabbitmq_node][:rabbitmq_start_timeout] %>
+
 image_dir: /var/vcap/store/rabbitmq_image
 max_disk: 2048
+vm_memory_high_watermark: 0.0793
+bandwidth_per_second: 0.09
+bandwidth_proxy:
+  bin: <%= node[:rabbitmq_node][:proxy_dir] %>/bandwidth_proxy
+  size: 1
+  window: 86400
+
+service_log_dir: /var/vcap/sys/service-log/rabbitmq

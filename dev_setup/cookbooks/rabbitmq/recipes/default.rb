@@ -26,6 +26,22 @@ bash "Install Erlang for RabbitMQ" do
   EOH
 end
 
+directory "#{node[:rabbitmq_node][:proxy_dir]}" do
+  owner node[:deployment][:user]
+  group node[:deployment][:group]
+  mode "0755"
+  recursive true
+  action :create
+end
+
+bandwidth_proxy = File.join(node[:rabbitmq_node][:proxy_dir], "bandwidth_proxy")
+cf_remote_file bandwidth_proxy do
+  owner node[:deployment][:user]
+  id node[:rabbitmq_node][:proxy_id]
+  checksum node[:rabbitmq_node][:proxy_checksum]
+  mode "0755"
+end
+
 node[:rabbitmq][:supported_versions].each do |version, install_version|
   #TODO, need more refine to actually support mutiple versions
   Chef::Log.info("Building rabbitmq version: #{version} - #{install_version}")
@@ -39,7 +55,7 @@ node[:rabbitmq][:supported_versions].each do |version, install_version|
       checksum node[:rabbitmq][:checksum]["#{install_version}"]
     end
 
-    bash "Install RabbitMQ #{install_version} As #{version}" do
+    bash "Install RabbitMQ" do
       cwd File.join("", "tmp")
       code <<-EOH
       tar xzf #{rabbitmq_tarball_path}

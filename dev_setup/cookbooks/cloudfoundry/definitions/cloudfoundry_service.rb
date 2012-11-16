@@ -16,5 +16,11 @@ define :cloudfoundry_service do
   service_name = params[:name]
   # Work around for RabbitMQ service since its directory name is "rabbit"
   service_name = "rabbit" if service_name == "rabbitmq"
-  cf_bundle_install(File.join(node[:cloudfoundry][:path], "services", service_name))
+
+  # Work around for vblob/redis/mongo/rabbit since other services haven't wardenized
+  if ["vblob", "rabbit", "mongodb", "redis"].include?(service_name)
+    cf_bundle_install(File.join(node[:cloudfoundry][:path], "services", "ng", service_name))
+  else
+    cf_bundle_install(File.join(node[:cloudfoundry][:path], "services", service_name))
+  end
 end
