@@ -14,7 +14,12 @@ supported_versions: <%= "['#{node[:redis][:supported_versions].keys.join("', '")
 default_version: "<%= node[:redis][:default_version] %>"
 op_time_limit: <%= node[:redis_node][:op_time_limit] %>
 redis_server_path:
-  "<%= node[:redis][:default_version] %>": <%= File.join(node[:redis][:path], "bin", "redis-server") %>
+<%
+  node[:redis][:supported_versions].each_key do |version|
+%>
+  "<%= version %>": "<%= File.join(node[:redis][:path], node[:redis][:supported_versions][version], "bin", "redis-server") %>"
+<% end %>
+
 port_range:
   first: 5000
   last: 25000
