@@ -2,11 +2,9 @@ include_attribute "deployment"
 
 default[:rabbitmq][:supported_versions] = {
         "2.4" => "2.4.1",
-        "2.8" => "2.8.7",
 }
 default[:rabbitmq][:version_aliases] = {
-        "deprecated" => "2.8",
-        "current"    => "2.4",
+        "current" => "2.4",
 }
 default[:rabbitmq][:default_version] = "2.4"
 
@@ -28,3 +26,6 @@ default[:rabbitmq_node][:index] = "0"
 default[:rabbitmq_node][:token] = "changerabbitmqtoken"
 default[:rabbitmq_node][:op_time_limit] = "6"
 default[:rabbitmq_node][:rabbitmq_start_timeout] = "5"
+default[:rabbitmq_node][:proxy_dir] = File.join(node[:deployment][:home], "deploy", "bandwidth_proxy", "bin")
+default[:rabbitmq_node][:proxy_id] = "eyJzaWciOiJpQXZ5aUYyZWVVZmEyU3RXUW82UVIveHZxRWM9Iiwib2lkIjoi%0ANGU0ZTc4YmNhMTFlMTIyMjA0ZTRlOTg2MzhiNzYzMDUwYjcxMzk2YjVmNzIi%0AfQ==%0A"
+default[:rabbitmq_node][:proxy_checksum] = "2b17a3b9ab3142efaf731d1e6adbe338cdcc9651667b17af93bbaa3684d605f7"
