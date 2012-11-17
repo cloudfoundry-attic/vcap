@@ -163,6 +163,7 @@ when "ubuntu"
 
       LUA_LIB=#{lua_path}/lib LUA_INC=#{lua_path}/include ./configure \
         --prefix=#{nginx_path} \
+        --with-http_ssl_module \
         --with-pcre=../pcre-8.12 \
         --with-cc-opt=-Wno-unused-but-set-variable \
         --add-module=../nginx_upload_module-2.2.0 \
