@@ -6,23 +6,27 @@
 #
 
 node[:redis][:supported_versions].each do |version, install_version|
-  #TODO, need more refine to actually support mutiple versions
   Chef::Log.info("Building redis version: #{version} - #{install_version}")
+
+  install_path = File.join(node[:deployment][:home], "deploy", "redis", install_version)
+  source_file_id, source_file_checksum = id_and_checksum_for_redis_version(install_version)
 
   cf_remote_file File.join(node[:deployment][:setup_cache], "redis-#{install_version}.tar.gz") do
     owner node[:deployment][:user]
-    id node[:redis][:id]
-    checksum node[:redis][:checksum]
+    id source_file_id
+    checksum source_file_checksum
   end
 
-  directory "#{node[:redis][:path]}" do
+  directory install_path do
     owner node[:deployment][:user]
     group node[:deployment][:group]
     mode "0755"
+    recursive true
+    action :create
   end
 
   %w[bin etc var].each do |dir|
-    directory File.join(node[:redis][:path], dir) do
+    directory File.join(install_path, dir) do
       owner node[:deployment][:user]
       group node[:deployment][:group]
       mode "0755"
@@ -31,7 +35,7 @@ node[:redis][:supported_versions].each do |version, install_version|
     end
   end
 
-  bash "Install Redis" do
+  bash "Install Redis #{version} (#{install_version})" do
     cwd File.join("", "tmp")
     user node[:deployment][:user]
     code <<-EOH
@@ -39,11 +43,11 @@ node[:redis][:supported_versions].each do |version, install_version|
   cd redis-#{install_version}
   make
   cd src
-  install redis-benchmark redis-cli redis-server redis-check-dump redis-check-aof #{File.join(node[:redis][:path], "bin")}
+  install redis-benchmark redis-cli redis-server redis-check-dump redis-check-aof #{File.join(install_path, "bin")}
   EOH
   end
 
-  template File.join(node[:redis][:path], "etc", "redis.conf") do
+  template File.join(install_path, "etc", "redis.conf") do
     source "redis.conf.erb"
     mode 0600
     owner node[:deployment][:user]
