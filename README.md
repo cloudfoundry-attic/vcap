@@ -126,29 +126,23 @@ will need to modify the target to include it here, like `api.vcap.me:8080`.
 Testing your setup
 ------------------
 
-Once the system is installed, you can run the following command Basic System
-Validation Tests (BVT) to ensure that major functionality is working. BVTs
-require additional dependencies of Maven and the JDK, which can be installed
-with:
+Once the system is installed, you can run the following Yeti cases(Yeti stands
+for "Yeti Extraordinary Test Infrastructure") to ensure that major functionality
+is working.
 
-    sudo apt-get install default-jdk maven2
+You can run the Yeti cases as the following steps:
 
-Now that you have the necessary dependencies, you can run the BVTs:
+    cd cloudfoundry/vcap/tests
+    ./update  ## this is not required for running administrative test cases
+    bundle exec rake full
 
-    cd cloudfoundry/vcap
-    cd tests && bundle package; bundle install && cd ..
-    rake tests
-
-### Unit tests can also be run using the following.
-
-    cd cloud_controller
-    rake spec
-    cd ../dea
-    rake spec
-    cd ../router
-    rake spec
-    cd ../health_manager
-    rake spec
+During the first time, Yeti will prompt you for information about your environment:
+  - target
+  - test user/test password
+  - admin user/admin password
+     <br>target should be a complete url which starts with 'api.' or 'ccng.'.
+     <br>This information except password is saved to ~/.bvt/config.yml file.
+     <br>When run the second time around, Yeti will not prompt for the information again.
 
 ### Step 6: you are done, make sure you can run a simple hello world app.
 
