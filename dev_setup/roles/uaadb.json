@@ -9,6 +9,7 @@
   "description": "UAA Database",
   "chef_type": "role",
   "run_list" : ["recipe[deployment]",
+                "recipe[essentials]",
                 "recipe[postgresql]",
                 "recipe[postgresql::system]",
                 "recipe[uaadb]"]

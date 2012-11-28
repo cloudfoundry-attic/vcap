@@ -205,14 +205,14 @@ end
 
 class UAAComponent < CoreComponent
   def initialize(*args)
-    @path = File.join($vcap_home, "vcap", "bin", "uaa")
+    @path = File.join($vcap_home, "bin", "uaa")
     super
   end
 end
 
 class ACMComponent < CoreComponent
   def initialize(*args)
-    @path = File.join($vcap_home, "vcap", "bin", "acm")
+    @path = File.join($vcap_home, "bin", "acm")
     super
   end
 end
@@ -306,7 +306,14 @@ class ServiceComponent < Component
     # mapping 'rabbitmq' in dev_setup to 'rabbit' in services
     pre = 'rabbit' if pre == 'rabbitmq'
     bin_name = name.index('rabbitmq')? name.sub(/mq/, '') : name
-    @path = File.join(vcap_bin, "../services", pre, "bin", bin_name)
+    service_dir = File.join(vcap_bin, "../services")
+
+    # Work around for vblob/redis/mongo/rabbit since other services haven't wardenized
+    if ["vblob", "rabbit", "mongodb", "redis"].include?(pre)
+      service_dir = File.join(vcap_bin, "../services", "ng")
+    end
+
+    @path = File.join(service_dir, pre, "bin", bin_name)
   end
 
   def get_configuration_path

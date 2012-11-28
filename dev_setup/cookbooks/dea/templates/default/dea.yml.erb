@@ -49,6 +49,9 @@ runtimes:
 <% if node[:dea][:runtimes].include?("ruby19") %>
   - ruby19
 <% end %>
+<% if node[:dea][:runtimes].include?("ruby193") %>
+  - ruby193
+<% end %>
 <% if node[:dea][:runtimes].include?("node04") %>
   - node
 <% end %>

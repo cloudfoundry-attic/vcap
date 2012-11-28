@@ -5,6 +5,13 @@
 # Copyright 2012, VMware
 #
 
+
+%w{xulrunner-1.9.2-dev libicu-dev libcurl4-gnutls-dev libtool erlang-dev erlang-eunit erlang-inets erlang-os-mon erlang-xmerl}.each do |p|
+  package p do
+    action [:install]
+  end
+end
+
 node[:couchdb][:supported_versions].each do |version, install_version|
   #TODO, need more refine to actually support mutiple versions
   Chef::Log.info("Building couchdb version: #{version} - #{install_version}")

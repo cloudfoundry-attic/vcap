@@ -13,3 +13,15 @@
 [submodule "warden"]
 	path = warden
 	url = https://github.com/cloudfoundry/warden.git
+[submodule "cloud_controller"]
+	path = cloud_controller
+	url = https://github.com/cloudfoundry/cloud_controller.git
+[submodule "router"]
+	path = router
+	url = https://github.com/cloudfoundry/router.git
+[submodule "dea"]
+	path = dea
+	url = https://github.com/cloudfoundry/dea.git
+[submodule "stager"]
+	path = stager
+	url = https://github.com/cloudfoundry/stager.git

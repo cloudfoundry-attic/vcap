@@ -8,6 +8,9 @@
   "json_class": "Chef::Role",
   "description": "PostgreSQL services gateway",
   "chef_type": "role",
-  "run_list" : ["role[services]",
+  "run_list" : ["recipe[deployment]",
+                "recipe[essentials]",
+                "recipe[ruby]",
+                "recipe[cloudfoundry]",
                 "recipe[postgresql::gateway]"]
 }
