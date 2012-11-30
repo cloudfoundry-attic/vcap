@@ -16,7 +16,6 @@ default[:cloud_controller][:staging][:grails] = "grails.yml"
 default[:cloud_controller][:staging][:lift] = "lift.yml"
 default[:cloud_controller][:staging][:node] = "node.yml"
 default[:cloud_controller][:staging][:otp_rebar] = "otp_rebar.yml"
-default[:cloud_controller][:staging][:platform] = "platform.yml"
 default[:cloud_controller][:staging][:rack] = "rack.yml"
 default[:cloud_controller][:staging][:rails3] = "rails3.yml"
 default[:cloud_controller][:staging][:sinatra] = "sinatra.yml"
@@ -35,3 +34,6 @@ default[:cloud_controller][:builtin_services] = ["redis", "mongodb", "mysql", "n
 default[:capacity][:max_uris] = 4
 default[:capacity][:max_services] = 16
 default[:capacity][:max_apps] = 20
+
+default[:vcap_redis][:port] = "5454"
+default[:vcap_redis][:password] = "PoIxbL98RWpwBuUJvKNojnpIcRb1ot2"

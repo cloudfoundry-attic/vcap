@@ -13,7 +13,13 @@ node_id: <%= "redis_node_#{node[:redis_node][:index]}" %>
 supported_versions: <%= "['#{node[:redis][:supported_versions].keys.join("', '")}']"%>
 default_version: "<%= node[:redis][:default_version] %>"
 op_time_limit: <%= node[:redis_node][:op_time_limit] %>
-redis_server_path: /usr/bin/redis-server-<%= node[:redis][:default_version] %>
+redis_server_path:
+<%
+  node[:redis][:supported_versions].each_key do |version|
+%>
+  "<%= version %>": "<%= node[:redis][:path_in_warden] %>/redis-<%= version %>/bin/redis-server"
+<% end %>
+
 port_range:
   first: 5000
   last: 25000
@@ -26,3 +32,4 @@ redis_timeout: <%= node[:redis_node][:redis_timeout] %>
 redis_start_timeout: <%= node[:redis_node][:redis_start_timeout] %>
 image_dir: /var/vcap/store/redis_image
 max_disk: 2048
+service_log_dir: /var/vcap/sys/service-log/redis

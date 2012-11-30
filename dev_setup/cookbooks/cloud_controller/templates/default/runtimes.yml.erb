@@ -7,6 +7,10 @@ python2:
   version_flag: '--version'
   environment:
     PATH: /usr/bin:$PATH
+  status:
+    name: current
+  series: python2
+  category: python
 java:
   description: "Java 6"
   version: "1.6"
@@ -24,6 +28,10 @@ java:
   environment:
     PATH: <%= File.join(node[:java6][:path]) %>:$PATH
     JAVA_HOME: <%= File.join(node[:java6][:java_home]) %>
+  status:
+    name: current
+  series: java
+  category: java
 <% if node[:java7][:available?] %>
 java7:
   description: "Java 7"
@@ -42,9 +50,13 @@ java7:
       - JAVA_OPTS="$JAVA_OPTS -Xdebug -Xrunjdwp:transport=dt_socket,address=$VCAP_DEBUG_PORT,server=y,suspend=n"
     suspend:
       - JAVA_OPTS="$JAVA_OPTS -Xdebug -Xrunjdwp:transport=dt_socket,address=$VCAP_DEBUG_PORT,server=y,suspend=y"
+  status:
+    name: current
+  series: java7
+  category: java
 <% end %>
 node:
-  version: '0.4.12'
+  version: "0.4.12"
   version_flag: '-v'
   version_output: 0.4.12
   description: 'Node.js'
@@ -60,8 +72,12 @@ node:
       - NODE_ARGS="--debug-brk=$VCAP_DEBUG_PORT"
   environment:
     PATH: <%= File.join(node[:node04][:path], "bin") %>:$PATH
+  status:
+    name: current
+  series: node
+  category: node
 node06:
-  version: '0.6.8'
+  version: "0.6.8"
   version_flag: '-v'
   version_output: 0.6.8
   description: 'Node.js'
@@ -77,8 +93,12 @@ node06:
       - NODE_ARGS="--debug-brk=$VCAP_DEBUG_PORT"
   environment:
     PATH: <%= File.join(node[:node06][:path], "bin") %>:$PATH
+  status:
+    name: current
+  series: node06
+  category: node
 node08:
-  version: 0.8.2
+  version: "0.8.2"
   version_flag: '-v'
   version_output: 0.8.2
   description: 'Node.js'
@@ -94,14 +114,22 @@ node08:
       - NODE_ARGS="--debug-brk=$VCAP_DEBUG_PORT"
   environment:
     PATH: <%= File.join(node[:node08][:path], "bin") %>:$PATH
+  status:
+    name: current
+  series: node08
+  category: node
 erlangR14B01:
-  version: 'R14B01'
+  version: "R14B01"
   description: 'Erlang R14B01'
   executable: <%= File.join(node[:erlang][:path], "bin", "erl") %>
-  version_output: ".* 5.8.3"
+  version_output: "5.8.2"
   version_flag: '-version'
   environment:
     PATH: <%= File.join(node[:erlang][:path], "bin") %>:$PATH
+  status:
+    name: current
+  series: erlangR14B01
+  category: erlang
 php:
   description: "PHP 5"
   version: "5.3"
@@ -110,23 +138,49 @@ php:
   version_flag: '-vn'
   environment:
     PATH: /usr/bin:$PATH
+  status:
+    name: current
+  series: php
+  category: php
 ruby18:
-  version: "1.8.7" # FIXME change to 1.8.7-p334
+  version: "1.8.7p357"
   description: "Ruby 1.8.7"
   executable: "<%= File.join(node[:ruby18][:path], "bin", "ruby") %>"
   version_flag: "-e 'puts RUBY_VERSION'"
-  additional_checks: "-e 'puts RUBY_PATCHLEVEL >= 174'"
+  additional_checks: "-e 'puts RUBY_PATCHLEVEL == 357'"
   version_output: 1.8.7
   environment:
-    PATH: <%= File.join(node[:ruby18][:path], "bin") %>:$PATH
+    PATH: <%= File.join(node[:ruby18][:path], "bin") %>:<%= File.join(node[:node08][:path], "bin") %>:$PATH
     BUNDLE_GEMFILE:
+  status:
+    name: current
+  series: ruby18
+  category: ruby
 ruby19:
   version: "1.9.2p180"
   description: "Ruby 1.9.2"
   executable: "<%= File.join(node[:ruby][:path], "bin", "ruby") %>"
   version_flag: "-e 'puts RUBY_VERSION'"
-  additional_checks: "-e 'puts RUBY_PATCHLEVEL >= 180'"
+  additional_checks: "-e 'puts RUBY_PATCHLEVEL == 180'"
   version_output: 1.9.2
   environment:
-    PATH: <%= File.join(node[:ruby][:path], "bin") %>:$PATH
+    PATH: <%= File.join(node[:ruby][:path], "bin") %>:<%= File.join(node[:node08][:path], "bin") %>:$PATH
     BUNDLE_GEMFILE:
+  status:
+    name: current
+  series: ruby19
+  category: ruby
+ruby193:
+  version: "1.9.3p194"
+  description: "Ruby 1.9.3"
+  executable: "<%= File.join(node[:ruby193][:path], "bin", "ruby") %>"
+  version_flag: "-e 'puts RUBY_VERSION'"
+  additional_checks: "-e 'puts RUBY_PATCHLEVEL == 194'"
+  version_output: 1.9.3
+  environment:
+    PATH: <%= File.join(node[:ruby193][:path], "bin") %>:<%= File.join(node[:node08][:path], "bin") %>:$PATH
+    BUNDLE_GEMFILE:
+  status:
+    name: current
+  series: ruby193
+  category: ruby
