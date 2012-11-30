@@ -74,12 +74,15 @@ if vcap_components["components"].include?("cloud_controller")
   puts "Setting up cloud controller environment"
   ENV["CLOUD_CONTROLLER_CONFIG"]=File.join(deployment_config_path, "cloud_controller.yml")
   ENV["RAILS_ENV"]="production"
-  ENV["PLATFORM_CONFIG"]=File.join(deployment_config_path, "staging","platform.yml")
 
   # Start the cloud controller component first as other components like the
   # health manager depend on it. Specifically, the health manager uses the same
   # database as the one used by the cloud controller.
   vcap_components["components"].unshift(vcap_components["components"].delete("cloud_controller"))
+end
+
+if vcap_components["components"].include?("stager")
+  ENV["PLATFORM_CONFIG"]=File.join(deployment_config_path, "platform.yml")
 end
 
 if vcap_components["components"].include?("uaa")
@@ -104,7 +107,7 @@ def exec_cmd(cmd)
 end
 
 ruby_binary = File.join(ruby_bin_dir, "ruby")
-vcap_home = File.join(deployment_info["cloudfoundry_home"])
+vcap_home = File.join(deployment_info["cloudfoundry_home"], "vcap")
 vcap_launch = File.join(script_dir, "vcap")
 
 puts "Using cloudfoundry config from #{deployment_config_path}"

@@ -52,7 +52,6 @@ directories:
   resources: /var/vcap/shared/resources
   # default values, relative to Rails.root. Leading slash for full path.
   staging_manifests: <%= File.join(node[:deployment][:config_path], "staging") %>
-  staging_cache: /var/vcap/data/cloud_controller/staging
   tmpdir: /var/vcap/data/cloud_controller/tmp
 
 # NATS message bus URI
@@ -91,14 +90,8 @@ redis:
 
 # App staging parameters
 staging:
-  max_concurrent_stagers: 10
   # Max duration for staging process
   max_staging_runtime:    120 # secs
-
-  # Create a secure environment for staging
-  secure: false
-  new_stager_percent: 100
-  new_stager_email_regexp: .*@vmware.com
 
   auth:
     user: zxsfhgjg
