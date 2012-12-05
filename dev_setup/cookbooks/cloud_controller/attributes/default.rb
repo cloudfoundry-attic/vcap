@@ -1,5 +1,6 @@
 include_recipe "deployment"
 include_attribute "postgresql"
+include_attribute "redis"
 include_attributes "uaa"
 include_attributes "service_lifecycle"
 
@@ -37,3 +38,4 @@ default[:capacity][:max_apps] = 20
 
 default[:vcap_redis][:port] = "5454"
 default[:vcap_redis][:password] = "PoIxbL98RWpwBuUJvKNojnpIcRb1ot2"
+default[:vcap_redis][:path] = File.join(node[:redis][:path], node[:redis][:supported_versions][node[:redis][:default_version]])

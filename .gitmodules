@@ -1,9 +1,6 @@
 [submodule "services"]
 	path = services
 	url = https://github.com/cloudfoundry/vcap-services.git
-[submodule "tests"]
-	path = tests
-	url = https://github.com/cloudfoundry/vcap-tests.git
 [submodule "uaa"]
 	path = uaa
 	url = https://github.com/cloudfoundry/uaa.git
@@ -22,3 +19,6 @@
 [submodule "stager"]
 	path = stager
 	url = https://github.com/cloudfoundry/stager.git
+[submodule "tests"]
+	path = tests
+	url = https://github.com/cloudfoundry/vcap-yeti.git
