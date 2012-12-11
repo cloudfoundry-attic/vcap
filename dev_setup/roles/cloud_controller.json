@@ -10,7 +10,7 @@
                  "recipe[ruby]",
                  "recipe[ruby::ruby18]",
                  "recipe[nginx]",
-                 "recipe[redis]",
+                 "recipe[vcap_redis]",
                  "recipe[ccdb]",
                  "recipe[cloud_controller]"]
 }
