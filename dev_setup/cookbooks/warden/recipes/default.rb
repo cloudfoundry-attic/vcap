@@ -38,9 +38,3 @@ bash "Setup warden server" do
     echo y | bundle exec rake setup[#{node[:deployment][:config_path]}/warden_server.conf]
   EOH
 end
-
-template "services.conf" do
-   path File.join(node[:warden][:rootfs_path], "etc", "init", "services.conf")
-   source "services.conf.erb"
-   mode 0644
-end

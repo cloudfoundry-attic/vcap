@@ -19,8 +19,8 @@ node_id: <%= "vblob_node_#{node[:vblob_node][:index]}" %>
 op_time_limit: <%= node[:vblob_node][:op_time_limit] %>
 vblob_timeout: <%= node[:vblob_node][:vblob_timeout] %>
 vblob_start_timeout: <%= node[:vblob_node][:vblob_start_timeout] %>
-nodejs_path: <%= node[:node06][:path] %>/bin/node
-vblobd_path: <%= File.join(node[:vblob][:path_in_warden], node[:vblob][:default_version]) %>
+nodejs_path: "<%= node[:vblob][:path] %>/node"
+vblobd_path: "<%= node[:vblob][:path] %>/<%= node[:vblob][:default_version] %>"
 vblobd_auth: <%= node[:vblob_node][:auth] %>
 vblobd_quota: 2147483647
 vblobd_obj_limit: 32768
@@ -31,3 +31,16 @@ port_range:
 max_disk: 2048
 vblobd_tmp_dir: /tmp/vblob
 service_log_dir: /var/vcap/sys/service-log/vblob
+
+service_common_dir: "<%= node[:vblob][:path] %>/common"
+service_bin_dir:
+  vblob: "<%= node[:vblob][:path] %>/<%= node[:vblob][:default_version] %>"
+  node: "<%= node[:vblob][:path] %>/node"
+
+z_interval: 30
+max_nats_payload: 1048576
+fqdn_hosts: false
+max_disk: 1024
+op_time_limit: 6
+service_start_timeout: 3
+m_interval: 10

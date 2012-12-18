@@ -7,6 +7,7 @@
   "run_list" : ["recipe[deployment]",
                 "recipe[essentials]",
                 "recipe[ruby]",
+                "recipe[service]",
                 "recipe[warden]",
                 "recipe[node::node06]",
                 "recipe[vblob]",
