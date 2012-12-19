@@ -8,6 +8,7 @@
                 "recipe[essentials]",
                 "recipe[ruby]",
                 "recipe[warden]",
+                "recipe[service]",
                 "recipe[redis]",
                 "recipe[redis::node]",
                 "recipe[redis::backup]",

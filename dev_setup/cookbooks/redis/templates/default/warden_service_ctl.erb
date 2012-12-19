@@ -1,0 +1,30 @@
+#!/bin/bash
+STOP_TIMEOUT=3
+OP=$1
+BASE_DIR=$2
+LOG_DIR=$3
+COMMON_DIR=$4
+PIDFILE=$BASE_DIR/service.pid
+
+source $COMMON_DIR/bin/utils.sh
+
+case $OP in
+  start)
+    BIN_DIR=$5
+    echo $$ > $PIDFILE
+    exec /sbin/start-stop-daemon --start --quiet --chuid vcap --exec $BIN_DIR/bin/redis-server -- $BASE_DIR/redis.conf
+    ;;
+
+  stop)
+    kill_and_wait $PIDFILE $STOP_TIMEOUT 1
+    ;;
+
+  status)
+    [ -f $PIDFILE ] && [ -e /proc/`head -1 $PIDFILE` ]
+    ;;
+
+  *)
+    echo "Usage: $0 {start|stop|status}"
+
+    ;;
+esac

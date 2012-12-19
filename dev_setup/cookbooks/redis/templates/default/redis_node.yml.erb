@@ -8,17 +8,10 @@ base_dir: /var/vcap/services/redis/instances
 redis_log_dir: /var/vcap/services/redis/logs
 pid: /var/vcap/sys/run/redis_node.pid
 max_memory: <%= node[:redis_node][:max_memory] %>
+memory_overhead: 20
 max_swap: 32
 node_id: <%= "redis_node_#{node[:redis_node][:index]}" %>
-supported_versions: <%= "['#{node[:redis][:supported_versions].keys.join("', '")}']"%>
-default_version: "<%= node[:redis][:default_version] %>"
 op_time_limit: <%= node[:redis_node][:op_time_limit] %>
-redis_server_path:
-<%
-  node[:redis][:supported_versions].each_key do |version|
-%>
-  "<%= version %>": "<%= node[:redis][:path_in_warden] %>/redis-<%= version %>/bin/redis-server"
-<% end %>
 
 port_range:
   first: 5000
@@ -33,3 +26,19 @@ redis_start_timeout: <%= node[:redis_node][:redis_start_timeout] %>
 image_dir: /var/vcap/store/redis_image
 max_disk: 2048
 service_log_dir: /var/vcap/sys/service-log/redis
+
+supported_versions: ["<%= node[:redis][:default_version] %>"]
+default_version: "<%= node[:redis][:default_version] %>"
+
+z_interval: 30
+service_common_dir: "<%= node[:redis][:path] %>/common"
+service_bin_dir:
+  "<%= node[:redis][:default_version] %>": "<%= node[:redis][:path] %>/<%= node[:redis][:default_version] %>"
+
+max_nats_payload: 1048576
+fqdn_hosts: false
+service_start_timeout: 3
+persistent: false
+op_time_limit: 6
+filesystem_quota: false
+m_interval: 10

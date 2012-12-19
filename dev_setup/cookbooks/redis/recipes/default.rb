@@ -5,10 +5,24 @@
 # Copyright 2012, VMware
 #
 
-# deploy redis in warden
-template "redis_startup.sh" do
-   path File.join(node[:warden][:rootfs_path], "usr", "bin", "redis_startup.sh")
-   source "redis_startup.sh.erb"
+directory node[:redis][:path] do
+  owner node[:deployment][:user]
+  group node[:deployment][:group]
+  mode "0755"
+  recursive true
+  action :create
+end
+
+bash "install redis tools" do
+  user node[:deployment][:user]
+  code <<-EOH
+    mkdir -p #{node[:redis][:path]}/common/bin
+    cp #{node[:service][:common_path]}/utils.sh #{node[:redis][:path]}/common/bin
+  EOH
+end
+
+template File.join(node[:redis][:path], "common", "bin", "warden_service_ctl") do
+   source "warden_service_ctl.erb"
    mode 0755
 end
 
@@ -23,7 +37,7 @@ node[:redis][:supported_versions].each do |version, install_version|
     checksum source_file_checksum
   end
 
-  install_dir = File.join(node[:warden][:rootfs_path], node[:redis][:path_in_warden], "redis-#{version}", "bin")
+  install_dir = File.join(node[:redis][:path], "#{version}", "bin")
   bash "Install Redis #{version} (#{install_version})" do
     cwd File.join("", "tmp")
     user node[:deployment][:user]
@@ -31,21 +45,22 @@ node[:redis][:supported_versions].each do |version, install_version|
     tar xzf #{File.join(node[:deployment][:setup_cache], "redis-#{install_version}.tar.gz")}
     cd redis-#{install_version}
     make
-    sudo mkdir -p #{install_dir}
-    sudo install src/redis-server #{install_dir}
+    mkdir -p #{install_dir}
+    install src/redis-server #{install_dir}
     EOH
   end
 end
 
 # deploy redis local
-directory "#{node[:redis][:path]}" do
+local_redis = File.join(node[:deployment][:home], "deploy", "redis")
+directory local_redis do
   owner node[:deployment][:user]
   group node[:deployment][:group]
   mode "0755"
 end
 
 %w[bin etc var].each do |dir|
-  directory File.join(node[:redis][:path], dir) do
+  directory File.join(local_redis, dir) do
     owner node[:deployment][:user]
     group node[:deployment][:group]
     mode "0755"
@@ -58,6 +73,6 @@ bash "Install Redis in local" do
   user node[:deployment][:user]
   code <<-EOH
     cd /tmp/redis-2.2.15/src
-    install redis-benchmark redis-cli redis-server redis-check-dump redis-check-aof #{File.join(node[:redis][:path], "bin")}
+    install redis-benchmark redis-cli redis-server redis-check-dump redis-check-aof #{File.join(local_redis, "bin")}
   EOH
 end

@@ -1,4 +1,5 @@
 include_attribute "deployment"
+include_attribute "service"
 
 include_attribute "backup"
 include_attribute "service_lifecycle"
@@ -16,8 +17,7 @@ default[:redis][:version_aliases] = {
 
 default[:redis][:default_version] = "2.2"
 
-default[:redis][:path] = File.join(node[:deployment][:home], "deploy", "redis")
-default[:redis][:path_in_warden] = File.join("", "usr", "share", "redis")
+default[:redis][:path] = File.join(node[:service][:path], "redis")
 default[:redis][:runner] = node[:deployment][:user]
 default[:redis][:port] = 6379
 default[:redis][:password] = "redis"
