@@ -1,0 +1,10 @@
+Code-Review+1: Tang Rui <rtang@vmware.com>
+Code-Review+2: Figo Feng <ffeng@vmware.com>
+Verified+1: Figo Feng <ffeng@vmware.com>
+Code-Review+1: Yang Yang <yangy@vmware.com>
+Code-Review+1: Andy Zhang <andyzhang@rbcon.com>
+Submitted-by: Haipeng Wu <hwu@rbcon.com>
+Submitted-at: Wed, 19 Dec 2012 05:33:43 +0000
+Reviewed-on: http://reviews.cloudfoundry.org/12264
+Project: vcap
+Branch: refs/heads/services_ng
