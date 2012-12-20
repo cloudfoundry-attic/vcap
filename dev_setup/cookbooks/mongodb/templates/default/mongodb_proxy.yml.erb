@@ -1,0 +1,20 @@
+---
+
+host: 0.0.0.0
+port: 29017
+
+mongodb:
+  host: 127.0.0.1
+  port: 27017
+  dbname: db
+  user: admin
+
+filter:
+  base_dir: /store/instance/data/
+  quota_files: 8
+  quota_data_size: 2032
+  enabled: true
+
+logging:
+  level: info
+  path: /store/log/mongodb_proxy.log

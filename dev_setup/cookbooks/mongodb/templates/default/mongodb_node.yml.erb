@@ -12,22 +12,8 @@ node_id: <%= "mongodb_node_#{node[:mongodb_node][:index]}" %>
 op_time_limit: <%= node[:mongodb_node][:op_time_limit] %>
 mongo_timeout: <%= node[:mongodb_node][:mongo_timeout] %>
 
-supported_versions: <%= "['#{node[:mongodb][:supported_versions].keys.join("', '")}']"%>
+supported_versions: ["<%= node[:mongodb][:default_version] %>"]
 default_version: "<%= node[:mongodb][:default_version] %>"
-
-mongod_path:
-<%
-  node[:mongodb][:supported_versions].each_key do |version|
-%>
-  "<%= version %>": "<%= File.join(node[:deployment][:home], "deploy", "mongodb", node[:mongodb][:supported_versions][version], "bin", "mongod") %>"
-<% end %>
-
-mongorestore_path:
-<%
-  node[:mongodb][:supported_versions].each_key do |version|
-%>
-  "<%= version %>": "<%= File.join(node[:deployment][:home], "deploy", "mongodb", node[:mongodb][:supported_versions][version], "bin", "mongorestore") %>"
-<% end %>
 
 mongod_options:
 <%
@@ -39,10 +25,28 @@ mongod_options:
 port_range:
   first: 25001
   last: 45000
-migration_nfs: /mnt/migration
 logging:
   level: debug
 
 image_dir: /var/vcap/store/mongodb_image
 max_disk: 2048
 service_log_dir: /var/vcap/sys/service-log/mongodb
+max_clients: 30
+max_nats_payload: 1048576
+fqdn_hosts: false
+op_time_limit: 6
+service_start_timeout: 4
+m_interval: 10
+z_interval: 30
+
+mongod_path:
+  "<%= node[:mongodb][:default_version] %>": "<%= node[:mongodb][:path] %>/<%= node[:mongodb][:default_version] %>/bin/mongod"
+
+migration_nfs: /var/vcap/services_migration_mongodb
+mongorestore_path:
+  "<%= node[:mongodb][:default_version] %>":  "<%= node[:mongodb][:path] %>/<%= node[:mongodb][:default_version] %>/bin/mongorestore"
+
+service_common_dir: "<%= node[:mongodb][:path] %>/common"
+service_bin_dir:
+  "<%= node[:mongodb][:default_version] %>": "<%= node[:mongodb][:path] %>/<%= node[:mongodb][:default_version] %>"
+  proxy: "<%= node[:mongodb_proxy][:path] %>"

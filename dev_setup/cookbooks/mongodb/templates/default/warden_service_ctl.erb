@@ -1,0 +1,48 @@
+#!/bin/bash
+STOP_TIMEOUT=3
+OP=$1
+shift
+BASE_DIR=$1
+shift
+LOG_DIR=$1
+shift
+COMMON_DIR=$1
+PIDFILE=$BASE_DIR/service.pid
+PROXY_PIDFILE=${BASE_DIR}/proxy.pid
+
+source $COMMON_DIR/bin/utils.sh
+
+case $OP in
+  start)
+    shift
+    BIN_DIR=$1
+    shift
+    PROXY_BIN_DIR=$1
+    shift
+    ADMIN_PASS=$1
+    shift
+    ARGS=$*
+    touch $LOG_DIR/mongodb.log
+    mkdir -p $BASE_DIR/data
+    $PROXY_BIN_DIR/bin/proxyctl -c $COMMON_DIR/config/mongodb_proxy.yml -p $ADMIN_PASS &
+    sleep 1
+    proxy_pid=`pidof proxyctl`
+    echo $proxy_pid > $PROXY_PIDFILE
+    echo $$ >> $PIDFILE
+    exec $BIN_DIR/bin/mongod --config $COMMON_DIR/config/mongodb.conf $ARGS
+    ;;
+
+  stop)
+    kill_and_wait $PIDFILE $STOP_TIMEOUT 1
+    kill_and_wait $PROXY_PIDFILE 1 1
+    ;;
+
+  status)
+    [ -f $PROXY_PIDFILE ] && [ -e /proc/`head -1 $PROXY_PIDFILE` ] && [ -f $PIDFILE ] && [ -e /proc/`head -1 $PIDFILE` ]
+    ;;
+
+  *)
+    echo "Usage: $0 {start|stop|status}"
+
+    ;;
+esac
