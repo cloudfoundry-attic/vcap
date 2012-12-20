@@ -8,6 +8,8 @@
                 "recipe[essentials]",
                 "recipe[ruby]",
                 "recipe[warden]",
+                "recipe[service]",
+                "recipe[go]",
                 "recipe[mongodb]",
                 "recipe[mongodb::node]",
                 "recipe[mongodb::backup]",
