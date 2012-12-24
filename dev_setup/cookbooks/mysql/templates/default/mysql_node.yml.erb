@@ -10,19 +10,52 @@ mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] 
 index: <%= node[:mysql_node][:index] %>
 pid: /var/vcap/sys/run/mysql_node.pid
 node_id: <%= "mysql_node_#{node[:mysql_node][:index]}" %>
-supported_versions: <%= "['#{node[:mysql][:supported_versions].keys.join("', '")}']"%>
-default_version: "<%= node[:mysql][:default_version] %>"
 op_time_limit: <%= node[:mysql_node][:op_time_limit] %>
 connection_wait_timeout: <%= node[:mysql_node][:connection_wait_timeout] %>
 max_db_size: <%= node[:mysql_node][:max_db_size] %>
 max_long_query: 3
 max_long_tx: 30
 kill_long_tx: true
-migration_nfs: /mnt/migration
+max_user_conns: 30
+migration_nfs: /var/vcap/services_migration_mysql
+
 mysql:
-  host: <%= node[:mysql][:host] %>
-  port: 3306
-  user: <%= node[:mysql][:server_root_user] %>
-  pass: <%= node[:mysql][:server_root_password] %>
+  "<%= node[:mysql][:default_version] %>":
+    host: <%= node[:mysql][:host] %>
+    port: 3307
+    user: <%= node[:mysql][:server_root_user] %>
+    pass: <%= node[:mysql][:server_root_password] %>
+    socket: "/var/vcap/sys/run/mysqld/mysqld<%= node[:mysql][:default_version] %>.sock"
+    mysqldump_bin:  "<%= node[:mysql][:path] %>/<%= node[:mysql][:default_version] %>/bin/mysqldump"
+    mysql_bin:  "<%= node[:mysql][:path] %>/<%= node[:mysql][:default_version] %>/bin/mysql"
 logging:
   level: debug
+
+supported_versions: ["<%= node[:mysql][:default_version] %>"]
+default_version: "<%= node[:mysql][:default_version] %>"
+
+connection_pool_size:
+  min: 1
+  max: 5
+
+z_interval: 30
+max_nats_payload: 1048576
+fqdn_hosts: false
+op_time_limit: 6
+
+max_disk: 128
+use_warden: true
+warden:
+  service_log_dir: /var/vcap/sys/service-log/mysql
+  service_common_dir: <%= node[:mysql][:path] %>/common
+  service_bin_dir:
+    "<%= node[:mysql][:default_version] %>": "<%= node[:mysql][:path] %>/<%= node[:mysql][:default_version] %>"
+
+  image_dir: /var/vcap/store/mysql_image
+  service_start_timeout: 3
+  filesystem_quota: false
+  port_range:
+    first: 15000
+    last: 25000
+
+m_interval: 10

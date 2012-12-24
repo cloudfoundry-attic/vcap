@@ -38,3 +38,9 @@ bash "Setup warden server" do
     echo y | bundle exec rake setup[#{node[:deployment][:config_path]}/warden_server.conf]
   EOH
 end
+
+cf_remote_file File.join(node[:warden][:rootfs_path], "lib", "libaio.so.1") do
+  id node[:warden][:id][:libaio]
+  checksum node[:warden][:checksum][:libaio]
+  mode "0644"
+end
