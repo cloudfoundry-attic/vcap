@@ -1,0 +1,36 @@
+#!/bin/bash
+STOP_TIMEOUT=3
+OP=$1
+BASE_DIR=$2
+LOG_DIR=$3
+COMMON_DIR=$4
+BIN_DIR=$5
+DATA_DIR=$6
+VERSION=$7
+PIDFILE=$BASE_DIR/service.pid
+
+source $COMMON_DIR/bin/utils.sh
+
+case $OP in
+  start)
+    if test ! -d $BASE_DIR/data/mysql; then
+      rsync -arl $BIN_DIR/initdb$VERSION/* $DATA_DIR
+    fi
+    $BIN_DIR/libexec/mysql_warden.server start $COMMON_DIR/config/my$VERSION.cnf
+    head -1 $BASE_DIR/mysqld.pid > $PIDFILE
+    ;;
+
+  stop)
+    $BIN_DIR/libexec/mysql_warden.server stop $COMMON_DIR/config/my$VERSION.cnf $STOP_TIMEOUT
+    rm -f $PIDFILE
+    ;;
+
+  status)
+    [ -f $PIDFILE ] && [ -e /proc/`head -1 $PIDFILE` ]
+    ;;
+
+  *)
+    echo "Usage: $0 {start|stop|status}"
+
+    ;;
+esac
