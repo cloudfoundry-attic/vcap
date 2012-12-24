@@ -25,8 +25,8 @@ serialization:
 postgresql:
   host: <%= node[:postgresql_node][:host] %>
   port: <%= node[:postgresql][:service_port]%>
-  user: <%= node[:postgresql][:server_root_user] %>
-  pass: <%= node[:postgresql][:server_root_password] %>
+  user: <%= node[:postgresql][:service_root_user] %>
+  pass: <%= node[:postgresql][:service_root_password] %>
   database: <%= node[:postgresql_node][:database]%>
 logging:
   level: debug

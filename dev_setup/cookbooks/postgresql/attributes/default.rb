@@ -1,31 +1,49 @@
 include_attribute "backup"
 include_attribute "service_lifecycle"
+include_attribute "service"
 
 default[:postgresql][:supported_versions] = {
-        "9.0" => "9.0",
+        "9.1" => "9.1",
 }
 default[:postgresql][:version_aliases] = {
-        "current" => "9.0",
+        "current" => "9.1",
 }
-default[:postgresql][:default_version] = "9.0"
+default[:postgresql][:default_version] = "9.1"
 
-default[:postgresql][:server_root_password] = "changeme"
-default[:postgresql][:server_root_user] = "root"
+default[:postgresql][:system_root_password] = "changeme"
+default[:postgresql][:system_root_user] = "root"
+default[:postgresql][:service_root_password] = "vcap"
+default[:postgresql][:service_root_user] = "vcap"
 default[:postgresql][:system_port] = "5432"
 default[:postgresql][:service_port] = "5433"
 default[:postgresql][:system_version] = "8.4"
-default[:postgresql][:service_version] = "9.0"
+default[:postgresql][:service_version] = "9.1"
 
-default[:postgresql_gateway][:service][:timeout] = "15"
-default[:postgresql_gateway][:node_timeout] = "10"
+default[:postgresql_gateway][:service][:timeout] = "25"
+default[:postgresql_gateway][:node_timeout] = "20"
 
+default[:postgresql_node][:path] = File.join(node[:service][:path], "postgresql")
 default[:postgresql_node][:host] = "localhost"
-default[:postgresql_node][:database] = "pg_service"
 default[:postgresql_node][:capacity] = "50"
-default[:postgresql_node][:max_db_size] = "20"
+default[:postgresql_node][:max_db_size] = "128"
 default[:postgresql_node][:token] = "changepostgresqltoken"
 default[:postgresql_node][:index] = "0"
-default[:postgresql_node][:op_time_limit] = "6"
+default[:postgresql_node][:op_time_limit] = "15"
+default[:postgresql_node][:database] = "postgres"
+
+default[:postgresql_node][:id][:package] = {
+        "9.1" => "eyJzaWciOiJPQk9KZDZodUxrYlEwZzI3K2hXa3llc1hkbjA9Iiwib2lkIjoi%0ANGU0ZTc4YmNhMzFlMTIxMDA0ZTRlN2Q1MTQ3NDVmMDUwZDgxMTU1MjA0ZmUi%0AfQ==%0A"
+}
+default[:postgresql_node][:checksum][:package] = {
+        "9.1" => "ccc5103176ebfde05cd3d49ff3f0d19d859384676d9806a745d7bb40e17762b2"
+}
+
+default[:postgresql_node][:id][:initdb] = {
+        "9.1" => "eyJzaWciOiJBTDcvTlEyMndNaHI2Y3N3TWFCZEZhcCt2V2s9Iiwib2lkIjoi%0ANGU0ZTc4YmNhMzFlMTIyMDA0ZTRlOGVjNjQ2ZTIxMDUwZDgxMTY4YzY3Y2Yi%0AfQ==%0A"
+}
+default[:postgresql_node][:checksum][:initdb] = {
+        "9.1" => "5e142d390f676814a4bb245087f4cc2b99f39c626803bcf21069215c64cf1ba4"
+}
 
 default[:postgresql_backup][:config_file] = "postgresql_backup.yml"
 default[:postgresql_backup][:cron_time] = "0 2 * * *"

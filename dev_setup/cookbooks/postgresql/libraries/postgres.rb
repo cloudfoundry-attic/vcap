@@ -89,8 +89,8 @@ module CloudFoundryPostgres
   def cf_pg_reset_user_password(db_sym)
     if node[db_sym][:adapter] == "postgresql" && node[:postgresql][:system_version] == node[:postgresql][:service_version] && node[:postgresql][:system_port] == node[:postgresql][:service_port]
       # override the postgresql's user and password
-      node[db_sym][:user] = node[:postgresql][:server_root_user]
-      node[db_sym][:password] = node[:postgresql][:server_root_password]
+      node[db_sym][:user] = node[:postgresql][:system_root_user]
+      node[db_sym][:password] = node[:postgresql][:system_root_password]
     end
   end
 
