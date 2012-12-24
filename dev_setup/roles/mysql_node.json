@@ -7,7 +7,10 @@
   "run_list" : ["recipe[deployment]",
                 "recipe[essentials]",
                 "recipe[ruby]",
+                "recipe[warden]",
+                "recipe[service]",
                 "recipe[mysql]",
                 "recipe[mysql::node]",
-                "recipe[mysql::backup]"]
+                "recipe[mysql::backup]",
+                "recipe[warden::start]"]
 }
