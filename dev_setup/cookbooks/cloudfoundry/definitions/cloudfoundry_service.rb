@@ -18,7 +18,7 @@ define :cloudfoundry_service do
   service_name = "rabbit" if service_name == "rabbitmq"
 
   # Work around for vblob/redis/mongo/rabbit since other services haven't wardenized
-  if ["vblob", "rabbit", "mongodb", "redis", "mysql"].include?(service_name)
+  if ["vblob", "rabbit", "mongodb", "redis", "mysql", "postgresql"].include?(service_name)
     cf_bundle_install(File.join(node[:cloudfoundry][:path], "services", "ng", service_name))
   else
     cf_bundle_install(File.join(node[:cloudfoundry][:path], "services", service_name))

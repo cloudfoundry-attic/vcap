@@ -3,26 +3,50 @@ capacity: <%= node[:postgresql_node][:capacity] %>
 plan: free
 local_db: sqlite3:/var/vcap/services/postgresql/postgresql_node.db
 base_dir: /var/vcap/services/postgresql/
-dump_bin: /usr/lib/postgresql/<%=node[:postgresql][:service_version]%>/bin/pg_dump
-restore_bin: /usr/lib/postgresql/<%=node[:postgresql][:service_version]%>/bin/pg_restore
 mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
 index: <%= node[:postgresql_node][:index] %>
 pid: /var/vcap/sys/run/postgresql_node.pid
 node_id: <%= "postgresql_node_#{node[:postgresql_node][:index]}" %>
-supported_versions: <%= "['#{node[:postgresql][:supported_versions].keys.join("', '")}']"%>
-default_version: "<%= node[:postgresql][:default_version] %>"
 op_time_limit: <%= node[:postgresql_node][:op_time_limit] %>
 max_db_size: <%= node[:postgresql_node][:max_db_size] %>
 max_long_query: 3
 max_long_tx: 30
 max_db_conns: 20
 db_size_overhead: 5.4
-migration_nfs: /mnt/migration
 postgresql:
-  host: <%= node[:postgresql_node][:host] %>
-  port: <%= node[:postgresql][:service_port]%>
-  user: <%= node[:postgresql][:server_root_user] %>
-  pass: <%= node[:postgresql][:server_root_password] %>
-  database: <%= node[:postgresql_node][:database]%>
+  "<%= node[:postgresql][:default_version] %>":
+    host: <%= node[:postgresql_node][:host] %>
+    port: <%= node[:postgresql][:service_port] %>
+    user: <%= node[:postgresql][:service_root_user] %>
+    pass: <%= node[:postgresql][:service_root_password] %>
+    database: <%= node[:postgresql_node][:database] %>
+    dump_bin: "<%= node[:postgresql_node][:path] %>/<%= node[:postgresql][:default_version] %>/bin/pg_dump"
+    restore_bin: "<%= node[:postgresql_node][:path] %>/<%= node[:postgresql][:default_version] %>/bin/pg_restore"
 logging:
   level: debug
+
+supported_versions: ["<%= node[:postgresql][:default_version] %>"]
+default_version: "<%= node[:postgresql][:default_version] %>"
+
+migration_nfs: /var/vcap/services_migration/postgresql
+z_interval: 30
+max_nats_payload: 1048576
+fqdn_hosts: false
+
+max_disk: 128
+use_warden: true
+warden:
+  service_log_dir: /var/vcap/sys/service-log/postgresql
+  service_bin_dir:
+    "<%= node[:postgresql][:default_version] %>": "<%= node[:postgresql_node][:path]%>/<%= node[:postgresql][:default_version] %>"
+
+  service_common_dir: "<%= node[:postgresql_node][:path] %>/common"
+  image_dir: /var/vcap/store/postgresql_image
+  service_start_timeout: 3
+  filesystem_quota: false
+
+  port_range:
+    first: 15000
+    last: 25000
+
+m_interval: 10
