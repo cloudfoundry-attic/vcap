@@ -309,7 +309,7 @@ class ServiceComponent < Component
     service_dir = File.join(vcap_bin, "../services")
 
     # Work around for vblob/redis/mongo/rabbit since other services haven't wardenized
-    if ["vblob", "rabbit", "mongodb", "redis", "mysql"].include?(pre)
+    if ["vblob", "rabbit", "mongodb", "redis", "mysql", "postgresql"].include?(pre)
       service_dir = File.join(vcap_bin, "../services", "ng")
     end
 
