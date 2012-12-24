@@ -12,8 +12,11 @@
                 "recipe[essentials]",
                 "recipe[ruby]",
                 "recipe[cloudfoundry]",
+                "recipe[warden]",
+                "recipe[service]",
                 "recipe[postgresql]",
                 "recipe[postgresql::service]",
                 "recipe[postgresql::node]",
-                "recipe[postgresql::backup]"]
+                "recipe[postgresql::backup]",
+                "recipe[warden::start]"]
 }
