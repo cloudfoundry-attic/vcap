@@ -1,0 +1,101 @@
+#!/bin/bash
+
+STOP_TIMEOUT=3
+OP=$1
+BASE_DIR=$2
+LOG_DIR=$3
+COMMON_DIR=$4
+PIDFILE=$BASE_DIR/service.pid
+
+source $COMMON_DIR/bin/utils.sh
+
+FIRST_TIME=0
+
+case $OP in
+  start)
+    BIN_DIR=$5
+    PORT=$6
+
+    echo `date` >> $LOG_DIR/postgresql_ctl.log
+
+    if [ ! -d $BASE_DIR -o ! -f $BASE_DIR/postgresql.conf ]; then
+      FIRST_TIME=1
+      mkdir -p $BASE_DIR
+      chown vcap:vcap $BASE_DIR
+
+      # copy initdb
+      rsync -arl $BIN_DIR/initdb/* $BASE_DIR
+
+      if [ $? != 0 ]; then
+        echo "ERROR: Unable to initialize PostgreSQL DB" >> $LOG_DIR/postgresql_ctl.log
+        exit 1
+      fi
+    fi
+
+    rsync -arl $BIN_DIR/initdb/pg_hba.conf $BASE_DIR/pg_hba.conf
+    rsync -arl $BIN_DIR/initdb/postgresql.conf $BASE_DIR/postgresql.conf
+
+    chown -R vcap:vcap $BASE_DIR
+    chmod -R 700 $BASE_DIR
+
+    # host server could connect the container without password
+    host_ip=`ip route | grep "^default" | cut -d' ' -f3`
+    echo "host all all $host_ip/32 trust" >> $BASE_DIR/pg_hba.conf
+    echo "host all all 0.0.0.0/0 md5" >> $BASE_DIR/pg_hba.conf
+
+    # since postgresql service is alive
+    # log dir change should cover both clean deploy and upgrade push
+    if [ ! -d $LOG_DIR ]; then
+      mkdir -p $LOG_DIR
+      chown vcap:vcap $LOG_DIR
+    fi
+    sed -i "s&^[\w|#]*log_directory = .*&log_directory = '${LOG_DIR}'&" $BASE_DIR/postgresql.conf
+
+    echo "Starting PostgreSQL `cat $BASE_DIR/PG_VERSION`: " >> $LOG_DIR/postgresql_ctl.log
+    LD_LIBRARY_PATH=$BIN_DIR/lib:$LD_LIBRARY_PATH $BIN_DIR/bin/pg_ctl -w start -D $BASE_DIR -l "$LOG_DIR/startup.log"
+
+    if [ $? == 0 ]; then
+      echo "PostgreSQL `cat $BASE_DIR/PG_VERSION` started successfully" >> $LOG_DIR/postgresql_ctl.log
+      head -1 $BASE_DIR/postmaster.pid > $PIDFILE
+      if [ $FIRST_TIME -eq 1 ]; then
+        # Setup contrib packages
+        for sqlf in citext.sql fuzzystrmatch.sql isn.sql ltree.sql pageinspect.sql pg_buffercache.sql pgcrypto.sql pg_freespacemap.sql sslinfo.sql tablefunc.sql uuid-ossp.sql
+        do
+          echo "Installing contrib package ${sqlf}" >> $LOG_DIR/postgresql_ctl.log
+          ${BIN_DIR}/bin/psql -U vcap -f ${BIN_DIR}/share/${sqlf} -d postgres >> $LOG_DIR/postgresql_ctl.log
+        done
+      fi
+      echo `date` >> $LOG_DIR/postgresql_ctl.log
+    else
+      rm $PIDFILE
+      if [ -e $BASE_DIR/postmaster.pid ]; then
+        ps -p `head -n 1 $BASE_DIR/postmaster.pid` 1>/dev/null 2>/dev/null
+        if [ $? == 1 ]; then
+          echo "There is a stale postmaster pid file, will remove it and kill possible orphan processes"
+          # remove the stale postmaster pid file
+          rm $BASE_DIR/postmaster.pid
+          # remove the orphan processes in hack style
+          ps -o pid,cmd --ppid=1 | grep 'postgres:' | cut -d' ' -f1 | xargs -r kill
+        fi
+      fi
+      echo "The PostgreSQL server start seems to have some problems, please see logs for details." >> $LOG_DIR/postgresql_ctl.log
+      exit 1
+    fi
+    ;;
+
+  stop)
+    BIN_DIR=$5
+    LD_LIBRARY_PATH=$BIN_DIR/lib:$LD_LIBRARY_PATH $BIN_DIR/bin/pg_ctl stop -m fast -w -D $BASE_DIR
+    wait_pidfile $PIDFILE 0 $STOP_TIMEOUT
+    ;;
+
+  status)
+    BIN_DIR=$5
+    LD_LIBRARY_PATH=$BIN_DIR/lib:$LD_LIBRARY_PATH $BIN_DIR/bin/pg_ctl status -D $BASE_DIR > /dev/null
+    ;;
+
+  *)
+    echo "Usage: $0 {start|stop|status}"
+    ;;
+
+esac
