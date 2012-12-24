@@ -1,0 +1,6 @@
+GRANT ALL ON *.* to 'root'@'%' IDENTIFIED BY '<%= node[:mysql][:server_root_password] %>' WITH GRANT OPTION;
+GRANT ALL ON *.* to 'root'@'localhost' IDENTIFIED BY '<%= node[:mysql][:server_root_password] %>' WITH GRANT OPTION;
+
+FLUSH PRIVILEGES;
+
+DROP DATABASE IF EXISTS test;
