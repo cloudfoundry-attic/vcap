@@ -1,0 +1,126 @@
+#!/bin/bash
+
+version=$1
+shift
+
+JOB_DIR=/var/vcap/jobs/postgresql_node_ng
+
+case "$version" in
+  "9.0")
+    PACKAGE_DIR=/var/vcap/packages/postgresql
+    DATA_DIR=/var/vcap/store/postgresql
+    RUN_DIR=/var/vcap/sys/run/postgresql
+    PIDFILE=$RUN_DIR/postgresql.pid
+    LOG_DIR=/var/vcap/sys/log/postgresql
+    SRC_CONF_FILE=$JOB_DIR/config/postgresql.conf
+
+    ;;
+  "9.1")
+    PACKAGE_DIR=/var/vcap/packages/postgresql91
+    DATA_DIR=/var/vcap/store/postgresql91
+    RUN_DIR=/var/vcap/sys/run/postgresql
+    PIDFILE=$RUN_DIR/postgresql91.pid
+    LOG_DIR=/var/vcap/sys/log/postgresql91
+    SRC_CONF_FILE=$JOB_DIR/config/postgresql91.conf
+
+    ;;
+esac
+
+FIRST_TIME=0
+
+source `dirname $0`/utils.sh
+
+case "$1" in
+  start)
+    pid_guard $PIDFILE "PostgreSQL"
+
+    mkdir -p $RUN_DIR
+    echo $$ > $PIDFILE # Satisfy Monit in case of slow start
+
+    sysctl -w 'kernel.shmmax=268435456'
+    sysctl -w 'kernel.shmall=2097152'
+
+    if [ ! -d $DATA_DIR -o ! -f $DATA_DIR/postgresql.conf ]; then
+      FIRST_TIME=1
+      mkdir -p $DATA_DIR
+      chown vcap:vcap $DATA_DIR
+
+      su - vcap -c "LD_LIBRARY_PATH=$PACKAGE_DIR/lib:$LD_LIBRARY_PATH $PACKAGE_DIR/bin/initdb -E utf8 -D $DATA_DIR"
+
+      if [ $? != 0 ]; then
+        echo "ERROR: Unable to initialize PostgreSQL DB"
+        exit 1
+      fi
+
+      echo "host all all 0.0.0.0/0 md5" >> $DATA_DIR/pg_hba.conf
+    fi
+
+    # update the config file in data directory
+    rsync -arl $SRC_CONF_FILE $DATA_DIR/postgresql.conf
+
+    # since postgresql service is alive
+    # log dir change should cover both clean deploy and upgrade push
+    if [ ! -d $LOG_DIR ]; then
+      mkdir -p $LOG_DIR
+      chown vcap:vcap $LOG_DIR
+    fi
+
+    echo "Starting PostgreSQL $version: "
+    su - vcap -c "LD_LIBRARY_PATH=$PACKAGE_DIR/lib:$LD_LIBRARY_PATH $PACKAGE_DIR/bin/pg_ctl -w start -D $DATA_DIR -l \"$LOG_DIR/startup.log\""
+
+    if [ $? == 0 ]; then
+      echo "PostgreSQL $version started successfully"
+      master_pid=`head -n 1 $DATA_DIR/postmaster.pid`
+      echo $master_pid > $PIDFILE
+      if [ $FIRST_TIME -eq 1 ]; then
+        # Setup contrib packages
+        for sqlf in citext.sql fuzzystrmatch.sql isn.sql ltree.sql pageinspect.sql pg_buffercache.sql pgcrypto.sql pg_freespacemap.sql sslinfo.sql tablefunc.sql uuid-ossp.sql
+        do
+          echo "Installing contrib package ${sqlf}"
+          ${PACKAGE_DIR}/bin/psql -U vcap -f ${PACKAGE_DIR}/share/${sqlf} -d postgres
+        done
+      fi
+      # absolve postmaster from OOM killer
+      if [ -e /proc/$master_pid/oom_score_adj ]; then
+        echo -1000 > /proc/$master_pid/oom_score_adj
+      elif [ -e /proc/$master_pid/oom_adj ]; then
+        # oom_adj is deprecated in 2.6.36+
+        echo -17 > /proc/$master_pid/oom_adj
+      fi
+    else
+      rm $PIDFILE
+      if [ -e $DATA_DIR/postmaster.pid ]; then
+        ps -p `head -n 1 $DATA_DIR/postmaster.pid` 1>/dev/null 2>/dev/null
+        if [ $? == 1 ]; then
+          echo "There is a stale postmaster pid file, will remove it and kill possible orphan processes"
+          # remove the stale postmaster pid file
+          rm $DATA_DIR/postmaster.pid
+          # try to terminate the orphan processes in hack style
+          ps -o pid,cmd --ppid=1 | grep 'postgres:' | cut -d' ' -f1 | xargs -r kill
+        fi
+      fi
+      echo "The PostgreSQL server start seems to have some problems, please see logs for details."
+      exit 1
+    fi
+
+    ;;
+
+  stop)
+    echo "Stopping PostgreSQL $version: "
+    su - vcap -c "LD_LIBRARY_PATH=$PACKAGE_DIR/lib:$LD_LIBRARY_PATH $PACKAGE_DIR/bin/pg_ctl stop -m fast -w -D $DATA_DIR"
+    wait_pidfile $PIDFILE
+
+    ;;
+
+  status)
+    su - vcap -c "LD_LIBRARY_PATH=$PACKAGE_DIR/lib:$LD_LIBRARY_PATH $PACKAGE_DIR/bin/pg_ctl status -D $DATA_DIR"
+
+    ;;
+
+  *)
+    echo "Usage: $0 {start|stop|status}"
+    exit 1
+
+    ;;
+
+esac
