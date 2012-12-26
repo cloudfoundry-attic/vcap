@@ -12,7 +12,7 @@ node_id: <%= "rabbit_node_free_#{node[:rabbitmq_node][:index]}" %>
 supported_versions: <%= "['#{node[:rabbitmq][:supported_versions].keys.join("', '")}']"%>
 default_version: "<%= node[:rabbitmq][:default_version] %>"
 op_time_limit: <%= node[:rabbitmq_node][:op_time_limit] %>
-migration_nfs: /mnt/vcap
+migration_nfs: /var/vcap/services_migration_rabbit
 port_range:
   first: 10001
   last: 20000
@@ -21,16 +21,30 @@ admin_port_range:
   last: 30000
 max_clients: 1000
 rabbitmq_log_dir: /var/vcap/services/rabbit/logs
-rabbitmq_server: <%= File.join(node[:rabbitmq][:path], "sbin", "rabbitmq-server") %>
+rabbitmq_server: <%= node[:rabbitmq][:path] %>
 rabbitmq_start_timeout: <%= node[:rabbitmq_node][:rabbitmq_start_timeout] %>
+rabbit:
+  '2.4':
+    config_template: ../../../resources/rabbitmq24.config.erb
+  '2.8':
+    config_template: ../../../resources/rabbitmq28.config.erb
+    disk_free_limit: 13421772
 
 image_dir: /var/vcap/store/rabbitmq_image
 max_disk: 2048
 vm_memory_high_watermark: 0.0793
 bandwidth_per_second: 0.09
-bandwidth_proxy:
-  bin: <%= node[:rabbitmq_node][:proxy_dir] %>/bandwidth_proxy
-  size: 1
-  window: 86400
-
 service_log_dir: /var/vcap/sys/service-log/rabbitmq
+
+m_interval: 10
+z_interval: 30
+max_nats_payload: 1048577
+fqdn_hosts: false
+filesystem_quota: true
+
+service_bin_dir:
+  '2.4': "<%= node[:rabbitmq][:path] %>/2.4"
+  '2.8': "<%= node[:rabbitmq][:path] %>/2.8"
+  erlang: "<%= node[:rabbitmq][:path] %>/erlang"
+
+service_common_dir: <%= node[:rabbitmq][:path] %>/common

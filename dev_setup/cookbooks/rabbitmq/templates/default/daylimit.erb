@@ -1,0 +1,43 @@
+#!/bin/bash
+
+DAYLIMIT_NG_BIN=<%= node[:rabbitmq][:path] %>/daylimit/bin/daylimit
+CONFIG_FILE=<%= node[:deployment][:config_path] %>/daylimit.yaml
+RUN_DIR=/var/vcap/sys/run/daylimit
+LOG_DIR=/var/vcap/sys/log/daylimit
+PIDFILE=${RUN_DIR}/daylimit.pid
+
+export PATH=<%= node[:ruby][:path] %>/bin:${PATH}
+# Used in warden client
+export HOME=/tmp
+
+case $1 in
+
+  start)
+    mkdir -p ${RUN_DIR}
+    mkdir -p ${LOG_DIR}
+    echo "Starting daylimit..."
+    nohup ${DAYLIMIT_NG_BIN} -c ${CONFIG_FILE} >> ${LOG_DIR}/daylimit.stdout.log 2>>${LOG_DIR}/daylimit.stderr.log &
+    echo $! > ${PIDFILE}
+    ;;
+
+  stop)
+    echo "Stopping daylimit..."
+    [ -f ${PIDFILE} ] || exit 0
+    PID=`cat ${PIDFILE}`
+    [ -f /proc/${PID}/exe ] && kill -9 ${PID}
+    ;;
+
+  restart)
+    $0 stop; sleep 1; $0 start
+    ;;
+
+  status)
+    [ -f ${PIDFILE} ] || exit 0
+    [ -f /proc/`cat ${PIDFILE}`/exe ] && echo "Running." || echo "Stopped."
+    ;;
+
+  *)
+    echo "Usage: daylimit {start|stop|restart|status}"
+    ;;
+
+esac
