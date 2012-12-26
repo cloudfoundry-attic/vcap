@@ -1,0 +1,9 @@
+---
+
+limitwindow: 120
+limitsize: 1048576
+logfile: /var/vcap/sys/log/daylimit/daylimit.log
+fetchinterval: 2
+blockrate: 600
+unblockrate: 10485
+wardenbin: <%= node["cloudfoundry"]["path"] %>/warden/warden/bin/warden
