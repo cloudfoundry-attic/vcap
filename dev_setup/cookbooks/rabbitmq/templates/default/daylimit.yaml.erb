@@ -1,0 +1,9 @@
+---
+
+limitwindow: 3600
+limitsize: 1000000000
+logfile: <%= node[:deployment][:log_path] %>/daylimit/daylimit.log
+fetchinterval: 2
+blockrate: 600
+unblockrate: 10000000
+wardenbin: <%= node["cloudfoundry"]["path"] %>/warden/warden/bin/warden
