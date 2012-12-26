@@ -1,0 +1,47 @@
+#!/bin/bash
+STOP_TIMEOUT=3
+OP=$1
+BASE_DIR=$2
+LOG_DIR=$3
+COMMON_DIR=$4
+PIDFILE=$BASE_DIR/service.pid
+
+source $COMMON_DIR/bin/utils.sh
+
+case $OP in
+  start)
+    BIN_DIR=$5
+    ERLANG_DIR=$6
+    NAME=$7
+    export ERLANG_HOME=$ERLANG_DIR
+    export PATH=$ERLANG_DIR/bin:$PATH
+    export HOME=$BASE_DIR
+    export RABBITMQ_NODENAME="$NAME@localhost"
+    export RABBITMQ_NODE_PORT=10001
+    export RABBITMQ_BASE=$BASE_DIR
+    export RABBITMQ_LOG_BASE=$LOG_DIR
+    export RABBITMQ_MNESIA_DIR=$BASE_DIR/mnesia
+    export RABBITMQ_PLUGINS_EXPAND_DIR=$BASE_DIR/plugins
+    export RABBITMQ_CONFIG_FILE=$BASE_DIR/config/rabbitmq
+    export RABBITMQ_ENABLED_PLUGINS_FILE=$BASE_DIR/config/enabled_plugins
+    export RABBITMQ_SERVER_START_ARGS="-smp disable"
+    export RABBITMQ_CONSOLE_LOG=reuse
+    export ERL_CRASH_DUMP="/dev/null"
+    export ERL_CRASH_DUMP_SECONDS="1"
+    echo $$ >> $PIDFILE
+    exec /sbin/start-stop-daemon --start --quiet --chuid vcap --exec $BIN_DIR/sbin/rabbitmq-server >$LOG_DIR/rabbitmq_stdout.log 2>$LOG_DIR/rabbitmq_stderr.log
+    ;;
+
+  stop)
+    kill_and_wait $PIDFILE $STOP_TIMEOUT 1
+    ;;
+
+  status)
+    [ -f $PIDFILE ] && [ -e /proc/`head -1 $PIDFILE` ]
+    ;;
+
+  *)
+    echo "Usage: $0 {start|stop|status}"
+
+    ;;
+esac
