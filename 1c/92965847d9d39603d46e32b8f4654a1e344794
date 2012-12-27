@@ -1,0 +1,8 @@
+Code-Review+2: Figo Feng <ffeng@vmware.com>
+Verified+1: Figo Feng <ffeng@vmware.com>
+Code-Review+1: Felix Hu <hhu@vmware.com>
+Submitted-by: Haipeng Wu <hwu@rbcon.com>
+Submitted-at: Thu, 27 Dec 2012 03:00:52 +0000
+Reviewed-on: http://reviews.cloudfoundry.org/12751
+Project: vcap
+Branch: refs/heads/services_ng
