@@ -134,7 +134,8 @@ if [ ! -f ${GEM} ] || [ `${GEM} -v` \< "1.3.6" ]; then
 fi
 
 echo "Installing chef..."
-${GEM} list -i chef || sudo ${GEM} install chef --version 10.12.0 -q --no-ri --no-rdoc > /dev/null
+CHEF_VERSION="10.16.4"
+${GEM} list -i chef -v ${CHEF_VERSION} || sudo ${GEM} install chef --version ${CHEF_VERSION} -q --no-ri --no-rdoc > /dev/null
 
 # Install blobstore_client
 echo "Installing blobstore_client..."
