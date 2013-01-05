@@ -139,7 +139,8 @@ ${GEM} list -i chef -v ${CHEF_VERSION} || sudo ${GEM} install chef --version ${C
 
 # Install blobstore_client
 echo "Installing blobstore_client..."
-${GEM} list -i blobstore_client || sudo ${GEM} install blobstore_client -q --no-ri --no-rdoc > /dev/null
+BLOB_VERSION="0.4.0"
+${GEM} list -i blobstore_client -v ${BLOB_VERSION} || sudo ${GEM} install blobstore_client --version ${BLOB_VERSION} -q --no-ri --no-rdoc > /dev/null
 
 # Install rake
 echo "Installing rake..."
