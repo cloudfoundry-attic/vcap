@@ -83,6 +83,7 @@ end
 
 if vcap_components["components"].include?("stager")
   ENV["PLATFORM_CONFIG"]=File.join(deployment_config_path, "platform.yml")
+  ENV["PATH"] = "#{deployment_info["node_bin_dir"]}:#{ENV["PATH"]}"
 end
 
 if vcap_components["components"].include?("uaa")

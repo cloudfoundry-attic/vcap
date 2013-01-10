@@ -7,6 +7,7 @@ service:
   plans: ['free']
   default_plan: 'free'
   tags: ['echobased', 'demo']
+  timeout: <%= node[:echo_gateway][:service][:timeout] %>
   supported_versions: <%= "['#{node[:echo][:supported_versions].keys.join("', '")}']"%>
   version_aliases:
 <% node[:echo][:version_aliases].each do |a, v| %>
