@@ -15,7 +15,7 @@ default[:redis][:version_aliases] = {
         "deprecated"    => "2.2"
 }
 
-default[:redis][:default_version] = "2.2"
+default[:redis][:default_version] = "2.6"
 
 default[:redis][:path] = File.join(node[:service][:path], "redis")
 default[:redis][:runner] = node[:deployment][:user]
