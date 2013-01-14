@@ -7,27 +7,31 @@ default[:mongodb][:path] = File.join(node[:service][:path], "mongodb")
 
 default[:mongodb][:supported_versions] = {
         "1.8" => "1.8.5",
-        "2.0" => "2.0.6"
+        "2.0" => "2.0.6",
+        "2.2" => "2.2.1"
 }
 default[:mongodb][:version_aliases] = {
-        "current" => "1.8",
-        "next"    => "2.0"
+        "current" => "2.2",
+        "deprecated" => "1.8"
 }
 
 default[:mongod_options] = {
         "1.8" => "",
-        "2.0" => "--nopreallocj"
+        "2.0" => "--nopreallocj",
+        "2.2" => "--nopreallocj"
 }
 
-default[:mongodb][:default_version] = "2.0"
+default[:mongodb][:default_version] = "2.2"
 
 default[:mongodb][:id] = {
         "1.8.5" => 'eyJzaWciOiJ0NHk5ZzBhRFkxSFZmaGhyNmQ5a0FQZFMxS1U9Iiwib2lkIjoi%0ANGU0ZTc4YmNhNTFlMTIxMjA0ZTRlODZlZThlMmM5MDUwMWEwZTYwOGI4YTMi%0AfQ==%0A',
-        "2.0.6" => 'eyJzaWciOiJNTDBqWkJ6NjJ2cWNYWmVaZ3dsUENRWlhjbFE9Iiwib2lkIjoi%0ANGU0ZTc4YmNhNDFlMTIxMjA0ZTRlODZlZTUzOTIxMDUwMWEwZTg2M2IzNTgi%0AfQ==%0A'
+        "2.0.6" => 'eyJzaWciOiJNTDBqWkJ6NjJ2cWNYWmVaZ3dsUENRWlhjbFE9Iiwib2lkIjoi%0ANGU0ZTc4YmNhNDFlMTIxMjA0ZTRlODZlZTUzOTIxMDUwMWEwZTg2M2IzNTgi%0AfQ==%0A',
+        "2.2.1" => 'eyJzaWciOiJkRmZpa2Z0L2pxc1IxMjgvdzc3b2R0SVZ2a2M9Iiwib2lkIjoi%0ANGU0ZTc4YmNhMzFlMTIxMDA0ZTRlN2Q1MTQ3NDVmMDUwZjNhNGQxNjNmZjMi%0AfQ==%0A'
 }
 default[:mongodb][:checksum] = {
         "1.8.5" => '0a84e0c749604cc5d523a8d8040beb0633ef8413ecd9e85b10190a30c568bb37',
-        "2.0.6" => '26c09e81a67b15eb66260257665d801c55337a97a5fd028a474f5c194a986f18'
+        "2.0.6" => '26c09e81a67b15eb66260257665d801c55337a97a5fd028a474f5c194a986f18',
+        "2.2.1" => 'b00ce272ab7a85461d5e8f1a467c6005b0711bebc29e02220c56259824190eb8'
 }
 
 default[:mongodb_gateway][:service][:timeout] = "15"

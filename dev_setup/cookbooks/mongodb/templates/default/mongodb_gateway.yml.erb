@@ -2,19 +2,15 @@
 cloud_controller_uri: <%= node[:cloud_controller][:service_api_uri] %>
 service:
   name: mongodb
-  version: "1.8"
+  version: "2.2"
   description: 'MongoDB NoSQL store'
   plans: ['free']
   default_plan: 'free'
   tags: ['nosql', 'document']
   timeout: <%= node[:mongodb_gateway][:service][:timeout] %>
-  supported_versions: <%= "['#{node[:mongodb][:supported_versions].keys.join("', '")}']"%>
+  supported_versions: ["<%= node[:mongodb][:default_version] %>"]
   version_aliases:
-<%
-  node[:mongodb][:version_aliases].each do |a, v|
-%>
-    "<%= a %>": "<%= v %>"
-<% end %>
+    "current": "<%= node[:mongodb][:default_version] %>"
 
 host: localhost
 index: 0
