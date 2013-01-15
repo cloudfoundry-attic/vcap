@@ -10,6 +10,7 @@ jobs:
           - mongodb
           - mysql
     - router
+    - stager
     - health_manager
     - ccdb
     - redis_node:
