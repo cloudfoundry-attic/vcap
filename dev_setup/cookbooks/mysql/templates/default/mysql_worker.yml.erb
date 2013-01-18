@@ -5,10 +5,10 @@ serialization_base_dir: <%= node[:snapshot][:dir] %>
 local_db: sqlite3:/var/vcap/services/mysql/mysql_node.db
 tmp_dir: <%= node[:service_lifecycle][:tmp_dir]|| "/var/vcap/snapshot/tmp"%>
 resque:
-  host: <%= node[:redis_resque][:host]%>
-  port: <%= node[:redis_resque][:port]%>
-  password: <%= node[:redis_resque][:password] %>
-  expire: <%= node[:redis_resque][:expire]%>
+  host: <%= node[:service_redis][:host]%>
+  port: <%= node[:service_redis][:port]%>
+  password: <%= node[:service_redis][:password] %>
+  expire: <%= node[:service_redis][:expire]%>
 mysqldump_bin: mysqldump
 gzip_bin: gzip
 mysql_bin: mysql

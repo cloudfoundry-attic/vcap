@@ -50,29 +50,3 @@ node[:redis][:supported_versions].each do |version, install_version|
     EOH
   end
 end
-
-# deploy redis local
-local_redis = File.join(node[:deployment][:home], "deploy", "redis")
-directory local_redis do
-  owner node[:deployment][:user]
-  group node[:deployment][:group]
-  mode "0755"
-end
-
-%w[bin etc var].each do |dir|
-  directory File.join(local_redis, dir) do
-    owner node[:deployment][:user]
-    group node[:deployment][:group]
-    mode "0755"
-    recursive true
-    action :create
-  end
-end
-
-bash "Install Redis in local" do
-  user node[:deployment][:user]
-  code <<-EOH
-    cd /tmp/redis-2.2.15/src
-    install redis-benchmark redis-cli redis-server redis-check-dump redis-check-aof #{File.join(local_redis, "bin")}
-  EOH
-end
