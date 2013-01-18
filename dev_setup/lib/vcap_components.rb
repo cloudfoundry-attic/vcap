@@ -241,7 +241,7 @@ class ServicesRedisComponent < Component
     if $config_dir.nil?
       raise "Fail to get path of redis-server for ServicesRedisComponent #{name}"
     end
-    @path = File.join($config_dir, "..", "deploy", "redis", "bin", "redis-server")
+    @path = File.join($config_dir, "..", "deploy", "service_redis", "bin", "redis-server")
   end
 
   def get_configuration_path

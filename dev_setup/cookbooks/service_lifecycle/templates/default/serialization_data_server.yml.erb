@@ -18,8 +18,8 @@ port:  <%= node[:serialization_data_server][:port]%>
 logging:
   level: debug
 redis:
-  host: <%= node[:redis_resque][:host]%>
-  port: <%= node[:redis_resque][:port]%>
-  password: <%= node[:redis_resque][:password] %>
-  expire: <%= node[:redis_resque][:expire]%>
+  host: <%= node[:service_redis][:host]%>
+  port: <%= node[:service_redis][:port]%>
+  password: <%= node[:service_redis][:password] %>
+  expire: <%= node[:service_redis][:expire]%>
 index: 0

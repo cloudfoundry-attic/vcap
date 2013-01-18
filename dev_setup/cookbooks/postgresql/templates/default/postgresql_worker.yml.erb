@@ -5,10 +5,10 @@ serialization_base_dir: <%= node[:snapshot][:dir] %>
 local_db: sqlite3:/var/vcap/services/postgresql/postgresql_node.db
 tmp_dir: <%= node[:service_lifecycle][:tmp_dir]|| "/var/vcap/snapshot/tmp"%>
 resque:
-  host: <%= node[:redis_resque][:host]%>
-  port: <%= node[:redis_resque][:port]%>
-  password: <%= node[:redis_resque][:password] %>
-  expire: <%= node[:redis_resque][:expire]%>
+  host: <%= node[:service_redis][:host]%>
+  port: <%= node[:service_redis][:port]%>
+  password: <%= node[:service_redis][:password] %>
+  expire: <%= node[:service_redis][:expire]%>
 dump_bin: /usr/lib/postgresql/<%=node[:postgresql][:service_version]%>/bin/pg_dump
 restore_bin: /usr/lib/postgresql/<%=node[:postgresql][:service_version]%>/bin/pg_restore
 mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
