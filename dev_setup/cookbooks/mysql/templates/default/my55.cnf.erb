@@ -1,5 +1,5 @@
 [client]
-port      = 3307
+port      = <%= node[:mysql][:port] %>
 socket		= /var/vcap/sys/run/mysqld/mysqld55.sock
 
 [mysqld_safe]
@@ -12,7 +12,7 @@ collation_server        = utf8_unicode_ci
 character_set_server    = utf8
 user		                = vcap
 socket		              = /var/vcap/sys/run/mysqld/mysqld55.sock
-port     	              = 3307
+port     	              = <%= node[:mysql][:port] %>
 basedir		              = <%= node[:mysql][:path] %>/<%= node[:mysql][:default_version] %>
 datadir                 = /var/vcap/store/mysql55
 tmpdir                  = /var/vcap/data/mysql_tmp
