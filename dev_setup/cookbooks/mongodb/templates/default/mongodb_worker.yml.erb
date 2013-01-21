@@ -1,6 +1,5 @@
 ---
 service_name: mongodb
-base_dir: /var/vcap/services/mongodb/instances
 snapshots_base_dir: <%= node[:snapshot][:dir]%>
 serialization_base_dir: <%= node[:snapshot][:dir] %>
 local_db: sqlite3:/var/vcap/services/mongodb/mongodb_node.db
@@ -10,9 +9,9 @@ resque:
   port: <%= node[:service_redis][:port]%>
   password: <%= node[:service_redis][:password] %>
   expire: <%= node[:service_redis][:expire]%>
-mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
 index: <%= node[:mongodb_node][:index] %>
 node_id: <%= "mongodb_node_#{node[:mongodb_node][:index]}" %>
+
 download_url_template: "http://service-serialization.<%= node[:deployment][:domain] %>/serialized/%{service}/%{name}/snapshots/%{snapshot_id}?token=%{token}"
 <%if node[:service_lifecycle][:enable]%>
 snapshot_quota: <%= node[:mongodb_node][:snapshot_quota] || "5" %>
@@ -21,26 +20,13 @@ snapshot_quota: 0
 <%end%>
 serialization:
   max_download_size_mb: <%= node[:service_lifecycle][:serialization_max_download_size]|| 10 %>
+
 default_version: <%= node[:mongodb][:default_version] %>
 mongodump_path:
-<%
-  node[:mongodb][:supported_versions].each_key do |version|
-%>
-  "<%= version %>": "<%= File.join(node[:deployment][:home], "deploy", "mongodb", node[:mongodb][:supported_versions][version], "bin", "mongodump") %>"
-<% end %>
+  "<%= node[:mongodb][:default_version] %>":  "<%= node[:mongodb][:path] %>/<%= node[:mongodb][:default_version] %>/bin/mongodump"
 mongorestore_path:
-<%
-  node[:mongodb][:supported_versions].each_key do |version|
-%>
-  "<%= version %>": "<%= File.join(node[:deployment][:home], "deploy", "mongodb", node[:mongodb][:supported_versions][version], "bin", "mongorestore") %>"
-<% end %>
+  "<%= node[:mongodb][:default_version] %>":  "<%= node[:mongodb][:path] %>/<%= node[:mongodb][:default_version] %>/bin/mongorestore"
 
 tar_path: /bin/tar
-port_range:
-  first: 25001
-  last: 45000
 logging:
   level: debug
-
-image_dir: /var/vcap/store/mongodb_image
-max_disk: 2048

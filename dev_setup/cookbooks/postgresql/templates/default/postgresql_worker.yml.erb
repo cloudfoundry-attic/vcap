@@ -9,9 +9,6 @@ resque:
   port: <%= node[:service_redis][:port]%>
   password: <%= node[:service_redis][:password] %>
   expire: <%= node[:service_redis][:expire]%>
-dump_bin: /usr/lib/postgresql/<%=node[:postgresql][:service_version]%>/bin/pg_dump
-restore_bin: /usr/lib/postgresql/<%=node[:postgresql][:service_version]%>/bin/pg_restore
-mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
 index: <%= node[:postgresql_node][:index] %>
 node_id: <%= "postgresql_node_#{node[:postgresql_node][:index]}" %>
 download_url_template: "http://service-serialization.<%= node[:deployment][:domain] %>/serialized/%{service}/%{name}/snapshots/%{snapshot_id}?token=%{token}"
@@ -22,11 +19,17 @@ snapshot_quota: 0
 <%end%>
 serialization:
   max_download_size_mb: <%= node[:service_lifecycle][:serialization_max_download_size]|| 10 %>
-postgresql:
-  host: <%= node[:postgresql_node][:host] %>
-  port: <%= node[:postgresql][:service_port]%>
-  user: <%= node[:postgresql][:service_root_user] %>
-  pass: <%= node[:postgresql][:service_root_password] %>
-  database: <%= node[:postgresql_node][:database]%>
 logging:
   level: debug
+
+postgresql:
+  "<%= node[:postgresql][:default_version] %>":
+    host: <%= node[:postgresql_node][:host] %>
+    port: <%= node[:postgresql][:service_port] %>
+    user: <%= node[:postgresql][:service_root_user] %>
+    pass: <%= node[:postgresql][:service_root_password] %>
+    database: <%= node[:postgresql_node][:database] %>
+    dump_bin: "<%= node[:postgresql_node][:path] %>/<%= node[:postgresql][:default_version] %>/bin/pg_dump"
+    restore_bin: "<%= node[:postgresql_node][:path] %>/<%= node[:postgresql][:default_version] %>/bin/pg_restore"
+
+use_warden: true

@@ -17,6 +17,7 @@ default[:mysql][:checksum][:initdb] = "fd13b9586c4dfbc8a06c4d0240dca887fd748f6a4
 default[:mysql][:server_root_password] = "mysql"
 default[:mysql][:server_root_user] = "root"
 default[:mysql][:host] = "localhost"
+default[:mysql][:port] = 3307
 
 default[:mysql_gateway][:service][:timeout] = "25"
 default[:mysql_gateway][:node_timeout] = "20"

@@ -9,12 +9,10 @@ resque:
   port: <%= node[:service_redis][:port]%>
   password: <%= node[:service_redis][:password] %>
   expire: <%= node[:service_redis][:expire]%>
-mysqldump_bin: mysqldump
-gzip_bin: gzip
-mysql_bin: mysql
-mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
+gzip_bin: /bin/gzip
 index: <%= node[:mysql_node][:index] %>
 node_id: <%= "mysql_node_#{node[:mysql_node][:index]}" %>
+
 download_url_template: "http://service-serialization.<%= node[:deployment][:domain] %>/serialized/%{service}/%{name}/snapshots/%{snapshot_id}?token=%{token}"
 <%if node[:service_lifecycle][:enable]%>
 snapshot_quota: <%= node[:mysql_node][:snapshot_quota] || "5" %>
@@ -23,10 +21,18 @@ snapshot_quota: 0
 <%end%>
 serialization:
   max_download_size_mb: <%= node[:service_lifecycle][:serialization_max_download_size]|| 10 %>
-mysql:
-  host: <%= node[:mysql][:host] %>
-  port: 3306
-  user: <%= node[:mysql][:server_root_user] %>
-  pass: <%= node[:mysql][:server_root_password] %>
+
 logging:
   level: debug
+
+mysql:
+  "<%= node[:mysql][:default_version] %>":
+    host: <%= node[:mysql][:host] %>
+    port: <%= node[:mysql][:port] %>
+    user: <%= node[:mysql][:server_root_user] %>
+    pass: <%= node[:mysql][:server_root_password] %>
+    socket: "/var/vcap/sys/run/mysqld/mysqld<%= node[:mysql][:default_version] %>.sock"
+    mysqldump_bin:  "<%= node[:mysql][:path] %>/<%= node[:mysql][:default_version] %>/bin/mysqldump"
+    mysql_bin:  "<%= node[:mysql][:path] %>/<%= node[:mysql][:default_version] %>/bin/mysql"
+
+use_warden: true

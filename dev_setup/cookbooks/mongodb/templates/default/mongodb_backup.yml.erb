@@ -1,16 +1,22 @@
 ---
 service_name: mongodb
 backup_base_dir: <%= node[:backup][:dir] %>
-service_base_dir: /var/vcap/services/mongodb/instances
-mongodump_path:
-<%
-  node[:mongodb][:supported_versions].each_key do |version|
-%>
-  "<%= version %>": "<%= File.join(node[:deployment][:home], "deploy", "mongodb", node[:mongodb][:supported_versions][version], "bin", "mongodump") %>"
-<% end %>
+base_dir: /var/vcap/services/mongodb/instances
+image_dir: /var/vcap/store/mongodb_image
+service_log_dir: /var/vcap/sys/service-log/mongodb
+
 logging:
   level: debug
 local_db: sqlite3:/var/vcap/services/mongodb/mongodb_node.db
 timeout: 600
 pid: /var/vcap/sys/run/mongodb_node/mongodb_backup.pid
 
+service_common_dir: "<%= node[:mongodb][:path] %>/common"
+service_bin_dir:
+  "<%= node[:mongodb][:default_version] %>": "<%= node[:mongodb][:path] %>/<%= node[:mongodb][:default_version] %>"
+
+supported_versions: ["<%= node[:mongodb][:default_version] %>"]
+default_version: "<%= node[:mongodb][:default_version] %>"
+
+mongodump_path:
+  "<%= node[:mongodb][:default_version] %>": "<%= node[:mongodb][:path] %>/<%= node[:mongodb][:default_version] %>/bin/mongodump"

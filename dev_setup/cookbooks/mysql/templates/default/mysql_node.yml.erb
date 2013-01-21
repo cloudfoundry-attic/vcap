@@ -22,7 +22,7 @@ migration_nfs: /var/vcap/services_migration_mysql
 mysql:
   "<%= node[:mysql][:default_version] %>":
     host: <%= node[:mysql][:host] %>
-    port: 3307
+    port: <%= node[:mysql][:port] %>
     user: <%= node[:mysql][:server_root_user] %>
     pass: <%= node[:mysql][:server_root_password] %>
     socket: "/var/vcap/sys/run/mysqld/mysqld<%= node[:mysql][:default_version] %>.sock"

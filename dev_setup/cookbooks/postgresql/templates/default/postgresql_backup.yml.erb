@@ -2,17 +2,21 @@
 service_name: postgresql
 local_db: sqlite3:/var/vcap/services/postgresql/postgresql_node.db
 backup_base_dir: <%= node[:backup][:dir]%>
-backup_cmd: /usr/lib/postgresql/<%=node[:postgresql][:service_version]%>/bin/pg_dump -Fc --host=:host --port=:port --username=:user --file=:full_path/:name.dump :name
-mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
+backup_cmd: ":dump_bin -Fc --port=:port --host=:host --username=:user --file=:full_path/:name.dump :name"
 timeout: 600
 index: <%= node[:postgresql_node][:index] %>
 pid: /var/vcap/sys/run/postgresql_backup.pid
 node_id: <%= "postgresql_node_#{node[:postgresql_node][:index]}" %>
-postgresql:
-  host: <%= node[:postgresql_node][:host] %>
-  port: <%= node[:postgresql][:service_port] %>
-  user: <%= node[:postgresql][:service_root_user] %>
-  pass: <%= node[:postgresql][:service_root_password] %>
-  database: <%= node[:postgresql_node][:database]%>
 logging:
   level: debug
+
+postgresql:
+  "<%= node[:postgresql][:default_version] %>":
+    host: <%= node[:postgresql_node][:host] %>
+    port: <%= node[:postgresql][:service_port] %>
+    user: <%= node[:postgresql][:service_root_user] %>
+    pass: <%= node[:postgresql][:service_root_password] %>
+    database: <%= node[:postgresql_node][:database] %>
+    dump_bin: "<%= node[:postgresql_node][:path] %>/<%= node[:postgresql][:default_version] %>/bin/pg_dump"
+
+use_warden: true

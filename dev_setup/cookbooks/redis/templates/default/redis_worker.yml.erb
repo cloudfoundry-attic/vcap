@@ -10,9 +10,13 @@ resque:
   port: <%= node[:service_redis][:port]%>
   password: <%= node[:service_redis][:password] %>
   expire: <%= node[:service_redis][:expire]%>
-mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
+logging:
+  level: debug
 index: <%= node[:redis_node][:index] %>
 node_id: <%= "redis_node_#{node[:redis_node][:index]}" %>
+max_memory: <%= node[:redis_node][:max_memory] %>
+memory_overhead: 20
+
 download_url_template: "http://service-serialization.<%= node[:deployment][:domain] %>/serialized/%{service}/%{name}/snapshots/%{snapshot_id}?token=%{token}"
 <%if node[:service_lifecycle][:enable]%>
 snapshot_quota: <%= node[:mysql_node][:snapshot_quota] || "5" %>
@@ -21,16 +25,18 @@ snapshot_quota: 0
 <%end%>
 serialization:
   max_download_size_mb: <%= node[:service_lifecycle][:serialization_max_download_size]|| 10 %>
-logging:
-  level: debug
+
 command_rename_prefix: protect-command-prefix
 gzip_bin: /bin/gzip
-redis_server_path:
-<%
-  node[:redis][:supported_versions].each_key do |version|
-%>
-  "<%= version %>": "<%= node[:redis][:path_in_warden] %>/redis-<%= version %>/bin/redis-server"
-<% end %>
 image_dir: /var/vcap/store/redis_image
-pid_file:
-max_disk: 2048
+service_log_dir: /var/vcap/sys/log/redis
+
+redis_server_path:
+  "<%= node[:redis][:default_version] %>": "<%= node[:redis][:path] %>/<%= node[:redis][:default_version] %>/bin/redis-server"
+service_common_dir: "<%= node[:redis][:path] %>/common"
+service_bin_dir:
+  "<%= node[:redis][:default_version] %>": "<%= node[:redis][:path] %>/<%= node[:redis][:default_version] %>"
+
+filesystem_quota: false
+persistent: false
+service_start_timeout: 3
