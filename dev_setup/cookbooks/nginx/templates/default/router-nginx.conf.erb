@@ -19,7 +19,7 @@ http {
   log_format main  '$host - [$time_local] '
                    '"$request" $status $bytes_sent '
                    '"$http_referer" "$http_user_agent" '
-                   '$remote_addr response_time:$upstream_response_time';
+                   '$remote_addr response_time:$upstream_response_time app_id:$app_id';
 
   access_log   <%= node[:nginx][:log_home] %>/nginx_router_main_access.log main;
 
@@ -39,6 +39,9 @@ http {
   gzip_disable         "MSIE [1-6]\.(?!.*SV1)";
 
   client_max_body_size 256M;
+
+  lua_package_path "<%= node[:lua][:module_path] %>/?.lua;;";
+  lua_package_cpath "<%= node[:lua][:module_path] %>/?.so;;";
 
   upstream router_status {
     server <%= node[:nginx][:uls_ip] %>:<%= node[:nginx][:uls_port] %>;
@@ -71,6 +74,7 @@ http {
       proxy_read_timeout          120;
 
       set $health_monitor '';
+      set $app_id 0;
       if ($http_user_agent = "HTTP-Monitor/1.1") {
         set $health_monitor T;
       }
@@ -82,9 +86,6 @@ http {
         # if we have multiple workers, there will be still few stats not synced for
         # the workers which don't get this monitor request.
         access_by_lua '
-          -- add package.path and package.cpath
-          package.path = package.path..";<%= node[:lua][:module_path] %>/?.lua"
-          package.cpath = package.cpath..";<%= node[:lua][:module_path] %>/?.so"
           local uls = require ("uls")
 
           ngx.log(ngx.DEBUG, "monitor trigger stats syncup")
@@ -118,9 +119,6 @@ http {
         set $app_id '';
 
         access_by_lua '
-          -- add package.path and package.cpath
-          package.path = package.path..";<%= node[:lua][:module_path] %>/?.lua"
-          package.cpath = package.cpath..";<%= node[:lua][:module_path] %>/?.so"
           local uls = require ("uls")
 
           uls.pre_process_subrequest(ngx, "<%= node[:router][:trace_key] %>")
@@ -139,9 +137,6 @@ http {
 
         # Handling response from backend servers
         header_filter_by_lua '
-          -- add package.path and package.cpath
-          package.path = package.path..";<%= node[:lua][:module_path] %>/?.lua"
-          package.cpath = package.cpath..";<%= node[:lua][:module_path] %>/?.so"
           local uls = require ("uls")
 
           uls.post_process_response(ngx)

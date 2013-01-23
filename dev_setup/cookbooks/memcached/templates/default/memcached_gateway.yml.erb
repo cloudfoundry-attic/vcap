@@ -6,8 +6,13 @@ service:
   description: "Memcached in-memory object cache service"
   plans: ['free']
   default_plan: 'free'
-  tags: ['memcached', 'memcached-1.4', 'key-value', 'cache']
+  tags: ['key-value', 'cache']
   timeout: <%= node[:memcached_gateway][:service][:timeout] %>
+  supported_versions: <%= "['#{node[:memcached][:supported_versions].keys.join("', '")}']"%>
+  version_aliases:
+<% node[:memcached][:version_aliases].each do |a, v| %>
+    "<%= a %>": "<%= v %>"
+<% end %>
 index: 0
 token: <%= node[:memcached_node][:token] %>
 mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/

@@ -1,5 +1,13 @@
 include_attribute "deployment"
-default[:neo4j][:version] = "community-1.4.1"
+
+default[:neo4j][:supported_versions] = {
+        "1.4" => "1.4",
+}
+default[:neo4j][:version_aliases] = {
+        "current" => "1.4",
+}
+default[:neo4j][:default_version] = "1.4"
+
 default[:neo4j][:service_dir] = "/var/vcap/services/neo4j"
 
 default[:neo4j][:server_id] = "eyJzaWciOiJ1aENFMlpLVm1qU2JVaVdzSmtadXhJV0F5Y1E9Iiwib2lkIjoi%0ANGU0ZTc4YmNhNDFlMTIyMDA0ZTRlOGVjNjVmNjdmMDUwMWEwYTc5ZGZjNjYi%0AfQ==%0A"

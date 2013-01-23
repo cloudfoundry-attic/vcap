@@ -6,8 +6,13 @@ service:
   description: 'Neo4j NOSQL store'
   plans: ['free']
   default_plan: 'free'
-  tags: ['neo4j', 'neo4j-1.4', 'nosql']
+  tags: ['nosql']
   timeout: <%= node[:neo4j_gateway][:service][:timeout] %>
+  supported_versions: <%= "['#{node[:neo4j][:supported_versions].keys.join("', '")}']"%>
+  version_aliases:
+<% node[:neo4j][:version_aliases].each do |a, v| %>
+    "<%= a %>": "<%= v %>"
+<% end %>
 host: localhost
 index: 0
 token: <%= node[:neo4j_node][:token] %>

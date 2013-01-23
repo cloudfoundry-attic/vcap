@@ -100,6 +100,9 @@ if [ -z "$VCAP_REPO_BRANCH" ]; then
   VCAP_REPO_BRANCH=master
 fi
 
+# apt-get update
+run_cmd apt-get update
+
 # Check if we have access to the web
 echo "Installing wget..."
 if ! run_cmd apt-get $APT_CONFIG install -qym wget; then
@@ -130,13 +133,14 @@ if [ ! -f ${GEM} ] || [ `${GEM} -v` \< "1.3.6" ]; then
   cd ${CWD}
 fi
 
-# FIXME: at some point you will want a version spec like "~> 10.12.0" here
 echo "Installing chef..."
-${GEM} list -i chef || sudo ${GEM} install chef -q --no-ri --no-rdoc > /dev/null
+CHEF_VERSION="10.16.4"
+${GEM} list -i chef -v ${CHEF_VERSION} || sudo ${GEM} install chef --version ${CHEF_VERSION} -q --no-ri --no-rdoc > /dev/null
 
 # Install blobstore_client
 echo "Installing blobstore_client..."
-${GEM} list -i blobstore_client || sudo ${GEM} install blobstore_client -q --no-ri --no-rdoc > /dev/null
+BLOB_VERSION="0.4.0"
+${GEM} list -i blobstore_client -v ${BLOB_VERSION} || sudo ${GEM} install blobstore_client --version ${BLOB_VERSION} -q --no-ri --no-rdoc > /dev/null
 
 # Install rake
 echo "Installing rake..."
@@ -146,30 +150,20 @@ ${GEM} list -i rake -i || sudo ${GEM} install rake -q --no-ri --no-rdoc > /dev/n
 echo "Installing git..."
 run_cmd apt-get $APT_CONFIG install -qym git-core
 
-readonly CORE_REPOS=(cloud_controller dea router stager)
-
 [ -d $CLOUDFOUNDRY_HOME ] || mkdir $CLOUDFOUNDRY_HOME
-for REPO in vcap "${CORE_REPOS[@]}"; do
-  if [ ! -d $CLOUDFOUNDRY_HOME/$REPO ]; then
-    if ! (cd $CLOUDFOUNDRY_HOME
-      git clone --no-checkout $VCAP_REPO_BASE/$REPO
-      cd $REPO
-      git checkout $VCAP_REPO_BRANCH
-      git submodule update --recursive --init
-    ); then
-      echo "Unable to clone cloudfoundry $REPO repo."
-      exit 1
-    fi
-  else
-    clear_bundler_settings $CLOUDFOUNDRY_HOME/$REPO
+REPO=vcap
+if [ ! -d $CLOUDFOUNDRY_HOME/${REPO} ]; then
+  if ! (cd $CLOUDFOUNDRY_HOME
+    git clone --no-checkout $VCAP_REPO_BASE/$REPO
+    cd $REPO
+    git checkout $VCAP_REPO_BRANCH
+    git submodule update --recursive --init
+  ); then
+    echo "Unable to clone cloudfoundry $REPO repo."
+    exit 1
   fi
-done
-
-
-# Our deployment code needs this gem. Using bundler seems like an overkill for
-# the deployment code. So for now just manually install the required gem.
-if ! gem list rake -i > /dev/null; then
-  gem install rake -q --no-ri --no-rdoc > /dev/null 2>&1
+else
+  clear_bundler_settings $CLOUDFOUNDRY_HOME/$REPO
 fi
 
 # Launch chef
@@ -187,6 +181,6 @@ if [ -n "$CONFIG_FILE" ]; then
 fi
 
 echo ""
-echo "Lanching chef..."
+echo "Launching chef..."
 sleep 3
 $CLOUDFOUNDRY_HOME/vcap/dev_setup/lib/chefsolo_launch.rb $ARGS

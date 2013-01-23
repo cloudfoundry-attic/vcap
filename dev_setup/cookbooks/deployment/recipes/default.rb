@@ -11,12 +11,14 @@ node[:uaadb][:host] ||= cf_local_ip
 node[:postgresql][:host] ||= cf_local_ip
 node[:redis_resque][:host] ||= cf_local_ip
 node[:vcap_redis][:host] ||= cf_local_ip
+node[:serialization_data_server][:host] ||= cf_local_ip
 
 [
   node[:deployment][:home], File.join(node[:deployment][:home], "deploy"),
   node[:deployment][:log_path], File.join(node[:deployment][:home], "sys", "log"),
   node[:deployment][:config_path],
   File.join(node[:deployment][:config_path], "staging"),
+  File.join(node[:deployment][:config_path], "legacy_staging"),
   node[:deployment][:setup_cache],
 ].each do |dir|
   directory dir do
@@ -53,6 +55,7 @@ template node[:deployment][:info_file] do
   variables({
     :name => node[:deployment][:name],
     :ruby_bin_dir => File.join(node[:ruby][:path], "bin"),
+    :node_bin_dir => File.join(node[:node08][:path], "bin"),
     :maven_bin_dir => File.join(node[:maven][:path], "bin"),
     :cloudfoundry_home => node[:cloudfoundry][:home],
     :cloudfoundry_path => node[:cloudfoundry][:path],

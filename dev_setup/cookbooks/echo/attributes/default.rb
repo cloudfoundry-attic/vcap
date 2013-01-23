@@ -1,6 +1,16 @@
 include_attribute "deployment"
 
+default[:echo][:supported_versions] = {
+        "1.0" => "1.0",
+}
+default[:echo][:version_aliases] = {
+        "current" => "1.0",
+}
+default[:echo][:default_version] = "1.0"
+
 default[:echo][:host] = "localhost"
+
+default[:echo_gateway][:service][:timeout] = "15"
 
 default[:echo_node][:capacity] = "100"
 default[:echo_node][:index] = "0"

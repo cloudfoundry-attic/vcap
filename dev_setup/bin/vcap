@@ -339,7 +339,7 @@ end
 args = opts_parser.parse!(args)
 ENV['CLOUD_FOUNDRY_CONFIG_PATH'] = $config_dir
 
-DIR = File.join($vcap_home, "vcap", "bin")
+DIR = File.join($vcap_home, "bin")
 
 SERVICE_DIR = File.join(DIR, '/services')
 unless $log_dir

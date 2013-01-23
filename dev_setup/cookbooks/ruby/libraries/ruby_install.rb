@@ -1,10 +1,7 @@
 module RubyInstall
   def cf_ruby_install(ruby_version, ruby_source_id, ruby_path, ruby_tarball_suffix)
-    rubygems_version = node[:rubygems][:version]
-    bundler_version = node[:rubygems][:bundler][:version]
-    rake_version = node[:rubygems][:rake][:version]
 
-    %w[ build-essential libssl-dev zlib1g-dev libreadline6-dev libxml2-dev libpq-dev].each do |pkg|
+    %w[ build-essential libssl-dev zlib1g-dev libreadline6-dev libxml2-dev].each do |pkg|
       package pkg
     end
 
@@ -42,12 +39,14 @@ module RubyInstall
       make install
       EOH
     end
+  end
 
+  def cf_rubygems_install(ruby_path, rubygems_version, rubygems_id, rubygems_checksum)
     rubygem_tarball_path = File.join(node[:deployment][:setup_cache], "rubygems-#{rubygems_version}.tgz")
     cf_remote_file rubygem_tarball_path do
       owner node[:deployment][:user]
-      id node[:rubygems][:id]
-      checksum node[:rubygems][:checksum]
+      id rubygems_id
+      checksum rubygems_checksum
     end
 
     bash "Install RubyGems #{ruby_path}" do
@@ -59,24 +58,15 @@ module RubyInstall
       #{File.join(ruby_path, "bin", "ruby")} setup.rb
       EOH
     end
+  end
 
-    gem_package "bundler" do
-      version bundler_version
-      gem_binary File.join(ruby_path, "bin", "gem")
-    end
-
-    gem_package "rake" do
-      version rake_version
-      gem_binary File.join(ruby_path, "bin", "gem")
-    end
-
+  def cf_gem_install(ruby_path, gem_name, gem_version = nil)
     # The default chef installed with Ubuntu 10.04 does not support the "retries" option
     # for gem_package. It may be a good idea to add/use that option once the ubuntu
     # chef package gets updated.
-    %w[ rack eventmachine thin sinatra mysql pg vmc ].each do |gem|
-      gem_package gem do
-        gem_binary File.join(ruby_path, "bin", "gem")
-      end
+    gem_package gem_name do
+      version gem_version if !gem_version.nil?
+      gem_binary File.join(ruby_path, "bin", "gem")
     end
   end
 end

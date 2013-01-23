@@ -16,7 +16,6 @@ jobs:
           - rabbitmq
           - postgresql
           - vblob
-          - filesystem
     - health_manager
     - dea
     - uaa
@@ -39,4 +38,3 @@ jobs:
     - rabbitmq_gateway
     - postgresql_gateway
     - vblob_gateway
-    - filesystem_gateway

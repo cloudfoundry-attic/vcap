@@ -1,0 +1,12 @@
+---
+name: "sinatra"
+runtimes:
+  - "ruby18":
+      default: true
+  - "ruby19":
+     default: false
+  - "ruby193":
+     default: false
+detection:
+  - "*.rb": "\\s*require[\\s\\(]*['\"]sinatra(/base)?['\"]" # .rb files in the root dir containing a require?
+  - "config/environment.rb": false # and config/environment.rb must not exist

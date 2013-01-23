@@ -6,8 +6,13 @@ service:
   description: 'Elasticsearch text search service'
   plans: ['free']
   default_plan: 'free'
-  tags: ['elasticsearch', 'elasticsearch-0.19', 'search']
+  tags: ['search']
   timeout: <%= node[:elasticsearch_gateway][:service][:timeout] %>
+  supported_versions: <%= "['#{node[:elasticsearch][:supported_versions].keys.join("', '")}']"%>
+  version_aliases:
+<% node[:elasticsearch][:version_aliases].each do |a, v| %>
+    "<%= a %>": "<%= v %>"
+<% end %>
 host: localhost
 index: 0
 token: <%= node[:elasticsearch_node][:token] %>

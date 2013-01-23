@@ -16,6 +16,7 @@ jobs:
     - redis_gateway
     - ccdb
     - dea
+    - stager
     - mysql_node:
         index: "0"
     - mysql_gateway

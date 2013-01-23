@@ -6,8 +6,13 @@ service:
   description: "CouchDB service"
   plans: ['free']
   default_plan: 'free'
-  tags: ['couchdb', 'couchdb-1.2', 'key-value', 'cache']
+  tags: ['key-value', 'cache']
   timeout: <%= node[:couchdb_gateway][:service][:timeout] %>
+  supported_versions: <%= "['#{node[:couchdb][:supported_versions].keys.join("', '")}']"%>
+  version_aliases:
+<% node[:couchdb][:version_aliases].each do |a, v| %>
+    "<%= a %>": "<%= v %>"
+<% end %>
 index: 0
 token: <%= node[:couchdb_node][:token] %>
 mbus: nats://<%= node[:nats_server][:user] %>:<%= node[:nats_server][:password] %>@<%= node[:nats_server][:host] %>:<%= node[:nats_server][:port] %>/
