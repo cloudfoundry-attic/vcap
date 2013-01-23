@@ -64,6 +64,7 @@ Here is a sampling of the currently supported jobs
  - cloud_controller
  - health_manager
  - dea
+ - stager
  - mysql_node
  - mysql_gateway
  - redis_node

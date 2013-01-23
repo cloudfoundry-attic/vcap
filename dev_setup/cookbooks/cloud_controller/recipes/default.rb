@@ -36,7 +36,7 @@ template node[:cloud_controller][:runtimes_file] do
    mode 0644
 end
 
-cf_bundle_install(File.expand_path(File.join("cloud_controller", "cloud_controller"), node[:cloudfoundry][:home]))
+cf_bundle_install(File.expand_path(File.join("cloud_controller", "cloud_controller"), node[:cloudfoundry][:path]))
 
 cf_pg_reset_user_password(:ccdb)
 

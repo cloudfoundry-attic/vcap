@@ -84,6 +84,13 @@ when "ubuntu"
     checksum node[:nginx][:checksums][:module_lua_source]
   end
 
+  upload_module_patch = File.join(node[:deployment][:setup_cache], "upload_module_put_support.patch")
+  cf_remote_file upload_module_patch do
+    owner node[:deployment][:user]
+    id node[:nginx][:upload_module_patch_id]
+    checksum node[:nginx][:checksums][:upload_module_patch]
+  end
+
   directory nginx_path do
     owner node[:deployment][:user]
     group node[:deployment][:group]
@@ -131,13 +138,22 @@ when "ubuntu"
     EOH
   end
 
+  bash "Patch nginx upload module" do
+    cwd File.join("", "tmp")
+    user node[:deployment][:user]
+    code <<-EOH
+      tar xzf #{nginx_upload_module_tarball}
+      cd nginx_upload_module-2.2.0
+      patch < #{upload_module_patch}
+    EOH
+  end
+
   bash "Install nginx" do
     cwd File.join("", "tmp")
     user node[:deployment][:user]
     code <<-EOH
       tar xzf #{nginx_tarball}
       tar xzf #{pcre_tarball}
-      tar xzf #{nginx_upload_module_tarball}
       tar xzf #{headers_more_tarball}
       tar xzf #{devel_kit_tarball}
       tar xzf #{nginx_lua_tarball}

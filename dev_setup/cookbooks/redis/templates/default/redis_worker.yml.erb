@@ -25,5 +25,11 @@ logging:
   level: debug
 command_rename_prefix: protect-command-prefix
 gzip_bin: /bin/gzip
-redis_server_path: <%= File.join(node[:redis][:path], "bin", "redis-server") %>
+redis_server_path:
+<%
+  node[:redis][:supported_versions].each_key do |version|
+%>
+  "<%= version %>": "<%= File.join(node[:redis][:path], node[:redis][:supported_versions][version], "bin", "redis-server") %>"
+<% end %>
+
 pid_file:
