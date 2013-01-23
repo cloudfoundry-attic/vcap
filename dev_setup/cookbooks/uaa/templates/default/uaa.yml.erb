@@ -56,5 +56,5 @@ oauth:
       authorities: uaa.none
       id: vmc
       resource-ids: none
-      redirect-uri: http://uaa.cloudfoundry.com/redirect/vmc,https://uaa.cloudfoundry.com/redirect/vmc
+      redirect-uri: http://uaa.<%= node[:deployment][:domain] %>/redirect/vmc,https://uaa.<%= node[:deployment][:domain] %>/redirect/vmc
       access-token-validity: 604800
