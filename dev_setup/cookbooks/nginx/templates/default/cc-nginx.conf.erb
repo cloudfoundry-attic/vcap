@@ -61,6 +61,11 @@ http {
     }
 
     location ~ (/apps/.*/application|/services/v\d+/configurations/.*/serialized/data) {
+      # Bypass for GET requests
+      if ($request_method = GET) {
+        proxy_pass http://cloud_controller;
+      }
+
       # Pass altered request body to this location
       upload_pass   @cc_uploads;
       upload_pass_args on;
