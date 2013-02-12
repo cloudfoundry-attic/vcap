@@ -133,6 +133,15 @@ if [ ! -f ${GEM} ] || [ `${GEM} -v` \< "1.3.6" ]; then
   cd ${CWD}
 fi
 
+# we need to install net-ssh ans net-ssh-gatewayto avoid dependency problems on chef.
+echo "Installing net-ssh..."
+NET_SSH_VERSION="2.2.2"
+${GEM} list -i net-ssh -v ${NET_SSH_VERSION} || sudo ${GEM} install net-ssh --version ${NET_SSH_VERSION} -q --no-ri --no-rdoc > /dev/null
+
+echo "Installing net-ssh-gateway..."
+NET_SSH_GATEWAY_VERSION=" 1.0.0"
+${GEM} list -i net-ssh-gateway -v ${NET_SSH_GATEWAY_VERSION} || sudo ${GEM} install net-ssh-gateway --version ${NET_SSH_GATEWAY_VERSION} -q --no-ri --no-rdoc > /dev/null
+
 echo "Installing chef..."
 CHEF_VERSION="10.16.4"
 ${GEM} list -i chef -v ${CHEF_VERSION} || sudo ${GEM} install chef --version ${CHEF_VERSION} -q --no-ri --no-rdoc > /dev/null
