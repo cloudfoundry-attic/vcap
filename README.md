@@ -189,8 +189,3 @@ Note that hitting refresh will show a different port in each refresh reflecting 
     +-------------+----+---------+-------------+----------+
     | env         | 1  | RUNNING | env.vcap.me |          |
     +-------------+----+---------+-------------+----------+
-
-## File a Bug
-
-To file a bug against Cloud Foundry Open Source and its components, sign up and use our
-bug tracking system: [http://cloudfoundry.atlassian.net](http://cloudfoundry.atlassian.net)
