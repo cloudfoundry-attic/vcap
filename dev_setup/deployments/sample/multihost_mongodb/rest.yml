@@ -16,6 +16,8 @@ jobs:
         index: "0"
     - redis_gateway
     - ccdb
+    - uaa
+    - uaadb
     - mysql_node:
         index: "0"
     - mysql_gateway
