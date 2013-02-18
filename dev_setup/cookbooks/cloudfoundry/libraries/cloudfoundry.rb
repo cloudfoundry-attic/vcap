@@ -13,7 +13,7 @@ module CloudFoundry
 
   A_ROOT_SERVER = '198.41.0.4'
   def cf_local_ip
-    if (proxy = ENV["http_proxy"] || ENV["https_proxy"])
+    if (proxy = ENV["http_proxy"] || ENV["HTTP_PROXY"])
       route = proxy.scan(/\d+.\d+.\d+.\d+/).first
     end
     route ||= A_ROOT_SERVER
