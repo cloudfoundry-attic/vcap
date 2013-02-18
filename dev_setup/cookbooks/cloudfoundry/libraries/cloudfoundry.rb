@@ -12,7 +12,10 @@ module CloudFoundry
   end
 
   A_ROOT_SERVER = '198.41.0.4'
-  def cf_local_ip(route = A_ROOT_SERVER)
+  def cf_local_ip
+    if (proxy = ENV["http_proxy"] || ENV["https_proxy"])
+      route = proxy.scan(/\d+.\d+.\d+.\d+/).first
+    end
     route ||= A_ROOT_SERVER
     orig, Socket.do_not_reverse_lookup = Socket.do_not_reverse_lookup, true
     UDPSocket.open {|s| s.connect(route, 1); s.addr.last }
