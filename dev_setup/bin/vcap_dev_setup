@@ -111,7 +111,7 @@ if ! run_cmd apt-get $APT_CONFIG install -qym wget; then
 fi
 
 echo "Checking web connectivity."
-if ! wget -q -T 2 -t 2 -O - http://api.cloudfoundry.com/info | grep "Cloud Application Platform" > /dev/null; then
+if ! wget -q -T 2 -t 2 -O - http://api.run.pivotal.io/info | grep "Cloud Foundry sponsored by Pivotal" > /dev/null; then
   echo "Giving up. Cannot connect to the web. Check your proxy settings if you are behind a proxy."
   exit 1
 fi
