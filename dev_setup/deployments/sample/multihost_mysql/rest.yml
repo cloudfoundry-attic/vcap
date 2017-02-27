@@ -13,6 +13,8 @@ jobs:
     - stager
     - health_manager
     - ccdb
+    - uaa
+    - uaadb
     - redis_node:
         index: "0"
     - redis_gateway
