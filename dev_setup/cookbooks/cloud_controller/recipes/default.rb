@@ -40,6 +40,16 @@ cf_bundle_install(File.expand_path(File.join("cloud_controller", "cloud_controll
 
 cf_pg_reset_user_password(:ccdb)
 
+bash "install staging gem" do
+  cwd File.expand_path(File.join(node["cloudfoundry"]["path"], "staging"))
+  user node[:deployment][:user]
+  code "
+#{File.join(node[:ruby][:path], "bin", "gem")} build vcap_staging.gemspec
+#{File.join(node[:ruby][:path], "bin", "gem")} uninstall -f vcap_staging
+#{File.join(node[:ruby][:path], "bin", "gem")} install vcap_staging-*.gem
+rm vcap_staging-*.gem"
+end
+
 staging_dir = File.join(node[:deployment][:config_path], "staging")
 node[:cloud_controller][:staging].each_pair do |framework, config|
   template config do
